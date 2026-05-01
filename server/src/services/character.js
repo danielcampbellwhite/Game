@@ -1,0 +1,323 @@
+import { db } from '../db.js';
+import { PROPERTIES, propertyById, xpForNext, rankFor, businessById, computeBusiness, vehicleById, STAT_CAPS } from '../data.js';
+import { getStockPrice } from './market.js';
+import { buffSnapshot } from './buffs.js';
+import { writeLog } from './log.js';
+
+const ENERGY_REGEN_MS = 5 * 60 * 1000;   // 1 energy per 5 min
+const NERVE_REGEN_MS  = 5 * 60 * 1000;   // 1 nerve per 5 min
+const HEALTH_REGEN_MS = 60 * 1000;       // 1 hp per minute (out of hospital)
+const BANK_INTEREST_PER_HOUR = 0.0002;   // 0.02% per hour
+
+export function loadCharacter(userId) {
+  return db.prepare('SELECT * FROM characters WHERE user_id = ?').get(userId);
+}
+
+export function loadCharacterById(id) {
+  return db.prepare('SELECT * FROM characters WHERE id = ?').get(id);
+}
+
+// Property bonuses are city-locked — you only enjoy the perks of properties
+// you own in the city you're currently in. Fly elsewhere and they go quiet.
+export function getPropertyBonuses(charId, city) {
+  const totals = { max_energy: 0, max_nerve: 0, happiness: 0 };
+  if (!city) return totals;
+  const rows = db.prepare(
+    'SELECT property_id FROM properties_owned WHERE char_id = ? AND city = ?'
+  ).all(charId, city);
+  for (const r of rows) {
+    const p = propertyById(r.property_id);
+    if (!p) continue;
+    totals.max_energy += p.bonuses.max_energy || 0;
+    totals.max_nerve  += p.bonuses.max_nerve  || 0;
+    totals.happiness  += p.bonuses.happiness  || 0;
+  }
+  return totals;
+}
+
+// Apply lazy regen / interest / bonuses to a character row in memory and persist.
+//
+// Critical: each periodic resource has its OWN tick timestamp that only
+// advances by full periods consumed. The wrong-and-easy version is to set
+// `last_tick = now` every call — that eats the sub-period delta and the
+// timer never accumulates if any other call (e.g. the 30s client poll)
+// fires sooner than the period.
+export function applyTick(ch) {
+  const now = Date.now();
+  if (!ch.last_tick) ch.last_tick = now;
+  if (!ch.last_health_tick) ch.last_health_tick = now;
+  if (!ch.bank_last_interest) ch.bank_last_interest = now;
+
+  // Property bonuses inflate caps — only properties in the current city
+  const bonuses = getPropertyBonuses(ch.id, ch.city);
+  const baseMaxEnergy = 100 + 5 * (ch.level - 1);
+  const baseMaxNerve  = 10 + Math.floor(ch.level / 5);
+  const prestigeMul   = 1 + (ch.prestige || 0) * 0.05;
+  ch.max_energy = Math.floor((baseMaxEnergy + bonuses.max_energy) * prestigeMul);
+  ch.max_nerve  = Math.floor((baseMaxNerve  + bonuses.max_nerve)  * prestigeMul);
+  ch.max_health = 100 + 5 * (ch.level - 1);
+
+  // Energy + nerve share a 5-minute rhythm. Advance the tick timestamp only
+  // by the multiple of the period actually consumed; the leftover carries
+  // over to the next call.
+  const energyTicks = Math.floor((now - ch.last_tick) / ENERGY_REGEN_MS);
+  if (energyTicks > 0) {
+    if (ch.energy < ch.max_energy) ch.energy = Math.min(ch.max_energy, ch.energy + energyTicks);
+    if (ch.nerve  < ch.max_nerve)  ch.nerve  = Math.min(ch.max_nerve,  ch.nerve + energyTicks);
+    ch.last_tick += energyTicks * ENERGY_REGEN_MS;
+  }
+
+  // Health uses its own 1-minute rhythm. Pause regen while in hospital.
+  const inHospital = !!(ch.hospital_until && ch.hospital_until > now);
+  if (inHospital) {
+    // Don't accumulate health time while in hospital; resume on discharge.
+    ch.last_health_tick = now;
+  } else {
+    const healthTicks = Math.floor((now - ch.last_health_tick) / HEALTH_REGEN_MS);
+    if (healthTicks > 0) {
+      if (ch.health < ch.max_health) ch.health = Math.min(ch.max_health, ch.health + healthTicks);
+      ch.last_health_tick += healthTicks * HEALTH_REGEN_MS;
+    }
+  }
+
+  // Hospital expired? full heal.
+  if (ch.hospital_until && ch.hospital_until <= now) {
+    ch.health = ch.max_health;
+    ch.hospital_until = null;
+    ch.hospital_reason = null;
+    ch.last_health_tick = now;
+    writeLog(ch.id, 'hospital', '🏥 Discharged from hospital — full health.', null, true);
+  }
+  // Jail expired
+  if (ch.jail_until && ch.jail_until <= now) {
+    ch.jail_until = null;
+    ch.jail_reason = null;
+    writeLog(ch.id, 'jail', '🚓 Released from jail — sentence served.', null, true);
+  }
+  // Travel arrival
+  if (ch.travel_until && ch.travel_until <= now && ch.travel_to) {
+    const arrivedCity = ch.travel_to;
+    ch.city = arrivedCity;
+    ch.travel_until = null;
+    ch.travel_to = null;
+    writeLog(ch.id, 'travel', `✈️ Landed in ${arrivedCity.replace(/_/g, ' ')}.`, null, true);
+  }
+
+  // Happiness floor + ceiling shifted by property bonus
+  const happinessFloor = 50 + bonuses.happiness;
+  if (ch.happiness < happinessFloor) ch.happiness = happinessFloor;
+  if (ch.happiness > 100 + bonuses.happiness) ch.happiness = 100 + bonuses.happiness;
+
+  // Bank interest — same leftover-preserving pattern, hourly
+  const hoursElapsed = Math.floor((now - ch.bank_last_interest) / (60 * 60 * 1000));
+  if (hoursElapsed >= 1 && ch.bank > 0) {
+    const factor = Math.pow(1 + BANK_INTEREST_PER_HOUR, hoursElapsed);
+    ch.bank = Math.floor(ch.bank * factor);
+    ch.bank_last_interest += hoursElapsed * 60 * 60 * 1000;
+  }
+
+  // Overdue loan auto-default. If the due date has passed, the bank
+  // compounds the principal at 5% per overdue day and tries to recover
+  // from cash + bank. Players can no longer take a loan and ghost it.
+  settleOverdueLoans(ch, now);
+
+  saveCharacter(ch);
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function settleOverdueLoans(ch, now) {
+  const overdue = db.prepare('SELECT * FROM loans WHERE char_id = ? AND due_at <= ?').all(ch.id, now);
+  for (const loan of overdue) {
+    let owed = loan.principal;
+    const daysOverdue = Math.floor((now - loan.due_at) / DAY_MS);
+    if (daysOverdue > 0) {
+      const grown = Math.floor(loan.principal * Math.pow(1.05, daysOverdue));
+      if (grown > loan.principal) {
+        owed = grown;
+        // Roll the new due date forward and write back the swollen principal.
+        db.prepare('UPDATE loans SET principal = ?, due_at = ? WHERE id = ?')
+          .run(owed, now, loan.id);
+        writeLog(ch.id, 'bank', `Overdue loan compounded: principal grew to £${owed.toLocaleString()} (+5%/day penalty).`);
+      }
+    }
+    // Try to recover from cash, then bank
+    if (ch.cash >= owed) {
+      ch.cash -= owed;
+      db.prepare('DELETE FROM loans WHERE id = ?').run(loan.id);
+      writeLog(ch.id, 'bank', `Auto-paid overdue loan £${owed.toLocaleString()} from cash.`);
+    } else if (ch.cash + ch.bank >= owed) {
+      const fromBank = owed - ch.cash;
+      ch.bank -= fromBank;
+      ch.cash = 0;
+      db.prepare('DELETE FROM loans WHERE id = ?').run(loan.id);
+      writeLog(ch.id, 'bank', `Auto-paid overdue loan £${owed.toLocaleString()} from cash + bank.`);
+    }
+    // Otherwise the loan stays and keeps compounding next tick.
+  }
+}
+
+const SAVE_STMT = `
+  UPDATE characters SET
+    name = ?, avatar = ?, city = ?,
+    level = ?, xp = ?,
+    energy = ?, max_energy = ?,
+    nerve = ?, max_nerve = ?,
+    health = ?, max_health = ?,
+    happiness = ?,
+    strength = ?, defence = ?, speed = ?, intelligence = ?,
+    reputation = ?,
+    cash = ?, bank = ?, dirty_cash = ?,
+    jail_until = ?, jail_reason = ?, hospital_until = ?, hospital_reason = ?,
+    travel_until = ?, travel_to = ?,
+    last_tick = ?, last_health_tick = ?, last_daily = ?, login_streak = ?,
+    bank_last_interest = ?,
+    equipped_weapon = ?, equipped_armour = ?,
+    prestige = ?,
+    strength_buff = ?, strength_buff_at = ?,
+    defence_buff = ?, defence_buff_at = ?,
+    speed_buff = ?, speed_buff_at = ?,
+    accuracy_buff = ?, accuracy_buff_at = ?,
+    strength_progress = ?, defence_progress = ?, speed_progress = ?
+  WHERE id = ?
+`;
+
+export function saveCharacter(ch) {
+  db.prepare(SAVE_STMT).run(
+    ch.name, ch.avatar, ch.city,
+    ch.level, ch.xp,
+    ch.energy, ch.max_energy,
+    ch.nerve, ch.max_nerve,
+    ch.health, ch.max_health,
+    ch.happiness,
+    ch.strength, ch.defence, ch.speed, ch.intelligence,
+    ch.reputation,
+    ch.cash, ch.bank, ch.dirty_cash,
+    ch.jail_until, ch.jail_reason || null,
+    ch.hospital_until, ch.hospital_reason || null,
+    ch.travel_until, ch.travel_to,
+    ch.last_tick, ch.last_health_tick, ch.last_daily, ch.login_streak,
+    ch.bank_last_interest,
+    ch.equipped_weapon, ch.equipped_armour,
+    ch.prestige,
+    ch.strength_buff || 0, ch.strength_buff_at || null,
+    ch.defence_buff  || 0, ch.defence_buff_at  || null,
+    ch.speed_buff    || 0, ch.speed_buff_at    || null,
+    ch.accuracy_buff || 0, ch.accuracy_buff_at || null,
+    ch.strength_progress || 0, ch.defence_progress || 0, ch.speed_progress || 0,
+    ch.id,
+  );
+}
+
+// Hard level cap. Players keep doing everything (gaining cash/rep/items),
+// but the level number freezes here and shows as "999+" client-side.
+export const MAX_LEVEL = 999;
+
+export function awardXp(ch, xp) {
+  if (ch.level >= MAX_LEVEL) { ch.xp = 0; return 0; }
+  ch.xp += xp;
+  let lvls = 0;
+  while (ch.level < MAX_LEVEL && ch.xp >= xpForNext(ch.level)) {
+    ch.xp -= xpForNext(ch.level);
+    ch.level += 1;
+    lvls += 1;
+    // small free vital boost on level up
+    ch.energy = Math.min(ch.max_energy + 5, ch.energy + 20);
+    ch.health = Math.min(ch.max_health + 5, ch.health + 30);
+  }
+  if (ch.level >= MAX_LEVEL) ch.xp = 0;
+  return lvls;
+}
+
+// Sum of all legal assets at fair value. Excludes dirty_cash by design.
+// - cash + bank: face value
+// - stocks: live market price × shares
+// - properties: full sticker price (no depreciation)
+// - businesses: 70% of computed cost (resale haircut)
+export function computeNetWorth(ch) {
+  let total = (ch.cash || 0) + (ch.bank || 0);
+
+  const stocks = db.prepare('SELECT stock_id, shares FROM stocks_owned WHERE char_id = ?').all(ch.id);
+  for (const s of stocks) total += Math.floor(getStockPrice(s.stock_id) * s.shares);
+
+  const props = db.prepare('SELECT property_id FROM properties_owned WHERE char_id = ?').all(ch.id);
+  for (const p of props) total += propertyById(p.property_id)?.cost || 0;
+
+  const bizes = db.prepare('SELECT business_id, city, scale, risk, quality, level FROM businesses_owned WHERE char_id = ?').all(ch.id);
+  for (const b of bizes) {
+    const t = businessById(b.business_id);
+    if (!t) continue;
+    const stats = computeBusiness(t, b.scale, b.risk, b.quality, b.city);
+    // Resale 70% of build cost + small kicker per upgrade level beyond 1
+    total += Math.floor(stats.cost * 0.7 * (1 + 0.05 * (b.level - 1)));
+  }
+
+  // Vehicles: stolen cars only count at their black-market dealer rate (40%
+  // of book) since you can't legally sell them; legally-owned cars use the
+  // dealer trade-in rate of ~60% of book.
+  const vehicles = db.prepare('SELECT vehicle_id, acquired_via FROM vehicles_owned WHERE char_id = ?').all(ch.id);
+  for (const v of vehicles) {
+    const def = vehicleById(v.vehicle_id);
+    if (!def) continue;
+    const rate = v.acquired_via === 'stolen' ? 0.40 : 0.60;
+    total += Math.floor(def.bookPrice * rate);
+  }
+  return total;
+}
+
+// What other players are allowed to see about this character. Strictly a
+// subset of publicCharacter — never returns cash/bank/equipment/buffs.
+// "online" reflects the SSE stream; "active" is a coarser last-seen window
+// for players idling on pages without an open EventSource.
+//
+// Gang badge is attached lazily to avoid a circular import — the resolver
+// is supplied by routes that have services/gangs.js loaded. Pages that
+// don't pass one (e.g. the rare path that doesn't care) will simply omit
+// the gang field.
+export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null) {
+  const atMax = ch.level >= MAX_LEVEL;
+  const lastActive = ch.last_active_at || 0;
+  const ACTIVE_WINDOW_MS = 60 * 1000;
+  const now = Date.now();
+  return {
+    id: ch.id,
+    name: ch.name,
+    avatar: ch.avatar,
+    city: ch.city,
+    level: atMax ? 999 : ch.level,
+    at_max_level: atMax,
+    rank: rankFor(ch.reputation).name,
+    reputation: ch.reputation,
+    prestige: ch.prestige || 0,
+    last_active_at: lastActive || null,
+    online: now - lastActive < ACTIVE_WINDOW_MS,
+    is_self: viewerId != null && viewerId === ch.id,
+    gang: gangBadgeResolver ? gangBadgeResolver(ch.id) : undefined,
+  };
+}
+
+export function publicCharacter(ch) {
+  const atMax = ch.level >= MAX_LEVEL;
+  return {
+    id: ch.id,
+    name: ch.name, avatar: ch.avatar, city: ch.city,
+    level: ch.level, xp: atMax ? 0 : ch.xp, xp_to_next: atMax ? 0 : xpForNext(ch.level),
+    at_max_level: atMax,
+    energy: ch.energy, max_energy: ch.max_energy,
+    nerve: ch.nerve, max_nerve: ch.max_nerve,
+    health: ch.health, max_health: ch.max_health,
+    happiness: ch.happiness,
+    strength: ch.strength, defence: ch.defence, speed: ch.speed, intelligence: ch.intelligence,
+    stat_caps: STAT_CAPS,
+    buffs: buffSnapshot(ch),
+    reputation: ch.reputation, rank: rankFor(ch.reputation).name,
+    cash: ch.cash, bank: ch.bank, dirty_cash: ch.dirty_cash,
+    net_worth: computeNetWorth(ch),
+    jail_until: ch.jail_until, jail_reason: ch.jail_reason || null,
+    hospital_until: ch.hospital_until, hospital_reason: ch.hospital_reason || null,
+    travel_until: ch.travel_until, travel_to: ch.travel_to,
+    equipped_weapon: ch.equipped_weapon, equipped_armour: ch.equipped_armour,
+    login_streak: ch.login_streak, last_daily: ch.last_daily,
+    prestige: ch.prestige,
+  };
+}

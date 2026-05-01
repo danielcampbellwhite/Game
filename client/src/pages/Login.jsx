@@ -1,0 +1,158 @@
+import React, { useState } from 'react';
+import { useGame } from '../context/GameContext.jsx';
+import { useNavigate } from 'react-router-dom';
+
+// ─── Showcase content ────────────────────────────────────────────────
+//
+// Edit these arrays as features ship. STATS is the at-a-glance numbers
+// strip; SHOWCASE is the screenshot grid. Each card optionally accepts
+// an `img` URL — if provided, it renders <img>; otherwise we fall back
+// to a styled gradient placeholder so the layout stays intact while
+// real screenshots are still being captured.
+//
+// To drop a real screenshot in, save the file under
+//   client/public/screenshots/<name>.png
+// and set `img: '/screenshots/<name>.png'`.
+
+const STATS = [
+  { value: '18',    label: 'Cities' },
+  { value: '60+',   label: 'Real-world weapons' },
+  { value: '105',   label: 'Vehicles' },
+  { value: '15',    label: 'Careers' },
+  { value: '20+',   label: 'Business templates' },
+  { value: '999',   label: 'Level cap' },
+];
+
+const SHOWCASE = [
+  { img: null, emoji: '🌍', bg: 'from-blue-900/40 to-ink-950',
+    title: 'A real-time world map',
+    blurb: '18 cities. Live player counts. Drag and zoom to scout the action.' },
+  { img: null, emoji: '🎰', bg: 'from-yellow-900/40 to-ink-950',
+    title: 'Casino & vice',
+    blurb: 'Roulette, blackjack, slots, sports books, scratchers — with sound effects.' },
+  { img: null, emoji: '⚔️', bg: 'from-blood-900/50 to-ink-950',
+    title: 'Real-time PvP',
+    blurb: 'Challenge anyone in your city. Knockout for sport, murder during a war.' },
+  { img: null, emoji: '🤝', bg: 'from-emerald-900/30 to-ink-950',
+    title: 'Gangs, wars, heists',
+    blurb: 'Found a gang at level 10. Wage 24h turf wars. Plan multi-role heists.' },
+  { img: null, emoji: '🚗', bg: 'from-violet-900/30 to-ink-950',
+    title: '105 vehicles to own',
+    blurb: 'From beaters to hypercars. Buy clean, steal them, or chop them up.' },
+  { img: null, emoji: '🔫', bg: 'from-orange-900/30 to-ink-950',
+    title: 'A real arsenal',
+    blurb: 'Glocks, SIGs, M4s, Barretts — with matching ammo and tiered armour.' },
+];
+
+const BULLETS = [
+  'Lift wallets, knock over banks, run drugs across borders, hunt rival players in the alley.',
+  'Found a gang. Declare war on another. Hold turf for permanent crime-cooldown perks.',
+  'Hold down a job for steady wages, run shopfronts to launder dirty cash, bet your bankroll on the next horse race.',
+  'No background workers — your city accrues income, drift and timers while you\'re offline. Drop in for five minutes or all night.',
+];
+
+function StatBlock({ value, label }) {
+  return (
+    <div className="text-center">
+      <div className="font-display text-3xl text-blood-400 tabular-nums">{value}</div>
+      <div className="text-[10px] uppercase text-ink-100/55 tracking-wide mt-1">{label}</div>
+    </div>
+  );
+}
+
+function ShowcaseCard({ s }) {
+  return (
+    <div className="rounded-lg border border-ink-100/10 overflow-hidden bg-ink-950/60">
+      {s.img ? (
+        <img src={s.img} alt={s.title} className="w-full h-32 object-cover" />
+      ) : (
+        <div className={`relative h-32 bg-gradient-to-br ${s.bg} flex items-center justify-center overflow-hidden`}>
+          <span className="text-7xl opacity-25 select-none">{s.emoji}</span>
+        </div>
+      )}
+      <div className="p-3 border-t border-ink-100/10">
+        <div className="text-sm font-medium text-ink-50">{s.title}</div>
+        <div className="text-[11px] text-ink-100/55 leading-snug mt-0.5">{s.blurb}</div>
+      </div>
+    </div>
+  );
+}
+
+export default function Login() {
+  const { login, register } = useGame();
+  const nav = useNavigate();
+  const [mode, setMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setErr(null); setBusy(true);
+    try {
+      if (mode === 'login') {
+        const r = await login(username, password);
+        nav(r.hasCharacter ? '/' : '/create');
+      } else {
+        await register(username, password);
+        nav('/create');
+      }
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto py-6 space-y-8">
+      {/* Login form */}
+      <div className="card max-w-sm mx-auto">
+        <div className="text-center mb-4">
+          <div className="font-display text-5xl text-blood-500">MAFIA LIFE</div>
+          <p className="text-xs text-ink-100/50 mt-1">Build an empire — or rot in jail trying.</p>
+        </div>
+        <div className="flex gap-1 mb-4 text-xs">
+          <button className={`btn ${mode==='login' ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setMode('login')}>Sign in</button>
+          <button className={`btn ${mode==='register' ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setMode('register')}>Create account</button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username" autoFocus className="w-full" />
+          <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" className="w-full" />
+          {err && <p className="text-blood-400 text-xs">{err}</p>}
+          <button disabled={busy} type="submit" className="btn btn-primary w-full">
+            {busy ? '...' : (mode === 'login' ? 'Enter the city' : 'Start a new life')}
+          </button>
+        </form>
+      </div>
+
+      {/* Showcase */}
+      <div className="space-y-6">
+        <div className="text-center max-w-2xl mx-auto">
+          <h2 className="font-display text-2xl text-ink-50">From petty thief to global empire</h2>
+          <p className="text-sm text-ink-100/65 mt-2">
+            A persistent browser-based crime sim. No install, no download — pick a name,
+            pick a city, see how long you last.
+          </p>
+        </div>
+
+        <div className="card">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+            {STATS.map(s => <StatBlock key={s.label} {...s} />)}
+          </div>
+        </div>
+
+        <ul className="grid sm:grid-cols-2 gap-2 max-w-2xl mx-auto text-sm text-ink-100/75">
+          {BULLETS.map((b, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="text-blood-400 shrink-0">•</span>
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {SHOWCASE.map(s => <ShowcaseCard key={s.title} s={s} />)}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,208 @@
+import { Router } from 'express';
+import { db } from '../db.js';
+import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
+import { rouletteColor, ROULETTE_PAYOUTS, rollSlot } from '../data-casino.js';
+import { drawCard, cardLabel, handTotal, isBlackjack, dealerPlay, settle } from '../services/blackjack.js';
+import { saveCharacter, publicCharacter } from '../services/character.js';
+import { writeLog } from '../services/log.js';
+
+const router = Router();
+
+// ──────────────────────────────────────────── Roulette ─────────────────────
+
+router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const { betType, betValue, amount } = req.body || {};
+  const stake = Math.max(1, parseInt(amount || 0, 10));
+  if (!ROULETTE_PAYOUTS[betType]) return res.status(400).json({ error: 'Bad bet type' });
+  if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
+
+  const number = Math.floor(Math.random() * 37); // 0–36
+  const color = rouletteColor(number);
+  const oddEven = number === 0 ? null : (number % 2 === 0 ? 'even' : 'odd');
+  const lowHigh = number === 0 ? null : (number <= 18 ? 'low' : 'high');
+  const dozen   = number === 0 ? null : (number <= 12 ? 'dozen1' : number <= 24 ? 'dozen2' : 'dozen3');
+
+  let won = false;
+  if (betType === 'red' || betType === 'black') won = (color === betType);
+  else if (betType === 'odd' || betType === 'even') won = (oddEven === betType);
+  else if (betType === 'low' || betType === 'high') won = (lowHigh === betType);
+  else if (betType === 'dozen1' || betType === 'dozen2' || betType === 'dozen3') won = (dozen === betType);
+  else if (betType === 'number') won = (parseInt(betValue, 10) === number);
+
+  ch.cash -= stake;
+  const payout = won ? stake * ROULETTE_PAYOUTS[betType] : 0;
+  ch.cash += payout;
+
+  writeLog(ch.id, 'casino',
+    won ? `Roulette: ${number} ${color} — ${betType} bet won £${payout.toLocaleString()}.`
+        : `Roulette: ${number} ${color} — ${betType} bet lost £${stake.toLocaleString()}.`);
+  saveCharacter(ch);
+  res.json({ ok: true, number, color, won, payout, character: publicCharacter(ch) });
+});
+
+// ──────────────────────────────────────────── Slots ────────────────────────
+
+router.post('/slots/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const stake = Math.max(1, parseInt(req.body?.amount || 0, 10));
+  if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
+  ch.cash -= stake;
+
+  const reels = [rollSlot(), rollSlot(), rollSlot()];
+  const allMatch = reels[0].id === reels[1].id && reels[1].id === reels[2].id;
+  const payout = allMatch ? stake * reels[0].mul : 0;
+  ch.cash += payout;
+
+  writeLog(ch.id, 'casino',
+    allMatch
+      ? `Slots: ${reels.map(r => r.emoji).join(' ')} — JACKPOT £${payout.toLocaleString()}!`
+      : `Slots: ${reels.map(r => r.emoji).join(' ')} — lost £${stake.toLocaleString()}.`);
+  saveCharacter(ch);
+  res.json({ ok: true, reels, won: allMatch, payout, character: publicCharacter(ch) });
+});
+
+// ──────────────────────────────────────────── Blackjack ───────────────────
+
+function loadHand(charId) {
+  const row = db.prepare('SELECT * FROM blackjack_hands WHERE char_id = ?').get(charId);
+  if (!row) return null;
+  return {
+    bet: row.bet,
+    playerCards: JSON.parse(row.player_cards),
+    dealerCards: JSON.parse(row.dealer_cards),
+    status: row.status,
+    result: row.result,
+    message: row.message,
+  };
+}
+
+function saveHand(charId, hand) {
+  db.prepare(`
+    INSERT INTO blackjack_hands (char_id, bet, player_cards, dealer_cards, status, result, message, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(char_id) DO UPDATE SET
+      bet = excluded.bet,
+      player_cards = excluded.player_cards,
+      dealer_cards = excluded.dealer_cards,
+      status = excluded.status,
+      result = excluded.result,
+      message = excluded.message
+  `).run(charId, hand.bet,
+    JSON.stringify(hand.playerCards),
+    JSON.stringify(hand.dealerCards),
+    hand.status,
+    hand.result || null,
+    hand.message || null,
+    Date.now());
+}
+
+// Outgoing format: dealer first card hidden until status != 'playing'.
+function publicHand(hand) {
+  if (!hand) return null;
+  const dealerVisible = hand.status === 'playing'
+    ? [hand.dealerCards[0], { hidden: true }]
+    : hand.dealerCards;
+  return {
+    bet: hand.bet,
+    playerCards: hand.playerCards.map(cardLabel),
+    dealerCards: dealerVisible.map(c => c.hidden ? '🂠' : cardLabel(c)),
+    playerTotal: handTotal(hand.playerCards),
+    dealerTotal: hand.status === 'playing' ? null : handTotal(hand.dealerCards),
+    status: hand.status,
+    result: hand.result,
+    message: hand.message,
+  };
+}
+
+router.get('/blackjack', requireAuth, requireCharacter, (req, res) => {
+  res.json({ hand: publicHand(loadHand(req.character.id)) });
+});
+
+router.post('/blackjack/deal', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const stake = Math.max(1, parseInt(req.body?.bet || 0, 10));
+  const existing = loadHand(ch.id);
+  if (existing && existing.status === 'playing') {
+    return res.status(409).json({ error: 'Finish your current hand first.' });
+  }
+  if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
+  ch.cash -= stake;
+
+  const playerCards = [drawCard(), drawCard()];
+  const dealerCards = [drawCard(), drawCard()];
+  let hand = { bet: stake, playerCards, dealerCards, status: 'playing' };
+
+  // Auto-resolve if either side has natural blackjack
+  if (isBlackjack(playerCards) || isBlackjack(dealerCards)) {
+    const result = settle(playerCards, dealerCards, stake);
+    ch.cash += result.payout;
+    hand.status = 'finished';
+    hand.result = result.result;
+    hand.message = result.message;
+  }
+
+  saveHand(ch.id, hand);
+  writeLog(ch.id, 'casino',
+    hand.status === 'finished'
+      ? `Blackjack: ${hand.message}`
+      : `Blackjack: dealt £${stake.toLocaleString()} hand.`);
+  saveCharacter(ch);
+  res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
+});
+
+router.post('/blackjack/hit', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const hand = loadHand(ch.id);
+  if (!hand || hand.status !== 'playing') return res.status(400).json({ error: 'No active hand' });
+  hand.playerCards.push(drawCard());
+  if (handTotal(hand.playerCards) > 21) {
+    const result = settle(hand.playerCards, hand.dealerCards, hand.bet);
+    hand.status = 'finished';
+    hand.result = result.result;
+    hand.message = result.message;
+  }
+  saveHand(ch.id, hand);
+  res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
+});
+
+router.post('/blackjack/stand', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const hand = loadHand(ch.id);
+  if (!hand || hand.status !== 'playing') return res.status(400).json({ error: 'No active hand' });
+  hand.dealerCards = dealerPlay(hand.dealerCards);
+  const result = settle(hand.playerCards, hand.dealerCards, hand.bet);
+  ch.cash += result.payout;
+  hand.status = 'finished';
+  hand.result = result.result;
+  hand.message = result.message;
+  saveHand(ch.id, hand);
+  writeLog(ch.id, 'casino', `Blackjack: ${hand.message}${result.payout ? ` (+£${result.payout.toLocaleString()})` : ''}.`);
+  saveCharacter(ch);
+  res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
+});
+
+router.post('/blackjack/double', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const hand = loadHand(ch.id);
+  if (!hand || hand.status !== 'playing') return res.status(400).json({ error: 'No active hand' });
+  if (hand.playerCards.length !== 2) return res.status(400).json({ error: 'Can only double on first action' });
+  if (ch.cash < hand.bet) return res.status(400).json({ error: 'Need cash to match the bet' });
+  ch.cash -= hand.bet;
+  hand.bet *= 2;
+  hand.playerCards.push(drawCard());
+  if (handTotal(hand.playerCards) <= 21) {
+    hand.dealerCards = dealerPlay(hand.dealerCards);
+  }
+  const result = settle(hand.playerCards, hand.dealerCards, hand.bet);
+  ch.cash += result.payout;
+  hand.status = 'finished';
+  hand.result = result.result;
+  hand.message = result.message;
+  saveHand(ch.id, hand);
+  writeLog(ch.id, 'casino', `Blackjack double: ${hand.message}${result.payout ? ` (+£${result.payout.toLocaleString()})` : ''}.`);
+  saveCharacter(ch);
+  res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
+});
+
+export default router;

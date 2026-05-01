@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+/* Scale the entire UI up ~12.5%. Tailwind classes are rem-based off of html,
+   so bumping html font-size scales every text/icon/spacing class
+   proportionally without needing per-component edits. */
+html { font-size: 18px; }
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(220, 38, 38, 0.10), transparent 50%),
+    radial-gradient(circle at 90% 110%, rgba(245, 158, 11, 0.08), transparent 50%),
+    #0a0908;
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: "Bebas Neue", Impact, Oswald, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium
+         bg-ink-800 hover:bg-ink-800/70 border border-ink-100/10 transition disabled:opacity-40
+         disabled:cursor-not-allowed select-none;
+}
+.btn-primary { @apply bg-blood-700 hover:bg-blood-600 border-blood-500/40 text-white; }
+.btn-money   { @apply bg-money-600 hover:bg-money-500 border-money-400/40 text-white; }
+.btn-gold    { @apply bg-gold-500 hover:bg-gold-400 border-gold-400/40 text-ink-950; }
+.btn-ghost   { @apply bg-transparent hover:bg-ink-800/60 border-ink-100/15; }
+
+.card {
+  @apply rounded-xl border border-ink-100/10 bg-ink-900/70 backdrop-blur p-4 shadow-lg shadow-black/40;
+}
+
+.bar {
+  @apply h-2 rounded-full bg-ink-100/10 overflow-hidden;
+}
+.bar > div { @apply h-full transition-all; }
+
+input, select {
+  @apply bg-ink-800 border border-ink-100/15 rounded-md px-3 py-2 text-sm text-ink-50
+         focus:outline-none focus:ring-2 focus:ring-blood-500/40;
+}
+
+.scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }

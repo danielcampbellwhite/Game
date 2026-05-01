@@ -1,0 +1,141 @@
+import { Router } from 'express';
+import { db } from '../db.js';
+import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
+import { CRIMES, crimeById, cityById, crimeCooldownSec, rollVehicleFromTier } from '../data.js';
+import { saveCharacter, awardXp, publicCharacter } from '../services/character.js';
+import { bumpMission } from '../services/missions.js';
+import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
+import { writeLog } from '../services/log.js';
+
+const router = Router();
+
+// "Punisher" tier — jail-on-fail dominates at high tiers. Escape-clean is
+// nearly impossible for major scores, and sentences scale aggressively so
+// jailbreaks (lawyer / bribe) become meaningful late game.
+const RISK_TABLE = {
+  tiny:    { jail: 0.15, hosp: 0.05, jailMin: 3,   hospMin: 2  },
+  low:     { jail: 0.25, hosp: 0.12, jailMin: 8,   hospMin: 5  },
+  med:     { jail: 0.40, hosp: 0.22, jailMin: 18,  hospMin: 12 },
+  high:    { jail: 0.55, hosp: 0.30, jailMin: 45,  hospMin: 25 },
+  extreme: { jail: 0.70, hosp: 0.25, jailMin: 120, hospMin: 50 },
+};
+
+function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function cooldownKey(crimeId) { return `crime_${crimeId}`; }
+
+router.get('/', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const rows = db.prepare("SELECT item_id, used_at FROM consumable_cooldowns WHERE char_id = ? AND item_id LIKE 'crime_%'").all(ch.id);
+  const cdMap = Object.fromEntries(rows.map(r => [r.item_id.replace(/^crime_/, ''), r.used_at]));
+  // Turf perk: gangs holding the city give their members -20% crime cooldown
+  // while operating in that city. Multiplier applies to the published cooldown.
+  const turfPerk = holdsTurfPerk(ch.id, ch.city);
+  res.json({
+    turf_perk_active: turfPerk,
+    crimes: CRIMES.map(c => {
+      const baseCd = crimeCooldownSec(c);
+      const cooldownSec = turfPerk ? Math.max(15, Math.floor(baseCd * TURF_CRIME_COOLDOWN_MUL)) : baseCd;
+      const used = cdMap[c.id] || 0;
+      const cooldownUntil = used + cooldownSec * 1000;
+      return {
+        ...c,
+        locked: ch.level < c.level,
+        city: cityById(ch.city)?.name,
+        cooldownSec,
+        cooldownUntil,
+        ready: Date.now() >= cooldownUntil,
+      };
+    }),
+  });
+});
+
+router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const crime = crimeById(req.body?.crime_id);
+  if (!crime) return res.status(400).json({ error: 'Unknown crime' });
+  if (ch.level < crime.level) return res.status(403).json({ error: `Requires level ${crime.level}` });
+  if (ch.energy < crime.energy) return res.status(400).json({ error: 'Not enough energy' });
+  if (ch.nerve < crime.nerve) return res.status(400).json({ error: 'Not enough nerve' });
+
+  // Cooldown check (turf perk same as in GET above)
+  const baseCd = crimeCooldownSec(crime);
+  const cdSec = holdsTurfPerk(ch.id, ch.city)
+    ? Math.max(15, Math.floor(baseCd * TURF_CRIME_COOLDOWN_MUL))
+    : baseCd;
+  const now = Date.now();
+  const cd = db.prepare('SELECT used_at FROM consumable_cooldowns WHERE char_id = ? AND item_id = ?').get(ch.id, cooldownKey(crime.id));
+  if (cd) {
+    const readyAt = cd.used_at + cdSec * 1000;
+    if (now < readyAt) return res.status(429).json({ error: 'Crime is on cooldown', cooldownUntil: readyAt });
+  }
+
+  ch.energy -= crime.energy;
+  ch.nerve  -= crime.nerve;
+
+  const intelBonus = (crime.intelBonus || 0) * (ch.intelligence * 0.3);
+  const success = Math.max(5, Math.min(95, crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus));
+  const roll = Math.random() * 100;
+
+  let result;
+  if (roll < success) {
+    const happyMul = 1 + (ch.happiness - 50) / 200;
+    const xpGain = Math.floor(crime.xp * happyMul);
+    const lvls = awardXp(ch, xpGain);
+    ch.reputation += Math.floor(crime.xp / 4);
+    ch.happiness = Math.min(100, ch.happiness + 1);
+    bumpMission(ch, 'crime_success', 1, { tier: crime.tier, crime: crime.id });
+
+    if (crime.tier === 'gta' && crime.vehicleTier) {
+      // Reward = a random car from the matched tier in the player's garage.
+      const v = rollVehicleFromTier(crime.vehicleTier);
+      if (v) {
+        db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at) VALUES (?, ?, ?, ?, ?)')
+          .run(ch.id, v.id, 'stolen', ch.city, Date.now());
+      }
+      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — drove off in a ${v ? v.maker + ' ' + v.name : 'vehicle'} (+${xpGain}xp).`, { crime: crime.id, vehicle: v?.id, xp: xpGain });
+      result = { ok: true, success: true, vehicle: v, xp: xpGain, levels: lvls };
+    } else {
+      const cityMul = cityById(ch.city)?.businessMul || 1.0;
+      const payout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul);
+      if (crime.dirty) ch.dirty_cash += payout;
+      else ch.cash += payout;
+      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (dirty)' : ''} +${xpGain}xp.`, { crime: crime.id, payout, xp: xpGain });
+      result = { ok: true, success: true, payout, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
+    }
+  } else {
+    // failure: jail/hospital based on risk
+    const risk = RISK_TABLE[crime.risk] || RISK_TABLE.low;
+    const consequence = Math.random();
+    if (consequence < risk.jail) {
+      const mins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
+      ch.jail_until = Date.now() + mins * 60 * 1000;
+      ch.jail_reason = `Caught red-handed attempting "${crime.name}" — sentenced to ${mins} minutes.`;
+      writeLog(ch.id, 'crime', `Caught attempting "${crime.name}". Jailed for ${mins} min.`, { crime: crime.id, jail_min: mins }, true);
+      result = { ok: true, success: false, jailed: true, jail_min: mins };
+    } else if (consequence < risk.jail + risk.hosp) {
+      const mins = Math.floor(risk.hospMin * (1 + Math.random() * 0.7));
+      ch.hospital_until = Date.now() + mins * 60 * 1000;
+      ch.health = Math.max(1, Math.floor(ch.health * 0.3));
+      ch.hospital_reason = `Botched "${crime.name}" and got your ass handed to you — admitted for ${mins} minutes.`;
+      writeLog(ch.id, 'crime', `Botched "${crime.name}" and got hurt. Hospital ${mins} min.`, { crime: crime.id, hosp_min: mins }, true);
+      result = { ok: true, success: false, hospital: true, hosp_min: mins };
+    } else {
+      ch.happiness = Math.max(0, ch.happiness - 2);
+      writeLog(ch.id, 'crime', `Failed "${crime.name}" — got away clean but empty-handed.`);
+      result = { ok: true, success: false, escaped: true };
+    }
+  }
+
+  // Record cooldown — applies whether you succeeded or got nicked.
+  db.prepare(`
+    INSERT INTO consumable_cooldowns (char_id, item_id, used_at) VALUES (?, ?, ?)
+    ON CONFLICT(char_id, item_id) DO UPDATE SET used_at = excluded.used_at
+  `).run(ch.id, cooldownKey(crime.id), now);
+  const cooldownUntil = now + cdSec * 1000;
+
+  saveCharacter(ch);
+  res.json({ ...result, cooldownUntil, character: publicCharacter(ch) });
+});
+
+export default router;

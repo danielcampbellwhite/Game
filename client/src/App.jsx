@@ -1,0 +1,128 @@
+import React from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useGame } from './context/GameContext.jsx';
+import Nav from './components/Nav.jsx';
+import StatsBar from './components/StatsBar.jsx';
+import Login from './pages/Login.jsx';
+import CharacterCreate from './pages/CharacterCreate.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import Crimes from './pages/Crimes.jsx';
+import Jail from './pages/Jail.jsx';
+import Hospital from './pages/Hospital.jsx';
+import Jobs from './pages/Jobs.jsx';
+import Travel from './pages/Travel.jsx';
+import Drugs from './pages/Drugs.jsx';
+import Businesses from './pages/Businesses.jsx';
+import Combat from './pages/Combat.jsx';
+import Bank from './pages/Bank.jsx';
+import Stocks from './pages/Stocks.jsx';
+import Property from './pages/Property.jsx';
+import Gym from './pages/Gym.jsx';
+import Range from './pages/Range.jsx';
+import University from './pages/University.jsx';
+import Items from './pages/Items.jsx';
+import Inventory from './pages/Inventory.jsx';
+import Missions from './pages/Missions.jsx';
+import GeneralStore from './pages/GeneralStore.jsx';
+import Players from './pages/Players.jsx';
+import Player from './pages/Player.jsx';
+import Messages from './pages/Messages.jsx';
+import PvpFight from './pages/PvpFight.jsx';
+import PvpChallengeModal from './components/PvpChallengeModal.jsx';
+import Gangs from './pages/Gangs.jsx';
+import Gang from './pages/Gang.jsx';
+import Wars from './pages/Wars.jsx';
+import OC from './pages/OC.jsx';
+import OCPlan from './pages/OCPlan.jsx';
+import OcInviteModal from './components/OcInviteModal.jsx';
+import CarDealer from './pages/CarDealer.jsx';
+import GunStore from './pages/GunStore.jsx';
+import ChopShop from './pages/ChopShop.jsx';
+import City from './pages/City.jsx';
+import Casino from './pages/Casino.jsx';
+import Bookmaker from './pages/Bookmaker.jsx';
+
+function Protected({ children }) {
+  const { token, character } = useGame();
+  const location = useLocation();
+  if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!character) return <Navigate to="/create" replace />;
+
+  // Hospital lockout — you can't go anywhere except the Hospital page until
+  // you pay your bills or wait out the timer.
+  const now = Date.now();
+  const inHospital = character.hospital_until && character.hospital_until > now;
+  if (inHospital && location.pathname !== '/hospital') {
+    return <Navigate to="/hospital" replace />;
+  }
+
+  // Jail lockout — same idea. Pay a lawyer, bribe out, or sit there.
+  const inJail = character.jail_until && character.jail_until > now;
+  if (inJail && location.pathname !== '/jail') {
+    return <Navigate to="/jail" replace />;
+  }
+
+  return children;
+}
+
+export default function App() {
+  const { token, character } = useGame();
+  return (
+    <div className="min-h-screen flex flex-col">
+      {token && character ? (
+        <>
+          <div className="sticky top-0 z-30">
+            <Nav />
+            <StatsBar />
+          </div>
+          <PvpChallengeModal />
+          <OcInviteModal />
+        </>
+      ) : null}
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
+        <Routes>
+          <Route path="/login" element={token ? <Navigate to={character ? '/' : '/create'} replace /> : <Login />} />
+          <Route path="/create" element={token && !character ? <CharacterCreate /> : <Navigate to={token ? '/' : '/login'} replace />} />
+          <Route path="/" element={<Protected><Dashboard /></Protected>} />
+          <Route path="/crimes" element={<Protected><Crimes /></Protected>} />
+          <Route path="/jail" element={<Protected><Jail /></Protected>} />
+          <Route path="/hospital" element={<Protected><Hospital /></Protected>} />
+          <Route path="/jobs" element={<Protected><Jobs /></Protected>} />
+          <Route path="/travel" element={<Protected><Travel /></Protected>} />
+          <Route path="/drugs" element={<Protected><Drugs /></Protected>} />
+          <Route path="/businesses" element={<Protected><Businesses /></Protected>} />
+          <Route path="/combat" element={<Protected><Combat /></Protected>} />
+          <Route path="/bank" element={<Protected><Bank /></Protected>} />
+          <Route path="/stocks" element={<Protected><Stocks /></Protected>} />
+          <Route path="/property" element={<Protected><Property /></Protected>} />
+          <Route path="/gym" element={<Protected><Gym /></Protected>} />
+          <Route path="/range" element={<Protected><Range /></Protected>} />
+          <Route path="/university" element={<Protected><University /></Protected>} />
+          <Route path="/inventory" element={<Protected><Inventory /></Protected>} />
+          <Route path="/items" element={<Protected><Items /></Protected>} />
+          <Route path="/missions" element={<Protected><Missions /></Protected>} />
+          <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />
+          <Route path="/players" element={<Protected><Players /></Protected>} />
+          <Route path="/players/:id" element={<Protected><Player /></Protected>} />
+          <Route path="/messages" element={<Protected><Messages /></Protected>} />
+          <Route path="/messages/with/:otherId" element={<Protected><Messages /></Protected>} />
+          <Route path="/pvp/fight" element={<Protected><PvpFight /></Protected>} />
+          <Route path="/gangs" element={<Protected><Gangs /></Protected>} />
+          <Route path="/gangs/:id" element={<Protected><Gang /></Protected>} />
+          <Route path="/gang" element={<Protected><Gang /></Protected>} />
+          <Route path="/wars" element={<Protected><Wars /></Protected>} />
+          <Route path="/oc" element={<Protected><OC /></Protected>} />
+          <Route path="/oc/plans/:id" element={<Protected><OCPlan /></Protected>} />
+          <Route path="/dealership" element={<Protected><CarDealer /></Protected>} />
+          <Route path="/gun-store" element={<Protected><GunStore /></Protected>} />
+          <Route path="/chop-shop" element={<Protected><ChopShop /></Protected>} />
+          <Route path="/city" element={<Protected><City /></Protected>} />
+          <Route path="/casino" element={<Protected><Casino /></Protected>} />
+          <Route path="/bookmaker" element={<Protected><Bookmaker /></Protected>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <footer className="text-center text-ink-100/30 text-xs py-4">Mafia Life</footer>
+    </div>
+  );
+}

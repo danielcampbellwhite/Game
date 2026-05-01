@@ -1,0 +1,124 @@
+import { Router } from 'express';
+import { db } from '../db.js';
+import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
+import { MISC_ITEMS, miscItemById, cityById } from '../data.js';
+import { saveCharacter, publicCharacter } from '../services/character.js';
+import { applyVitalEffects, effectsToText } from '../services/vitals.js';
+import { bumpMission } from '../services/missions.js';
+import { writeLog } from '../services/log.js';
+
+const router = Router();
+
+function ownedQty(charId, itemId) {
+  const r = db.prepare("SELECT qty FROM inventory WHERE char_id = ? AND kind = 'misc' AND item_id = ?")
+    .get(charId, itemId);
+  return r?.qty || 0;
+}
+
+router.get('/', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const ownedRows = db.prepare("SELECT item_id, qty FROM inventory WHERE char_id = ? AND kind = 'misc'")
+    .all(ch.id);
+  const ownedMap = Object.fromEntries(ownedRows.map(r => [r.item_id, r.qty]));
+  const items = MISC_ITEMS.map(i => ({
+    ...i,
+    cityCost: Math.floor(i.cost * cityMul),
+    owned: ownedMap[i.id] || 0,
+  }));
+  res.json({ items, cityName: cityById(ch.city)?.name });
+});
+
+router.post('/buy', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const { item_id, qty = 1 } = req.body || {};
+  const item = miscItemById(item_id);
+  if (!item) return res.status(400).json({ error: 'Unknown item' });
+  const n = Math.max(1, Math.min(99, parseInt(qty, 10) || 1));
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const unit = Math.floor(item.cost * cityMul);
+  const total = unit * n;
+  if (ch.cash < total) return res.status(400).json({ error: `Need £${total.toLocaleString()}` });
+  ch.cash -= total;
+  db.prepare(`
+    INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, 'misc', ?, ?)
+    ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
+  `).run(ch.id, item.id, n);
+  writeLog(ch.id, 'shop', `Bought ${n}× ${item.emoji} ${item.name} for £${total.toLocaleString()}.`);
+  saveCharacter(ch);
+  res.json({ ok: true, character: publicCharacter(ch), owned: ownedQty(ch.id, item.id) });
+});
+
+router.post('/use', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const item = miscItemById(req.body?.item_id);
+  if (!item) return res.status(400).json({ error: 'Unknown item' });
+  const have = ownedQty(ch.id, item.id);
+  if (have <= 0) return res.status(400).json({ error: "You don't have that." });
+
+  // Decrement first; clean up zero-qty rows so the inventory page stays tidy.
+  if (have === 1) {
+    db.prepare("DELETE FROM inventory WHERE char_id = ? AND kind = 'misc' AND item_id = ?").run(ch.id, item.id);
+  } else {
+    db.prepare("UPDATE inventory SET qty = qty - 1 WHERE char_id = ? AND kind = 'misc' AND item_id = ?").run(ch.id, item.id);
+  }
+
+  let applied = null;
+  let cashDelta = 0;
+  let jackpot = false;
+  let flavour = '';
+  if (item.effects) {
+    applied = applyVitalEffects(ch, item.effects);
+    flavour = effectsToText(applied);
+  }
+  if (item.oneShotCash) {
+    const { min, max } = item.oneShotCash;
+    cashDelta = Math.floor(Math.random() * (max - min + 1)) + min;
+    ch.cash += cashDelta;
+    flavour = cashDelta > 0 ? `won £${cashDelta.toLocaleString()}` : 'no win';
+  }
+  if (Array.isArray(item.prizes) && item.prizes.length) {
+    // Weighted draw across the prize tiers. We scale the roll by the
+    // actual sum of declared chances rather than assuming it's exactly
+    // 1.0 — with many tiers and very small probabilities, float drift
+    // would otherwise leave a tiny gap that always landed on the
+    // fallback (highest-amount) tier and break the odds.
+    const total = item.prizes.reduce((s, p) => s + p.chance, 0);
+    const roll = Math.random() * total;
+    let acc = 0;
+    let pick = item.prizes[item.prizes.length - 1];
+    for (const p of item.prizes) {
+      acc += p.chance;
+      if (roll < acc) { pick = p; break; }
+    }
+    cashDelta = pick.amount;
+    ch.cash += cashDelta;
+    // Flag the top-tier prize as a jackpot for louder logging / notify.
+    const topAmount = item.prizes.reduce((m, p) => Math.max(m, p.amount), 0);
+    jackpot = cashDelta > 0 && cashDelta === topAmount && topAmount >= 1000;
+    flavour = cashDelta > 0
+      ? (jackpot ? `🎰 JACKPOT — won £${cashDelta.toLocaleString()}!` : `won £${cashDelta.toLocaleString()}`)
+      : 'no win';
+  }
+  if (item.missionOnly) {
+    flavour = 'used';
+  }
+
+  // Mission progression: every misc-item use bumps the generic counter, and
+  // also a specific-item counter for missions that ask for a particular item.
+  bumpMission(ch, 'misc_use_any', 1);
+  bumpMission(ch, 'misc_use', 1, { item: item.id });
+
+  writeLog(ch.id, 'misc', `${item.emoji} ${item.name} — ${flavour}.`, { item: item.id, applied, cash: cashDelta, jackpot }, jackpot);
+  saveCharacter(ch);
+  res.json({
+    ok: true,
+    applied,
+    cash: cashDelta,
+    jackpot,
+    character: publicCharacter(ch),
+    owned: ownedQty(ch.id, item.id),
+  });
+});
+
+export default router;
