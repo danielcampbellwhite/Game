@@ -8,7 +8,7 @@
   },
   "scripts": {
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
-    "postinstall": "npm install --prefix server && npm install --prefix client",
+    "postinstall": "npm install --prefix server --omit=dev && npm install --prefix client --include=dev",
     "dev": "concurrently -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
