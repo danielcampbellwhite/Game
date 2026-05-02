@@ -445,6 +445,26 @@ export function initDb() {
       log_json         TEXT   NOT NULL DEFAULT '[]',
       executed_at      INTEGER NOT NULL
     );
+
+    -- ── Player-driven Job Board ──────────────────────────────────────
+    -- A newspaper-style classifieds board, scoped to one city per ad.
+    -- The server holds no contract / no escrow — it's pure connective
+    -- tissue: posters describe the gig + price; takers reach out via DM
+    -- and the two settle privately (bank transfer, etc.). The 7-day
+    -- expiry keeps the board feeling current without a cron.
+    CREATE TABLE IF NOT EXISTS job_board_listings (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      poster_id   INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      city        TEXT    NOT NULL,
+      category    TEXT    NOT NULL,
+      title       TEXT    NOT NULL,
+      body        TEXT    NOT NULL,
+      rate_text   TEXT    NOT NULL,
+      created_at  INTEGER NOT NULL,
+      expires_at  INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_job_board_city_active ON job_board_listings(city, expires_at);
+    CREATE INDEX IF NOT EXISTS idx_job_board_poster ON job_board_listings(poster_id);
   `);
 
   // Migrations for columns added after the initial schema. Each is wrapped in

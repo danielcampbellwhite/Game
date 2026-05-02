@@ -58,8 +58,10 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
       <p className="text-[11px] text-ink-100/50 mb-3">
         Pick a template, name your venture, and tune the sliders.{' '}
         <b>Scale</b> raises cost and hourly income.{' '}
-        <b>Risk</b> only applies to illegal fronts — it boosts profit but invites police <i>raids</i> (a bust mid-collection that wipes pending earnings and may jail you).{' '}
-        <b>Quality</b> raises hourly slightly and, on illegal fronts, lowers your raid odds. <span className="text-money-400">Legal businesses (cafés, hotels, taxi firms, etc.) are never raided.</span>
+        <b>Risk</b> only applies to illegal fronts — it boosts profit but amplifies police <i>raid</i> chance.{' '}
+        <b>Quality</b> raises hourly slightly and, on illegal fronts, lowers raid odds — base 5% at quality 1, down to 1% at quality 5.{' '}
+        <span className="text-blood-400">A raid <b>destroys the business entirely</b>, wipes pending earnings, and may jail you.</span>{' '}
+        <span className="text-money-400">Legal businesses are never raided.</span>
       </p>
 
       <div className="space-y-4">
@@ -158,7 +160,7 @@ export default function Businesses() {
     setBusy(key); setMsg(null);
     try {
       const r = await api.post(`/businesses/${path}`, body);
-      if (r.raided) setMsg(`🚨 RAID! Lost ${fmt(r.lost)} pending${r.jailMin ? ` · jailed ${r.jailMin}m` : ''}`);
+      if (r.raided) setMsg(`🚨 RAID! Business confiscated · lost ${fmt(r.lost)} pending${r.jailMin ? ` · jailed ${r.jailMin}m` : ''}`);
       else if (r.earnings) setMsg(`Collected ${fmt(r.earnings)}`);
       else if (r.clean) setMsg(`Cleaned ${fmt(r.clean)} (lost ${fmt(r.lost)})`);
       else setMsg('Done.');

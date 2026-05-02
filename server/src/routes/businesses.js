@@ -134,17 +134,25 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
   const businessName = row.custom_name || template.name;
 
   if (raid) {
-    db.prepare('UPDATE businesses_owned SET last_collected = ? WHERE id = ?').run(Date.now(), row.id);
-    // 40% chance the raid also nets you (ie. makes you do time)
+    // Confiscation: the business is destroyed. Pending earnings are lost,
+    // build cost is gone, and the row is removed. There's a 40% chance
+    // the player also catches a sentence on the way out.
+    db.prepare('DELETE FROM businesses_owned WHERE id = ?').run(row.id);
     let jailMin = 0;
     if (Math.random() < 0.4) {
       jailMin = 10 + Math.floor(Math.random() * 35);
       ch.jail_until = Date.now() + jailMin * 60 * 1000;
       ch.jail_reason = `Police raided "${businessName}" while you were on site — sentenced to ${jailMin} minutes.`;
     }
-    writeLog(ch.id, 'business', `🚨 RAID at "${businessName}" — lost £${earnings.toLocaleString()} pending${jailMin ? `, jailed ${jailMin}m` : ''}.`, { biz: row.id, lost: earnings, jailMin }, true);
+    writeLog(
+      ch.id,
+      'business',
+      `🚨 RAID at "${businessName}" — business confiscated, lost £${earnings.toLocaleString()} pending${jailMin ? `, jailed ${jailMin}m` : ''}.`,
+      { biz: row.id, lost: earnings, jailMin, confiscated: true },
+      true,
+    );
     saveCharacter(ch);
-    return res.json({ ok: true, raided: true, lost: earnings, jailMin, character: publicCharacter(ch) });
+    return res.json({ ok: true, raided: true, confiscated: true, lost: earnings, jailMin, character: publicCharacter(ch) });
   }
 
   if (template.illegal) ch.dirty_cash += earnings;

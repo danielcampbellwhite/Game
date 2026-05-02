@@ -9,7 +9,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Crimes from './pages/Crimes.jsx';
 import Jail from './pages/Jail.jsx';
 import Hospital from './pages/Hospital.jsx';
-import Jobs from './pages/Jobs.jsx';
+import JobBoard from './pages/JobBoard.jsx';
 import Travel from './pages/Travel.jsx';
 import Drugs from './pages/Drugs.jsx';
 import Businesses from './pages/Businesses.jsx';
@@ -87,7 +87,7 @@ export default function App() {
           <Route path="/crimes" element={<Protected><Crimes /></Protected>} />
           <Route path="/jail" element={<Protected><Jail /></Protected>} />
           <Route path="/hospital" element={<Protected><Hospital /></Protected>} />
-          <Route path="/jobs" element={<Protected><Jobs /></Protected>} />
+          <Route path="/jobs" element={<Protected><JobBoard /></Protected>} />
           <Route path="/travel" element={<Protected><Travel /></Protected>} />
           <Route path="/drugs" element={<Protected><Drugs /></Protected>} />
           <Route path="/businesses" element={<Protected><Businesses /></Protected>} />

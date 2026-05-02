@@ -83,23 +83,6 @@ export const CRIMES = [
 // … Sat=6); `startHour` is when the shift opens; `durationHours` how long it
 // runs (can cross midnight). The player must check in once during each open
 // shift on a working day or get fired on the next API call.
-export const JOBS = [
-  { id: 'janitor',    name: 'Janitor',           emoji: '🧹', hourly: 80,     gates: { level: 1 },                                              task: 'Sweep the loading dock',         taskEnergy: 1, xp: 5,   schedule: { days: [1,2,3,4,5],     startHour: 18, durationHours: 8  } },
-  { id: 'delivery',   name: 'Delivery Driver',   emoji: '🚚', hourly: 180,    gates: { level: 1, speed: 5 },                                    task: 'Drop off a package',             taskEnergy: 1, xp: 8,   schedule: { days: [1,2,3,4,5,6],   startHour: 7,  durationHours: 10 } },
-  { id: 'bartender',  name: 'Bartender',         emoji: '🍻', hourly: 270,    gates: { level: 3, intelligence: 5 },                             task: 'Stock the bar',                  taskEnergy: 1, xp: 12,  schedule: { days: [3,4,5,6,0],     startHour: 18, durationHours: 8  } },
-  { id: 'security',   name: 'Security Guard',    emoji: '🛡️', hourly: 400,    gates: { level: 6, strength: 12, defence: 10 },                   task: 'Patrol the back lot',            taskEnergy: 2, xp: 18,  schedule: { days: [0,1,2,3,4,5,6], startHour: 16, durationHours: 8  } },
-  { id: 'taxi',       name: 'Taxi Driver',       emoji: '🚕', hourly: 540,    gates: { level: 8, speed: 12 },                                   task: 'Drive the morning shift',        taskEnergy: 2, xp: 24,  schedule: { days: [0,1,2,3,4,5,6], startHour: 6,  durationHours: 10 } },
-  { id: 'mechanic',   name: 'Mechanic',          emoji: '🔧', hourly: 720,    gates: { level: 10, intelligence: 15 },                           task: 'Fix a customer\'s engine',       taskEnergy: 2, xp: 30,  schedule: { days: [1,2,3,4,5,6],   startHour: 8,  durationHours: 10 } },
-  { id: 'bouncer',    name: 'Bouncer',           emoji: '🥋', hourly: 920,    gates: { level: 12, strength: 25, defence: 20 },                  task: 'Work the door at the club',      taskEnergy: 3, xp: 42,  schedule: { days: [4,5,6],         startHour: 21, durationHours: 6  } },
-  { id: 'trainer',    name: 'Personal Trainer',  emoji: '💪', hourly: 1080,   gates: { level: 14, strength: 25, speed: 20 },                    task: 'Coach a client through a session', taskEnergy: 3, xp: 50, schedule: { days: [1,2,3,4,5],   startHour: 6,  durationHours: 14 } },
-  { id: 'accountant', name: 'Accountant',        emoji: '📊', hourly: 1500,   gates: { level: 18, intelligence: 30, reputation: 200 },          task: 'Reconcile the ledger',           taskEnergy: 2, xp: 70,  schedule: { days: [1,2,3,4,5],     startHour: 9,  durationHours: 8  } },
-  { id: 'engineer',   name: 'Software Engineer', emoji: '💻', hourly: 2200,   gates: { level: 22, intelligence: 45 },                           task: 'Ship a code change',             taskEnergy: 2, xp: 100, schedule: { days: [1,2,3,4,5],     startHour: 10, durationHours: 8  } },
-  { id: 'lawyer',     name: 'Lawyer',            emoji: '⚖️',  hourly: 3400,  gates: { level: 28, intelligence: 60, reputation: 500 },          task: 'Review a deposition',            taskEnergy: 3, xp: 150, schedule: { days: [1,2,3,4,5],     startHour: 8,  durationHours: 11 } },
-  { id: 'broker',     name: 'Stockbroker',       emoji: '📈', hourly: 4800,   gates: { level: 32, intelligence: 70, reputation: 800 },          task: 'Run the morning trades',         taskEnergy: 3, xp: 200, schedule: { days: [1,2,3,4,5],     startHour: 7,  durationHours: 9  } },
-  { id: 'surgeon',    name: 'Surgeon',           emoji: '🩺', hourly: 7200,   gates: { level: 40, intelligence: 90 },                           task: 'Perform a routine surgery',      taskEnergy: 4, xp: 280, schedule: { days: [0,1,2,3,4,5,6], startHour: 7,  durationHours: 12 } },
-  { id: 'executive',  name: 'Executive CEO',     emoji: '🕴️',  hourly: 11500, gates: { level: 50, intelligence: 100, reputation: 2500 },        task: 'Approve quarterly earnings',     taskEnergy: 4, xp: 400, schedule: { days: [1,2,3,4,5],     startHour: 9,  durationHours: 12 } },
-];
-
 export const DRUGS = [
   { id: 'weed',    name: 'Weed',    base: 100,    levelGate: 1  },
   { id: 'mdma',    name: 'MDMA',    base: 350,    levelGate: 8  },
@@ -234,9 +217,13 @@ export function computeBusiness(template, scale, risk, quality, city) {
   if (template.illegal) hourlyFactor *= 1 + 0.18 * (r - 1);
   const hourly = Math.floor(template.baseHourly * cityMul * hourlyFactor);
 
-  const raidChance = template.illegal
-    ? Math.max(0, (0.005 * r * r) - (0.0015 * (q - 1)))
-    : 0;
+  // Illegal businesses get raided. Base chance scales by quality:
+  // q=1 → 5%, q=5 → 1% (linear). Risk slider amplifies on top: r=1 → 1×,
+  // r=5 → 2×. So a max-quality, min-risk shop is 1%; min-quality,
+  // max-risk is 10%.
+  const baseRaid = 0.05 - 0.04 * ((q - 1) / 4);
+  const riskMul = 1 + 0.25 * (r - 1);
+  const raidChance = template.illegal ? Math.max(0, baseRaid * riskMul) : 0;
 
   const upgradeCost = Math.floor(cost * 0.45);
 
@@ -646,7 +633,6 @@ export const RANKS = [
 export const byId = (arr, id) => arr.find(x => x.id === id);
 export const cityById = id => byId(CITIES, id);
 export const crimeById = id => byId(CRIMES, id);
-export const jobById = id => byId(JOBS, id);
 export const drugById = id => byId(DRUGS, id);
 export const weaponById = id => byId(WEAPONS, id);
 export const armourById = id => byId(ARMOUR, id);
@@ -775,7 +761,6 @@ export const DAILY_MISSIONS = [
   { id: 'streetwise',  tier: 'easy', name: 'Streetwise',     emoji: '🥷',  desc: 'Pull off 5 successful street-tier crimes.',          target: 5, type: 'crime_success', meta: { tier: 'street' }, xp: 60,  cash: 250  },
   { id: 'gym_rat',     tier: 'easy', name: 'Gym Rat',        emoji: '🏋️',  desc: 'Complete 3 gym training sessions.',                  target: 3, type: 'gym_session',                              xp: 50,  cash: 200  },
   { id: 'scholar',     tier: 'easy', name: 'Scholar',        emoji: '🎓',  desc: 'Take 2 university courses.',                         target: 2, type: 'university_class',                         xp: 70,  cash: 250  },
-  { id: 'paycheck',    tier: 'easy', name: 'Punch the Clock',emoji: '⏰',  desc: 'Check in for 1 work shift.',                         target: 1, type: 'job_checkin',                              xp: 60,  cash: 200  },
   { id: 'prep_kit',    tier: 'easy', name: 'Prep Kit',       emoji: '🎒',  desc: 'Use any 3 items from the General Store.',            target: 3, type: 'misc_use_any',                             xp: 50,  cash: 200  },
 
   // ── med ──

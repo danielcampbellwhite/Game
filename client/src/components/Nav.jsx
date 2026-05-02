@@ -7,7 +7,7 @@ import { useEventStream } from '../hooks/useEventStream.js';
 const links = [
   { to: '/inventory', label: 'Inventory' },
   { to: '/missions',  label: 'Missions'  },
-  { to: '/jobs',      label: 'Jobs'      },
+  { to: '/jobs',      label: 'Job Board' },
   { to: '/city',      label: 'City'      },
   { to: '/crimes',    label: 'Crimes'    },
   { to: '/oc',        label: 'Heists'    },
