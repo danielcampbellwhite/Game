@@ -13,9 +13,12 @@ router.get('/options', (_req, res) => {
 
 router.post('/create', requireAuth, (req, res) => {
   const { name, avatar, city } = req.body || {};
-  if (!name || !avatar || !city) return res.status(400).json({ error: 'name, avatar, city required' });
+  if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
-  if (!AVATARS.includes(avatar)) return res.status(400).json({ error: 'Invalid avatar' });
+  // Avatar is no longer surfaced in the UI — accept either an empty
+  // string or a known avatar id (legacy data).
+  const avatarVal = (avatar || '').trim();
+  if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
   if (name.length < 2 || name.length > 24) return res.status(400).json({ error: 'Name length 2-24' });
   const exists = db.prepare('SELECT id FROM characters WHERE user_id = ?').get(req.user.id);
   if (exists) return res.status(409).json({ error: 'Character already exists' });
@@ -30,7 +33,7 @@ router.post('/create', requireAuth, (req, res) => {
       last_tick, last_health_tick, bank_last_interest,
       equipped_weapon, equipped_armour, created_at
     ) VALUES (?, ?, ?, ?, 1, 1, 1, 1, ?, ?, ?, 'fists', 'none', ?)
-  `).run(req.user.id, name, avatar, city, now, now, now, now);
+  `).run(req.user.id, name, avatarVal, city, now, now, now, now);
   writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}.`);
   const ch = loadCharacter(req.user.id);
   applyTick(ch);
@@ -60,9 +63,10 @@ router.post('/new-character', requireAuth, (req, res) => {
   if (!ch) return res.status(404).json({ error: 'No character to replace.' });
   if (ch.status !== 'pending_new_character') return res.status(409).json({ error: 'Your character is alive — no new character to roll.' });
 
-  if (!name || !avatar || !city) return res.status(400).json({ error: 'name, avatar, city required' });
+  if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
-  if (!AVATARS.includes(avatar)) return res.status(400).json({ error: 'Invalid avatar' });
+  const avatarVal = (avatar || '').trim();
+  if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
   const trimmed = String(name).trim();
   if (trimmed.length < 2 || trimmed.length > 24) return res.status(400).json({ error: 'Name length 2-24' });
   const taken = db.prepare('SELECT id FROM characters WHERE name = ? COLLATE NOCASE AND id != ?').get(trimmed, ch.id);
@@ -103,7 +107,7 @@ router.post('/new-character', requireAuth, (req, res) => {
       last_active_at = ?, created_at = ?
     WHERE id = ?
   `).run(
-    trimmed, avatar, city,
+    trimmed, avatarVal, city,
     maxEnergy, maxEnergy,
     maxNerve, maxNerve,
     maxHealth, maxHealth,

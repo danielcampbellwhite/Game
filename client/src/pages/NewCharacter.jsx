@@ -11,9 +11,8 @@ import Card from '../components/Card.jsx';
 export default function NewCharacter() {
   const { character, refresh } = useGame();
   const nav = useNavigate();
-  const [opts, setOpts] = useState({ cities: [], avatars: [] });
+  const [opts, setOpts] = useState({ cities: [] });
   const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState(null);
   const [city, setCity] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -21,7 +20,6 @@ export default function NewCharacter() {
   useEffect(() => {
     api.get('/character/options').then(d => {
       setOpts(d);
-      setAvatar(d.avatars[0]);
       setCity(d.cities[0].id);
     });
   }, []);
@@ -30,7 +28,7 @@ export default function NewCharacter() {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
-      await api.post('/character/new-character', { name, avatar, city });
+      await api.post('/character/new-character', { name, avatar: '', city });
       await refresh();
       nav('/');
     } catch (e) { setErr(e.message); }
@@ -43,7 +41,7 @@ export default function NewCharacter() {
     <div className="max-w-2xl mx-auto space-y-4">
       <Card>
         <div className="text-center">
-          <div className="font-display text-3xl text-blood-500">☠️ Your character has been killed.</div>
+          <div className="font-display text-3xl text-blood-500">Your character has been killed.</div>
           <p className="text-xs text-ink-100/65 mt-2">
             {character.name} is dead. Everything they owned — bank, cash, businesses, properties, vehicles, inventory, gang — is gone.
             Roll a new character to continue. New characters start at <b>level 10</b> and have <b>3 days of protection</b> from any attack.
@@ -59,23 +57,12 @@ export default function NewCharacter() {
               placeholder="The new boss" className="w-full" autoFocus />
           </div>
           <div>
-            <label className="text-xs uppercase text-ink-100/60 block mb-1">Avatar</label>
-            <div className="grid grid-cols-6 gap-2">
-              {opts.avatars.map(a => (
-                <button type="button" key={a} onClick={() => setAvatar(a)}
-                  className={`text-3xl py-3 rounded-lg border ${avatar === a ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
-                  {a}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
             <label className="text-xs uppercase text-ink-100/60 block mb-1">Starting city</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {opts.cities.map(c => (
                 <button type="button" key={c.id} onClick={() => setCity(c.id)}
                   className={`p-3 rounded-lg border text-left ${city === c.id ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
-                  <div className="text-xl">{c.emoji} <span className="font-medium">{c.name}</span></div>
+                  <div className="font-medium">{c.name}</div>
                   <div className="text-[10px] text-ink-100/50 mt-1">drugs ×{c.drugMul} · biz ×{c.businessMul}</div>
                 </button>
               ))}

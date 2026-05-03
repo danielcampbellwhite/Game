@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useGame } from './context/GameContext.jsx';
 import Nav from './components/Nav.jsx';
-import StatsBar from './components/StatsBar.jsx';
 import Login from './pages/Login.jsx';
 import CharacterCreate from './pages/CharacterCreate.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -87,7 +86,6 @@ export default function App() {
         <>
           <div className="sticky top-0 z-30">
             <Nav />
-            <StatsBar />
           </div>
           <PvpChallengeModal />
           <OcInviteModal />

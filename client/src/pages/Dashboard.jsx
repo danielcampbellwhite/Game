@@ -75,7 +75,7 @@ export default function Dashboard() {
 
   return (
     <div className="grid md:grid-cols-3 gap-4">
-      <Card title={`${c.avatar} ${c.name}`} subtitle={`${c.rank} · Level ${c.at_max_level ? '999+' : c.level}${c.prestige ? ` · ⭐ ${c.prestige}` : ''}`} className="md:col-span-2">
+      <Card title={c.name} subtitle={`${c.rank} · Level ${c.at_max_level ? '999+' : c.level}${c.prestige ? ` · Prestige ${c.prestige}` : ''}`} className="md:col-span-2">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <Stat label="Strength"     base={c.strength}     buff={c.buffs?.strength?.current} cap={c.stat_caps?.strength} />
           <Stat label="Defence"      base={c.defence}      buff={c.buffs?.defence?.current}  cap={c.stat_caps?.defence}  />
@@ -113,19 +113,19 @@ export default function Dashboard() {
         <Card title="Status" className="md:col-span-3">
           {inJail && (
             <div className="flex items-center justify-between">
-              <p>🚓 In jail. <Timer until={c.jail_until} prefix="Out in " onExpire={refresh} /></p>
+              <p>In jail. <Timer until={c.jail_until} prefix="Out in " onExpire={refresh} /></p>
               <button className="btn" onClick={() => nav('/jail')}>Open cell options</button>
             </div>
           )}
           {inHospital && (
             <div className="flex items-center justify-between mt-2">
-              <p>🏥 In hospital. <Timer until={c.hospital_until} prefix="Out in " onExpire={refresh} /></p>
+              <p>In hospital. <Timer until={c.hospital_until} prefix="Out in " onExpire={refresh} /></p>
               <button className="btn" onClick={() => nav('/hospital')}>Pay for treatment</button>
             </div>
           )}
           {travelling && (
             <div className="mt-2">
-              <p>✈️ Travelling to {c.travel_to}. <Timer until={c.travel_until} prefix="Arriving in " onExpire={refresh} /></p>
+              <p>Travelling to {c.travel_to}. <Timer until={c.travel_until} prefix="Arriving in " onExpire={refresh} /></p>
             </div>
           )}
         </Card>
@@ -144,7 +144,7 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          <Card title="🚗 Garage" subtitle={`${inv.vehicles.length} vehicles · sell stolen ones at the Chop Shop, trade in legit ones the same place.`}
+          <Card title="Garage" subtitle={`${inv.vehicles.length} vehicles · sell stolen ones at the Chop Shop, trade in legit ones the same place.`}
             className="md:col-span-3"
             right={
               <div className="flex gap-2 text-xs">
@@ -158,14 +158,14 @@ export default function Dashboard() {
                   <div key={v.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                     <div className="font-medium">{v.maker} {v.name}</div>
                     <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.bookPrice)}</div>
-                    <div className="text-[10px] text-ink-100/40 mt-0.5">{v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'} · in {v.cityName}</div>
+                    <div className="text-[10px] text-ink-100/40 mt-0.5">{v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · in {v.cityName}</div>
                   </div>
                 ))}
               </div>
             )}
           </Card>
 
-          <Card title="🔫 Weapons" className="md:col-span-3">
+          <Card title="Weapons" className="md:col-span-3">
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className={`rounded-lg p-3 border ${eq.weapon === 'fists' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
                 <div className="font-medium">Fists</div>
@@ -183,7 +183,7 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          <Card title="🦺 Armour" className="md:col-span-3">
+          <Card title="Armour" className="md:col-span-3">
             <div className="grid sm:grid-cols-2 gap-3">
               <div className={`rounded-lg p-3 border ${eq.armour === 'none' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
                 <div className="font-medium">No Armour</div>
@@ -199,7 +199,7 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          <Card title="🔋 Ammo on hand" className="md:col-span-3">
+          <Card title="Ammo on hand" className="md:col-span-3">
             {!inv.ammo.length ? <p className="text-sm text-ink-100/60">No ammo. Pick some up at the Gun Store.</p> : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {inv.ammo.map(a => (

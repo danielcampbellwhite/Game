@@ -14,8 +14,8 @@ function cooldownLabel(sec) {
 
 const TIER_TITLES = {
   street: 'Street Crimes',
-  cyber:  '💻 Cybercrime',
-  gta:    '🚗 Grand Theft Auto',
+  cyber:  'Cybercrime',
+  gta:    'Grand Theft Auto',
   major:  'Major Scores',
 };
 const TIER_ORDER  = ['street', 'cyber', 'gta', 'major'];
@@ -49,11 +49,11 @@ function PlayerCrimes({ character }) {
   }
 
   return (
-    <Card title="🔫 Player Crimes" subtitle="Felonies against another player. Every outcome lands you in jail — no exceptions.">
+    <Card title="Player Crimes" subtitle="Felonies against another player. Every outcome lands you in jail — no exceptions.">
       <div className="grid sm:grid-cols-2 gap-3 mb-3">
         <button onClick={() => toggle('rob')}
           className={`text-left rounded-lg p-3 border transition ${open === 'rob' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
-          <div className="font-medium">🤜 Rob a Player</div>
+          <div className="font-medium">Rob a Player</div>
           <div className="text-[11px] text-ink-100/55 mt-1">
             Mug them on the spot. Win → all their cash on hand + hospitalised. Lose → caught.
           </div>
@@ -61,7 +61,7 @@ function PlayerCrimes({ character }) {
         </button>
         <button onClick={() => toggle('murder')}
           className={`text-left rounded-lg p-3 border transition ${open === 'murder' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
-          <div className="font-medium">☠️ Attempt Murder</div>
+          <div className="font-medium">Attempt Murder</div>
           <div className="text-[11px] text-ink-100/55 mt-1">
             Async hit. Pick bullets if you've got a gun. Permadeath on success — but jail either way.
           </div>
@@ -88,7 +88,6 @@ function PlayerCrimes({ character }) {
                 <button key={p.id} onClick={() => nav(`/${open}/${p.id}`)}
                   className="text-left rounded-md p-2 border border-ink-100/10 bg-ink-900/40 hover:border-blood-500/40 hover:bg-ink-900/70 transition">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xl">{p.avatar}</span>
                     <span className="font-medium truncate">{p.name}</span>
                     <span className="text-[10px] uppercase text-ink-100/40">L{p.at_max_level ? '999+' : p.level}</span>
                   </div>
@@ -142,9 +141,9 @@ export default function Crimes() {
                 <p className="text-money-400">✅ {last.crime.name} succeeded — drove off in a <b>{last.result.vehicle.maker} {last.result.vehicle.name}</b> (Tier {last.result.vehicle.tier}, book {fmt(last.result.vehicle.bookPrice)}). +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>
               )}
               {last.result.success && !last.result.vehicle && <p className="text-money-400">✅ {last.crime.name} succeeded — +{fmt(last.result.payout)} {last.result.dirty ? '(dirty)' : ''} +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>}
-              {last.result.success === false && last.result.jailed && <p className="text-yellow-400">🚓 Caught — jailed {last.result.jail_min} min.</p>}
-              {last.result.success === false && last.result.hospital && <p className="text-blue-300">🏥 Hurt — hospital {last.result.hosp_min} min.</p>}
-              {last.result.success === false && last.result.escaped && <p className="text-ink-100/70">💨 Failed but escaped clean.</p>}
+              {last.result.success === false && last.result.jailed && <p className="text-yellow-400">Caught — jailed {last.result.jail_min} min.</p>}
+              {last.result.success === false && last.result.hospital && <p className="text-blue-300">Hurt — hospital {last.result.hosp_min} min.</p>}
+              {last.result.success === false && last.result.escaped && <p className="text-ink-100/70">Failed but escaped clean.</p>}
             </div>
           )}
         </Card>

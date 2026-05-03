@@ -44,7 +44,7 @@ export default function Player() {
     try {
       await api.post('/pvp/challenge', { target_id: parseInt(id, 10), mode });
       setMsg(mode === 'murder'
-        ? '☠️ Murder challenge sent. Waiting for them to accept (60s).'
+        ? 'Murder challenge sent. Waiting for them to accept (60s).'
         : 'Challenge sent. Waiting for them to accept (60s).');
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
@@ -105,7 +105,6 @@ export default function Player() {
 
       <Card>
         <div className="flex items-baseline gap-3">
-          <div className="text-5xl">{p.avatar}</div>
           <div className="min-w-0 flex-1">
             <div className="font-display text-3xl">{p.name}</div>
             <div className="text-xs text-ink-100/60">
@@ -139,28 +138,28 @@ export default function Player() {
               onClick={() => challenge('knockout')}
               className="btn text-xs"
               title={p.city !== character?.city ? 'Different city — fly to them first.' : 'Mutual combat — they must accept; turn-based fight in the Fight Club.'}>
-              {busy === 'challenge-knockout' ? '…' : '⚔ Challenge'}
+              {busy === 'challenge-knockout' ? '…' : 'Challenge'}
             </button>
             <button
               disabled={p.city !== character?.city}
               onClick={() => nav(`/rob/${p.id}`)}
               className="btn text-xs"
               title={p.city !== character?.city ? 'Different city — fly to them first.' : "Mug them on the spot — async. Win and you steal all their cash + put them in hospital."}>
-              🤜 Rob
+              Rob
             </button>
             <button
               disabled={p.city !== character?.city}
               onClick={() => nav(`/murder/${p.id}`)}
               className="btn text-xs"
               title={p.city !== character?.city ? 'Different city — fly to them first.' : 'Async assassination attempt with your equipped weapon. Permadeath on success.'}>
-              ☠️ Murder
+              Murder
             </button>
             <button
               disabled={busy === 'trade' || p.city !== character?.city}
               onClick={startTrade}
               className="btn text-xs"
               title={p.city !== character?.city ? 'You must both be in the same city to trade.' : 'Open a trade window with this player.'}>
-              {busy === 'trade' ? '…' : '🤝 Trade'}
+              {busy === 'trade' ? '…' : 'Trade'}
             </button>
             {/* Invite to my gang — only if I'm officer+ and target has no gang */}
             {(myGang?.role === 'leader' || myGang?.role === 'officer') && !p.gang && (
@@ -268,7 +267,7 @@ export default function Player() {
             {data.businesses.map(b => (
               <div key={b.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                 <div className="flex items-baseline justify-between gap-2">
-                  <div className="font-medium">{b.emoji} {b.name}</div>
+                  <div className="font-medium">{b.name}</div>
                   <span className="text-[10px] uppercase text-ink-100/40">L{b.level}</span>
                 </div>
                 <div className="text-[11px] text-ink-100/60">

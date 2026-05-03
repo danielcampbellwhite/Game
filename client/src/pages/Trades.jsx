@@ -23,7 +23,6 @@ function TradeRow({ trade, character }) {
       className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 hover:border-blood-500/40 hover:bg-ink-900/60 transition flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl">{other?.avatar}</span>
           <span className="font-medium truncate">{other?.name}</span>
           <StatusPill trade={trade} />
         </div>

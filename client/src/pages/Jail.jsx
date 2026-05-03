@@ -85,7 +85,6 @@ function VisitingHours({ character, refreshChar }) {
               <div key={p.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <Link to={`/players/${p.id}`} className="flex items-center gap-2 min-w-0 hover:underline">
-                    <span className="text-2xl shrink-0">{p.avatar}</span>
                     <span className="min-w-0">
                       <span className="font-medium truncate">{p.name}</span>
                       <span className="ml-2 text-[10px] uppercase text-ink-100/40">L{p.level}</span>

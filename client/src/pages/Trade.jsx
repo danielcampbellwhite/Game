@@ -304,7 +304,7 @@ export default function Trade() {
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
       <Card title="🤝 Trade"
-        subtitle={other ? `With ${other.avatar} ${other.name} (Lvl ${other.level})` : 'Loading…'}
+        subtitle={other ? `With ${other.name} (Lvl ${other.level})` : 'Loading…'}
         right={<Link to="/trades" className="btn btn-ghost text-xs">← All trades</Link>}>
         <div className="text-[11px] text-ink-100/55">
           Status: <b>{trade.status}</b> · expires in <Timer until={trade.expires_at} onExpire={load} /> · 5% tax on cash flowing in either direction (sink).

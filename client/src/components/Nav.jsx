@@ -3,6 +3,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
 import { useEventStream } from '../hooks/useEventStream.js';
+import { fmt } from './Money.jsx';
 
 const links = [
   { to: '/inventory', label: 'Inventory' },
@@ -53,7 +54,6 @@ function NotificationBell() {
     return () => clearInterval(i);
   }, []);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const onClick = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
@@ -66,7 +66,6 @@ function NotificationBell() {
     setOpen(next);
     if (next && data.unreadCount > 0) {
       await api.post('/notifications/seen');
-      // Optimistic clear
       setData({ ...data, unreadCount: 0, items: data.items.map(x => ({ ...x, unread: false })) });
     }
   }
@@ -75,9 +74,9 @@ function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={toggle}
-        className="relative px-2 py-1 rounded-md hover:bg-ink-800/60 transition"
+        className="relative px-2 py-1 rounded-md hover:bg-ink-800/60 transition text-[11px] uppercase tracking-wide text-ink-100/75"
         aria-label="Notifications">
-        <span className="text-xl">🔔</span>
+        Alerts
         {data.unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
             {data.unreadCount > 99 ? '99+' : data.unreadCount}
@@ -112,13 +111,33 @@ function NotificationBell() {
   );
 }
 
+// Compact inline stat — label, value, and a thin progress sliver. Used
+// in the condensed header strip; keeps four vitals + cash legible at a
+// glance without taking the full row of bars StatsBar used.
+function MiniStat({ label, value, max, color, money }) {
+  const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  return (
+    <div className="min-w-0 leading-tight">
+      <div className="flex items-baseline justify-between gap-2 text-[10px] uppercase text-ink-100/55">
+        <span>{label}</span>
+        <span className={`tabular-nums ${money ? 'text-money-400 font-medium' : 'text-ink-100/85'}`}>
+          {money ? fmt(value) : `${value}/${max}`}
+        </span>
+      </div>
+      {!money && (
+        <div className="h-[3px] rounded-full bg-ink-100/10 overflow-hidden">
+          <div className={color} style={{ width: pct + '%', height: '100%' }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Nav() {
   const { logout, character } = useGame();
   const nav = useNavigate();
-  const [open, setOpen] = useState(false);
   const [dmUnread, setDmUnread] = useState(0);
 
-  // Initial fetch + SSE-driven updates for the Messages link badge.
   useEffect(() => {
     if (!character) return;
     api.get('/messages/unread').then(r => setDmUnread(r.total_unread || 0)).catch(() => {});
@@ -135,9 +154,9 @@ export default function Nav() {
   const inJail     = character?.jail_until     && character.jail_until     > now;
   const lockedOut  = inHospital || inJail;
 
-  const linkClass = (l, isActive) => {
-    if (lockedOut) return 'px-2.5 py-1.5 text-xs rounded-md text-ink-100/30 cursor-not-allowed line-through';
-    return `px-2.5 py-1.5 text-xs rounded-md ${isActive ? 'bg-blood-700 text-white' : 'hover:bg-ink-800/70'}`;
+  const linkClass = (isActive) => {
+    if (lockedOut) return 'shrink-0 px-3 py-1.5 text-xs rounded-md text-ink-100/30 cursor-not-allowed line-through';
+    return `shrink-0 px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${isActive ? 'bg-blood-700 text-white' : 'hover:bg-ink-800/70 text-ink-100/85'}`;
   };
   const onClickGuard = (e) => { if (lockedOut) e.preventDefault(); };
 
@@ -145,47 +164,34 @@ export default function Nav() {
     ? 'flex items-center gap-2 px-2 py-1 rounded-md text-ink-100/30 cursor-not-allowed line-through'
     : 'flex items-center gap-2 px-2 py-1 rounded-md hover:bg-ink-800/60 transition';
 
+  const xpPct = character && !character.at_max_level && character.xp_to_next
+    ? Math.max(0, Math.min(100, (character.xp / character.xp_to_next) * 100))
+    : 0;
+
   return (
     <header className="border-b border-ink-100/10 bg-ink-950/85 backdrop-blur">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-        <button className="md:hidden btn btn-ghost px-2 py-1" onClick={() => setOpen(!open)} aria-label="menu">☰</button>
-        <div className="font-display text-2xl text-blood-500 hidden sm:block">MAFIA LIFE</div>
+      {/* ── Top bar — branding + character chip + actions ─────── */}
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3">
+        <Link to="/" className="font-display text-xl sm:text-2xl text-blood-500 shrink-0" aria-label="Home">
+          MAFIA LIFE
+        </Link>
 
-        <Link to="/" onClick={onClickGuard} className={charChipClass} aria-label="Dashboard">
-          <span className="text-2xl leading-none">{character?.avatar}</span>
-          <div className="hidden sm:block leading-tight">
-            <div className="text-sm font-medium">{character?.name}</div>
-            <div className="text-[10px] text-ink-100/50">Lvl {character?.at_max_level ? '999+' : character?.level} · {character?.rank}</div>
+        <Link to="/" onClick={onClickGuard} className={charChipClass + ' min-w-0'} aria-label="Dashboard">
+          <div className="leading-tight min-w-0">
+            <div className="text-sm font-medium truncate">{character?.name}</div>
+            <div className="text-[10px] text-ink-100/50">
+              Lvl {character?.at_max_level ? '999+' : character?.level} · {character?.rank}
+            </div>
           </div>
         </Link>
 
-        <nav className="hidden md:flex flex-wrap gap-1 ml-auto">
-          {links.map(l => (
-            <NavLink key={l.to} to={l.to}
-              onClick={onClickGuard}
-              className={({isActive}) => linkClass(l, isActive)}>
-              {l.label}
-            </NavLink>
-          ))}
-          {inHospital && (
-            <NavLink to="/hospital" className="px-2.5 py-1.5 text-xs rounded-md bg-blue-600 text-white animate-pulse">
-              🏥 Hospital
-            </NavLink>
-          )}
-          {inJail && (
-            <NavLink to="/jail" className="px-2.5 py-1.5 text-xs rounded-md bg-yellow-600 text-white animate-pulse">
-              🚓 Jail
-            </NavLink>
-          )}
-        </nav>
-
-        <div className="md:ml-2 ml-auto flex items-center gap-2 text-xs">
+        <div className="ml-auto flex items-center gap-2 text-xs">
           <Link
             to="/messages"
             onClick={onClickGuard}
             aria-label="Messages"
-            className={`relative px-2 py-1 rounded-md transition ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60'}`}>
-            <span className="text-xl">✉️</span>
+            className={`relative px-2 py-1 rounded-md transition text-[11px] uppercase tracking-wide ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-ink-100/75'}`}>
+            Msgs
             {dmUnread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
                 {dmUnread > 99 ? '99+' : dmUnread}
@@ -196,33 +202,53 @@ export default function Nav() {
           <button className="btn btn-ghost text-xs" onClick={() => { logout(); nav('/login'); }}>Sign out</button>
         </div>
       </div>
-      {open && (
-        <div className="md:hidden border-t border-ink-100/10 grid grid-cols-3 gap-1 p-2">
-          {inHospital && (
-            <NavLink to="/hospital" onClick={() => setOpen(false)}
-              className="col-span-3 text-center px-2 py-2 text-xs rounded bg-blue-600 text-white">
-              🏥 You're in hospital — tap here
-            </NavLink>
-          )}
-          {inJail && (
-            <NavLink to="/jail" onClick={() => setOpen(false)}
-              className="col-span-3 text-center px-2 py-2 text-xs rounded bg-yellow-600 text-white">
-              🚓 You're in jail — tap here
+
+      {/* ── Condensed stats strip ─────────────────────────────── */}
+      {character && (
+        <div className="border-t border-ink-100/10 bg-ink-900/40">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-1 text-xs">
+            <MiniStat label="Energy"  value={character.energy}    max={character.max_energy} color="bg-yellow-400" />
+            <MiniStat label="Nerve"   value={character.nerve}     max={character.max_nerve}  color="bg-blood-500"  />
+            <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
+            <MiniStat label="Happy"   value={character.happiness} max={100}                  color="bg-pink-400"   />
+            <MiniStat label="Cash"    value={character.cash}      money />
+            <div className="min-w-0 leading-tight">
+              <div className="flex items-baseline justify-between gap-2 text-[10px] uppercase text-ink-100/55">
+                <span>{character.at_max_level ? 'Max Lvl' : 'XP'}</span>
+                <span className="tabular-nums text-ink-100/85">
+                  {character.at_max_level ? '999+' : `${character.xp}/${character.xp_to_next}`}
+                </span>
+              </div>
+              {!character.at_max_level && (
+                <div className="h-[3px] rounded-full bg-ink-100/10 overflow-hidden">
+                  <div className="bg-gold-500" style={{ width: xpPct + '%', height: '100%' }} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Nav links ─────────────────────────────────────────── */}
+      {/* Mobile: single horizontal scroll line; desktop: wrap & justify. */}
+      <nav className="border-t border-ink-100/10 overflow-x-auto scrollbar"
+        style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex items-center gap-1 md:flex-wrap whitespace-nowrap">
+          {(inHospital || inJail) && (
+            <NavLink to={inHospital ? '/hospital' : '/jail'}
+              className={`shrink-0 px-3 py-1.5 text-xs rounded-md text-white animate-pulse whitespace-nowrap ${inHospital ? 'bg-blue-600' : 'bg-yellow-600'}`}>
+              {inHospital ? 'Hospital — locked' : 'Jail — locked'}
             </NavLink>
           )}
           {links.map(l => (
             <NavLink key={l.to} to={l.to}
-              onClick={(e) => { onClickGuard(e); if (!e.defaultPrevented) setOpen(false); }}
-              className={({isActive}) =>
-                lockedOut
-                  ? 'text-center px-2 py-2 text-xs rounded bg-ink-800/20 text-ink-100/30 line-through'
-                  : `text-center px-2 py-2 text-xs rounded ${isActive ? 'bg-blood-700 text-white' : 'bg-ink-800/40'}`
-              }>
+              onClick={onClickGuard}
+              className={({isActive}) => linkClass(isActive)}>
               {l.label}
             </NavLink>
           ))}
         </div>
-      )}
+      </nav>
     </header>
   );
 }

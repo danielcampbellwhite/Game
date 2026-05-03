@@ -16,7 +16,6 @@ function PlayerRow({ p }) {
   return (
     <Link to={`/players/${p.id}`}
       className="flex items-center gap-3 p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
-      <div className="text-2xl shrink-0">{p.avatar}</div>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="font-medium truncate">{p.name}</span>

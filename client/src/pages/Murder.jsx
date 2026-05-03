@@ -17,10 +17,10 @@ function OutcomeBanner({ result }) {
         ? 'border-yellow-700 bg-yellow-900/20 text-yellow-200'
         : 'border-ink-100/30 bg-ink-900 text-ink-100';
   const headline = {
-    kill:         '☠️ Murder confirmed.',
-    severe_wound: '🩸 Critical wounding.',
-    wound:        '🩸 Wound inflicted.',
-    miss:         '❌ Attempt failed.',
+    kill:         'Murder confirmed.',
+    severe_wound: 'Critical wounding.',
+    wound:        'Wound inflicted.',
+    miss:         'Attempt failed.',
   }[outcome];
   return (
     <div className={`rounded-md border p-3 ${palette}`}>
@@ -81,8 +81,8 @@ export default function Murder() {
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
-      <Card title={`☠️ Murder attempt`}
-        subtitle={`Target: ${target.avatar} ${target.name} (Lvl ${target.level}) · ${target.cityName}`}
+      <Card title="Murder attempt"
+        subtitle={`Target: ${target.name} (Lvl ${target.level}) · ${target.cityName}`}
         right={<Link to={`/players/${target.id}`} className="btn btn-ghost text-xs">← Back to profile</Link>}>
         <p className="text-xs text-ink-100/55">
           Asynchronous — works whether they're online or offline. They get notified the
@@ -140,10 +140,10 @@ export default function Murder() {
 
       <Card title="Outcomes" subtitle="Roll resolves immediately on commit. There's no live combat — they don't fight back.">
         <ul className="text-xs space-y-1 text-ink-100/75">
-          <li>☠️ <b className="text-blood-400">Kill</b> — total damage ≥ 100% of their max HP. Permadeath: they have to roll a new character at level 10. You take <b>100%</b> of their cash on hand.</li>
-          <li>🩸 <b className="text-yellow-300">Critical wound</b> — ≥ 50% of max HP. They get hospitalised 60–180 min. You take 10% of their cash.</li>
-          <li>🩹 <b className="text-yellow-200">Wound</b> — ≥ 20% of max HP. Hospital 15–45 min. No cash transfer.</li>
-          <li>❌ <b>Miss</b> — they get notified, ammo + energy spent, you walk away.</li>
+          <li><b className="text-blood-400">Kill</b> — total damage ≥ 100% of their max HP. Permadeath: they have to roll a new character at level 10. You take <b>100%</b> of their cash on hand.</li>
+          <li><b className="text-yellow-300">Critical wound</b> — ≥ 50% of max HP. They get hospitalised 60–180 min. You take 10% of their cash.</li>
+          <li><b className="text-yellow-200">Wound</b> — ≥ 20% of max HP. Hospital 15–45 min. No cash transfer.</li>
+          <li><b>Miss</b> — they get notified, ammo + energy spent, you walk away.</li>
         </ul>
         <p className="text-[11px] text-ink-100/45 mt-2">
           24h cooldown on you afterwards; 24h immunity for them. New characters are protected for the first <b>3 days</b> after creation.
