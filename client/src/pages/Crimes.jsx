@@ -52,7 +52,7 @@ function PlayerCrimes({ character }) {
   }
 
   return (
-    <Card title="Player Crimes" subtitle="Felonies against another player. Every outcome lands you in jail — no exceptions.">
+    <Card title="Player Crimes" subtitle="Felonies against another player. Every outcome lands you in jail — no exceptions." collapsible>
       <div className="grid sm:grid-cols-2 gap-3 mb-3">
         <button onClick={() => toggle('rob')}
           className={`text-left rounded-lg p-3 border transition ${open === 'rob' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
@@ -184,7 +184,8 @@ export default function Crimes() {
       <PlayerCrimes character={character} />
 
       <Card title="Multiplayer Crimes (Heists)"
-        subtitle="Crew-led organised crime. Bigger payouts than anything you can pull alone — but you need bodies and the right stat profile in each seat.">
+        subtitle="Crew-led organised crime. Bigger payouts than anything you can pull alone — but you need bodies and the right stat profile in each seat."
+        collapsible>
         <ul className="text-xs space-y-1 text-ink-100/75 list-disc pl-5">
           <li><b className="text-blood-300">Pick a heist</b> from the catalogue (jewellery store, bank vault, casino, etc.). Each defines named roles — Driver, Hacker, Muscle, Lookout — with a minimum stat requirement per seat.</li>
           <li><b className="text-blood-300">Recruit your crew.</b> As leader, invite players to fill each role. Their stats must clear the role's minimum or they can't accept.</li>
@@ -200,7 +201,7 @@ export default function Crimes() {
       </Card>
 
       {orderedTiers.map(tier => (
-        <Card key={tier} title={TIER_TITLES[tier] || tier} subtitle={TIER_SUBTITLES[tier] || null}>
+        <Card key={tier} title={TIER_TITLES[tier] || tier} subtitle={TIER_SUBTITLES[tier] || null} collapsible>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {grouped[tier].map(c => {
               const onCd = !c.ready;
