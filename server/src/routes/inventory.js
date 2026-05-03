@@ -27,7 +27,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     return {
       id: i.item_id,
       name: m?.name || i.item_id,
-      emoji: m?.emoji || '📦',
+      emoji: m?.emoji || '',
       desc: m?.desc || '',
       qty: i.qty,
       effects: m?.effects || null,

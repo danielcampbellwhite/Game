@@ -84,7 +84,7 @@ export default function Bookmaker() {
 
   return (
     <div className="space-y-4">
-      <Card title="📒 The Bookmaker" subtitle="Place wagers on auto-generated sporting events. Odds carry an ~8% house margin — pick well.">
+      <Card title=" The Bookmaker" subtitle="Place wagers on auto-generated sporting events. Odds carry an ~8% house margin — pick well.">
         {msg && <p className="text-xs">{msg}</p>}
       </Card>
 

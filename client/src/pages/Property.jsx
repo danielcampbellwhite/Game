@@ -5,7 +5,7 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 
-const TIER_EMOJI = { 1: '🏚️', 2: '🏠', 3: '🏡', 4: '🏰' };
+const TIER_EMOJI = { 1: '', 2: '', 3: '', 4: '' };
 
 export default function Property() {
   const { character, refresh } = useGame();
@@ -31,7 +31,7 @@ export default function Property() {
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title="🏘️ Estate Agent" subtitle={`Listings in ${data.currentCityName}. Properties are city-locked — to buy a place in another city, fly there first.`} />
+      <Card title=" Estate Agent" subtitle={`Listings in ${data.currentCityName}. Properties are city-locked — to buy a place in another city, fly there first.`} />
 
       <Card title="Your portfolio" subtitle={data.owned.length ? `${data.owned.length} propert${data.owned.length === 1 ? 'y' : 'ies'} across the world. Bonuses only apply in the city you're currently in.` : null}>
         {!data.owned.length ? <p className="text-sm text-ink-100/60">None yet — buy your first below.</p> : (
@@ -42,12 +42,12 @@ export default function Property() {
                 <div key={p.id} className={`rounded-md border p-3 ${here ? 'border-money-500/40 bg-money-600/10' : 'border-ink-100/10 bg-ink-950/40 opacity-70'}`}>
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
-                      <div className="font-medium text-sm">{TIER_EMOJI[p.tier] || '🏠'} {p.name}</div>
+                      <div className="font-medium text-sm">{TIER_EMOJI[p.tier] || ''} {p.name}</div>
                       {p.address && <div className="text-[10px] text-ink-100/45">{p.address}</div>}
                       <div className="text-[10px] mt-0.5">
                         <span className="text-ink-100/55">{p.cityName}</span>
                         <span className={`ml-2 text-[9px] uppercase tracking-wide ${here ? 'text-money-400' : 'text-ink-100/40'}`}>
-                          {here ? '● Active here' : 'Inactive'}
+                          {here ? ' Active here' : 'Inactive'}
                         </span>
                       </div>
                     </div>
@@ -71,7 +71,7 @@ export default function Property() {
               <div key={p.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0">
-                    <div className="font-medium">{TIER_EMOJI[p.tier] || '🏠'} {p.name}</div>
+                    <div className="font-medium">{TIER_EMOJI[p.tier] || ''} {p.name}</div>
                     <div className="text-[10px] text-ink-100/45">{p.address}</div>
                     <div className="text-[10px] text-ink-100/50">{p.tierLabel} · Tier {p.tier}</div>
                   </div>

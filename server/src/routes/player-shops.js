@@ -14,7 +14,7 @@ import { writeLog } from '../services/log.js';
 
 const router = Router();
 
-// ── Helpers ─────────────────────────────────────────────────────────
+//  Helpers 
 function loadShopById(id) {
   return db.prepare('SELECT * FROM businesses_player WHERE id = ?').get(id);
 }
@@ -32,27 +32,27 @@ function listingsFor(businessId) {
 function lookupItem(kind, itemId, instanceId = null) {
   if (kind === 'misc') {
     const m = miscItemById(itemId);
-    return m ? { name: m.name, emoji: m.emoji || '📦', sub: m.desc || '' } : null;
+    return m ? { name: m.name, emoji: m.emoji || '', sub: m.desc || '' } : null;
   }
   if (kind === 'weapon') {
     const w = weaponById(itemId);
     return w ? {
       name: w.name,
-      emoji: '🔫',
+      emoji: '',
       sub: `${w.maker ? w.maker + ' · ' : ''}DMG ${w.dmg}${w.ammoType ? ` · ${w.ammoType}` : ' · melee'}`,
     } : null;
   }
   if (kind === 'armour') {
     const a = armourById(itemId);
-    return a ? { name: a.name, emoji: '🦺', sub: `DEF ${a.def}` } : null;
+    return a ? { name: a.name, emoji: '', sub: `DEF ${a.def}` } : null;
   }
   if (kind === 'ammo') {
     const a = ammoById(itemId);
-    return a ? { name: a.name, emoji: '🔋', sub: `${a.cost}/round base` } : null;
+    return a ? { name: a.name, emoji: '', sub: `${a.cost}/round base` } : null;
   }
   if (kind === 'drug') {
     const d = drugById(itemId);
-    return d ? { name: d.name, emoji: '💊', sub: `level ${d.levelGate}+` } : null;
+    return d ? { name: d.name, emoji: '', sub: `level ${d.levelGate}+` } : null;
   }
   if (kind === 'weapon_instance') {
     const inst = loadWeaponInstance(instanceId);
@@ -63,8 +63,8 @@ function lookupItem(kind, itemId, instanceId = null) {
     const modList = stats.mods.map(m => m.name).join(', ');
     return {
       name: base.name,
-      emoji: '🔧',
-      sub: `🔧 ${base.maker || ''} · DMG ${stats.dmg}${stats.accuracy ? ` · +${stats.accuracy} acc` : ''}${modList ? ` · ${modList}` : ''}`,
+      emoji: '',
+      sub: ` ${base.maker || ''} · DMG ${stats.dmg}${stats.accuracy ? ` · +${stats.accuracy} acc` : ''}${modList ? ` · ${modList}` : ''}`,
       extra: { mods: stats.mods, dmg: stats.dmg, accuracy: stats.accuracy, ammoType: base.ammoType, category: base.category, maker: base.maker || null },
     };
   }
@@ -77,8 +77,8 @@ function lookupItem(kind, itemId, instanceId = null) {
     const modList = stats.mods.map(m => m.name).join(', ');
     return {
       name: `${base.maker} ${base.name}`,
-      emoji: '🚗',
-      sub: `Tier ${base.tier}${stats.is_modified ? ' · 🔧 modded' : ''}${modList ? ` · ${modList}` : ''}`,
+      emoji: '',
+      sub: `Tier ${base.tier}${stats.is_modified ? ' ·  modded' : ''}${modList ? ` · ${modList}` : ''}`,
       extra: { mods: stats.mods, power: stats.power, handling: stats.handling, tier: base.tier, maker: base.maker, model: base.name, book_price: stats.bookPrice },
     };
   }
@@ -86,7 +86,7 @@ function lookupItem(kind, itemId, instanceId = null) {
 }
 
 function decorateListing(row) {
-  const meta = lookupItem(row.kind, row.item_id, row.instance_id) || { name: row.item_id, emoji: '📦', sub: '' };
+  const meta = lookupItem(row.kind, row.item_id, row.instance_id) || { name: row.item_id, emoji: '', sub: '' };
   return {
     id: row.id,
     kind: row.kind,
@@ -147,12 +147,12 @@ function upsertListing({ businessId, kind, itemId, source, addQty, priceEach }) 
   return db.prepare('SELECT * FROM shop_listings WHERE id = ?').get(result.lastInsertRowid);
 }
 
-// ── GET /api/player-shops/wholesale-catalogue ──────────────────────
+//  GET /api/player-shops/wholesale-catalogue 
 router.get('/wholesale-catalogue', requireAuth, requireCharacter, (_req, res) => {
   res.json({ items: wholesaleCatalogue(), wholesale_pct: WHOLESALE_PRICE_PCT });
 });
 
-// ── GET /api/player-shops/in/:city ─────────────────────────────────
+//  GET /api/player-shops/in/:city 
 router.get('/in/:city', requireAuth, requireCharacter, (req, res) => {
   const city = req.params.city;
   if (!cityById(city)) return res.status(400).json({ error: 'Unknown city' });
@@ -172,7 +172,7 @@ router.get('/in/:city', requireAuth, requireCharacter, (req, res) => {
   res.json({ city, cityName: cityById(city)?.name, shops: decorated });
 });
 
-// ── GET /api/player-shops/mine ─────────────────────────────────────
+//  GET /api/player-shops/mine 
 router.get('/mine', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const rows = db.prepare(`
@@ -187,7 +187,7 @@ router.get('/mine', requireAuth, requireCharacter, (req, res) => {
   res.json({ shops: decorated, max_per_city: PLAYER_BIZ_PER_CITY_MAX });
 });
 
-// ── GET /api/player-shops/:id ──────────────────────────────────────
+//  GET /api/player-shops/:id 
 router.get('/:id', requireAuth, requireCharacter, (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (!Number.isFinite(id)) return res.status(400).json({ error: 'Bad id' });
@@ -220,7 +220,7 @@ function validateShopName(name, excludeId = null) {
   return { trimmed };
 }
 
-// ── POST /api/player-shops — found a shop ──────────────────────────
+//  POST /api/player-shops — found a shop 
 router.post('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const { name, description } = req.body || {};
@@ -252,7 +252,7 @@ router.post('/', requireAuth, requireCharacter, (req, res) => {
     ) VALUES (?, ?, 'shop', ?, ?, 'standard', 0, 0, 0, 0, 0, 'active', ?, ?, '{}')
   `).run(ch.id, ch.city, trimmed, desc, now, now);
 
-  writeLog(ch.id, 'business', `🏪 Founded "${trimmed}" in ${cityById(ch.city)?.name} for £${SHOP_FOUNDING_COST.toLocaleString()}.`);
+  writeLog(ch.id, 'business', ` Founded "${trimmed}" in ${cityById(ch.city)?.name} for £${SHOP_FOUNDING_COST.toLocaleString()}.`);
   saveCharacter(ch);
 
   const shop = loadShopById(result.lastInsertRowid);
@@ -263,7 +263,7 @@ router.post('/', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── PATCH /api/player-shops/:id — edit name + description ─────────
+//  PATCH /api/player-shops/:id — edit name + description 
 //
 // Owner-only. Accepts any subset of `name` / `description`; fields not
 // supplied are left alone. Pass `description: ""` to clear the
@@ -300,7 +300,7 @@ router.patch('/:id', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, shop: publicShop(fresh, { viewer_is_owner: true }) });
 });
 
-// ── POST /api/player-shops/:id/withdraw ────────────────────────────
+//  POST /api/player-shops/:id/withdraw 
 router.post('/:id/withdraw', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const id = parseInt(req.params.id, 10);
@@ -316,7 +316,7 @@ router.post('/:id/withdraw', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, shop: publicShop(loadShopById(id), { viewer_is_owner: true }), character: publicCharacter(ch) });
 });
 
-// ── POST /api/player-shops/:id/close ───────────────────────────────
+//  POST /api/player-shops/:id/close 
 router.post('/:id/close', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const id = parseInt(req.params.id, 10);
@@ -346,7 +346,7 @@ router.post('/:id/close', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, refund, character: publicCharacter(ch) });
 });
 
-// ── POST /api/player-shops/:id/listings/wholesale ──────────────────
+//  POST /api/player-shops/:id/listings/wholesale 
 // Buy from wholesaler at wholesale price × qty (paid from owner cash).
 // Stacks into the existing listing for the same item if there is one;
 // otherwise creates a new listing. Latest retail price always wins.
@@ -382,7 +382,7 @@ router.post('/:id/listings/wholesale', requireAuth, requireCharacter, (req, res)
   });
 });
 
-// ── POST /api/player-shops/:id/listings/inventory ─────────────────
+//  POST /api/player-shops/:id/listings/inventory 
 //
 // Move an item the owner already holds in their personal inventory
 // into the shop as a listing at their chosen retail price. The qty is
@@ -404,7 +404,7 @@ router.post('/:id/listings/inventory', requireAuth, requireCharacter, (req, res)
     return res.status(400).json({ error: `Items of kind "${kind}" can't be listed in shops yet.` });
   }
 
-  // ── Per-instance branch (weapon_instance, vehicle) ──
+  //  Per-instance branch (weapon_instance, vehicle) 
   if (INSTANCE_KINDS.has(kind)) {
     const instanceId = parseInt(rawInstanceId, 10);
     if (!Number.isFinite(instanceId)) return res.status(400).json({ error: 'instance_id required.' });
@@ -445,7 +445,7 @@ router.post('/:id/listings/inventory', requireAuth, requireCharacter, (req, res)
     });
   }
 
-  // ── Stack branch (misc, weapon, armour, ammo, drug) ──
+  //  Stack branch (misc, weapon, armour, ammo, drug) 
   const qty = Math.max(1, parseInt(rawQty, 10) || 0);
   if (!qty) return res.status(400).json({ error: 'qty is required.' });
   if (!lookupItem(kind, item_id)) {
@@ -497,7 +497,7 @@ router.post('/:id/listings/inventory', requireAuth, requireCharacter, (req, res)
   });
 });
 
-// ── GET /api/player-shops/:id/listable-inventory ──────────────────
+//  GET /api/player-shops/:id/listable-inventory 
 // Surfaces the owner's misc-item inventory in a shape the client can
 // build the "List from inventory" picker from. Filters out anything
 // already at qty 0 and items that aren't shop-eligible (none for misc
@@ -589,7 +589,7 @@ router.get('/:id/listable-inventory', requireAuth, requireCharacter, (req, res) 
   res.json({ items: [...stackItems, ...weaponInstances, ...vehicles] });
 });
 
-// ── DELETE /api/player-shops/:id/listings/:listingId ──────────────
+//  DELETE /api/player-shops/:id/listings/:listingId 
 // Wholesale listings: stock destroyed (no refund). Inventory-sourced:
 // stock is returned to the owner's inventory.
 router.delete('/:id/listings/:listingId', requireAuth, requireCharacter, (req, res) => {
@@ -614,7 +614,7 @@ router.delete('/:id/listings/:listingId', requireAuth, requireCharacter, (req, r
   res.json({ ok: true, listings: listingsFor(id).map(decorateListing) });
 });
 
-// ── POST /api/player-shops/:id/buy/:listingId ─────────────────────
+//  POST /api/player-shops/:id/buy/:listingId 
 router.post('/:id/buy/:listingId', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const id = parseInt(req.params.id, 10);

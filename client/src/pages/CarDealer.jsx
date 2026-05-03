@@ -15,7 +15,7 @@ const TIER_LABEL = {
   7: 'Hypercar',
 };
 
-const tierEmoji = t => (t >= 6 ? '🏎️' : t >= 4 ? '🚘' : t === 3 ? '🚙' : '🚗');
+const tierEmoji = t => (t >= 6 ? '' : t >= 4 ? '' : t === 3 ? '' : '');
 
 export default function CarDealer() {
   const { character, refresh } = useGame();
@@ -53,7 +53,7 @@ export default function CarDealer() {
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title="🏢 Premier Auto" subtitle={`Showroom in ${data.cityName}. Cars are titled to you, no questions asked.`}>
+      <Card title=" Premier Auto" subtitle={`Showroom in ${data.cityName}. Cars are titled to you, no questions asked.`}>
         <div className="flex flex-wrap gap-2 items-center text-xs">
           <select value={filter} onChange={e => setFilter(e.target.value)}>
             <option value="all">All tiers</option>

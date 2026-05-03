@@ -58,7 +58,7 @@ export default function CharacterCreate() {
           <div className="flex gap-2">
             <input value={name} onChange={e => setName(e.target.value)} maxLength={32} placeholder="Vito Corleone" className="flex-1" />
             <button type="button" onClick={rollName} disabled={rolling} className="btn btn-ghost text-xs whitespace-nowrap">
-              {rolling ? '…' : '🎲 Random'}
+              {rolling ? '…' : 'Random'}
             </button>
           </div>
           {!gender && <p className="text-[10px] text-ink-100/40 mt-1">Pick a gender below to weight the random names.</p>}

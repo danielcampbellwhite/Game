@@ -50,7 +50,7 @@ export default function Drugs() {
   const invMap = Object.fromEntries(data.inventory.map(i => [i.id, i.qty]));
 
   return (
-    <Card title="💊 Drug market" subtitle={`${data.city.replace('_', ' ')}`}>
+    <Card title=" Drug market" subtitle={`${data.city.replace('_', ' ')}`}>
       {msg && <p className="text-xs text-money-400 mb-3">{msg}</p>}
       <div className="grid sm:grid-cols-2 gap-3">
         {data.market.map(d => {

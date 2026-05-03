@@ -6,7 +6,7 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 
-// ── Tabs ──────────────────────────────────────────────────────────────
+//  Tabs 
 // Big inventory pages get noisy fast. Tabs keep the visible list short
 // and make it easier to find a specific category.
 const TABS = [
@@ -102,7 +102,7 @@ export default function Inventory() {
       const isCash = item.oneShotCash || item.prizes;
       let body = 'used';
       if (isCash) {
-        if (r.jackpot) body = `🎰 JACKPOT — +£${r.cash.toLocaleString()}!`;
+        if (r.jackpot) body = ` JACKPOT — +£${r.cash.toLocaleString()}!`;
         else if (r.cash > 0) body = `+£${r.cash.toLocaleString()}`;
         else body = 'no win';
       } else if (item.effects && r.applied) {
@@ -139,7 +139,7 @@ export default function Inventory() {
     <div className="space-y-4 max-w-5xl mx-auto">
       {msg && <Card><p className="text-xs text-money-400">{msg}</p></Card>}
 
-      <Card title="🎒 Inventory" subtitle="Every item, weapon, vehicle and stash you own.">
+      <Card title=" Inventory" subtitle="Every item, weapon, vehicle and stash you own.">
         <div className="flex flex-wrap gap-2">
           {TABS.map(t => {
             const n = counts[t.id];
@@ -154,33 +154,33 @@ export default function Inventory() {
         </div>
       </Card>
 
-      {/* ── Overview ──────────────────────────────────────────────── */}
+      {/*  Overview  */}
       {tab === 'overview' && (
         <>
           <EquippedSummary inv={inv} />
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card title="🔫 Weapons" right={<button onClick={() => setTab('weapons')} className="btn btn-ghost text-xs">View all</button>}>
+            <Card title=" Weapons" right={<button onClick={() => setTab('weapons')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.weapons}</div>
               <div className="text-[11px] text-ink-100/55">in your stash</div>
             </Card>
-            <Card title="🦺 Armour" right={<button onClick={() => setTab('armour')} className="btn btn-ghost text-xs">View all</button>}>
+            <Card title=" Armour" right={<button onClick={() => setTab('armour')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.armour}</div>
               <div className="text-[11px] text-ink-100/55">vests / jackets</div>
             </Card>
-            <Card title="🔋 Ammo" right={<button onClick={() => setTab('ammo')} className="btn btn-ghost text-xs">View all</button>}>
+            <Card title=" Ammo" right={<button onClick={() => setTab('ammo')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.ammo}</div>
               <div className="text-[11px] text-ink-100/55">rounds total</div>
             </Card>
-            <Card title="💊 Drugs" right={<button onClick={() => setTab('drugs')} className="btn btn-ghost text-xs">View all</button>}>
+            <Card title=" Drugs" right={<button onClick={() => setTab('drugs')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.drugs}</div>
               <div className="text-[11px] text-ink-100/55">units on you</div>
             </Card>
-            <Card title="🛒 Items" right={<button onClick={() => setTab('items')} className="btn btn-ghost text-xs">View all</button>}>
+            <Card title=" Items" right={<button onClick={() => setTab('items')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.items}</div>
               <div className="text-[11px] text-ink-100/55">misc / shop-bought</div>
             </Card>
-            <Card title="🚗 Vehicles" right={<button onClick={() => setTab('vehicles')} className="btn btn-ghost text-xs">View all</button>}>
+            <Card title=" Vehicles" right={<button onClick={() => setTab('vehicles')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.vehicles}</div>
               <div className="text-[11px] text-ink-100/55">in garages worldwide</div>
             </Card>
@@ -188,11 +188,11 @@ export default function Inventory() {
         </>
       )}
 
-      {/* ── Weapons ───────────────────────────────────────────────── */}
+      {/*  Weapons  */}
       {tab === 'weapons' && (
-        <Card title="🔫 Weapons"
+        <Card title=" Weapons"
           subtitle="Equip one at a time. Ranged weapons need ammo of the matching type."
-          right={<Link to="/customize/weapons" className="btn btn-ghost text-xs">🔧 Customize</Link>}>
+          right={<Link to="/customize/weapons" className="btn btn-ghost text-xs"> Customize</Link>}>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border ${eq.weapon === 'fists' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
               <div className="font-medium">Fists</div>
@@ -218,9 +218,9 @@ export default function Inventory() {
         </Card>
       )}
 
-      {/* ── Armour ────────────────────────────────────────────────── */}
+      {/*  Armour  */}
       {tab === 'armour' && (
-        <Card title="🦺 Armour" subtitle="Reduces damage taken from incoming attacks.">
+        <Card title=" Armour" subtitle="Reduces damage taken from incoming attacks.">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border ${eq.armour === 'none' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
               <div className="font-medium">No Armour</div>
@@ -245,9 +245,9 @@ export default function Inventory() {
         </Card>
       )}
 
-      {/* ── Ammo ──────────────────────────────────────────────────── */}
+      {/*  Ammo  */}
       {tab === 'ammo' && (
-        <Card title="🔋 Ammo on hand" subtitle="Restock at the Gun Store."
+        <Card title=" Ammo on hand" subtitle="Restock at the Gun Store."
           right={<Link className="btn btn-ghost text-xs" to="/gun-store">→ Gun Store</Link>}>
           {!inv.ammo.length ? (
             <p className="text-sm text-ink-100/60">No ammo. Pick some up at the Gun Store.</p>
@@ -270,9 +270,9 @@ export default function Inventory() {
         </Card>
       )}
 
-      {/* ── Drugs ─────────────────────────────────────────────────── */}
+      {/*  Drugs  */}
       {tab === 'drugs' && (
-        <Card title="💊 Drugs" subtitle="Buy low, fly somewhere, sell high. Listed by quantity on you."
+        <Card title=" Drugs" subtitle="Buy low, fly somewhere, sell high. Listed by quantity on you."
           right={<Link className="btn btn-ghost text-xs" to="/drugs">→ Drug Market</Link>}>
           {!inv.drugs.length ? (
             <p className="text-sm text-ink-100/60">You're carrying nothing. Hit the drug market.</p>
@@ -289,9 +289,9 @@ export default function Inventory() {
         </Card>
       )}
 
-      {/* ── Misc / general-store items ────────────────────────────── */}
+      {/*  Misc / general-store items  */}
       {tab === 'items' && (
-        <Card title="🛒 Items" subtitle="Shop-bought misc gear — most are mission props, a few have everyday uses."
+        <Card title=" Items" subtitle="Shop-bought misc gear — most are mission props, a few have everyday uses."
           right={<Link className="btn btn-ghost text-xs" to="/general-store">→ General Store</Link>}>
           {!inv.misc.length ? (
             <p className="text-sm text-ink-100/60">Nothing in the kit bag.</p>
@@ -317,12 +317,12 @@ export default function Inventory() {
         </Card>
       )}
 
-      {/* ── Vehicles ──────────────────────────────────────────────── */}
+      {/*  Vehicles  */}
       {tab === 'vehicles' && (
-        <Card title="🚗 Vehicles" subtitle={`${inv.vehicles.length} cars across your garages — sell stolen ones at the Chop Shop, trade in legit ones the same place.`}
+        <Card title=" Vehicles" subtitle={`${inv.vehicles.length} cars across your garages — sell stolen ones at the Chop Shop, trade in legit ones the same place.`}
           right={
             <div className="flex gap-2 text-xs">
-              <Link className="btn btn-ghost" to="/customize/vehicles">🔧 Customize</Link>
+              <Link className="btn btn-ghost" to="/customize/vehicles"> Customize</Link>
               <Link className="btn btn-ghost" to="/dealership">→ Car Dealer</Link>
               <Link className="btn btn-ghost" to="/chop-shop">→ Chop Shop</Link>
             </div>
@@ -335,14 +335,14 @@ export default function Inventory() {
                 <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="font-medium">{v.maker} {v.name}</div>
-                    {v.is_modified && <span className="text-[10px] uppercase text-yellow-300">🔧 modded</span>}
+                    {v.is_modified && <span className="text-[10px] uppercase text-yellow-300"> modded</span>}
                   </div>
                   <div className="text-[11px] text-ink-100/60">
                     Tier {v.tier} · book {fmt(v.bookPrice)}
                     {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
                   </div>
                   <div className="text-[10px] text-ink-100/40 mt-0.5">
-                    {v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'} · in {v.cityName}
+                    {v.acquired_via === 'stolen' ? ' stolen' : ' bought'} · in {v.cityName}
                   </div>
                   {v.mods?.length > 0 && (
                     <div className="text-[10px] text-ink-100/55 mt-1 truncate">

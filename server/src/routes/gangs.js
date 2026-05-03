@@ -22,7 +22,7 @@ function broadcastGang(gangId, type, extra = {}) {
   for (const m of members) sendEvent(m.char_id, type, { gang_id: gangId, ...extra });
 }
 
-// ── Discovery ─────────────────────────────────────────────────────────
+//  Discovery 
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const rows = db.prepare(`
@@ -77,7 +77,7 @@ router.get('/:id', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── Founding / disbanding ─────────────────────────────────────────────
+//  Founding / disbanding 
 
 router.post('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -107,7 +107,7 @@ router.post('/:id/disband', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, refund: result.refund, character: publicCharacter(ch) });
 });
 
-// ── Invites ───────────────────────────────────────────────────────────
+//  Invites 
 
 router.post('/:id/invite', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -176,7 +176,7 @@ router.post('/invites/:id/decline', requireAuth, requireCharacter, (req, res) =>
   res.json({ ok: true });
 });
 
-// ── Leave / kick / promote / title ────────────────────────────────────
+//  Leave / kick / promote / title 
 
 router.post('/:id/leave', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -263,7 +263,7 @@ router.post('/:id/title', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Treasury ──────────────────────────────────────────────────────────
+//  Treasury 
 
 router.post('/:id/deposit', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -301,7 +301,7 @@ router.post('/:id/withdraw', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, character: publicCharacter(ch), gang: publicGang(loadGang(g.id), ch.id) });
 });
 
-// ── Wars + turf ───────────────────────────────────────────────────────
+//  Wars + turf 
 
 router.get('/wars/active', requireAuth, requireCharacter, (req, res) => {
   res.json({
@@ -353,7 +353,7 @@ router.get('/:id/war', requireAuth, requireCharacter, (req, res) => {
   } : null });
 });
 
-// ── Gang chat ─────────────────────────────────────────────────────────
+//  Gang chat 
 
 router.get('/:id/chat', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;

@@ -100,7 +100,7 @@ app.use('/api/oc', ocRoutes);
 app.use('/api/incarceration', incarcerationRoutes);
 app.use('/api/admin', adminRoutes);
 
-// ── Static SPA serving (production / deploy) ─────────────────────────
+//  Static SPA serving (production / deploy) 
 //
 // In dev the Vite dev server runs separately on :5173 and proxies /api
 // calls here. In a deployed build (Railway / Fly / etc.) we want a

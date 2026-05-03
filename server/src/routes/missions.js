@@ -25,7 +25,7 @@ router.post('/claim', requireAuth, requireCharacter, (req, res) => {
   const lvls = awardXp(ch, result.xp);
   ch.cash += result.cash;
   const tpl = missionById(missionId);
-  writeLog(ch.id, 'mission', `${tpl?.emoji || '🎯'} Claimed mission "${tpl?.name || missionId}" — +${result.xp}xp +£${result.cash.toLocaleString()}.`, { mission: missionId, xp: result.xp, cash: result.cash, levels: lvls });
+  writeLog(ch.id, 'mission', `${tpl?.emoji || ''} Claimed mission "${tpl?.name || missionId}" — +${result.xp}xp +£${result.cash.toLocaleString()}.`, { mission: missionId, xp: result.xp, cash: result.cash, levels: lvls });
   saveCharacter(ch);
   res.json({
     ok: true,

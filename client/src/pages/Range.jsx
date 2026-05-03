@@ -31,7 +31,7 @@ export default function Range() {
 
   return (
     <div className="space-y-4">
-      <Card title="🎯 Linden Shooting Range" subtitle="Train accuracy. Burn ammo for a temporary buff that boosts your hit chance with ranged weapons.">
+      <Card title=" Linden Shooting Range" subtitle="Train accuracy. Burn ammo for a temporary buff that boosts your hit chance with ranged weapons.">
         <div className="grid sm:grid-cols-3 gap-3 text-xs">
           <div>
             <div className="text-[10px] uppercase text-ink-100/50">Accuracy</div>
@@ -69,7 +69,7 @@ export default function Range() {
               return (
                 <div key={d.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="font-medium">🎯 {d.name}</div>
+                    <div className="font-medium"> {d.name}</div>
                     <div className="text-[10px] text-ink-100/50">{d.energy} en · {d.ammo} rounds</div>
                   </div>
                   <div className="text-[11px] text-ink-100/55 mt-1">{d.desc}</div>

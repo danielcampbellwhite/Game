@@ -102,7 +102,7 @@ router.post('/use', requireAuth, requireCharacter, requireFreeCharacter, (req, r
     const topAmount = item.prizes.reduce((m, p) => Math.max(m, p.amount), 0);
     jackpot = cashDelta > 0 && cashDelta === topAmount && topAmount >= 1000;
     flavour = cashDelta > 0
-      ? (jackpot ? `🎰 JACKPOT — won £${cashDelta.toLocaleString()}!` : `won £${cashDelta.toLocaleString()}`)
+      ? (jackpot ? ` JACKPOT — won £${cashDelta.toLocaleString()}!` : `won £${cashDelta.toLocaleString()}`)
       : 'no win';
   }
   if (item.missionOnly) {

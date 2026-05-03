@@ -22,9 +22,9 @@ function VehicleRow({ v, picked, onPick }) {
       className={`text-left rounded-lg p-3 border bg-ink-950/40 hover:border-blood-500/40 transition w-full ${isPicked ? 'border-money-500/60' : 'border-ink-100/10'}`}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="font-medium truncate">{v.maker} {v.name}</div>
-        {v.is_modified && <span className="text-[10px] uppercase text-yellow-300">🔧 modded</span>}
+        {v.is_modified && <span className="text-[10px] uppercase text-yellow-300"> modded</span>}
       </div>
-      <div className="text-[11px] text-ink-100/55">Tier {v.tier} · {v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'}</div>
+      <div className="text-[11px] text-ink-100/55">Tier {v.tier} · {v.acquired_via === 'stolen' ? ' stolen' : ' bought'}</div>
       <div className="text-[11px] text-ink-100/55">
         Book: <b className="text-money-400">{fmt(v.book_price)}</b>
         {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)} from mods)</span>}
@@ -119,7 +119,7 @@ function VehicleDetail({ id, character, onChanged }) {
   return (
     <div className="space-y-4">
       <Card title={`${v.maker} ${v.name}`}
-        subtitle={`Tier ${v.tier} · ${v.cityName} · ${v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'}`}>
+        subtitle={`Tier ${v.tier} · ${v.cityName} · ${v.acquired_via === 'stolen' ? ' stolen' : ' bought'}`}>
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div>
             <div className="text-[10px] uppercase text-ink-100/55">Book value</div>
@@ -137,7 +137,7 @@ function VehicleDetail({ id, character, onChanged }) {
         </div>
         {v.is_modified && (
           <p className="text-[11px] text-yellow-300 mt-3">
-            🔧 Modified — chop shop and dealer won't take this. Sell to other players via your shop.
+             Modified — chop shop and dealer won't take this. Sell to other players via your shop.
           </p>
         )}
         {msg && <p className="text-xs text-blood-400 mt-2">{msg}</p>}
@@ -179,7 +179,7 @@ export default function CustomizeVehicles() {
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
-      <Card title="🔧 Vehicle Customization"
+      <Card title=" Vehicle Customization"
         subtitle="Install engine / tires / paint / body / exhaust / interior mods. Customised cars can only be sold to other players — chop shop & dealer won't touch them."
         right={<Link to="/inventory" className="btn btn-ghost text-xs">← Inventory</Link>}>
         {msg && <p className="text-xs text-blood-400">{msg}</p>}

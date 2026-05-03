@@ -4,7 +4,7 @@
 //  - Player can hit / stand / double (no split)
 //  - One active hand per character; deal again to start fresh
 
-const SUITS = ['♠','♥','♦','♣'];
+const SUITS = ['','','',''];
 
 export function drawCard() {
   return {

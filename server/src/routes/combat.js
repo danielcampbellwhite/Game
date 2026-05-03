@@ -45,7 +45,7 @@ function publicFight(fight, ch) {
   };
 }
 
-// ── Targets / catalogue ────────────────────────────────────────────────
+//  Targets / catalogue 
 
 router.get('/targets', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -64,7 +64,7 @@ router.get('/state', requireAuth, requireCharacter, (req, res) => {
   res.json({ fight: publicFight(fight, req.character), moves: COMBAT_MOVES });
 });
 
-// ── Engage / attack / flee ─────────────────────────────────────────────
+//  Engage / attack / flee 
 
 router.post('/start', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;

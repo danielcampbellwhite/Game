@@ -8,7 +8,7 @@ import { writeLog } from '../services/log.js';
 
 const router = Router();
 
-// ──────────────────────────────────────────── Roulette ─────────────────────
+//  Roulette 
 
 router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
@@ -41,7 +41,7 @@ router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacte
   res.json({ ok: true, number, color, won, payout, character: publicCharacter(ch) });
 });
 
-// ──────────────────────────────────────────── Slots ────────────────────────
+//  Slots 
 
 router.post('/slots/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
@@ -62,7 +62,7 @@ router.post('/slots/spin', requireAuth, requireCharacter, requireFreeCharacter, 
   res.json({ ok: true, reels, won: allMatch, payout, character: publicCharacter(ch) });
 });
 
-// ──────────────────────────────────────────── Blackjack ───────────────────
+//  Blackjack 
 
 function loadHand(charId) {
   const row = db.prepare('SELECT * FROM blackjack_hands WHERE char_id = ?').get(charId);
@@ -106,7 +106,7 @@ function publicHand(hand) {
   return {
     bet: hand.bet,
     playerCards: hand.playerCards.map(cardLabel),
-    dealerCards: dealerVisible.map(c => c.hidden ? '🂠' : cardLabel(c)),
+    dealerCards: dealerVisible.map(c => c.hidden ? '' : cardLabel(c)),
     playerTotal: handTotal(hand.playerCards),
     dealerTotal: hand.status === 'playing' ? null : handTotal(hand.dealerCards),
     status: hand.status,

@@ -14,7 +14,7 @@ function gauss(stdDev = 1) {
 
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
-// ───────── Drugs ─────────
+//  Drugs 
 
 function ensureDrugRow(city, drug) {
   const row = db.prepare('SELECT * FROM drug_market WHERE city = ? AND drug_id = ?').get(city, drug.id);
@@ -59,7 +59,7 @@ export function getDrugMarketForCity(city) {
   }));
 }
 
-// ───────── Stocks ─────────
+//  Stocks 
 
 const HISTORY_RETENTION_MS = 24 * 60 * 60 * 1000; // keep 24h, show 12h
 

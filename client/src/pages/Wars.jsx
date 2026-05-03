@@ -38,7 +38,7 @@ export default function Wars() {
 
   return (
     <div className="space-y-4">
-      <Card title="⚔ Active wars" subtitle={wars.length ? `${wars.length} ongoing — turf changes hands at the end.` : 'No active wars.'}>
+      <Card title=" Active wars" subtitle={wars.length ? `${wars.length} ongoing — turf changes hands at the end.` : 'No active wars.'}>
         {!wars.length ? (
           <p className="text-sm text-ink-100/55">Quiet on the streets right now.</p>
         ) : (
@@ -72,7 +72,7 @@ export default function Wars() {
         )}
       </Card>
 
-      <Card title="🏴 Held turfs" subtitle="Cities currently controlled by a gang. Members of the holding gang get -20% crime cooldowns while operating in their city.">
+      <Card title=" Held turfs" subtitle="Cities currently controlled by a gang. Members of the holding gang get -20% crime cooldowns while operating in their city.">
         {!turfs.length ? (
           <p className="text-sm text-ink-100/55">No held turfs. Win a war to claim a city.</p>
         ) : (

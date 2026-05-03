@@ -26,7 +26,7 @@ function cityName(id) {
   return (id || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ── Visiting hours: list of jailed players in your city ──────────────
+//  Visiting hours: list of jailed players in your city 
 function VisitingHours({ character, refreshChar }) {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);   // `${id}-bail` | `${id}-bust`
@@ -54,15 +54,15 @@ function VisitingHours({ character, refreshChar }) {
     try {
       const r = await api.post(`/incarceration/${p.id}/bust`);
       setMsg(r.success
-        ? `🪓 Busted ${p.name} out — clean getaway.`
-        : `🚓 Caught trying to bust ${p.name} out — you've been jailed.`);
+        ? ` Busted ${p.name} out — clean getaway.`
+        : ` Caught trying to bust ${p.name} out — you've been jailed.`);
       await refresh();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
   }
 
   return (
-    <Card title="🤝 Visiting hours"
+    <Card title=" Visiting hours"
       subtitle={`Players locked up in ${cityName(character.city)} right now. Bail them out for cash, or roll the dice on a bust.`}
       right={<button onClick={load} className="btn btn-ghost text-xs">↻ Refresh</button>}>
       <p className="text-[11px] text-ink-100/45 mb-3">
@@ -157,7 +157,7 @@ export default function Jail() {
   if (!inJail) {
     return (
       <div className="space-y-4 max-w-3xl mx-auto">
-        <Card title="🚓 City Holding Cells" subtitle="You're a free citizen — for now. While you're out, you can visit the cells and help others get out too.">
+        <Card title=" City Holding Cells" subtitle="You're a free citizen — for now. While you're out, you can visit the cells and help others get out too.">
           <Link to="/" className="btn btn-ghost w-full text-xs">← Back to dashboard</Link>
         </Card>
         <VisitingHours character={character} refreshChar={refresh} />
@@ -167,9 +167,9 @@ export default function Jail() {
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
-      <Card title="🚓 City Holding Cells" subtitle="You've been arrested. Sit it out, or move money to get out faster.">
+      <Card title=" City Holding Cells" subtitle="You've been arrested. Sit it out, or move money to get out faster.">
         <div className="bg-yellow-700/15 border border-yellow-500/30 rounded-md p-3 text-sm">
-          <div className="font-medium text-yellow-300">⛓ Locked up</div>
+          <div className="font-medium text-yellow-300"> Locked up</div>
           {character.jail_reason && (
             <p className="text-ink-100/85 text-sm mt-1">{character.jail_reason}</p>
           )}

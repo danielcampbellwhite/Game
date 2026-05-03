@@ -323,7 +323,7 @@ export default function Gang() {
         <Card>
           <div className="flex items-baseline justify-between gap-3">
             <div>
-              <div className="text-[10px] uppercase text-blood-400 tracking-wide">⚔ AT WAR</div>
+              <div className="text-[10px] uppercase text-blood-400 tracking-wide"> AT WAR</div>
               <div className="text-sm mt-1">
                 Contested city: <b>{war.contested_city_name}</b>
               </div>
@@ -363,7 +363,7 @@ export default function Gang() {
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-ink-100/70">No active war.</p>
             <button onClick={openDeclare} disabled={busy === 'declare-war'} className="btn btn-primary text-xs">
-              {busy === 'declare-war' ? '…' : '⚔ Declare war'}
+              {busy === 'declare-war' ? '…' : ' Declare war'}
             </button>
           </div>
         </Card>
@@ -376,7 +376,7 @@ export default function Gang() {
       )}
 
       {you && (
-        <Card title="💰 Treasury">
+        <Card title=" Treasury">
           <div className="grid sm:grid-cols-2 gap-3">
             <form onSubmit={e => { e.preventDefault(); act('deposit', { amount: parseInt(depAmount, 10) }); }}>
               <label className="text-[10px] uppercase text-ink-100/55">Deposit</label>
@@ -408,7 +408,7 @@ export default function Gang() {
         </div>
       </Card>
 
-      {you && <Card title="💬 Gang chat"><GangChat gangId={g.id} you={you} /></Card>}
+      {you && <Card title=" Gang chat"><GangChat gangId={g.id} you={you} /></Card>}
     </div>
   );
 }

@@ -106,7 +106,7 @@ export default function GunStore() {
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title={`🔫 Smokey's Gun Emporium — ${data.cityName}`} subtitle="Walk in armed, walk out armoured. Equip what you own from your profile.">
+      <Card title={` Smokey's Gun Emporium — ${data.cityName}`} subtitle="Walk in armed, walk out armoured. Equip what you own from your profile.">
         <div className="flex flex-wrap gap-2 items-center text-xs">
           <select value={makerFilter} onChange={e => setMakerFilter(e.target.value)}>
             <option value="all">All manufacturers</option>
@@ -148,7 +148,7 @@ export default function GunStore() {
         );
       })}
 
-      <Card title="🦺 Armour">
+      <Card title=" Armour">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.armours.map(a => (
             <div key={a.id} className={`rounded-lg p-3 border bg-ink-950/40 ${a.locked ? 'opacity-60 border-ink-100/5' : 'border-ink-100/10'}`}>
@@ -164,7 +164,7 @@ export default function GunStore() {
         </div>
       </Card>
 
-      <Card title="🔋 Ammo"
+      <Card title=" Ammo"
         subtitle={`Surplus rounds buy back at ${Math.round((data.ammoSellBackPct || 0.5) * 100)}% of base — useful for clearing stock you no longer need.`}>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {data.ammo.map(a => <AmmoCard key={a.id} a={a} character={character} buy={buy} sell={sellAmmo} busy={busy} />)}

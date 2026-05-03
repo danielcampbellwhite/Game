@@ -7,12 +7,12 @@ import { fmt } from '../components/Money.jsx';
 import { sfx, scheduleRouletteTicks, isSfxOn, setSfxOn } from '../lib/sfx.js';
 
 const TABS = [
-  { key: 'roulette',  label: '🎡 Roulette' },
-  { key: 'blackjack', label: '🃏 Blackjack' },
-  { key: 'slots',     label: '🎰 Slots' },
+  { key: 'roulette',  label: ' Roulette' },
+  { key: 'blackjack', label: ' Blackjack' },
+  { key: 'slots',     label: ' Slots' },
 ];
 
-// ─────── Roulette wheel + spin animation ────────────────────────────
+//  Roulette wheel + spin animation 
 
 // European single-zero wheel order, 0 at top going clockwise.
 const WHEEL_ORDER = [
@@ -135,7 +135,7 @@ function Roulette() {
           {last.error
             ? <p className="text-blood-400 text-sm">{last.error}</p>
             : <p className={`text-sm ${last.won ? 'text-money-400' : 'text-blood-400'}`}>
-                Landed on <b>{last.number} {last.color}</b> — {last.won ? `🎉 won ${fmt(last.payout)}` : `lost ${fmt(amount)}`}
+                Landed on <b>{last.number} {last.color}</b> — {last.won ? ` won ${fmt(last.payout)}` : `lost ${fmt(amount)}`}
               </p>}
         </div>
       )}
@@ -144,8 +144,8 @@ function Roulette() {
         <div className="text-xs uppercase text-ink-100/60">Bet on</div>
         <div className="grid grid-cols-3 gap-2">
           {[
-            ['red', '🔴 Red', '1:1'],
-            ['black', '⚫ Black', '1:1'],
+            ['red', ' Red', '1:1'],
+            ['black', ' Black', '1:1'],
             ['odd', 'Odd', '1:1'],
             ['even', 'Even', '1:1'],
             ['low', '1–18', '1:1'],
@@ -182,9 +182,9 @@ function Roulette() {
   );
 }
 
-// ─────── Slots — spinning reel animation ────────────────────────────
+//  Slots — spinning reel animation 
 
-const SLOT_EMOJI_POOL = ['🍒','🍋','🍊','🍇','🔔','7️⃣'];
+const SLOT_EMOJI_POOL = ['','','','','','7️⃣'];
 
 function SlotReel({ symbol, spinning }) {
   return (
@@ -200,7 +200,7 @@ function SlotReel({ symbol, spinning }) {
 function Slots() {
   const { character, refresh } = useGame();
   const [amount, setAmount] = useState(50);
-  const [reels, setReels] = useState(['🍒','🍋','🍊']);
+  const [reels, setReels] = useState(['','','']);
   const [reelSpin, setReelSpin] = useState([false, false, false]);
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState(null);
@@ -268,7 +268,7 @@ function Slots() {
       </div>
       {last && !busy && !last.error && (
         <p className={`text-sm ${last.won ? 'text-money-400 font-semibold' : 'text-blood-400'}`}>
-          {last.won ? `🎉 JACKPOT — ${fmt(last.payout)}!` : `Lost ${fmt(amount)}`}
+          {last.won ? ` JACKPOT — ${fmt(last.payout)}!` : `Lost ${fmt(amount)}`}
         </p>
       )}
       {last?.error && <p className="text-blood-400 text-xs">{last.error}</p>}
@@ -279,15 +279,15 @@ function Slots() {
         </button>
       </div>
       <p className="text-[11px] text-ink-100/45">
-        Three of a kind: 🍒 ×5 · 🍋 ×8 · 🍊 ×12 · 🍇 ×25 · 🔔 ×75 · 7️⃣ ×250
+        Three of a kind:  ×5 ·  ×8 ·  ×12 ·  ×25 ·  ×75 · 7️⃣ ×250
       </p>
     </div>
   );
 }
 
-// ─────── Blackjack — animated cards ─────────────────────────────────
+//  Blackjack — animated cards 
 
-const HIDDEN_CARD = '🂠';
+const HIDDEN_CARD = '';
 
 // Card slot with a "deal" flip-in animation.
 function BlackjackCard({ value, idx }) {
@@ -479,7 +479,7 @@ function Blackjack() {
           </div>
           {showResultText && serverHand.message && (
             <p className={`text-sm font-semibold ${resultColor}`}>
-              {serverHand.result === 'won' || serverHand.result === 'blackjack' ? '🎉 ' : ''}
+              {serverHand.result === 'won' || serverHand.result === 'blackjack' ? ' ' : ''}
               {serverHand.message}
             </p>
           )}
@@ -508,7 +508,7 @@ function Blackjack() {
   );
 }
 
-// ─────── Page ───────────────────────────────────────────────────────
+//  Page 
 
 function SoundToggle() {
   const [on, setOn] = useState(isSfxOn());
@@ -524,7 +524,7 @@ function SoundToggle() {
       aria-label={on ? 'Mute sound effects' : 'Unmute sound effects'}
       title={on ? 'Mute sound effects' : 'Unmute sound effects'}
       className="btn btn-ghost text-xs">
-      {on ? '🔊 Sound on' : '🔈 Muted'}
+      {on ? ' Sound on' : ' Muted'}
     </button>
   );
 }
@@ -533,7 +533,7 @@ export default function Casino() {
   const [tab, setTab] = useState('roulette');
   return (
     <div className="space-y-4">
-      <Card title="🎰 The Lucky Crown Casino"
+      <Card title=" The Lucky Crown Casino"
         subtitle="Roulette spins, blackjack hands, and slot pulls. The house always wins, but tonight could be different."
         right={<SoundToggle />}>
         <div className="flex gap-2">

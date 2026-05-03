@@ -75,7 +75,7 @@ export default function NewCharacter() {
               <input value={name} onChange={e => setName(e.target.value)} maxLength={32}
                 placeholder="The new boss" className="flex-1" autoFocus />
               <button type="button" onClick={rollName} disabled={rolling} className="btn btn-ghost text-xs whitespace-nowrap">
-                {rolling ? '…' : '🎲 Random'}
+                {rolling ? '…' : 'Random'}
               </button>
             </div>
           </div>

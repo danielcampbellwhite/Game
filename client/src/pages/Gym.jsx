@@ -46,7 +46,7 @@ export default function Gym() {
       const perm = Object.entries(r.permanentGains || {})
         .map(([s, v]) => `+${v} ${s.toUpperCase()} (PERMANENT!)`).join(', ');
       setMsg(perm
-        ? `🎉 ${machine.name}: ${summary} · ${perm}`
+        ? ` ${machine.name}: ${summary} · ${perm}`
         : `${machine.name}: ${summary}`);
       await refresh(); await load();
     } catch (e) { setMsg(e.message); }
@@ -56,7 +56,7 @@ export default function Gym() {
   if (!data) return null;
   return (
     <div className="space-y-4">
-      <Card title="🏋️ Iron Foundry Gym" subtitle="Temporary buffs decay 1 point per hour. Keep training and you'll also slowly grow your base stats permanently — until you hit the cap, after which it's just temp buffs.">
+      <Card title=" Iron Foundry Gym" subtitle="Temporary buffs decay 1 point per hour. Keep training and you'll also slowly grow your base stats permanently — until you hit the cap, after which it's just temp buffs.">
         <BuffStrip buffs={data.buffs} />
         <div className="mt-3 pt-3 border-t border-ink-100/10">
           <div className="text-[10px] uppercase text-ink-100/55 mb-2">Permanent stat progress (next +1)</div>

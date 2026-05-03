@@ -1,7 +1,7 @@
 import { db } from '../db.js';
 import { weaponById, applyMods, vehicleById, applyVehicleMods, isVehicleModified } from '../data.js';
 
-// ── Weapon instance helpers ─────────────────────────────────────────
+//  Weapon instance helpers 
 
 export function loadWeaponInstance(id) {
   if (id == null) return null;
@@ -58,7 +58,7 @@ export function returnOneToWeaponStack(charId, baseItemId) {
   `).run(charId, baseItemId);
 }
 
-// ── Vehicle helpers ─────────────────────────────────────────────────
+//  Vehicle helpers 
 
 export function loadVehicleRow(id) {
   return db.prepare('SELECT * FROM vehicles_owned WHERE id = ?').get(id);

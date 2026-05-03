@@ -39,7 +39,7 @@ export default function OcInviteModal() {
           <div className="text-4xl">{invite.crime?.emoji}</div>
           <div className="min-w-0">
             <div className="font-display text-xl">{invite.crime?.name}</div>
-            <div className="text-[10px] uppercase tracking-wide text-money-400">🎯 Heist invite</div>
+            <div className="text-[10px] uppercase tracking-wide text-money-400"> Heist invite</div>
           </div>
         </div>
         <p className="text-xs text-ink-100/65">

@@ -9,10 +9,10 @@ import Timer from '../components/Timer.jsx';
 
 function StatusPill({ trade }) {
   if (trade.status === 'pending')
-    return <span className="text-[10px] uppercase text-yellow-400">● pending</span>;
+    return <span className="text-[10px] uppercase text-yellow-400"> pending</span>;
   if (trade.status === 'active')
-    return <span className="text-[10px] uppercase text-money-400">● active</span>;
-  return <span className="text-[10px] uppercase text-ink-100/45">● {trade.status}</span>;
+    return <span className="text-[10px] uppercase text-money-400"> active</span>;
+  return <span className="text-[10px] uppercase text-ink-100/45"> {trade.status}</span>;
 }
 
 function TradeRow({ trade, character }) {
@@ -57,7 +57,7 @@ export default function Trades() {
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
-      <Card title="🤝 Trades"
+      <Card title=" Trades"
         subtitle="Active and pending direct trades. Initiate a new one from any player's profile.">
         {msg && <p className="text-xs text-blood-400">{msg}</p>}
       </Card>

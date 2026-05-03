@@ -5,7 +5,7 @@ import { cityById } from '../data.js';
 
 const router = Router();
 
-// ── Tunables ───────────────────────────────────────────────────────────
+//  Tunables 
 const MAX_ACTIVE_PER_PLAYER = 3;
 const LISTING_TTL_MS        = 7 * 24 * 60 * 60 * 1000; // 7 days
 const TITLE_MIN = 3;
@@ -18,16 +18,16 @@ const RATE_MAX  = 40;
 // Values are stored as-is; emoji + label are rendered client-side from
 // this same list (kept in sync via the GET /categories surface).
 export const CATEGORIES = [
-  { id: 'protection',   emoji: '🛡️', label: 'Protection' },
-  { id: 'driver',       emoji: '🚗', label: 'Driver' },
-  { id: 'mechanic',     emoji: '🔧', label: 'Mechanic' },
-  { id: 'hacker',       emoji: '💻', label: 'Hacker' },
-  { id: 'medic',        emoji: '🩹', label: 'Medic' },
-  { id: 'lookout',      emoji: '👁️', label: 'Lookout' },
-  { id: 'muscle',       emoji: '🤜', label: 'Muscle' },
-  { id: 'investigator', emoji: '🕵️', label: 'Investigator' },
-  { id: 'tutor',        emoji: '🎓', label: 'Tutor' },
-  { id: 'other',        emoji: '📦', label: 'Other' },
+  { id: 'protection',   emoji: '', label: 'Protection' },
+  { id: 'driver',       emoji: '', label: 'Driver' },
+  { id: 'mechanic',     emoji: '', label: 'Mechanic' },
+  { id: 'hacker',       emoji: '', label: 'Hacker' },
+  { id: 'medic',        emoji: '', label: 'Medic' },
+  { id: 'lookout',      emoji: '', label: 'Lookout' },
+  { id: 'muscle',       emoji: '', label: 'Muscle' },
+  { id: 'investigator', emoji: '', label: 'Investigator' },
+  { id: 'tutor',        emoji: '', label: 'Tutor' },
+  { id: 'other',        emoji: '', label: 'Other' },
 ];
 const CATEGORY_IDS = new Set(CATEGORIES.map(c => c.id));
 
@@ -39,7 +39,7 @@ function pruneExpired(now) {
 
 function decorate(row, posterById) {
   const p = posterById.get(row.poster_id);
-  const meta = CATEGORIES.find(c => c.id === row.category) || { emoji: '📦', label: row.category };
+  const meta = CATEGORIES.find(c => c.id === row.category) || { emoji: '', label: row.category };
   return {
     id: row.id,
     title: row.title,

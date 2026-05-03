@@ -11,10 +11,10 @@ import { writeLog } from '../services/log.js';
 
 const router = Router();
 
-// ── Constants ──────────────────────────────────────────────────────────
+//  Constants 
 const SELLABLE_KINDS = new Set(['misc', 'weapon', 'armour', 'ammo', 'drug']);
 
-// ── Helpers ────────────────────────────────────────────────────────────
+//  Helpers 
 function emptyOffer() { return { items: [], cash: 0 }; }
 function parseOffer(json) {
   try {
@@ -26,11 +26,11 @@ function parseOffer(json) {
   } catch { return emptyOffer(); }
 }
 function lookupItem(kind, itemId) {
-  if (kind === 'misc')   { const m = miscItemById(itemId);   return m ? { name: m.name, emoji: m.emoji || '📦' } : null; }
-  if (kind === 'weapon') { const w = weaponById(itemId);     return w ? { name: w.name, emoji: '🔫' } : null; }
-  if (kind === 'armour') { const a = armourById(itemId);     return a ? { name: a.name, emoji: '🦺' } : null; }
-  if (kind === 'ammo')   { const a = ammoById(itemId);       return a ? { name: a.name, emoji: '🔋' } : null; }
-  if (kind === 'drug')   { const d = drugById(itemId);       return d ? { name: d.name, emoji: '💊' } : null; }
+  if (kind === 'misc')   { const m = miscItemById(itemId);   return m ? { name: m.name, emoji: m.emoji || '' } : null; }
+  if (kind === 'weapon') { const w = weaponById(itemId);     return w ? { name: w.name, emoji: '' } : null; }
+  if (kind === 'armour') { const a = armourById(itemId);     return a ? { name: a.name, emoji: '' } : null; }
+  if (kind === 'ammo')   { const a = ammoById(itemId);       return a ? { name: a.name, emoji: '' } : null; }
+  if (kind === 'drug')   { const d = drugById(itemId);       return d ? { name: d.name, emoji: '' } : null; }
   return null;
 }
 function decorateOfferItems(items) {
@@ -41,7 +41,7 @@ function decorateOfferItems(items) {
       item_id: i.item_id,
       qty: i.qty,
       name: meta?.name || i.item_id,
-      emoji: meta?.emoji || '📦',
+      emoji: meta?.emoji || '',
     };
   });
 }
@@ -234,7 +234,7 @@ function executeSwap(trade) {
   }
 }
 
-// ── Routes ─────────────────────────────────────────────────────────────
+//  Routes 
 
 // GET /api/trades — list active and recent trades for the caller.
 router.get('/', requireAuth, requireCharacter, (req, res) => {
@@ -456,14 +456,14 @@ router.post('/:id/complete', requireAuth, requireCharacter, (req, res) => {
   writeLog(
     trade.initiator_id,
     'trade',
-    `🤝 Trade with ${loadCharacterById(trade.recipient_id)?.name} completed. Cash in: £${result.initReceivesCash.toLocaleString()} · paid £${(parseOffer(trade.initiator_offer_json).cash - result.initTax).toLocaleString()}+£${result.initTax} tax.`,
+    ` Trade with ${loadCharacterById(trade.recipient_id)?.name} completed. Cash in: £${result.initReceivesCash.toLocaleString()} · paid £${(parseOffer(trade.initiator_offer_json).cash - result.initTax).toLocaleString()}+£${result.initTax} tax.`,
     { trade_id: id },
     true,
   );
   writeLog(
     trade.recipient_id,
     'trade',
-    `🤝 Trade with ${loadCharacterById(trade.initiator_id)?.name} completed. Cash in: £${result.recipReceivesCash.toLocaleString()} · paid £${(parseOffer(trade.recipient_offer_json).cash - result.recipTax).toLocaleString()}+£${result.recipTax} tax.`,
+    ` Trade with ${loadCharacterById(trade.initiator_id)?.name} completed. Cash in: £${result.recipReceivesCash.toLocaleString()} · paid £${(parseOffer(trade.recipient_offer_json).cash - result.recipTax).toLocaleString()}+£${result.recipTax} tax.`,
     { trade_id: id },
     true,
   );

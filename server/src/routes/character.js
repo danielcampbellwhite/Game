@@ -41,8 +41,8 @@ router.get('/options', async (_req, res) => {
   res.json({ cities: CITIES, avatars: AVATARS, factions: FACTIONS, genders: GENDERS });
 });
 
-// ── Gangster name generator ─────────────────────────────────────────
-// Used by the character-creation form's "🎲 Random" button. Pulls
+//  Gangster name generator 
+// Used by the character-creation form's " Random" button. Pulls
 // first/last from gender-aware buckets and occasionally adds a colourful
 // nickname (e.g. "Vinny 'The Knife' Marino"). No DB hit; pure RNG over
 // curated lists, so collisions with existing names are possible — the

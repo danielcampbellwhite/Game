@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import worldTopology from 'world-atlas/countries-110m.json';
 
-// ── City coordinates ──────────────────────────────────────────────────
+//  City coordinates 
 // Real lat/lng for each game city. react-simple-maps takes [lng, lat]
 // (GeoJSON convention) — note the order in the Marker props below.
 const CITY_COORDS = {
@@ -216,7 +216,7 @@ export default function WorldMap({ cities, you }) {
             {hoverCity.players} player{hoverCity.players === 1 ? '' : 's'}
           </div>
           {(hoverCity.online || 0) > 0 && (
-            <div className="text-[11px] text-money-400 tabular-nums">● {hoverCity.online} online</div>
+            <div className="text-[11px] text-money-400 tabular-nums"> {hoverCity.online} online</div>
           )}
           {hoverCity.id === you && (
             <div className="text-[10px] text-yellow-400 uppercase tracking-wide mt-0.5">You are here</div>

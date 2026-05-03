@@ -19,7 +19,7 @@ export default function ChopShop() {
     setBusy(`${where}-${v.id}`); setMsg(null);
     try {
       const r = await api.post('/chopshop/sell', { id: v.id, where });
-      if (r.busted) setMsg(`🚨 STING — lost the ${v.maker} ${v.name} and jailed ${r.jailMin}m!`);
+      if (r.busted) setMsg(` STING — lost the ${v.maker} ${v.name} and jailed ${r.jailMin}m!`);
       else setMsg(`Sold ${v.maker} ${v.name} for ${fmt(r.payout)}${r.dirty ? ' (dirty)' : ''}.`);
       await refresh(); await load();
     } catch (e) { setMsg(e.message); }
@@ -30,7 +30,7 @@ export default function ChopShop() {
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title="🪓 The Chop Shop & Black-Market Dealer" subtitle={`Operating out of ${data.cityName}.`}>
+      <Card title=" The Chop Shop & Black-Market Dealer" subtitle={`Operating out of ${data.cityName}.`}>
         <p className="text-[11px] text-ink-100/60">
           Two ways to move metal. <span className="text-money-400">Chop shop</span> turns it into parts —
           fast, no fuss, but you get just <b>{(data.chopRate * 100).toFixed(0)}%</b> of book.
@@ -49,8 +49,8 @@ export default function ChopShop() {
               <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-medium">{v.maker} {v.name}{v.is_modified && <span className="ml-2 text-[10px] uppercase text-yellow-300">🔧 modded</span>}</div>
-                    <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.book)} · {v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'}</div>
+                    <div className="font-medium">{v.maker} {v.name}{v.is_modified && <span className="ml-2 text-[10px] uppercase text-yellow-300"> modded</span>}</div>
+                    <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.book)} · {v.acquired_via === 'stolen' ? ' stolen' : ' bought'}</div>
                     <div className="text-[10px] text-ink-100/40">{v.cityName}</div>
                   </div>
                 </div>

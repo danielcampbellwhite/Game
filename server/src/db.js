@@ -253,7 +253,7 @@ export function initDb() {
       PRIMARY KEY (char_id, mission_id)
     );
 
-    -- ── Multiplayer: direct messages ──────────────────────────────────
+    --  Multiplayer: direct messages 
     -- One row per pair of players who have ever chatted. char_lo < char_hi
     -- so the pair has a single canonical row regardless of which side
     -- spoke first. last_message_at lets us order the thread list cheaply.
@@ -292,7 +292,7 @@ export function initDb() {
       PRIMARY KEY (blocker_id, blocked_id)
     );
 
-    -- ── Multiplayer: PvP knockouts ────────────────────────────────────
+    --  Multiplayer: PvP knockouts 
     -- Challenge handshake: attacker creates a row; target accepts/declines
     -- inside expires_at or it's auto-expired. status transitions:
     --   pending → accepted (deleted on conversion to pvp_fights row)
@@ -330,7 +330,7 @@ export function initDb() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_pvp_fights_attacker ON pvp_fights(attacker_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_pvp_fights_target   ON pvp_fights(target_id);
 
-    -- ── Multiplayer: gangs ────────────────────────────────────────────
+    --  Multiplayer: gangs 
     CREATE TABLE IF NOT EXISTS gangs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT    NOT NULL,
@@ -381,7 +381,7 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_gang_messages_gang ON gang_messages(gang_id, id);
 
-    -- ── Turf wars ─────────────────────────────────────────────────────
+    --  Turf wars 
     -- gang_a is the declarer, gang_b the target. Active while winner_id
     -- IS NULL AND ended_at IS NULL. Lazy-expired by services/gangs.js
     -- whenever any war-aware route runs.
@@ -410,7 +410,7 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_turf_holds_gang ON turf_holds(gang_id);
 
-    -- ── Organised crimes (heists) ────────────────────────────────────
+    --  Organised crimes (heists) 
     -- Plan rows live until the heist is executed or cancelled. status:
     --   recruiting → ready (all roles filled) → complete | failed | cancelled
     CREATE TABLE IF NOT EXISTS oc_plans (
@@ -447,7 +447,7 @@ export function initDb() {
       executed_at      INTEGER NOT NULL
     );
 
-    -- ── Weapon customisation (Phase 2) ──────────────────────────────
+    --  Weapon customisation (Phase 2) 
     -- One row per modified weapon. Stock (unmodified) weapons stay in
     -- the aggregated inventory rows; the first time a player installs
     -- a mod we promote one instance out of the stack into a row here.
@@ -461,7 +461,7 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_weapon_instances_owner ON weapon_instances(owner_id);
 
-    -- ── Player-run Businesses (Phase 1: shops) ────────────────────
+    --  Player-run Businesses (Phase 1: shops) 
     -- Player-founded businesses, city-locked. Two-pot cash model:
     -- outgoings_cash pays rent, sales_cash accumulates revenue.
     -- 30% of founding cost auto-seeds the outgoings pot. Owner tops up
@@ -494,7 +494,7 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_pbiz_owner ON businesses_player(owner_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_pbiz_name_unique ON businesses_player(name COLLATE NOCASE);
 
-    -- ── Player ↔ player trades ───────────────────────────────────────
+    --  Player ↔ player trades 
     -- A direct trade between two players. Each side has an offer JSON
     -- with shape { items: [{kind, item_id, qty}], cash }.
     -- Confirmation is per-side; editing your own offer auto-resets BOTH
@@ -551,7 +551,7 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_listing_biz ON shop_listings(business_id);
 
-    -- ── Player-driven Job Board ──────────────────────────────────────
+    --  Player-driven Job Board 
     -- A newspaper-style classifieds board, scoped to one city per ad.
     -- The server holds no contract / no escrow — it's pure connective
     -- tissue: posters describe the gig + price; takers reach out via DM
@@ -699,7 +699,7 @@ export function initDb() {
     db.prepare("DELETE FROM inventory WHERE kind = 'weapon' AND item_id = ?").run(oldId);
   }
 
-  // ── City roster cull (2026-05): 34 → 14 ────────────────────────────
+  //  City roster cull (2026-05): 34 → 14 
   // Any data row still pointing at a dropped city gets remapped to its
   // nearest geographic / thematic kept neighbour so we don't orphan
   // characters, vehicles, properties, businesses, gangs, jobs, or

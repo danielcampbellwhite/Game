@@ -35,7 +35,7 @@ export default function University() {
   if (!data) return null;
   return (
     <div className="space-y-4">
-      <Card title="🏛️ Northbridge University" subtitle="Permanent intelligence gains. Cost scales with your current INT — each point gets dearer as you climb. Real-world course durations apply: short courses every few hours, top tutors only every few days.">
+      <Card title=" Northbridge University" subtitle="Permanent intelligence gains. Cost scales with your current INT — each point gets dearer as you climb. Real-world course durations apply: short courses every few hours, top tutors only every few days.">
         <div className="text-xs flex items-baseline gap-4">
           <div>
             <span className="text-[10px] uppercase text-ink-100/50">Intelligence</span>
@@ -51,7 +51,7 @@ export default function University() {
 
       {data.maxed && (
         <Card>
-          <p className="text-sm text-money-400 font-medium">🎓 You've graduated — for good.</p>
+          <p className="text-sm text-money-400 font-medium"> You've graduated — for good.</p>
           <p className="text-xs text-ink-100/60 mt-1">
             You're at the intelligence cap of {data.cap}. Every job, crime bonus and gameplay
             requirement is already covered — there's nothing left for the university to sell you.

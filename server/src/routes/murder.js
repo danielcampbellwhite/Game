@@ -15,7 +15,7 @@ import { softDeath } from '../services/death.js';
 
 const router = Router();
 
-// ── Tunables ────────────────────────────────────────────────────────
+//  Tunables 
 const ATTEMPT_ENERGY_COST = 25;
 const ATTACKER_COOLDOWN_MS = 24 * 60 * 60 * 1000;   // 24h between attempts
 const TARGET_COOLDOWN_MS   = 24 * 60 * 60 * 1000;   // 24h immunity per target
@@ -36,7 +36,7 @@ const targetCooldowns   = new Map();    // targetId   -> last targeted ms
 
 function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-// ── Hit + damage rolls ──────────────────────────────────────────────
+//  Hit + damage rolls 
 function hitChance(attackerEff, targetEff) {
   const base = 0.35;
   const accFactor = (attackerEff.intelligence + attackerEff.speed) / 200;
@@ -53,7 +53,7 @@ function damageRoll(weapon, target, targetEff) {
   return Math.max(1, Math.floor(baseDmg * variance) - reduce);
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
+//  Helpers 
 function ammoOnHand(charId, ammoType) {
   if (!ammoType) return 0;
   return db.prepare("SELECT qty FROM inventory WHERE char_id = ? AND kind = 'ammo' AND item_id = ?")
@@ -82,7 +82,7 @@ function eligibility(attacker, target, now) {
   return null;
 }
 
-// ── GET /api/murder/info?target_id=X ────────────────────────────────
+//  GET /api/murder/info?target_id=X 
 router.get('/info', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const targetId = parseInt(req.query.target_id, 10);
@@ -120,7 +120,7 @@ router.get('/info', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── POST /api/murder/attempt ────────────────────────────────────────
+//  POST /api/murder/attempt 
 //
 // Body: { target_id, bullets? } — bullets only used for ranged weapons.
 // Melee/fists always make a single attack.
@@ -192,7 +192,7 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   else if (damageRatio >= 0.2)               outcome = 'wound';
   else                                        outcome = 'miss';
 
-  // ── Apply target effects per outcome ─────────────────────────────
+  //  Apply target effects per outcome 
   let cashTaken = 0;
   let cashPct = 0;
   let succession = null;
@@ -208,8 +208,8 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     ch.reputation += 20 + (target.level || 1) * 2;
     bumpMission(ch, 'combat_win', 1, { enemy: `murder_${target.id}` });
 
-    writeLog(ch.id, 'pvp', `☠️ You murdered ${target.name} — took £${cashTaken.toLocaleString()}.`, { target: target.id, outcome, cashTaken }, true);
-    writeLog(target.id, 'pvp', `☠️ Murdered by ${ch.name} — lost everything, must roll a new character.`, { attacker: ch.id, outcome }, true);
+    writeLog(ch.id, 'pvp', ` You murdered ${target.name} — took £${cashTaken.toLocaleString()}.`, { target: target.id, outcome, cashTaken }, true);
+    writeLog(target.id, 'pvp', ` Murdered by ${ch.name} — lost everything, must roll a new character.`, { attacker: ch.id, outcome }, true);
 
     // Save attacker, then soft-death the target. The killer already
     // pulled their cut of cash above; softDeath wipes the rest.
@@ -244,10 +244,10 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     ch.reputation += xp / 5;
 
     writeLog(ch.id, 'pvp',
-      `🩸 You ${outcome === 'severe_wound' ? 'critically ' : ''}wounded ${target.name} — took £${cashTaken.toLocaleString()}.`,
+      ` You ${outcome === 'severe_wound' ? 'critically ' : ''}wounded ${target.name} — took £${cashTaken.toLocaleString()}.`,
       { target: target.id, outcome, cashTaken }, true);
     writeLog(target.id, 'pvp',
-      `🩸 You were ${outcome === 'severe_wound' ? 'critically wounded' : 'wounded'} by ${ch.name}. Hospitalised ${hospitalMins}m.`,
+      ` You were ${outcome === 'severe_wound' ? 'critically wounded' : 'wounded'} by ${ch.name}. Hospitalised ${hospitalMins}m.`,
       { attacker: ch.id, outcome }, true);
 
     saveCharacter(ch);
@@ -263,8 +263,8 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   }
 
   // Miss / fail — no jail, just bullets and energy spent.
-  writeLog(ch.id, 'pvp', `❌ Failed murder attempt on ${target.name} — they got away.`, { target: target.id, outcome }, true);
-  writeLog(target.id, 'pvp', `⚠ ${ch.name} tried to kill you and missed.`, { attacker: ch.id, outcome }, true);
+  writeLog(ch.id, 'pvp', ` Failed murder attempt on ${target.name} — they got away.`, { target: target.id, outcome }, true);
+  writeLog(target.id, 'pvp', ` ${ch.name} tried to kill you and missed.`, { attacker: ch.id, outcome }, true);
   saveCharacter(ch);
   sendEvent(target.id, 'pvp.attacked', { by: { id: ch.id, name: ch.name }, outcome: 'miss' });
   return res.json({

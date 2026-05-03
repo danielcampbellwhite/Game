@@ -166,9 +166,9 @@ export default function Crimes() {
           {last.error ? <p className="text-blood-400 text-sm">{last.error}</p> : (
             <div className="text-sm">
               {last.result.success && last.result.vehicle && (
-                <p className="text-money-400">✅ {last.crime.name} succeeded — drove off in a <b>{last.result.vehicle.maker} {last.result.vehicle.name}</b> (Tier {last.result.vehicle.tier}, book {fmt(last.result.vehicle.bookPrice)}). +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>
+                <p className="text-money-400"> {last.crime.name} succeeded — drove off in a <b>{last.result.vehicle.maker} {last.result.vehicle.name}</b> (Tier {last.result.vehicle.tier}, book {fmt(last.result.vehicle.bookPrice)}). +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>
               )}
-              {last.result.success && !last.result.vehicle && <p className="text-money-400">✅ {last.crime.name} succeeded — +{fmt(last.result.payout)} {last.result.dirty ? '(dirty)' : ''} +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>}
+              {last.result.success && !last.result.vehicle && <p className="text-money-400"> {last.crime.name} succeeded — +{fmt(last.result.payout)} {last.result.dirty ? '(dirty)' : ''} +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>}
               {last.result.success === false && last.result.jailed && <p className="text-yellow-400">Caught — jailed {last.result.jail_min} min.</p>}
               {last.result.success === false && last.result.hospital && <p className="text-blue-300">Hurt — hospital {last.result.hosp_min} min.</p>}
               {last.result.success === false && last.result.escaped && <p className="text-ink-100/70">Failed but escaped clean.</p>}

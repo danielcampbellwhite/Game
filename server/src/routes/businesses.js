@@ -147,7 +147,7 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
     writeLog(
       ch.id,
       'business',
-      `🚨 RAID at "${businessName}" — business confiscated, lost £${earnings.toLocaleString()} pending${jailMin ? `, jailed ${jailMin}m` : ''}.`,
+      ` RAID at "${businessName}" — business confiscated, lost £${earnings.toLocaleString()} pending${jailMin ? `, jailed ${jailMin}m` : ''}.`,
       { biz: row.id, lost: earnings, jailMin, confiscated: true },
       true,
     );

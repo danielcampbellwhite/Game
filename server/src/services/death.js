@@ -84,8 +84,8 @@ export function softDeath(loser, killerName = null) {
     lid,
     'system',
     killerName
-      ? `☠️ Murdered by ${killerName}. Roll a new character to continue.`
-      : `☠️ Killed in action. Roll a new character to continue.`,
+      ? ` Murdered by ${killerName}. Roll a new character to continue.`
+      : ` Killed in action. Roll a new character to continue.`,
     { killer: killerName },
     true,
   );

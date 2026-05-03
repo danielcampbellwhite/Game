@@ -54,7 +54,7 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
   const illegalTemplates = templates.filter(t => t.illegal);
 
   return (
-    <Card title="🏗️ Found a new business" subtitle={`In ${currentCityName} — fly elsewhere to build there instead.`}>
+    <Card title=" Found a new business" subtitle={`In ${currentCityName} — fly elsewhere to build there instead.`}>
       <p className="text-[11px] text-ink-100/50 mb-3">
         Pick a template, name your venture, and tune the sliders.{' '}
         <b>Scale</b> raises cost and hourly income.{' '}
@@ -160,7 +160,7 @@ export default function Businesses() {
     setBusy(key); setMsg(null);
     try {
       const r = await api.post(`/businesses/${path}`, body);
-      if (r.raided) setMsg(`🚨 RAID! Business confiscated · lost ${fmt(r.lost)} pending${r.jailMin ? ` · jailed ${r.jailMin}m` : ''}`);
+      if (r.raided) setMsg(` RAID! Business confiscated · lost ${fmt(r.lost)} pending${r.jailMin ? ` · jailed ${r.jailMin}m` : ''}`);
       else if (r.earnings) setMsg(`Collected ${fmt(r.earnings)}`);
       else if (r.clean) setMsg(`Cleaned ${fmt(r.clean)} (lost ${fmt(r.lost)})`);
       else setMsg('Done.');
@@ -219,7 +219,7 @@ export default function Businesses() {
         />
       )}
 
-      <Card title="🧼 Money Laundering" subtitle={`Dirty cash: ${fmt(character.dirty_cash)}`}>
+      <Card title=" Money Laundering" subtitle={`Dirty cash: ${fmt(character.dirty_cash)}`}>
         {data.owned.some(b => b.launderRate) ? (
           <>
             <div className="flex gap-2">
@@ -242,12 +242,12 @@ export default function Businesses() {
               Found one of these via <b>+ Found new</b> above. Each has a different "clean rate" — the % of every pound that survives the wash:
             </p>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-ink-100/65 mt-1">
-              <li>🧼 Car Wash — <b className="text-money-400">70%</b></li>
-              <li>🎰 Underground Casino — <b className="text-money-400">74%</b></li>
-              <li>💃 Strip Club — <b className="text-money-400">78%</b></li>
-              <li>🏘️ Real Estate Office — <b className="text-money-400">78%</b></li>
-              <li>🪩 Nightclub — <b className="text-money-400">82%</b></li>
-              <li>🏨 Luxury Hotel — <b className="text-money-400">86%</b></li>
+              <li> Car Wash — <b className="text-money-400">70%</b></li>
+              <li> Underground Casino — <b className="text-money-400">74%</b></li>
+              <li> Strip Club — <b className="text-money-400">78%</b></li>
+              <li> Real Estate Office — <b className="text-money-400">78%</b></li>
+              <li> Nightclub — <b className="text-money-400">82%</b></li>
+              <li> Luxury Hotel — <b className="text-money-400">86%</b></li>
             </ul>
             <p className="text-[11px] text-ink-100/45">
               Higher tiers clean more efficiently but cost a lot more upfront. The £25k Car Wash is the cheapest entry into laundering.

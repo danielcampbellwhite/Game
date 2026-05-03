@@ -10,7 +10,7 @@ import { bumpMission } from '../services/missions.js';
 
 const router = Router();
 
-// ── Tunables ────────────────────────────────────────────────────────
+//  Tunables 
 const ENERGY_COST = 10;
 const ATTACKER_COOLDOWN_MS = 60 * 60 * 1000;       // 1h between robberies (per attacker)
 const TARGET_COOLDOWN_MS   = 30 * 60 * 1000;       // 30m immunity (per target)
@@ -62,7 +62,7 @@ function eligibility(attacker, target, now) {
   return null;
 }
 
-// ── GET /api/rob/info?target_id=X ───────────────────────────────────
+//  GET /api/rob/info?target_id=X 
 router.get('/info', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const targetId = parseInt(req.query.target_id, 10);
@@ -86,7 +86,7 @@ router.get('/info', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── POST /api/rob/attempt ──────────────────────────────────────────
+//  POST /api/rob/attempt 
 router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const targetId = parseInt(req.body?.target_id, 10);
@@ -128,10 +128,10 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     bumpMission(ch, 'rob_player', 1);
 
     // Attacker log: never mentions reveal status, never mentions jail.
-    writeLog(ch.id, 'pvp', `🤜 You robbed ${target.name} for £${cashTaken.toLocaleString()}.`,
+    writeLog(ch.id, 'pvp', ` You robbed ${target.name} for £${cashTaken.toLocaleString()}.`,
       { target: target.id, cashTaken }, true);
     writeLog(target.id, 'pvp',
-      `🤜 You were robbed by ${robberLabel} — lost £${cashTaken.toLocaleString()}, hospitalised ${hospitalMins}m.`,
+      ` You were robbed by ${robberLabel} — lost £${cashTaken.toLocaleString()}, hospitalised ${hospitalMins}m.`,
       { attacker_id: revealed ? ch.id : null, cashTaken, revealed }, true);
 
     saveCharacter(ch);
@@ -152,10 +152,10 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   const revealed = Math.random() < REVEAL_PCT;
   const robberLabel = revealed ? ch.name : 'an unknown assailant';
 
-  writeLog(ch.id, 'pvp', `❌ ${target.name} fought you off — got away with nothing.`,
+  writeLog(ch.id, 'pvp', ` ${target.name} fought you off — got away with nothing.`,
     { target: target.id }, true);
   writeLog(target.id, 'pvp',
-    `🛡 You fought off a robbery attempt by ${robberLabel}.`,
+    ` You fought off a robbery attempt by ${robberLabel}.`,
     { attacker_id: revealed ? ch.id : null, revealed }, true);
 
   saveCharacter(ch);

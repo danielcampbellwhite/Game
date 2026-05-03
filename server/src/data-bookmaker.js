@@ -61,7 +61,7 @@ const generators = {
     const weights = [rand(1, 3), rand(1, 3), rand(0.6, 1.4)];
     const { probs, odds } = generateOdds(weights);
     return {
-      sport: '⚽ Football',
+      sport: ' Football',
       name: `${home} vs ${away}`,
       description: 'Premier league fixture. Bet on the result.',
       outcomes: [
@@ -78,7 +78,7 @@ const generators = {
     const weights = [rand(0.8, 2.4), rand(0.8, 2.4)];
     const { probs, odds } = generateOdds(weights, 1.06);
     return {
-      sport: '🥊 Boxing',
+      sport: ' Boxing',
       name: `${a} vs ${b}`,
       description: '12-round championship fight.',
       outcomes: [
@@ -94,7 +94,7 @@ const generators = {
     const weights = horses.map(() => rand(0.3, 2.5));
     const { probs, odds } = generateOdds(weights, 1.12);
     return {
-      sport: '🐎 Horse Racing',
+      sport: ' Horse Racing',
       name: `${horses[0].split(' ').slice(-1)[0]} Stakes`,
       description: '6-horse field at Ascot.',
       outcomes: horses.map((h, i) => ({
@@ -109,7 +109,7 @@ const generators = {
     const weights = drivers.map(() => rand(0.5, 2.0));
     const { probs, odds } = generateOdds(weights, 1.10);
     return {
-      sport: '🏁 Formula 1',
+      sport: ' Formula 1',
       name: `Grand Prix — ${pickN(['Monaco','Silverstone','Monza','Spa','Suzuka'], 1)[0]}`,
       description: 'Race winner — top 5 contenders.',
       outcomes: drivers.map((d, i) => ({

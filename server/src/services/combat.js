@@ -74,7 +74,7 @@ export function runRound(fight, player, enemy, playerMoveId) {
   const round = fight.round;
   const playerEntry = { round, who: 'player', move: playerMove.id, name: playerMove.name };
 
-  // ── Player turn ────────────────────────────────────────────────────────
+  //  Player turn 
   const playerOutcome = rollMoveOutcome({
     move: playerMove,
     attackerStr: eff.strength,
@@ -86,7 +86,7 @@ export function runRound(fight, player, enemy, playerMoveId) {
 
   if (playerOutcome.kind === 'skip') {
     playerEntry.kind = 'block';
-    playerEntry.text = `🛡️ You brace for impact.`;
+    playerEntry.text = ` You brace for impact.`;
   } else if (playerOutcome.kind === 'miss') {
     playerEntry.kind = 'miss';
     playerEntry.text = `${playerMove.emoji} You threw a ${playerMove.name.toLowerCase()} — missed.`;
@@ -98,7 +98,7 @@ export function runRound(fight, player, enemy, playerMoveId) {
     playerEntry.kind = playerOutcome.crit ? 'crit' : 'hit';
     playerEntry.dmg = playerOutcome.dmg;
     playerEntry.text = playerOutcome.crit
-      ? `💥 CRITICAL ${playerMove.name}! ${enemy.name} takes ${playerOutcome.dmg}.`
+      ? ` CRITICAL ${playerMove.name}! ${enemy.name} takes ${playerOutcome.dmg}.`
       : `${playerMove.emoji} Your ${playerMove.name.toLowerCase()} lands for ${playerOutcome.dmg}.`;
   }
   log.push(playerEntry);
@@ -109,7 +109,7 @@ export function runRound(fight, player, enemy, playerMoveId) {
     return { roundEntries: [playerEntry], ended: true, playerWon: true };
   }
 
-  // ── Enemy turn ─────────────────────────────────────────────────────────
+  //  Enemy turn 
   const enemyMove = pickEnemyMove();
   const enemyEntry = { round, who: 'enemy', move: enemyMove.id, name: enemyMove.name };
   const enemyOutcome = rollMoveOutcome({
@@ -133,7 +133,7 @@ export function runRound(fight, player, enemy, playerMoveId) {
     enemyEntry.dmg = enemyOutcome.dmg;
     const blockTag = playerMove.defensive ? ' (blocked)' : '';
     enemyEntry.text = enemyOutcome.crit
-      ? `💥 ${enemy.name} lands a CRITICAL ${enemyMove.name.toLowerCase()}${blockTag} for ${enemyOutcome.dmg}.`
+      ? ` ${enemy.name} lands a CRITICAL ${enemyMove.name.toLowerCase()}${blockTag} for ${enemyOutcome.dmg}.`
       : `${enemyMove.emoji} ${enemy.name}'s ${enemyMove.name.toLowerCase()}${blockTag} hits you for ${enemyOutcome.dmg}.`;
   }
   log.push(enemyEntry);

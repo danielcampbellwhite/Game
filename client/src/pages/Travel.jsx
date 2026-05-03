@@ -27,7 +27,7 @@ export default function Travel() {
 
   if (!data) return null;
   return (
-    <Card title="✈️ Travel" subtitle={`Currently in: ${data.currentCity}`}>
+    <Card title=" Travel" subtitle={`Currently in: ${data.currentCity}`}>
       {msg && <p className="text-xs text-blood-400 mb-3">{msg}</p>}
       <div className="grid md:grid-cols-2 gap-3">
         {data.flights.map(f => (

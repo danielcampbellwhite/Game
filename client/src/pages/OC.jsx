@@ -49,7 +49,7 @@ export default function OC() {
       {msg && <Card><p className="text-xs text-blood-400">{msg}</p></Card>}
 
       {data.plans.length > 0 && (
-        <Card title="🗂 Your active plans">
+        <Card title=" Your active plans">
           <ul className="space-y-2">
             {data.plans.map(p => (
               <li key={p.id}>
@@ -69,7 +69,7 @@ export default function OC() {
         </Card>
       )}
 
-      <Card title="🎯 Heist catalogue" subtitle="Bigger crews, bigger scores. Roles gate by stat — recruit a balanced crew or it goes sideways.">
+      <Card title=" Heist catalogue" subtitle="Bigger crews, bigger scores. Roles gate by stat — recruit a balanced crew or it goes sideways.">
         <div className="grid sm:grid-cols-2 gap-3">
           {data.crimes.map(c => {
             const tooLow = (character?.level ?? 0) < c.levelGate;

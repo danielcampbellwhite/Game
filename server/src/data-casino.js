@@ -16,11 +16,11 @@ export const ROULETTE_PAYOUTS = {
 
 // Slots — 3 reels, weighted symbols, three-of-a-kind payouts only.
 export const SLOT_SYMBOLS = [
-  { id: 'cherry', emoji: '🍒', weight: 30, mul: 5    },
-  { id: 'lemon',  emoji: '🍋', weight: 25, mul: 8    },
-  { id: 'orange', emoji: '🍊', weight: 20, mul: 12   },
-  { id: 'grape',  emoji: '🍇', weight: 15, mul: 25   },
-  { id: 'bell',   emoji: '🔔', weight: 8,  mul: 75   },
+  { id: 'cherry', emoji: '', weight: 30, mul: 5    },
+  { id: 'lemon',  emoji: '', weight: 25, mul: 8    },
+  { id: 'orange', emoji: '', weight: 20, mul: 12   },
+  { id: 'grape',  emoji: '', weight: 15, mul: 25   },
+  { id: 'bell',   emoji: '', weight: 8,  mul: 75   },
   { id: 'seven',  emoji: '7️⃣', weight: 2,  mul: 250  },
 ];
 const SLOT_TOTAL = SLOT_SYMBOLS.reduce((a, s) => a + s.weight, 0);

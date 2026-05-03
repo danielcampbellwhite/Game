@@ -111,9 +111,10 @@ function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={toggle}
-        className="relative px-2 py-1 rounded-md hover:bg-ink-800/60 transition text-[11px] uppercase tracking-wide text-ink-100/75"
-        aria-label="Notifications">
-        Alerts
+        className="relative px-2 py-1 rounded-md hover:bg-ink-800/60 transition text-base text-ink-100/75"
+        aria-label="Notifications"
+        title="Notifications">
+        🔔
         {data.unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
             {data.unreadCount > 99 ? '99+' : data.unreadCount}
@@ -174,6 +175,7 @@ export default function Nav() {
   const { logout, character } = useGame();
   const nav = useNavigate();
   const [dmUnread, setDmUnread] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   // Prev DM count for chiming on increases. null on mount so the initial
   // fetch doesn't ring; SSE deltas after that *should* ring.
   const prevDmRef = useRef(null);
@@ -202,8 +204,10 @@ export default function Nav() {
   const lockedOut  = inHospital || inJail;
 
   const linkClass = (isActive) => {
-    if (lockedOut) return 'shrink-0 px-3 py-1.5 text-xs rounded-md text-ink-100/30 cursor-not-allowed line-through';
-    return `shrink-0 px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${isActive ? 'bg-blood-700 text-white' : 'hover:bg-ink-800/70 text-ink-100/85'}`;
+    // No `shrink-0` — on mobile (flex column) we want each link to fill
+    // the row; on desktop the wrap layout collapses naturally.
+    if (lockedOut) return 'px-3 py-2 md:py-1.5 text-xs rounded-md text-ink-100/30 cursor-not-allowed line-through';
+    return `px-3 py-2 md:py-1.5 text-xs rounded-md whitespace-nowrap ${isActive ? 'bg-blood-700 text-white' : 'hover:bg-ink-800/70 text-ink-100/85'}`;
   };
   const onClickGuard = (e) => { if (lockedOut) e.preventDefault(); };
 
@@ -217,7 +221,7 @@ export default function Nav() {
 
   return (
     <header className="border-b border-ink-100/10 bg-ink-950/85 backdrop-blur">
-      {/* ── Top bar — branding + character chip + actions ─────── */}
+      {/*  Top bar — branding + character chip + actions  */}
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3">
         <Link to="/" className="font-display text-xl sm:text-2xl text-blood-500 shrink-0" aria-label="Home">
           MAFIA LIFE
@@ -232,13 +236,14 @@ export default function Nav() {
           </div>
         </Link>
 
-        <div className="ml-auto flex items-center gap-2 text-xs">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 text-xs">
           <Link
             to="/messages"
             onClick={onClickGuard}
             aria-label="Messages"
-            className={`relative px-2 py-1 rounded-md transition text-[11px] uppercase tracking-wide ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-ink-100/75'}`}>
-            Msgs
+            title="Messages"
+            className={`relative px-2 py-1 rounded-md transition text-base ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-ink-100/75'}`}>
+            ✉
             {dmUnread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
                 {dmUnread > 99 ? '99+' : dmUnread}
@@ -253,11 +258,20 @@ export default function Nav() {
               Admin
             </Link>
           )}
-          <button className="btn btn-ghost text-xs" onClick={() => { logout(); nav('/login'); }}>Sign out</button>
+          {/* Mobile-only hamburger — toggles the nav-links drawer below.
+              Desktop (md+) renders the nav links inline so this is hidden. */}
+          <button
+            type="button"
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(o => !o)}
+            className="md:hidden px-2 py-1 rounded-md hover:bg-ink-800/60 text-ink-100/85 text-lg leading-none">
+            ☰
+          </button>
         </div>
       </div>
 
-      {/* ── Condensed stats strip ─────────────────────────────── */}
+      {/*  Condensed stats strip  */}
       {character && (
         <div className="border-t border-ink-100/10 bg-ink-900/40">
           <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-1 text-xs">
@@ -283,20 +297,22 @@ export default function Nav() {
         </div>
       )}
 
-      {/* ── Nav links ─────────────────────────────────────────── */}
-      {/* Mobile: single horizontal scroll line; desktop: wrap & justify. */}
-      <nav className="border-t border-ink-100/10 overflow-x-auto scrollbar"
-        style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex items-center gap-1 md:flex-wrap whitespace-nowrap">
+      {/*  Nav links
+          Desktop (md+): horizontal row, always visible.
+          Mobile (<md): hidden by default, opens as a vertical drawer
+          when the ☰ button up top is tapped. */}
+      <nav className={`border-t border-ink-100/10 ${menuOpen ? 'block' : 'hidden'} md:block`}>
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-1">
           {(inHospital || inJail) && (
             <NavLink to={inHospital ? '/hospital' : '/jail'}
+              onClick={() => setMenuOpen(false)}
               className={`shrink-0 px-3 py-1.5 text-xs rounded-md text-white animate-pulse whitespace-nowrap ${inHospital ? 'bg-blue-600' : 'bg-yellow-600'}`}>
               {inHospital ? 'Hospital — locked' : 'Jail — locked'}
             </NavLink>
           )}
           {links.map(l => (
             <NavLink key={l.to} to={l.to}
-              onClick={onClickGuard}
+              onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
               className={({isActive}) => linkClass(isActive)}>
               {l.label}
             </NavLink>

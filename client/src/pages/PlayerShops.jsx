@@ -100,7 +100,7 @@ export default function PlayerShops() {
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      <Card title={`🏪 Player Shops — ${data.cityName}`}
+      <Card title={` Player Shops — ${data.cityName}`}
         subtitle="Player-run businesses operating in this city. Buy in person, or set up your own.">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-ink-100/55">{data.shops.length} shop{data.shops.length === 1 ? '' : 's'} in this city</span>

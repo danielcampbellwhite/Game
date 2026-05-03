@@ -67,7 +67,7 @@ function StockCard({ stock, holding, qty, setQty, onTrade, busy }) {
         <div className="text-right">
           <div className="font-display text-xl tabular-nums">£{stock.price.toFixed(2)}</div>
           <div className={`text-[11px] tabular-nums ${up ? 'text-money-400' : 'text-blood-400'}`}>
-            {up ? '▲' : '▼'} {up ? '+' : ''}{delta.toFixed(2)} ({up ? '+' : ''}{deltaPct.toFixed(2)}%) <span className="text-ink-100/40 ml-1">12h</span>
+            {up ? '' : ''} {up ? '+' : ''}{delta.toFixed(2)} ({up ? '+' : ''}{deltaPct.toFixed(2)}%) <span className="text-ink-100/40 ml-1">12h</span>
           </div>
         </div>
       </div>
@@ -126,7 +126,7 @@ export default function Stocks() {
 
   return (
     <div className="space-y-3">
-      <Card title="📈 Stock Broker" subtitle="Live tickers — past 12 hours of price action shown. Markets tick every 30 minutes.">
+      <Card title=" Stock Broker" subtitle="Live tickers — past 12 hours of price action shown. Markets tick every 30 minutes.">
         {msg && <p className="text-xs text-blood-400">{msg}</p>}
       </Card>
 

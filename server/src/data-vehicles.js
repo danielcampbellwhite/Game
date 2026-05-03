@@ -18,7 +18,7 @@
 //   7 — hypercar / ultra-lux    (~£320k–£3.6M)
 
 export const VEHICLES = [
-  // ── Tier 1 ─────────────────────────────────────────────
+  //  Tier 1 
   { id: 'toyota_yaris',       name: 'Yaris',            maker: 'Toyota',      tier: 1, bookPrice: 5000  },
   { id: 'hyundai_accent',     name: 'Accent',           maker: 'Hyundai',     tier: 1, bookPrice: 5500  },
   { id: 'kia_rio',            name: 'Rio',              maker: 'Kia',         tier: 1, bookPrice: 6000  },
@@ -36,7 +36,7 @@ export const VEHICLES = [
   { id: 'dacia_sandero',      name: 'Sandero',          maker: 'Dacia',       tier: 1, bookPrice: 9500  },
   { id: 'old_corolla',        name: 'Corolla (E120)',   maker: 'Toyota',      tier: 1, bookPrice: 4200  },
 
-  // ── Tier 2 ─────────────────────────────────────────────
+  //  Tier 2 
   { id: 'honda_civic',        name: 'Civic',            maker: 'Honda',       tier: 2, bookPrice: 24000 },
   { id: 'toyota_camry',       name: 'Camry',            maker: 'Toyota',      tier: 2, bookPrice: 28000 },
   { id: 'toyota_corolla',     name: 'Corolla',          maker: 'Toyota',      tier: 2, bookPrice: 22000 },
@@ -55,7 +55,7 @@ export const VEHICLES = [
   { id: 'ford_fusion',        name: 'Fusion',           maker: 'Ford',        tier: 2, bookPrice: 26000 },
   { id: 'hyundai_sonata',     name: 'Sonata',           maker: 'Hyundai',     tier: 2, bookPrice: 28000 },
 
-  // ── Tier 3 ─────────────────────────────────────────────
+  //  Tier 3 
   { id: 'vw_gti',             name: 'Golf GTI',         maker: 'Volkswagen',  tier: 3, bookPrice: 36000 },
   { id: 'civic_type_r',       name: 'Civic Type R',     maker: 'Honda',       tier: 3, bookPrice: 45000 },
   { id: 'subaru_wrx',         name: 'WRX',              maker: 'Subaru',      tier: 3, bookPrice: 38000 },
@@ -71,7 +71,7 @@ export const VEHICLES = [
   { id: 'subaru_outback',     name: 'Outback',          maker: 'Subaru',      tier: 3, bookPrice: 38000 },
   { id: 'vw_tiguan',          name: 'Tiguan',           maker: 'Volkswagen',  tier: 3, bookPrice: 35000 },
 
-  // ── Tier 4 ─────────────────────────────────────────────
+  //  Tier 4 
   { id: 'bmw_3series',        name: '3 Series',         maker: 'BMW',         tier: 4, bookPrice: 52000 },
   { id: 'mercedes_cclass',    name: 'C-Class',          maker: 'Mercedes',    tier: 4, bookPrice: 55000 },
   { id: 'audi_a4',            name: 'A4',               maker: 'Audi',        tier: 4, bookPrice: 50000 },
@@ -87,7 +87,7 @@ export const VEHICLES = [
   { id: 'subaru_sti',         name: 'WRX STI',          maker: 'Subaru',      tier: 4, bookPrice: 50000 },
   { id: 'tesla_model3p',      name: 'Model 3 Performance', maker: 'Tesla',    tier: 4, bookPrice: 55000 },
 
-  // ── Tier 5 ─────────────────────────────────────────────
+  //  Tier 5 
   { id: 'bmw_5series',        name: '5 Series',         maker: 'BMW',         tier: 5, bookPrice: 85000  },
   { id: 'mercedes_eclass',    name: 'E-Class',          maker: 'Mercedes',    tier: 5, bookPrice: 88000  },
   { id: 'audi_a6',            name: 'A6',               maker: 'Audi',        tier: 5, bookPrice: 82000  },
@@ -104,7 +104,7 @@ export const VEHICLES = [
   { id: 'maserati_ghibli',    name: 'Ghibli Trofeo',    maker: 'Maserati',    tier: 5, bookPrice: 120000 },
   { id: 'lexus_lc500',        name: 'LC 500',           maker: 'Lexus',       tier: 5, bookPrice: 105000 },
 
-  // ── Tier 6 ─────────────────────────────────────────────
+  //  Tier 6 
   { id: 'porsche_911_turbo_s',name: '911 Turbo S',      maker: 'Porsche',     tier: 6, bookPrice: 230000 },
   { id: 'audi_r8',            name: 'R8',               maker: 'Audi',        tier: 6, bookPrice: 200000 },
   { id: 'mercedes_amg_gt',    name: 'AMG GT',           maker: 'Mercedes',    tier: 6, bookPrice: 180000 },
@@ -120,7 +120,7 @@ export const VEHICLES = [
   { id: 'porsche_taycan_ts',  name: 'Taycan Turbo S',   maker: 'Porsche',     tier: 6, bookPrice: 200000 },
   { id: 'bentley_continental',name: 'Continental GT',   maker: 'Bentley',     tier: 6, bookPrice: 250000 },
 
-  // ── Tier 7 ─────────────────────────────────────────────
+  //  Tier 7 
   { id: 'ferrari_488_pista',  name: '488 Pista',        maker: 'Ferrari',     tier: 7, bookPrice: 400000  },
   { id: 'ferrari_sf90',       name: 'SF90 Stradale',    maker: 'Ferrari',     tier: 7, bookPrice: 525000  },
   { id: 'lambo_aventador_svj',name: 'Aventador SVJ',    maker: 'Lamborghini', tier: 7, bookPrice: 580000  },
@@ -137,7 +137,7 @@ export const VEHICLES = [
   { id: 'ferrari_laferrari',  name: 'LaFerrari',        maker: 'Ferrari',     tier: 7, bookPrice: 1500000 },
   { id: 'amg_one',            name: 'AMG One',          maker: 'Mercedes',    tier: 7, bookPrice: 2700000 },
 
-  // ── Expansion ─────────────────────────────────────────────────────
+  //  Expansion 
   // Tier 1 — beaters
   { id: 'lada_riva',          name: 'Riva',             maker: 'Lada',        tier: 1, bookPrice: 1200   },
   { id: 'fiat_panda',         name: 'Panda',            maker: 'Fiat',        tier: 1, bookPrice: 1800   },
@@ -196,7 +196,7 @@ export const TIER_NAMES = {
   7: 'Hypercar',
 };
 
-export const tierEmoji = (tier) => (tier >= 6 ? '🏎️' : tier >= 4 ? '🚘' : tier === 3 ? '🚙' : '🚗');
+export const tierEmoji = (tier) => (tier >= 6 ? '' : tier >= 4 ? '' : tier === 3 ? '' : '');
 
 // Random vehicle from a given tier — used by GTA crime success.
 export function rollVehicleFromTier(tier) {

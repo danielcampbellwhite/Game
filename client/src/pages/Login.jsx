@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useGame } from '../context/GameContext.jsx';
 import { useNavigate } from 'react-router-dom';
 
-// ─── Showcase content ────────────────────────────────────────────────
+//  Showcase content 
 //
 // Edit these arrays as features ship. STATS is the at-a-glance numbers
 // strip; SHOWCASE is the screenshot grid. Each card optionally accepts
@@ -24,22 +24,22 @@ const STATS = [
 ];
 
 const SHOWCASE = [
-  { img: null, emoji: '🌍', bg: 'from-blue-900/40 to-ink-950',
+  { img: null, emoji: '', bg: 'from-blue-900/40 to-ink-950',
     title: 'A real-time world map',
     blurb: '18 cities. Live player counts. Drag and zoom to scout the action.' },
-  { img: null, emoji: '🎰', bg: 'from-yellow-900/40 to-ink-950',
+  { img: null, emoji: '', bg: 'from-yellow-900/40 to-ink-950',
     title: 'Casino & vice',
     blurb: 'Roulette, blackjack, slots, sports books, scratchers — with sound effects.' },
-  { img: null, emoji: '⚔️', bg: 'from-blood-900/50 to-ink-950',
+  { img: null, emoji: '', bg: 'from-blood-900/50 to-ink-950',
     title: 'Real-time PvP',
     blurb: 'Challenge anyone in your city. Knockout for sport, murder during a war.' },
-  { img: null, emoji: '🤝', bg: 'from-emerald-900/30 to-ink-950',
+  { img: null, emoji: '', bg: 'from-emerald-900/30 to-ink-950',
     title: 'Gangs, wars, heists',
     blurb: 'Found a gang at level 10. Wage 24h turf wars. Plan multi-role heists.' },
-  { img: null, emoji: '🚗', bg: 'from-violet-900/30 to-ink-950',
+  { img: null, emoji: '', bg: 'from-violet-900/30 to-ink-950',
     title: '105 vehicles to own',
     blurb: 'From beaters to hypercars. Buy clean, steal them, or chop them up.' },
-  { img: null, emoji: '🔫', bg: 'from-orange-900/30 to-ink-950',
+  { img: null, emoji: '', bg: 'from-orange-900/30 to-ink-950',
     title: 'A real arsenal',
     blurb: 'Glocks, SIGs, M4s, Barretts — with matching ammo and tiered armour.' },
 ];

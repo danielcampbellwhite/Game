@@ -113,7 +113,7 @@ export default function Player() {
             </div>
             <div className="text-[11px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
               {p.online
-                ? <span className="text-money-400">● online now</span>
+                ? <span className="text-money-400"> online now</span>
                 : <span>last seen {timeAgo(p.last_active_at)}</span>}
               <FactionBadge faction={p.faction} />
               {p.same_city && (
@@ -192,8 +192,8 @@ export default function Player() {
         )}
       </Card>
 
-      {/* ── Loadout ──────────────────────────────────────────────── */}
-      <Card title="🎒 Loadout" subtitle="What this player is carrying right now.">
+      {/*  Loadout  */}
+      <Card title=" Loadout" subtitle="What this player is carrying right now.">
         <div className="grid sm:grid-cols-2 gap-4 text-sm">
           <div>
             <div className="text-[10px] uppercase text-ink-100/50">Weapon</div>
@@ -228,8 +228,8 @@ export default function Player() {
         </div>
       </Card>
 
-      {/* ── Garage ──────────────────────────────────────────────── */}
-      <Card title={`🚗 Garage · ${data.garage?.length || 0}`}
+      {/*  Garage  */}
+      <Card title={` Garage · ${data.garage?.length || 0}`}
         subtitle={data.garage?.length ? 'Cars they own across the world.' : 'No cars on file.'}>
         {data.garage?.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-3">
@@ -238,7 +238,7 @@ export default function Player() {
                 <div className="font-medium">{v.maker} {v.name}</div>
                 <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.bookPrice)}</div>
                 <div className="text-[10px] text-ink-100/40 mt-0.5">
-                  {v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'} · in {v.cityName}
+                  {v.acquired_via === 'stolen' ? ' stolen' : ' bought'} · in {v.cityName}
                 </div>
               </div>
             ))}
@@ -246,8 +246,8 @@ export default function Player() {
         )}
       </Card>
 
-      {/* ── Properties ──────────────────────────────────────────── */}
-      <Card title={`🏘️ Properties · ${data.properties?.length || 0}`}
+      {/*  Properties  */}
+      <Card title={` Properties · ${data.properties?.length || 0}`}
         subtitle={data.properties?.length ? 'Real estate they hold the deeds to.' : 'No registered property.'}>
         {data.properties?.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-3">
@@ -264,8 +264,8 @@ export default function Player() {
         )}
       </Card>
 
-      {/* ── Businesses ──────────────────────────────────────────── */}
-      <Card title={`🏗️ Businesses · ${data.businesses?.length || 0}`}
+      {/*  Businesses  */}
+      <Card title={` Businesses · ${data.businesses?.length || 0}`}
         subtitle={data.businesses?.length ? 'Fronts and operations on the books.' : 'No businesses on the books.'}>
         {data.businesses?.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-3">

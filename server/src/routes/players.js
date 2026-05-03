@@ -59,7 +59,7 @@ router.get('/:id', requireAuth, requireCharacter, (req, res) => {
     'SELECT 1 FROM dm_blocks WHERE blocker_id = ? AND blocked_id = ?'
   ).get(req.character.id, target.id);
 
-  // ── Public loadout / holdings ────────────────────────────────────
+  //  Public loadout / holdings 
   // What this player has equipped right now, plus rounds remaining for
   // the equipped weapon's ammo type. Mirrors /api/inventory for self.
   const w = target.equipped_weapon ? weaponById(target.equipped_weapon) : null;

@@ -82,7 +82,7 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
     ch.jail_until = Date.now() + jailMin * 60 * 1000;
     ch.jail_reason = `Walked into a sting trying to fence a ${v.maker} ${v.name} at the black-market dealer — sentenced to ${jailMin} minutes.`;
     db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id); // car seized
-    writeLog(ch.id, 'chop', `🚨 STING at the black-market dealer — lost the ${v.maker} ${v.name} and jailed ${jailMin}m.`, { vehicle: v.id });
+    writeLog(ch.id, 'chop', ` STING at the black-market dealer — lost the ${v.maker} ${v.name} and jailed ${jailMin}m.`, { vehicle: v.id });
     saveCharacter(ch);
     return res.json({ ok: true, busted: true, jailMin, character: publicCharacter(ch) });
   }

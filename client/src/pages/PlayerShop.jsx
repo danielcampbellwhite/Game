@@ -44,13 +44,13 @@ function ListingRow({ listing, isOwner, onBuy, onDelist, busy, sameCity }) {
 }
 
 const KIND_LABEL = {
-  misc:             '🛒 Item',
-  weapon:           '🔫 Weapon',
-  armour:           '🦺 Armour',
-  ammo:             '🔋 Ammo',
-  drug:             '💊 Drug',
-  weapon_instance:  '🔧 Modded weapon',
-  vehicle:          '🚗 Vehicle',
+  misc:             ' Item',
+  weapon:           ' Weapon',
+  armour:           ' Armour',
+  ammo:             ' Ammo',
+  drug:             ' Drug',
+  weapon_instance:  ' Modded weapon',
+  vehicle:          ' Vehicle',
 };
 
 // Per-instance items have qty=1 always and are referenced by instance_id
@@ -134,7 +134,7 @@ function ListFromInventoryForm({ shop, onListed }) {
         {item?.sub && <div className="text-[10px] text-ink-100/55 mt-1">{item.sub}</div>}
         {item?.equipped && (
           <div className="text-[11px] text-yellow-300 mt-1">
-            ⚠ This is currently equipped. Listing it will unequip you.
+             This is currently equipped. Listing it will unequip you.
           </div>
         )}
       </div>
@@ -300,7 +300,7 @@ function EditShopForm({ shop, onSaved }) {
           {busy ? 'Saving…' : 'Save changes'}
         </button>
         {savedAt > 0 && Date.now() - savedAt < 4000 && !dirty && (
-          <span className="text-[11px] text-money-400">✓ Saved.</span>
+          <span className="text-[11px] text-money-400"> Saved.</span>
         )}
       </div>
     </form>
@@ -333,7 +333,7 @@ function OwnerPanel({ shop, onChanged }) {
     <Card title="Owner controls" subtitle="Edit your shop, withdraw earnings, or close down."
       right={
         <button onClick={() => setShowEdit(s => !s)} className="btn btn-ghost text-xs">
-          {showEdit ? 'Hide edit form' : '✎ Edit shop'}
+          {showEdit ? 'Hide edit form' : ' Edit shop'}
         </button>
       }>
       {showEdit && (
@@ -420,7 +420,7 @@ export default function PlayerShop() {
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      <Card title={`🏪 ${shop.name}`}
+      <Card title={` ${shop.name}`}
         subtitle={`In ${shop.cityName}${shop.owner ? ` · run by ${shop.owner.avatar} ${shop.owner.name}` : ''}`}
         right={<Link to="/shops" className="btn btn-ghost text-xs">← All shops</Link>}>
         {shop.description && (

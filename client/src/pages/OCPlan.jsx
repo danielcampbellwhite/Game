@@ -32,7 +32,7 @@ function PlayerSearch({ onPick }) {
                 <span className="text-xl mr-2">{p.avatar}</span>
                 <span className="text-sm font-medium">{p.name}</span>
                 <span className="text-[10px] text-ink-100/50 ml-2">L{p.level} · {p.rank}</span>
-                {p.online && <span className="text-[10px] text-money-400 ml-2">● online</span>}
+                {p.online && <span className="text-[10px] text-money-400 ml-2"> online</span>}
               </button>
             </li>
           ))}
@@ -123,7 +123,7 @@ export default function OCPlan() {
       {msg && <Card><p className="text-xs text-blood-400">{msg}</p></Card>}
 
       {result && (
-        <Card title={result.outcome === 'full' ? '🏆 Heist succeeded' : result.outcome === 'partial' ? '🎯 Partial success' : '💥 Heist busted'}>
+        <Card title={result.outcome === 'full' ? ' Heist succeeded' : result.outcome === 'partial' ? ' Partial success' : ' Heist busted'}>
           {result.outcome !== 'bust' ? (
             <div>
               <p className="text-sm text-money-400">Total payout: <span className="font-display text-lg">{fmt(result.payout_total)}</span></p>
@@ -141,7 +141,7 @@ export default function OCPlan() {
               <ul className="text-xs text-ink-100/75 mt-2 space-y-1">
                 {result.splits.map(s => (
                   <li key={s.char_id}>
-                    {s.name}: {s.jailed ? `🚓 jailed ${s.jailed}m` : s.hospital ? `🏥 hospital ${s.hospital}m` : '🏃 escaped'}
+                    {s.name}: {s.jailed ? ` jailed ${s.jailed}m` : s.hospital ? ` hospital ${s.hospital}m` : ' escaped'}
                   </li>
                 ))}
               </ul>
@@ -169,7 +169,7 @@ export default function OCPlan() {
           <div className="mt-4 flex flex-wrap gap-2">
             {isLeader && plan.ready && (
               <button disabled={busy === 'execute'} onClick={execute} className="btn btn-money text-xs">
-                {busy === 'execute' ? '…' : '🎬 Execute heist'}
+                {busy === 'execute' ? '…' : ' Execute heist'}
               </button>
             )}
             {isLeader && (

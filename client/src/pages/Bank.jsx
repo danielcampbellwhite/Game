@@ -37,7 +37,7 @@ export default function Bank() {
 
   return (
     <div className="space-y-4">
-      <Card title="🏦 Bank" subtitle={`Hourly interest on deposits: ${(info.interestRateHourly*100).toFixed(3)}%`}>
+      <Card title=" Bank" subtitle={`Hourly interest on deposits: ${(info.interestRateHourly*100).toFixed(3)}%`}>
         {msg && <p className="text-xs text-money-400 mb-3">{msg}</p>}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
@@ -57,7 +57,7 @@ export default function Bank() {
         </div>
       </Card>
 
-      <Card title="🏷️ Credit Profile" subtitle="Like a real-world credit score: built from your level, reputation, and net worth.">
+      <Card title=" Credit Profile" subtitle="Like a real-world credit score: built from your level, reputation, and net worth.">
         <div className="grid sm:grid-cols-3 gap-4 text-sm">
           <div>
             <div className="text-[10px] uppercase text-ink-100/50">Rating</div>

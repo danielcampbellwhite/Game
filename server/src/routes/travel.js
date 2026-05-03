@@ -80,7 +80,7 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
 
   if (busted) {
     // Caught at the gate — never made it onto the flight.
-    writeLog(ch.id, 'travel', `🚨 Customs seized your stash: ${seized}. Jailed ${bustJailMin} min.`, null, true);
+    writeLog(ch.id, 'travel', ` Customs seized your stash: ${seized}. Jailed ${bustJailMin} min.`, null, true);
   } else if (dur === 0) {
     ch.city = target.id;
     ch.travel_until = null;

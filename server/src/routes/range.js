@@ -47,7 +47,7 @@ router.post('/train', requireAuth, requireCharacter, requireFreeCharacter, (req,
   applyTrainingBuffs(ch, { accuracy: drill.buff });
   ch.happiness = Math.min(100, ch.happiness + 1);
 
-  writeLog(ch.id, 'training', `🎯 ${drill.name} — fired ${drill.ammo} rounds of ${weapon.ammoType}, +${drill.buff} accuracy.`, { drill: drill.id, ammo: drill.ammo });
+  writeLog(ch.id, 'training', ` ${drill.name} — fired ${drill.ammo} rounds of ${weapon.ammoType}, +${drill.buff} accuracy.`, { drill: drill.id, ammo: drill.ammo });
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch), buffs: buffSnapshot(ch) });
 });

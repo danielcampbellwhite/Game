@@ -5,7 +5,7 @@ import { writeLog } from './log.js';
 import { sendEvent } from './events.js';
 import { bumpMission } from './missions.js';
 
-// ── Plan/role helpers ──────────────────────────────────────────────────
+//  Plan/role helpers 
 
 export function loadPlan(id) {
   return db.prepare('SELECT * FROM oc_plans WHERE id = ?').get(id);
@@ -80,7 +80,7 @@ export function publicPlan(plan, viewerId = null, profileResolver = null) {
   };
 }
 
-// ── Plan lifecycle ─────────────────────────────────────────────────────
+//  Plan lifecycle 
 
 export function createPlan(leader, crimeId) {
   const crime = orgCrimeById(crimeId);
@@ -160,7 +160,7 @@ export function cancelPlan(plan) {
   return { ok: true };
 }
 
-// ── Execution ──────────────────────────────────────────────────────────
+//  Execution 
 //
 // Returns a result object describing everything that happened. Mutates
 // every participant's character row (cash, energy, xp, possible jail/
@@ -195,7 +195,7 @@ export function executePlan(plan) {
     participants.push({ char: ch, role: def });
   }
 
-  // ── Roll success ─────────────────────────────────────────────────────
+  //  Roll success 
   // Each participant contributes a competence ratio (their stat / role.min)
   // capped at 1.5. Crew score is the average. We then roll vs a 0.6
   // baseline plus crew score: combined < 1.0 → bust; 1.0–1.4 → partial; 1.4+ → full.
@@ -213,7 +213,7 @@ export function executePlan(plan) {
   else if (roll >= 1.0) outcome = 'partial';
   else                  outcome = 'bust';
 
-  // ── Apply energy & vitals ───────────────────────────────────────────
+  //  Apply energy & vitals 
   for (const p of participants) {
     p.char.energy = Math.max(0, p.char.energy - crime.energy);
   }
@@ -243,14 +243,14 @@ export function executePlan(plan) {
         p.char.jail_until = Date.now() + mins * 60 * 1000;
         p.char.jail_reason = `Caught running "${crime.name}" with the crew — sentenced to ${mins} minutes.`;
         splits.push({ char_id: p.char.id, name: p.char.name, role: p.role.id, jailed: mins });
-        writeLog(p.char.id, 'oc', `🚓 "${crime.name}" went sideways — jailed ${mins}m.`, { plan_id: plan.id }, true);
+        writeLog(p.char.id, 'oc', ` "${crime.name}" went sideways — jailed ${mins}m.`, { plan_id: plan.id }, true);
       } else if (c < risk.jail + risk.hosp) {
         const mins = Math.floor(risk.hospMin * (1 + Math.random() * 0.7));
         p.char.hospital_until = Date.now() + mins * 60 * 1000;
         p.char.health = Math.max(1, Math.floor(p.char.health * 0.3));
         p.char.hospital_reason = `Took a beating during the failed "${crime.name}" — admitted for ${mins} minutes.`;
         splits.push({ char_id: p.char.id, name: p.char.name, role: p.role.id, hospital: mins });
-        writeLog(p.char.id, 'oc', `🏥 Botched "${crime.name}" — hospital ${mins}m.`, { plan_id: plan.id }, true);
+        writeLog(p.char.id, 'oc', ` Botched "${crime.name}" — hospital ${mins}m.`, { plan_id: plan.id }, true);
       } else {
         splits.push({ char_id: p.char.id, name: p.char.name, role: p.role.id, escaped: true });
         writeLog(p.char.id, 'oc', `"${crime.name}" failed — slipped away clean but empty-handed.`, { plan_id: plan.id });

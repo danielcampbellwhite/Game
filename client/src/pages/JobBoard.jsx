@@ -169,7 +169,7 @@ export default function JobBoard() {
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      <Card title={`📋 The ${data.cityName} Daily — Classifieds`}
+      <Card title={` The ${data.cityName} Daily — Classifieds`}
         subtitle="A player-driven job board. Post what you offer or scan the columns for work."
         right={
           <button onClick={() => setShowForm(s => !s)} className="btn btn-primary text-xs">

@@ -104,7 +104,7 @@ router.post('/:threadId/read', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, read_up_to: upTo });
 });
 
-// ── Block list ─────────────────────────────────────────────────────────
+//  Block list 
 
 router.get('/blocks/list', requireAuth, requireCharacter, (req, res) => {
   const rows = db.prepare(`

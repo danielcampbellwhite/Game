@@ -169,7 +169,7 @@ export default function Gangs() {
         </Card>
       )}
 
-      <Card title="🏴 Gang directory" subtitle={`${data.gangs.length} gang${data.gangs.length === 1 ? '' : 's'} active`}>
+      <Card title=" Gang directory" subtitle={`${data.gangs.length} gang${data.gangs.length === 1 ? '' : 's'} active`}>
         {!data.gangs.length ? (
           <p className="text-sm text-ink-100/55">No gangs founded yet. Be the first.</p>
         ) : (

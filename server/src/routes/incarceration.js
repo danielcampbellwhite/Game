@@ -9,7 +9,7 @@ import { rankFor } from '../data.js';
 
 const router = Router();
 
-// ── Pricing ────────────────────────────────────────────────────────────
+//  Pricing 
 //
 // Mirrors the solo formulas in routes/jail.js + routes/hospital.js so
 // helping a friend lines up with what they'd pay themselves. Bail uses
@@ -46,7 +46,7 @@ function bustChanceFor(rescuer) {
 // table just for this.
 const bustAttempts = new Map();
 
-// ── Helpers ────────────────────────────────────────────────────────────
+//  Helpers 
 function callerLockedOut(ch) {
   const now = Date.now();
   if (ch.jail_until && ch.jail_until > now) return "You're in jail.";
@@ -80,7 +80,7 @@ function rowFor(target, now, mode) {
   };
 }
 
-// ── List ───────────────────────────────────────────────────────────────
+//  List 
 //
 // City-scoped: only players physically in the caller's current city.
 // You can't bail / bust / pay for someone halfway around the world.
@@ -113,7 +113,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── Bail (jail) ────────────────────────────────────────────────────────
+//  Bail (jail) 
 router.post('/:id/bail', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const targetId = parseInt(req.params.id, 10);
@@ -137,7 +137,7 @@ router.post('/:id/bail', requireAuth, requireCharacter, (req, res) => {
   target.jail_reason = null;
 
   writeLog(ch.id, 'jail', `Posted bail for ${target.name} — £${cost.toLocaleString()}.`);
-  writeLog(target.id, 'jail', `🤝 ${ch.name} posted bail for you — you walk free.`, null, true);
+  writeLog(target.id, 'jail', ` ${ch.name} posted bail for you — you walk free.`, null, true);
 
   saveCharacter(ch);
   saveCharacter(target);
@@ -146,7 +146,7 @@ router.post('/:id/bail', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, character: publicCharacter(ch), cost });
 });
 
-// ── Bust (jail) ────────────────────────────────────────────────────────
+//  Bust (jail) 
 router.post('/:id/bust', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const targetId = parseInt(req.params.id, 10);
@@ -176,8 +176,8 @@ router.post('/:id/bust', requireAuth, requireCharacter, (req, res) => {
   if (success) {
     target.jail_until = null;
     target.jail_reason = null;
-    writeLog(ch.id, 'jail', `🪓 Busted ${target.name} out of jail.`);
-    writeLog(target.id, 'jail', `🪓 ${ch.name} busted you out of jail — get gone.`, null, true);
+    writeLog(ch.id, 'jail', ` Busted ${target.name} out of jail.`);
+    writeLog(target.id, 'jail', ` ${ch.name} busted you out of jail — get gone.`, null, true);
     saveCharacter(target);
     sendEvent(target.id, 'incarceration.released', { by: ch.name, kind: 'bust' });
     return res.json({ ok: true, success: true, chance, character: publicCharacter(ch) });
@@ -187,7 +187,7 @@ router.post('/:id/bust', requireAuth, requireCharacter, (req, res) => {
   const sentenceS = BUST_FAIL_JAIL_MIN_S + Math.floor(Math.random() * (BUST_FAIL_JAIL_MAX_S - BUST_FAIL_JAIL_MIN_S + 1));
   ch.jail_until = now + sentenceS * 1000;
   ch.jail_reason = `Caught trying to bust ${target.name} out of jail.`;
-  writeLog(ch.id, 'jail', `🚓 Caught trying to bust ${target.name} out — jailed for ${sentenceS}s.`, null, true);
+  writeLog(ch.id, 'jail', ` Caught trying to bust ${target.name} out — jailed for ${sentenceS}s.`, null, true);
   writeLog(target.id, 'jail', `${ch.name} tried to bust you out and got nicked.`, null, true);
   saveCharacter(ch);
   sendEvent(target.id, 'incarceration.bust_failed', { by: ch.name });
@@ -195,7 +195,7 @@ router.post('/:id/bust', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, success: false, chance, character: publicCharacter(ch) });
 });
 
-// ── Pay hospital bill ──────────────────────────────────────────────────
+//  Pay hospital bill 
 router.post('/:id/pay-hospital', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const targetId = parseInt(req.params.id, 10);
@@ -220,7 +220,7 @@ router.post('/:id/pay-hospital', requireAuth, requireCharacter, (req, res) => {
   target.health = target.max_health;
 
   writeLog(ch.id, 'hospital', `Paid ${target.name}'s hospital bill — £${cost.toLocaleString()}.`);
-  writeLog(target.id, 'hospital', `🤝 ${ch.name} paid your hospital bill — discharged & patched up.`, null, true);
+  writeLog(target.id, 'hospital', ` ${ch.name} paid your hospital bill — discharged & patched up.`, null, true);
 
   saveCharacter(ch);
   saveCharacter(target);

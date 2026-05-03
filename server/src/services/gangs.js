@@ -1,7 +1,7 @@
 import { db } from '../db.js';
 import { loadCharacterById } from './character.js';
 
-// ── Tunables ───────────────────────────────────────────────────────────
+//  Tunables 
 export const FOUND_LEVEL_GATE = 10;
 export const NAME_MIN = 3;
 export const NAME_MAX = 32;
@@ -12,7 +12,7 @@ export const TITLE_MAX = 32;
 export const CHAT_MAX = 1500;
 export const CHAT_PAGE = 50;
 
-// ── War tunables ───────────────────────────────────────────────────────
+//  War tunables 
 export const WAR_DURATION_MS    = 24 * 60 * 60 * 1000;   // 24h
 export const WAR_REMATCH_MS     = 48 * 60 * 60 * 1000;   // 48h between same two gangs
 export const TURF_HOLD_MS       = 7  * 24 * 60 * 60 * 1000; // 7-day hold
@@ -20,7 +20,7 @@ export const SCORE_KO           = 1;
 export const SCORE_MURDER       = 5;
 export const TURF_CRIME_COOLDOWN_MUL = 0.8;              // -20% crime cooldown
 
-// ── Roles + permission helpers ─────────────────────────────────────────
+//  Roles + permission helpers 
 export const ROLES = ['recruit', 'soldier', 'officer', 'leader'];
 const ROLE_RANK = Object.fromEntries(ROLES.map((r, i) => [r, i]));
 function rankOf(role) { return ROLE_RANK[role] ?? -1; }
@@ -38,7 +38,7 @@ export function outranks(actorMembership, targetMembership) {
   return rankOf(actorMembership.role) > rankOf(targetMembership.role);
 }
 
-// ── Loading ────────────────────────────────────────────────────────────
+//  Loading 
 export function loadGang(gangId) {
   return db.prepare('SELECT * FROM gangs WHERE id = ?').get(gangId);
 }
@@ -68,7 +68,7 @@ export function loadMembers(gangId) {
   `).all(gangId);
 }
 
-// ── Founding ───────────────────────────────────────────────────────────
+//  Founding 
 //
 // Returns { ok: true, gang } on success, or { error } on failure.
 export function foundGang(founder, { name, tag, description }) {
@@ -104,7 +104,7 @@ export function foundGang(founder, { name, tag, description }) {
   return { ok: true, gang: loadGang(gangId) };
 }
 
-// ── Invites ────────────────────────────────────────────────────────────
+//  Invites 
 export function pendingInvitesFor(charId) {
   return db.prepare(`
     SELECT i.*, g.name AS gang_name, g.tag AS gang_tag,
@@ -125,7 +125,7 @@ export function existingPendingInvite(gangId, inviteeId) {
   `).get(gangId, inviteeId);
 }
 
-// ── Disband (leader only). Refunds treasury to leader ──────────────────
+//  Disband (leader only). Refunds treasury to leader 
 export function disbandGang(gang, leader) {
   const refund = gang.treasury || 0;
   if (refund > 0) {
@@ -137,7 +137,7 @@ export function disbandGang(gang, leader) {
   return { refund };
 }
 
-// ── Public payloads ────────────────────────────────────────────────────
+//  Public payloads 
 export function publicGang(gang, viewerId = null) {
   if (!gang) return null;
   const members = loadMembers(gang.id);
@@ -181,7 +181,7 @@ export function gangBadgeFor(charId) {
   return publicGangBadge(g);
 }
 
-// ── Wars ───────────────────────────────────────────────────────────────
+//  Wars 
 //
 // Lazy-expire any wars whose timer has elapsed. For each: pick winner,
 // install a turf hold (or extend an existing one if the same gang wins
@@ -308,7 +308,7 @@ export function bumpWarScoreFromAttack(attacker, victim, eventCity, kind /* 'ko'
   return db.prepare('SELECT * FROM gang_wars WHERE id = ?').get(war.id);
 }
 
-// ── Turf holds ─────────────────────────────────────────────────────────
+//  Turf holds 
 export function listTurfHolds() {
   expireFinishedWars();
   const now = Date.now();
@@ -339,7 +339,7 @@ export function holdsTurfPerk(charId, city) {
   return !!(m && m.gang_id === hold.gang_id);
 }
 
-// ── Leader-death handling ──────────────────────────────────────────────
+//  Leader-death handling 
 //
 // Called BEFORE deleting the dead character row when a murder kills a
 // leader. Promotes the most senior surviving member, or disbands if no

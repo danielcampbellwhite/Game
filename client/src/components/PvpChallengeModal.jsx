@@ -101,13 +101,13 @@ export default function PvpChallengeModal() {
               </Link>
             </div>
             <div className={`text-[10px] uppercase tracking-wide ${isMurder ? 'text-blood-300' : 'text-blood-400'}`}>
-              {isMurder ? '☠️ Wants to KILL you' : '⚔ Wants to fight you'}
+              {isMurder ? ' Wants to KILL you' : ' Wants to fight you'}
             </div>
           </div>
         </div>
         {isMurder ? (
           <p className="text-xs text-blood-300">
-            ☠️ This is a MURDER challenge — your character will be permanently deleted if you lose.
+             This is a MURDER challenge — your character will be permanently deleted if you lose.
             All cash on hand will go to your killer. Bank, gear and progression all lost. Are you ready?
           </p>
         ) : (

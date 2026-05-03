@@ -90,16 +90,16 @@ function PvpChallengeSection({ character }) {
   }
 
   if (!players) {
-    return <Card title="🥊 Challenge a player" subtitle="Loading nearby fighters…" />;
+    return <Card title=" Challenge a player" subtitle="Loading nearby fighters…" />;
   }
 
   return (
-    <Card title="🥊 Challenge a player"
+    <Card title=" Challenge a player"
       subtitle={`Online and offline players currently in ${character.city.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}. PvP fights are turn-based — same combat engine as the NPC fights, but both sides take alternating turns.`}
       right={<button onClick={load} disabled={busy === 'load'} className="btn btn-ghost text-xs">↻ Refresh</button>}>
       {pendingId && (
         <div className="rounded-md border border-yellow-500/40 bg-yellow-700/10 p-2 mb-3 text-xs text-yellow-300">
-          ⏳ Waiting for {pendingTargetName} to accept… you'll be taken to the fight if they accept (60s window).
+           Waiting for {pendingTargetName} to accept… you'll be taken to the fight if they accept (60s window).
         </div>
       )}
       {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
@@ -117,7 +117,7 @@ function PvpChallengeSection({ character }) {
                   <span className="text-[10px] uppercase text-ink-100/45">L{p.at_max_level ? '999+' : p.level}</span>
                 </div>
                 {p.online
-                  ? <span className="text-[10px] uppercase text-money-400">● online</span>
+                  ? <span className="text-[10px] uppercase text-money-400"> online</span>
                   : <span className="text-[10px] text-ink-100/45">{timeAgo(p.last_active_at)}</span>}
               </div>
               <div className="text-[11px] text-ink-100/55 mt-1">{p.rank}</div>
@@ -125,7 +125,7 @@ function PvpChallengeSection({ character }) {
                 disabled={busy === 'chal-' + p.id || pendingId != null}
                 onClick={() => challenge(p)}
                 className="btn btn-primary text-xs w-full mt-2">
-                {busy === 'chal-' + p.id ? '…' : pendingId != null ? 'Pending challenge…' : '⚔ Challenge'}
+                {busy === 'chal-' + p.id ? '…' : pendingId != null ? 'Pending challenge…' : ' Challenge'}
               </button>
             </div>
           ))}
@@ -207,11 +207,11 @@ export default function Combat() {
   const moves = data.moves || [];
   const fight = data.fight;
 
-  // ── Active fight UI ──────────────────────────────────────────────────
+  //  Active fight UI 
   if (fight) {
     return (
       <div className="space-y-4">
-        <Card title={`🥊 Fighting ${fight.enemy_name}`} subtitle={`Level ${fight.enemy_level} · Round ${fight.round}`}>
+        <Card title={` Fighting ${fight.enemy_name}`} subtitle={`Level ${fight.enemy_level} · Round ${fight.round}`}>
           <div className="grid sm:grid-cols-2 gap-4">
             <HpBar label={`You (${character?.name})`} hp={fight.player_hp} max={fight.player_max_hp} side="player" />
             <HpBar label={fight.enemy_name} hp={fight.enemy_hp} max={fight.enemy_max_hp} side="enemy" />
@@ -273,20 +273,20 @@ export default function Combat() {
     );
   }
 
-  // ── Out-of-fight UI: target list + last summary ──────────────────────
+  //  Out-of-fight UI: target list + last summary 
   return (
     <div className="space-y-4">
       {summary && (
         <Card>
           {summary.fled ? (
-            <p className="text-sm text-yellow-400">🏃 You bailed.{summary.repLoss ? ` -${summary.repLoss} reputation.` : ''}</p>
+            <p className="text-sm text-yellow-400"> You bailed.{summary.repLoss ? ` -${summary.repLoss} reputation.` : ''}</p>
           ) : summary.playerWon ? (
             <p className="text-sm text-money-400">
-              🏆 Win! +{fmt(summary.payout)} +{summary.xp}xp{summary.levels > 0 ? ` · LEVEL UP ×${summary.levels}` : ''}
+               Win! +{fmt(summary.payout)} +{summary.xp}xp{summary.levels > 0 ? ` · LEVEL UP ×${summary.levels}` : ''}
             </p>
           ) : (
             <p className="text-sm text-blood-400">
-              💀 KO'd. Hospitalised for {summary.hospital_min} min · -£{summary.cash_lost?.toLocaleString()}.
+               KO'd. Hospitalised for {summary.hospital_min} min · -£{summary.cash_lost?.toLocaleString()}.
             </p>
           )}
         </Card>
@@ -294,7 +294,7 @@ export default function Combat() {
 
       {msg && <Card><p className="text-xs text-blood-400">{msg}</p></Card>}
 
-      <Card title="🥊 Fight Club" subtitle="Bare-knuckle, no weapons. Strength scales damage; speed boosts crit chance and dodge. Engaging costs 8 energy.">
+      <Card title=" Fight Club" subtitle="Bare-knuckle, no weapons. Strength scales damage; speed boosts crit chance and dodge. Engaging costs 8 energy.">
         <div className="grid sm:grid-cols-2 gap-3">
           {targets.map(t => (
             <div key={t.id} className={`rounded-lg p-3 border bg-ink-950/40 ${t.locked ? 'opacity-50 border-ink-100/5' : t.recommended ? 'border-money-500/40' : 'border-ink-100/10'}`}>

@@ -42,7 +42,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ── Bootstrap ────────────────────────────────────────────────────────
+//  Bootstrap 
 // One-shot: grants admin to the calling user. Idempotent — safe to call
 // repeatedly. Once any user has the flag set you can remove ADMIN_TOKEN
 // from the env (the flag persists in the DB).
@@ -51,7 +51,7 @@ router.post('/promote-self', requireAuth, requireAdminToken, (req, res) => {
   res.json({ ok: true, user_id: req.user.id, message: 'You are now an admin. ADMIN_TOKEN can be removed.' });
 });
 
-// ── Self-buff (legacy / convenience) ─────────────────────────────────
+//  Self-buff (legacy / convenience) 
 router.post('/buff-self', requireAuth, requireAdmin, requireCharacter, (req, res) => {
   const ch = req.character;
   applyEdits(ch, req.body || {}, { defaults: { level: 100, cashAdd: 100_000_000, maxStats: true } });
@@ -60,7 +60,7 @@ router.post('/buff-self', requireAuth, requireAdmin, requireCharacter, (req, res
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
-// ── List players ─────────────────────────────────────────────────────
+//  List players 
 router.get('/players', requireAuth, requireAdmin, (_req, res) => {
   const rows = db.prepare(`
     SELECT
@@ -77,7 +77,7 @@ router.get('/players', requireAuth, requireAdmin, (_req, res) => {
   res.json({ players: rows.map(r => ({ ...r, is_admin: !!r.is_admin })) });
 });
 
-// ── Fetch one player ─────────────────────────────────────────────────
+//  Fetch one player 
 router.get('/players/:id', requireAuth, requireAdmin, (req, res) => {
   const id = parseInt(req.params.id, 10);
   const ch = loadCharacterByCharacterId(id);
@@ -85,7 +85,7 @@ router.get('/players/:id', requireAuth, requireAdmin, (req, res) => {
   res.json({ character: publicCharacter(ch) });
 });
 
-// ── Edit a player ────────────────────────────────────────────────────
+//  Edit a player 
 //
 // Body: any subset of editable fields. See applyEdits() below for the
 // full menu. Mutations apply immediately; the response carries the
@@ -214,7 +214,7 @@ function applyEdits(ch, body, opts = {}) {
   return changes.join(', ');
 }
 
-// ── NPC seeding ──────────────────────────────────────────────────────
+//  NPC seeding 
 //
 // Generates randomised users + characters to populate the world. Each
 // seeded user gets username `npc_<random>` so /purge-seeded can find

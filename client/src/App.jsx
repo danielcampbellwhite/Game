@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useGame } from './context/GameContext.jsx';
 import Nav from './components/Nav.jsx';
 import Login from './pages/Login.jsx';
@@ -79,6 +79,26 @@ function Protected({ children }) {
   return children;
 }
 
+function Footer() {
+  // Sign Out lives at the bottom of every authenticated screen so it's
+  // out of the top bar's way but still one tap from anywhere.
+  const { token, character, logout } = useGame();
+  const nav = useNavigate();
+  if (!token || !character) return null;
+  return (
+    <footer className="border-t border-ink-100/10 bg-ink-950/85 backdrop-blur">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-wide text-ink-100/40">Mafia Life</span>
+        <button
+          onClick={() => { logout(); nav('/login'); }}
+          className="btn btn-ghost text-xs">
+          Sign out
+        </button>
+      </div>
+    </footer>
+  );
+}
+
 export default function App() {
   const { token, character } = useGame();
   return (
@@ -144,7 +164,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <footer className="text-center text-ink-100/30 text-xs py-4">Mafia Life</footer>
+      <Footer />
     </div>
   );
 }

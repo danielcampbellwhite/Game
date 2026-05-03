@@ -54,7 +54,7 @@ export function loadMissions(ch) {
     return {
       id: r.mission_id,
       name: tpl?.name || r.mission_id,
-      emoji: tpl?.emoji || '❓',
+      emoji: tpl?.emoji || '',
       desc: tpl?.desc || '',
       tier: tpl?.tier || 'easy',
       progress: r.progress,
@@ -101,7 +101,7 @@ export function bumpMission(ch, type, count = 1, meta = null) {
     if (next !== r.progress) {
       update.run(next, ch.id, r.mission_id);
       if (next >= r.target) {
-        writeLog(ch.id, 'mission', `🎯 Mission ready to claim: ${tpl.name}.`, { mission: tpl.id }, true);
+        writeLog(ch.id, 'mission', ` Mission ready to claim: ${tpl.name}.`, { mission: tpl.id }, true);
       }
     }
   }

@@ -65,7 +65,7 @@ export default function GeneralStore() {
 
   return (
     <div className="space-y-4">
-      <Card title={`🛒 Murphy's General Store — ${data.cityName}`}
+      <Card title={` Murphy's General Store — ${data.cityName}`}
         subtitle="Odds, ends, and props. Most are mission props with no other use; a couple lift your spirits.">
         {cityMul !== 1 && (
           <p className="text-[11px] text-ink-100/50">Local prices are at ×{cityMul.toFixed(2)} of base.</p>

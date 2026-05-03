@@ -97,13 +97,13 @@ export function applyTick(ch) {
     ch.hospital_until = null;
     ch.hospital_reason = null;
     ch.last_health_tick = now;
-    writeLog(ch.id, 'hospital', '🏥 Discharged from hospital — full health.', null, true);
+    writeLog(ch.id, 'hospital', ' Discharged from hospital — full health.', null, true);
   }
   // Jail expired
   if (ch.jail_until && ch.jail_until <= now) {
     ch.jail_until = null;
     ch.jail_reason = null;
-    writeLog(ch.id, 'jail', '🚓 Released from jail — sentence served.', null, true);
+    writeLog(ch.id, 'jail', ' Released from jail — sentence served.', null, true);
   }
   // Travel arrival
   if (ch.travel_until && ch.travel_until <= now && ch.travel_to) {
@@ -111,7 +111,7 @@ export function applyTick(ch) {
     ch.city = arrivedCity;
     ch.travel_until = null;
     ch.travel_to = null;
-    writeLog(ch.id, 'travel', `✈️ Landed in ${arrivedCity.replace(/_/g, ' ')}.`, null, true);
+    writeLog(ch.id, 'travel', ` Landed in ${arrivedCity.replace(/_/g, ' ')}.`, null, true);
   }
 
   // Happiness floor + ceiling shifted by property bonus

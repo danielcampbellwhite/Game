@@ -126,7 +126,7 @@ export default function PvpFight() {
     finally { setBusy(null); }
   }
 
-  // ── No fight: show summary or a stub ────────────────────────────────
+  //  No fight: show summary or a stub 
   if (!fight) {
     return (
       <div className="space-y-4 max-w-2xl mx-auto">
@@ -135,18 +135,18 @@ export default function PvpFight() {
             {summary.outcome === 'attacker_won' || summary.outcome === 'target_won' ? (
               summary.winner_id === character?.id ? (
                 <p className="text-sm text-money-400">
-                  🏆 You knocked them out!{' '}
+                   You knocked them out!{' '}
                   +{fmt(summary.cash_taken)} taken
                   · +{summary.xp}xp
                   {summary.levels > 0 ? ` · LEVEL UP ×${summary.levels}` : ''}
                 </p>
               ) : (
                 <p className="text-sm text-blood-400">
-                  💀 You got KO'd. Hospital {summary.hosp_min} min · -£{summary.cash_taken?.toLocaleString()}.
+                   You got KO'd. Hospital {summary.hosp_min} min · -£{summary.cash_taken?.toLocaleString()}.
                 </p>
               )
             ) : (
-              <p className="text-sm text-yellow-400">🏃 Fight ended — bailed out.</p>
+              <p className="text-sm text-yellow-400"> Fight ended — bailed out.</p>
             )}
           </Card>
         )}
@@ -158,17 +158,17 @@ export default function PvpFight() {
     );
   }
 
-  // ── Live fight ──────────────────────────────────────────────────────
+  //  Live fight 
   const turnLeft = turnTimerLeft(fight.turn_deadline);
   const isYourTurn = fight.your_turn;
   const moves = fight.moves || [];
 
   return (
     <div className="space-y-4">
-      <Card title={`${fight.mode === 'murder' ? '☠️ MURDER' : '⚔ Fight'} — ${fight.opponent?.name}`} subtitle={`Round ${fight.round} · ${fight.opponent?.online ? 'online' : 'offline'}${fight.mode === 'murder' ? ' · Permadeath on KO' : ''}`}>
+      <Card title={`${fight.mode === 'murder' ? ' MURDER' : ' Fight'} — ${fight.opponent?.name}`} subtitle={`Round ${fight.round} · ${fight.opponent?.online ? 'online' : 'offline'}${fight.mode === 'murder' ? ' · Permadeath on KO' : ''}`}>
         {fight.mode === 'murder' && (
           <div className="bg-blood-700/20 border border-blood-500/40 rounded-md p-2 text-xs mb-3">
-            ☠️ This is a war murder fight. The loser's character is permanently deleted — all cash on hand goes to the winner.
+             This is a war murder fight. The loser's character is permanently deleted — all cash on hand goes to the winner.
           </div>
         )}
         <div className="grid sm:grid-cols-2 gap-4">

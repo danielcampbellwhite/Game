@@ -42,7 +42,7 @@ export default function Missions() {
 
   return (
     <div className="space-y-4">
-      <Card title="🎯 Daily Missions"
+      <Card title=" Daily Missions"
         subtitle="Three rolls every UTC midnight. Knock them out for a big XP bump."
         right={
           <div className="text-right text-[11px] text-ink-100/60">

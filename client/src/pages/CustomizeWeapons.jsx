@@ -27,7 +27,7 @@ function WeaponRow({ item, equipped, onPick }) {
       <div className="flex items-baseline justify-between gap-2">
         <div className="font-medium">{item.base?.name || item.base_item_id}</div>
         <span className="text-[10px] text-ink-100/55">
-          {item.kind === 'instance' ? '🔧 modded' : `×${item.qty}`}
+          {item.kind === 'instance' ? ' modded' : `×${item.qty}`}
         </span>
       </div>
       {item.base?.maker && <div className="text-[10px] text-ink-100/50">{item.base.maker}</div>}
@@ -41,7 +41,7 @@ function WeaponRow({ item, equipped, onPick }) {
           {item.stats.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
         </div>
       )}
-      {isEq && <div className="text-[10px] text-money-400 mt-1">● equipped</div>}
+      {isEq && <div className="text-[10px] text-money-400 mt-1"> equipped</div>}
     </button>
   );
 }
@@ -154,7 +154,7 @@ function DetailPane({ pickRef, character, onChanged }) {
           </div>
           <div>
             <div className="text-[10px] uppercase text-ink-100/55">Status</div>
-            <div className="text-sm">{data.stats?.is_modified ? '🔧 Modified' : 'Stock'}</div>
+            <div className="text-sm">{data.stats?.is_modified ? ' Modified' : 'Stock'}</div>
             {data.kind === 'stock' && <div className="text-[10px] text-ink-100/55">×{data.qty} in stack</div>}
           </div>
         </div>
@@ -204,7 +204,7 @@ export default function CustomizeWeapons() {
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
-      <Card title="🔧 Weapon Customization"
+      <Card title=" Weapon Customization"
         subtitle="Modify weapons with category-compatible mods. Stock weapons promote to a unique instance the moment you install your first mod. Removing all mods returns the weapon to your stack."
         right={<Link to="/inventory" className="btn btn-ghost text-xs">← Inventory</Link>}>
         {msg && <p className="text-xs text-blood-400">{msg}</p>}

@@ -17,7 +17,7 @@ import { writeLog } from '../services/log.js';
 
 const router = Router();
 
-// ── Helpers ─────────────────────────────────────────────────────────
+//  Helpers 
 
 // Parse a "ref" into either a stock-stack reference or an instance
 // reference. Format: "stock:<base_item_id>" or "instance:<id>".
@@ -63,7 +63,7 @@ function listStockWeapons(charId) {
   }).filter(Boolean);
 }
 
-// ── GET /api/customize/weapons ──────────────────────────────────────
+//  GET /api/customize/weapons 
 //
 // All of the player's weapons, both stock stacks and modded instances,
 // in a single feed. Fists are excluded (always-on, can't be modded).
@@ -77,7 +77,7 @@ router.get('/weapons', requireAuth, requireCharacter, (req, res) => {
   res.json({ stocks, instances, equipped });
 });
 
-// ── GET /api/customize/weapons/:ref ─────────────────────────────────
+//  GET /api/customize/weapons/:ref 
 router.get('/weapons/:ref', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const ref = parseRef(req.params.ref);
@@ -114,7 +114,7 @@ router.get('/weapons/:ref', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── POST /api/customize/weapons/install ─────────────────────────────
+//  POST /api/customize/weapons/install 
 //
 // Body: { ref, slot, mod_id }
 //
@@ -172,7 +172,7 @@ router.post('/weapons/install', requireAuth, requireCharacter, (req, res) => {
   ch.cash -= mod.cost;
   db.prepare('UPDATE weapon_instances SET mods_json = ? WHERE id = ?').run(JSON.stringify(modsObj), instanceId);
   saveCharacter(ch);
-  writeLog(ch.id, 'craft', `🔧 Installed ${mod.emoji} ${mod.name} on your ${weaponById(baseId)?.name} for £${mod.cost.toLocaleString()}.`);
+  writeLog(ch.id, 'craft', ` Installed ${mod.emoji} ${mod.name} on your ${weaponById(baseId)?.name} for £${mod.cost.toLocaleString()}.`);
 
   const fresh = loadWeaponInstance(instanceId);
   res.json({
@@ -182,7 +182,7 @@ router.post('/weapons/install', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// ── DELETE /api/customize/weapons/instance/:id/slot/:slot ──────────
+//  DELETE /api/customize/weapons/instance/:id/slot/:slot 
 //
 // Uninstall a mod (no refund). If the instance ends up with zero mods,
 // it auto-demotes back to the player's weapon stack and the instance row
@@ -218,7 +218,7 @@ router.delete('/weapons/instance/:id/slot/:slot', requireAuth, requireCharacter,
   res.json({ ok: true, demoted: false, instance: decorateInstance(loadWeaponInstance(id)) });
 });
 
-// ── POST /api/customize/weapons/equip ───────────────────────────────
+//  POST /api/customize/weapons/equip 
 //
 // Body: { ref } — equip a stock weapon ("stock:<id>") or a modded
 // instance ("instance:<id>"). Stock equipping goes through the same
@@ -245,7 +245,7 @@ router.post('/weapons/equip', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
-// ── Vehicles (Phase 2D) ─────────────────────────────────────────────
+//  Vehicles (Phase 2D) 
 
 // GET /api/customize/vehicles — list every vehicle the player owns
 // (across all cities) with its hydrated mod state.
@@ -300,7 +300,7 @@ router.post('/vehicles/install', requireAuth, requireCharacter, (req, res) => {
   ch.cash -= mod.cost;
   db.prepare('UPDATE vehicles_owned SET mods_json = ? WHERE id = ?').run(JSON.stringify(modsObj), id);
   saveCharacter(ch);
-  writeLog(ch.id, 'craft', `🔧 Installed ${mod.emoji} ${mod.name} on your ${base.maker} ${base.name} for £${mod.cost.toLocaleString()}.`);
+  writeLog(ch.id, 'craft', ` Installed ${mod.emoji} ${mod.name} on your ${base.maker} ${base.name} for £${mod.cost.toLocaleString()}.`);
 
   res.json({
     ok: true,

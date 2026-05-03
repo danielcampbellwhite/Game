@@ -26,7 +26,7 @@ function cityName(id) {
   return (id || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ── Other patients in your city — pay their bills ───────────────────
+//  Other patients in your city — pay their bills 
 function OtherPatients({ character, refreshChar }) {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);   // patient id mid-action

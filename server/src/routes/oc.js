@@ -29,7 +29,7 @@ function broadcastPlan(planId, type, extra = {}) {
   for (const r of rows) sendEvent(r.char_id, type, { plan_id: planId, ...extra });
 }
 
-// ── Catalogue + index ─────────────────────────────────────────────────
+//  Catalogue + index 
 
 router.get('/crimes', requireAuth, requireCharacter, (req, res) => {
   res.json({ crimes: ORGANISED_CRIMES });
@@ -50,7 +50,7 @@ router.get('/plans/:id', requireAuth, requireCharacter, (req, res) => {
   res.json({ plan: publicPlan(p, req.character.id, makeProfileResolver(req.character.city)) });
 });
 
-// ── Create / cancel ───────────────────────────────────────────────────
+//  Create / cancel 
 
 router.post('/plans', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -71,7 +71,7 @@ router.post('/plans/:id/cancel', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Invite / accept / decline / leave ─────────────────────────────────
+//  Invite / accept / decline / leave 
 
 router.post('/plans/:id/invite', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
@@ -128,7 +128,7 @@ router.post('/plans/:id/leave', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Execute ───────────────────────────────────────────────────────────
+//  Execute 
 
 router.post('/plans/:id/execute', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;

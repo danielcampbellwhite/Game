@@ -9,11 +9,11 @@ import Timer from '../components/Timer.jsx';
 import { fmt } from '../components/Money.jsx';
 
 const KIND_LABEL = {
-  misc:   '🛒 Item',
-  weapon: '🔫 Weapon',
-  armour: '🦺 Armour',
-  ammo:   '🔋 Ammo',
-  drug:   '💊 Drug',
+  misc:   ' Item',
+  weapon: ' Weapon',
+  armour: ' Armour',
+  ammo:   ' Ammo',
+  drug:   ' Drug',
 };
 
 // Builds the inventory list the picker pulls from. We hit /api/inventory
@@ -26,10 +26,10 @@ function useMyInventory(refreshKey) {
       try {
         const r = await api.get('/inventory');
         const items = [];
-        for (const w of r.weapons || []) if (w.id !== 'fists') items.push({ kind: 'weapon', item_id: w.id, qty: w.qty, name: w.name, emoji: '🔫' });
-        for (const a of r.armours || []) if (a.id !== 'none')  items.push({ kind: 'armour', item_id: a.id, qty: a.qty, name: a.name, emoji: '🦺' });
-        for (const a of r.ammo || [])    items.push({ kind: 'ammo',   item_id: a.id, qty: a.qty, name: a.name, emoji: '🔋' });
-        for (const d of r.drugs || [])   items.push({ kind: 'drug',   item_id: d.id, qty: d.qty, name: d.name, emoji: '💊' });
+        for (const w of r.weapons || []) if (w.id !== 'fists') items.push({ kind: 'weapon', item_id: w.id, qty: w.qty, name: w.name, emoji: '' });
+        for (const a of r.armours || []) if (a.id !== 'none')  items.push({ kind: 'armour', item_id: a.id, qty: a.qty, name: a.name, emoji: '' });
+        for (const a of r.ammo || [])    items.push({ kind: 'ammo',   item_id: a.id, qty: a.qty, name: a.name, emoji: '' });
+        for (const d of r.drugs || [])   items.push({ kind: 'drug',   item_id: d.id, qty: d.qty, name: d.name, emoji: '' });
         for (const m of r.misc || [])    items.push({ kind: 'misc',   item_id: m.id, qty: m.qty, name: m.name, emoji: m.emoji });
         setInv(items);
       } catch { setInv([]); }
@@ -57,7 +57,7 @@ function OfferDisplay({ offer, label, isMine }) {
           ))}
           {offer.cash > 0 && (
             <li className="flex items-baseline justify-between border-t border-ink-100/10 pt-1 mt-1">
-              <span className="text-money-400">💵 Cash</span>
+              <span className="text-money-400"> Cash</span>
               <span className="tabular-nums text-money-400">{fmt(offer.cash)}</span>
             </li>
           )}
@@ -133,7 +133,7 @@ function MyOfferEditor({ inv, offer, onChange, disabled }) {
           ))}
           {offer.cash > 0 && (
             <li className="flex items-baseline justify-between border-t border-ink-100/10 pt-1 mt-1">
-              <span className="text-money-400">💵 Cash</span>
+              <span className="text-money-400"> Cash</span>
               <span className="tabular-nums text-money-400">{fmt(offer.cash)}</span>
             </li>
           )}
@@ -303,7 +303,7 @@ export default function Trade() {
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
-      <Card title="🤝 Trade"
+      <Card title=" Trade"
         subtitle={other ? `With ${other.name} (Lvl ${other.level})` : 'Loading…'}
         right={<Link to="/trades" className="btn btn-ghost text-xs">← All trades</Link>}>
         <div className="text-[11px] text-ink-100/55">
@@ -344,7 +344,7 @@ export default function Trade() {
                     onChange={(next) => { setDraft(next); setDraftDirty(true); }} />}
               <div className="mt-2 flex flex-wrap gap-2 items-center text-[11px]">
                 {myConfirmed
-                  ? <span className="text-money-400">✓ Your side is confirmed</span>
+                  ? <span className="text-money-400"> Your side is confirmed</span>
                   : <span className="text-ink-100/55">Your side is unconfirmed</span>}
                 {!myConfirmed && draftDirty && (
                   <button disabled={busy === 'offer'} onClick={saveOffer} className="btn btn-primary text-xs">
@@ -374,7 +374,7 @@ export default function Trade() {
               <OfferDisplay offer={theirOffer} label={`${other?.name}'s offer`} />
               <div className="mt-2 text-[11px]">
                 {theirConfirmed
-                  ? <span className="text-money-400">✓ Their side is confirmed</span>
+                  ? <span className="text-money-400"> Their side is confirmed</span>
                   : <span className="text-ink-100/55">Waiting for them to confirm…</span>}
               </div>
               {theirOffer.cash > 0 && (

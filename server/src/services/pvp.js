@@ -9,7 +9,7 @@ import { bumpMission } from './missions.js';
 import { loadMembership, activeWarBetween, bumpWarScoreFromAttack, handleLeaderDeath, gangBadgeFor } from './gangs.js';
 import { softDeath } from './death.js';
 
-// ── Tunables ───────────────────────────────────────────────────────────
+//  Tunables 
 export const CHALLENGE_TTL_MS    = 60_000;     // target has 60s to accept
 export const TURN_DEADLINE_MS    = 45_000;     // turn-holder has 45s before auto-flee
 export const TARGET_COOLDOWN_MS  = 60 * 60 * 1000;   // 1h between attacks on the same person
@@ -22,7 +22,7 @@ export const ENGAGE_MIN_HP        = 30;
 
 function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-// ── Eligibility ────────────────────────────────────────────────────────
+//  Eligibility 
 //
 // Two flavours: `challengeEligibility` is the strict pre-issue check used
 // when an attacker hits the "Attack" button (includes both attacker- and
@@ -103,7 +103,7 @@ export function murderEligibility(attacker, target) {
   return null;
 }
 
-// ── State accessors ────────────────────────────────────────────────────
+//  State accessors 
 export function loadActiveFightFor(charId) {
   return db.prepare(
     'SELECT * FROM pvp_fights WHERE attacker_id = ? OR target_id = ?'
@@ -136,7 +136,7 @@ export function loadOpenChallengesFor(charId, role = 'either') {
   ).all(charId, charId);
 }
 
-// ── Fight lifecycle ────────────────────────────────────────────────────
+//  Fight lifecycle 
 //
 // Convert an accepted challenge into a live pvp_fights row. Returns the
 // new fight row.
@@ -196,7 +196,7 @@ export function runPvpTurn(fight, actingPlayer, opponent, moveId) {
     // Block: skip your attack; the *next* incoming attack on you is halved.
     // We surface this via fight.turn flipping and a marker entry.
     entry.kind = 'block';
-    entry.text = `🛡️ ${actingPlayer.name} braces for impact.`;
+    entry.text = ` ${actingPlayer.name} braces for impact.`;
     fight._block_pending = actorRole; // ephemeral hint for next runPvpTurn
   } else if (outcome.kind === 'miss') {
     entry.kind = 'miss';
@@ -220,7 +220,7 @@ export function runPvpTurn(fight, actingPlayer, opponent, moveId) {
     entry.dmg = dmg;
     const blockTag = entry.blocked ? ' (blocked)' : '';
     entry.text = outcome.crit
-      ? `💥 CRITICAL ${move.name}! ${opponent.name} takes ${dmg}${blockTag}.`
+      ? ` CRITICAL ${move.name}! ${opponent.name} takes ${dmg}${blockTag}.`
       : `${move.emoji} ${actingPlayer.name}'s ${move.name.toLowerCase()} lands for ${dmg}${blockTag}.`;
   }
 
@@ -265,7 +265,7 @@ export function endFight(fight, attacker, target, outcome) {
     const loser  = winnerRole === 'attacker' ? target   : attacker;
 
     if (fight.mode === 'murder') {
-      // ── Permadeath branch ─────────────────────────────────────────
+      //  Permadeath branch 
       // Loser's cash on hand → winner. Bank balance is destroyed with
       // the character. Character row is deleted (cascades clean up
       // gang_members, dm_threads, etc).
@@ -281,8 +281,8 @@ export function endFight(fight, attacker, target, outcome) {
       // War scoreboard bump (kind=murder = 5pts).
       bumpWarScoreFromAttack(winner, loser, fight.city, 'murder');
 
-      writeLog(winner.id, 'pvp', `☠️ You murdered ${loser.name} — took £${cashTake.toLocaleString()}, +${xp}xp.`, { opponent: loser.id, payout: cashTake, xp, mode: 'murder' }, true);
-      writeLog(loser.id,  'pvp', `☠️ Murdered by ${winner.name} — lost everything, reset to level 10.`, { opponent: winner.id, mode: 'murder' }, true);
+      writeLog(winner.id, 'pvp', ` You murdered ${loser.name} — took £${cashTake.toLocaleString()}, +${xp}xp.`, { opponent: loser.id, payout: cashTake, xp, mode: 'murder' }, true);
+      writeLog(loser.id,  'pvp', ` Murdered by ${winner.name} — lost everything, reset to level 10.`, { opponent: winner.id, mode: 'murder' }, true);
 
       // Sync winner HP from fight, then save.
       if (winnerRole === 'attacker') attacker.health = fight.attacker_hp;
@@ -309,7 +309,7 @@ export function endFight(fight, attacker, target, outcome) {
       return summary;
     }
 
-    // ── Standard knockout branch ────────────────────────────────────
+    //  Standard knockout branch 
     const cashTake = Math.floor((loser.cash || 0) * CASH_TRANSFER_PCT);
     if (cashTake > 0) {
       loser.cash -= cashTake;
@@ -327,8 +327,8 @@ export function endFight(fight, attacker, target, outcome) {
     // and the fight took place in the contested city.
     bumpWarScoreFromAttack(winner, loser, fight.city, 'ko');
 
-    writeLog(winner.id, 'pvp', `🥊 You knocked ${loser.name} out — +£${cashTake.toLocaleString()}, +${xp}xp.`, { opponent: loser.id, payout: cashTake, xp }, true);
-    writeLog(loser.id,  'pvp', `🥊 ${winner.name} knocked you out${cashTake ? `, took £${cashTake.toLocaleString()}` : ''}. Hospital ${hospMin}m.`, { opponent: winner.id, lost: cashTake, hosp_min: hospMin }, true);
+    writeLog(winner.id, 'pvp', ` You knocked ${loser.name} out — +£${cashTake.toLocaleString()}, +${xp}xp.`, { opponent: loser.id, payout: cashTake, xp }, true);
+    writeLog(loser.id,  'pvp', ` ${winner.name} knocked you out${cashTake ? `, took £${cashTake.toLocaleString()}` : ''}. Hospital ${hospMin}m.`, { opponent: winner.id, lost: cashTake, hosp_min: hospMin }, true);
 
     if (winnerRole === 'attacker') attacker.health = fight.attacker_hp;
     else                            target.health   = fight.target_hp;
@@ -339,7 +339,7 @@ export function endFight(fight, attacker, target, outcome) {
     target.health   = fight.target_hp;
     const fleer = outcome === 'fled_attacker' ? attacker : target;
     const stayer = outcome === 'fled_attacker' ? target  : attacker;
-    writeLog(fleer.id,  'pvp', `🏃 You bailed out of the fight with ${stayer.name}.`, { opponent: stayer.id });
+    writeLog(fleer.id,  'pvp', ` You bailed out of the fight with ${stayer.name}.`, { opponent: stayer.id });
     writeLog(stayer.id, 'pvp', `${fleer.name} bailed out of your fight.`, { opponent: fleer.id });
     summary = { ...summary, fleer_id: fleer.id };
   }
@@ -350,7 +350,7 @@ export function endFight(fight, attacker, target, outcome) {
   return summary;
 }
 
-// ── Lazy turn-deadline enforcement ─────────────────────────────────────
+//  Lazy turn-deadline enforcement 
 //
 // Anywhere we read fight state, first check whether the active turn-holder
 // has missed their deadline. If so, they auto-flee. Returns the (possibly
@@ -375,7 +375,7 @@ export function maybeAutoFlee(fight) {
   return null;
 }
 
-// ── Public payloads ────────────────────────────────────────────────────
+//  Public payloads 
 export function publicFight(fight, viewerId) {
   if (!fight) return null;
   const att = loadCharacterById(fight.attacker_id);
