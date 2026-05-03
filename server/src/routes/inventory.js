@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, cityById, drugById, miscItemById, propertyById } from '../data.js';
+import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, cityById, drugById, miscItemById, propertyById, applyVehicleMods } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 
@@ -41,10 +41,18 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const vehicles = vehicleRows.map(r => {
     const v = vehicleById(r.vehicle_id);
     if (!v) return null;
+    const stats = applyVehicleMods(v, r.mods_json);
     return {
       id: r.id, vehicle_id: v.id, name: v.name, maker: v.maker, tier: v.tier,
       image: v.image,
-      bookPrice: v.bookPrice, acquired_via: r.acquired_via, city: r.city,
+      bookPrice: stats.bookPrice,
+      base_book_price: stats.base_book_price,
+      value_delta: stats.value_delta,
+      power: stats.power,
+      handling: stats.handling,
+      is_modified: stats.is_modified,
+      mods: stats.mods,
+      acquired_via: r.acquired_via, city: r.city,
       cityName: cityById(r.city)?.name, acquired_at: r.acquired_at,
     };
   }).filter(Boolean);

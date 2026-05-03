@@ -15,6 +15,7 @@ const links = [
   { to: '/gangs',     label: 'Gangs'     },
   { to: '/wars',      label: 'Turf Wars' },
   { to: '/players',   label: 'Players'   },
+  { to: '/trades',    label: 'Trades'    },
 ];
 
 const TYPE_COLOR = {

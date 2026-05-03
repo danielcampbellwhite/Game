@@ -21,6 +21,12 @@ export function requireAuth(req, res, next) {
 export function requireCharacter(req, res, next) {
   const ch = loadCharacter(req.user.id);
   if (!ch) return res.status(404).json({ error: 'No character. Create one first.' });
+  // After death, the row sits in pending_new_character until the player
+  // rolls a fresh character. Block normal gameplay; the new-character
+  // creation endpoint sidesteps this guard.
+  if (ch.status === 'pending_new_character') {
+    return res.status(409).json({ error: 'Your character has been killed. Create a new one to continue.', new_character_required: true });
+  }
   applyTick(ch);
   req.character = ch;
   next();

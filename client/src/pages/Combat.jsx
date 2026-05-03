@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
+import { useEventStream } from '../hooks/useEventStream.js';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
@@ -28,6 +30,109 @@ function HpBar({ label, hp, max, side = 'player' }) {
         <div className={`h-full ${bar} transition-all`} style={{ width: pct + '%' }} />
       </div>
     </div>
+  );
+}
+
+function timeAgo(ts) {
+  if (!ts) return 'never';
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+// PvP-only section. Pulls recent players from /api/players/search?q= (no
+// query → recently-active list), filters to the caller's city since
+// PvP is same-city only. Hitting Challenge fires the existing
+// /api/pvp/challenge handshake; once the target accepts, the server
+// pushes a `pvp.fight_started` SSE we listen for to navigate to the
+// turn-based fight page.
+function PvpChallengeSection({ character }) {
+  const nav = useNavigate();
+  const [players, setPlayers] = useState(null);
+  const [busy, setBusy] = useState(null);     // 'load' | `chal-${id}`
+  const [pendingId, setPendingId] = useState(null);  // outgoing challenge id
+  const [pendingTargetName, setPendingTargetName] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  async function load() {
+    setBusy('load');
+    try {
+      const r = await api.get('/players/search');
+      // Same-city only; hide self.
+      setPlayers(r.players.filter(p => p.city === character.city && p.id !== character.id));
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+  useEffect(() => { if (character?.city) load(); }, [character?.city]);
+
+  // When the recipient accepts, the server pushes pvp.fight_started to
+  // both sides — that's our cue to jump to the fight page.
+  useEventStream('pvp.fight_started', () => nav('/pvp/fight'));
+  useEventStream('pvp.declined', (p) => {
+    if (p?.challenge_id === pendingId) {
+      setMsg(`${pendingTargetName || 'Target'} declined.`);
+      setPendingId(null);
+      setPendingTargetName(null);
+    }
+  });
+
+  async function challenge(p) {
+    setBusy('chal-' + p.id); setMsg(null);
+    try {
+      const r = await api.post('/pvp/challenge', { target_id: p.id, mode: 'knockout' });
+      setPendingId(r.challenge?.id ?? null);
+      setPendingTargetName(p.name);
+      setMsg(`Challenge sent to ${p.name}. They have 60s to accept.`);
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!players) {
+    return <Card title="🥊 Challenge a player" subtitle="Loading nearby fighters…" />;
+  }
+
+  return (
+    <Card title="🥊 Challenge a player"
+      subtitle={`Online and offline players currently in ${character.city.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}. PvP fights are turn-based — same combat engine as the NPC fights, but both sides take alternating turns.`}
+      right={<button onClick={load} disabled={busy === 'load'} className="btn btn-ghost text-xs">↻ Refresh</button>}>
+      {pendingId && (
+        <div className="rounded-md border border-yellow-500/40 bg-yellow-700/10 p-2 mb-3 text-xs text-yellow-300">
+          ⏳ Waiting for {pendingTargetName} to accept… you'll be taken to the fight if they accept (60s window).
+        </div>
+      )}
+      {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
+      {players.length === 0 ? (
+        <p className="text-xs text-ink-100/55 text-center py-4">
+          Nobody else in your city right now. Try Travel to find a more active scene.
+        </p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {players.map(p => (
+            <div key={p.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-baseline gap-2 min-w-0">
+                  <span className="text-2xl">{p.avatar}</span>
+                  <Link to={`/players/${p.id}`} className="font-medium truncate hover:underline">{p.name}</Link>
+                  <span className="text-[10px] uppercase text-ink-100/45">L{p.at_max_level ? '999+' : p.level}</span>
+                </div>
+                {p.online
+                  ? <span className="text-[10px] uppercase text-money-400">● online</span>
+                  : <span className="text-[10px] text-ink-100/45">{timeAgo(p.last_active_at)}</span>}
+              </div>
+              <div className="text-[11px] text-ink-100/55 mt-1">{p.rank}</div>
+              <button
+                disabled={busy === 'chal-' + p.id || pendingId != null}
+                onClick={() => challenge(p)}
+                className="btn btn-primary text-xs w-full mt-2">
+                {busy === 'chal-' + p.id ? '…' : pendingId != null ? 'Pending challenge…' : '⚔ Challenge'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -211,6 +316,8 @@ export default function Combat() {
           ))}
         </div>
       </Card>
+
+      {character && <PvpChallengeSection character={character} />}
     </div>
   );
 }

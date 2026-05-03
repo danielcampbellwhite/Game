@@ -20,7 +20,6 @@ import Property from './pages/Property.jsx';
 import Gym from './pages/Gym.jsx';
 import Range from './pages/Range.jsx';
 import University from './pages/University.jsx';
-import Items from './pages/Items.jsx';
 import Inventory from './pages/Inventory.jsx';
 import Missions from './pages/Missions.jsx';
 import GeneralStore from './pages/GeneralStore.jsx';
@@ -41,12 +40,27 @@ import ChopShop from './pages/ChopShop.jsx';
 import City from './pages/City.jsx';
 import Casino from './pages/Casino.jsx';
 import Bookmaker from './pages/Bookmaker.jsx';
+import PlayerShops from './pages/PlayerShops.jsx';
+import PlayerShop from './pages/PlayerShop.jsx';
+import Trades from './pages/Trades.jsx';
+import Trade from './pages/Trade.jsx';
+import Murder from './pages/Murder.jsx';
+import Rob from './pages/Rob.jsx';
+import CustomizeWeapons from './pages/CustomizeWeapons.jsx';
+import CustomizeVehicles from './pages/CustomizeVehicles.jsx';
+import NewCharacter from './pages/NewCharacter.jsx';
 
 function Protected({ children }) {
   const { token, character } = useGame();
   const location = useLocation();
   if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
   if (!character) return <Navigate to="/create" replace />;
+
+  // Death lockout — character has been killed; player must roll a new
+  // character before they can resume play.
+  if (character.status === 'pending_new_character' && location.pathname !== '/new-character') {
+    return <Navigate to="/new-character" replace />;
+  }
 
   // Hospital lockout — you can't go anywhere except the Hospital page until
   // you pay your bills or wait out the timer.
@@ -99,7 +113,6 @@ export default function App() {
           <Route path="/range" element={<Protected><Range /></Protected>} />
           <Route path="/university" element={<Protected><University /></Protected>} />
           <Route path="/inventory" element={<Protected><Inventory /></Protected>} />
-          <Route path="/items" element={<Protected><Items /></Protected>} />
           <Route path="/missions" element={<Protected><Missions /></Protected>} />
           <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />
           <Route path="/players" element={<Protected><Players /></Protected>} />
@@ -119,6 +132,15 @@ export default function App() {
           <Route path="/city" element={<Protected><City /></Protected>} />
           <Route path="/casino" element={<Protected><Casino /></Protected>} />
           <Route path="/bookmaker" element={<Protected><Bookmaker /></Protected>} />
+          <Route path="/shops" element={<Protected><PlayerShops /></Protected>} />
+          <Route path="/shops/:id" element={<Protected><PlayerShop /></Protected>} />
+          <Route path="/trades" element={<Protected><Trades /></Protected>} />
+          <Route path="/trades/:id" element={<Protected><Trade /></Protected>} />
+          <Route path="/murder/:id" element={<Protected><Murder /></Protected>} />
+          <Route path="/rob/:id" element={<Protected><Rob /></Protected>} />
+          <Route path="/customize/weapons" element={<Protected><CustomizeWeapons /></Protected>} />
+          <Route path="/customize/vehicles" element={<Protected><CustomizeVehicles /></Protected>} />
+          <Route path="/new-character" element={<Protected><NewCharacter /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

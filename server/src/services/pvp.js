@@ -2,11 +2,12 @@ import { db } from '../db.js';
 import { COMBAT_MOVES, moveById } from '../data.js';
 import { effectiveStats } from './buffs.js';
 import { rollMoveOutcome } from './combat.js';
-import { saveCharacter, awardXp, loadCharacterById, publicProfileFor } from './character.js';
+import { saveCharacter, awardXp, loadCharacterById, publicProfileFor, isNewCharProtected, NEW_CHAR_PROTECTION_DAYS } from './character.js';
 import { writeLog } from './log.js';
 import { sendEvent } from './events.js';
 import { bumpMission } from './missions.js';
 import { loadMembership, activeWarBetween, bumpWarScoreFromAttack, handleLeaderDeath, gangBadgeFor } from './gangs.js';
+import { softDeath } from './death.js';
 
 // ── Tunables ───────────────────────────────────────────────────────────
 export const CHALLENGE_TTL_MS    = 60_000;     // target has 60s to accept
@@ -16,7 +17,6 @@ export const ATTACKER_COOLDOWN_MS = 5 * 60 * 1000;   // 5m between any attacks
 export const KO_HOSPITAL_MIN     = 12;          // base hospital minutes for the loser
 export const KO_HOSPITAL_VARIANCE_MIN = 8;      // + 0..N
 export const CASH_TRANSFER_PCT   = 0.05;        // 5% of loser's cash → winner
-export const NEWBIE_PROTECTION_LVL = 5;
 export const ENGAGE_ENERGY        = 8;
 export const ENGAGE_MIN_HP        = 30;
 
@@ -35,7 +35,7 @@ function situationalEligibility(attacker, target) {
   if (!target) return 'Player not found.';
   if (attacker.id === target.id) return "You can't challenge yourself.";
   if (attacker.city !== target.city) return 'You must be in the same city to attack.';
-  if (target.level < NEWBIE_PROTECTION_LVL) return 'That player is under newbie protection (lvl 5).';
+  if (isNewCharProtected(target)) return `That player is under new-character protection (first ${NEW_CHAR_PROTECTION_DAYS} days).`;
   if (attacker.jail_until && attacker.jail_until > now) return "You're in jail.";
   if (attacker.hospital_until && attacker.hospital_until > now) return "You're in hospital.";
   if (attacker.travel_until && attacker.travel_until > now) return "You're travelling.";
@@ -282,28 +282,19 @@ export function endFight(fight, attacker, target, outcome) {
       bumpWarScoreFromAttack(winner, loser, fight.city, 'murder');
 
       writeLog(winner.id, 'pvp', `☠️ You murdered ${loser.name} — took £${cashTake.toLocaleString()}, +${xp}xp.`, { opponent: loser.id, payout: cashTake, xp, mode: 'murder' }, true);
-      writeLog(loser.id,  'pvp', `☠️ Murdered by ${winner.name} — character permanently lost.`, { opponent: winner.id, mode: 'murder' }, true);
-
-      // If the loser was a gang leader, hand off or disband BEFORE deletion
-      // (otherwise the leader_id FK constraint would block).
-      const loserMembership = loadMembership(loser.id);
-      let succession = null;
-      if (loserMembership) {
-        const g = db.prepare('SELECT * FROM gangs WHERE id = ?').get(loserMembership.gang_id);
-        if (g && g.leader_id === loser.id) {
-          succession = handleLeaderDeath(g.id, loser.id);
-        }
-      }
+      writeLog(loser.id,  'pvp', `☠️ Murdered by ${winner.name} — lost everything, reset to level 10.`, { opponent: winner.id, mode: 'murder' }, true);
 
       // Sync winner HP from fight, then save.
       if (winnerRole === 'attacker') attacker.health = fight.attacker_hp;
       else                            target.health   = fight.target_hp;
       saveCharacter(winner);
 
-      // Delete the loser's character row — cascades through gang_members,
-      // dm_*, missions, fights, etc.
+      // Soft-death: keep the row + estate (bank, businesses, properties,
+      // vehicles, stocks, level, stats, loans). Wipe inventory, equipped
+      // gear, gang membership, transient state. The player will be
+      // routed to the heir-creation flow on next login.
       db.prepare('DELETE FROM pvp_fights WHERE id = ?').run(fight.id);
-      db.prepare('DELETE FROM characters WHERE id = ?').run(loser.id);
+      const { succession } = softDeath(loser, winner.name);
 
       summary = {
         ...summary,

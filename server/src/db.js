@@ -22,6 +22,7 @@ export function initDb() {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
+      email TEXT,
       password_hash TEXT NOT NULL,
       created_at INTEGER NOT NULL
     );
@@ -446,6 +447,110 @@ export function initDb() {
       executed_at      INTEGER NOT NULL
     );
 
+    -- ── Weapon customisation (Phase 2) ──────────────────────────────
+    -- One row per modified weapon. Stock (unmodified) weapons stay in
+    -- the aggregated inventory rows; the first time a player installs
+    -- a mod we promote one instance out of the stack into a row here.
+    -- mods_json maps slot → mod id, e.g. { barrel: "barrel_pistol_long" }.
+    CREATE TABLE IF NOT EXISTS weapon_instances (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_id    INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      base_item_id TEXT   NOT NULL,
+      mods_json   TEXT    NOT NULL DEFAULT '{}',
+      created_at  INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_weapon_instances_owner ON weapon_instances(owner_id);
+
+    -- ── Player-run Businesses (Phase 1: shops) ────────────────────
+    -- Player-founded businesses, city-locked. Two-pot cash model:
+    -- outgoings_cash pays rent, sales_cash accumulates revenue.
+    -- 30% of founding cost auto-seeds the outgoings pot. Owner tops up
+    -- outgoings from their wallet; withdraws sales to it.
+    --
+    -- type   — 'shop' for now (more types in later phases: casino…)
+    -- tier   — 'small' / 'medium' / 'large' — drives slots + rent
+    -- status — 'active' / 'inactive' (rent unpaid) / 'closed'
+    -- config_json — type-specific knobs (casino stakes etc.)
+    CREATE TABLE IF NOT EXISTS businesses_player (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_id        INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      city            TEXT    NOT NULL,
+      type            TEXT    NOT NULL,
+      name            TEXT    NOT NULL,
+      description     TEXT,
+      tier            TEXT    NOT NULL,
+      outgoings_cash  INTEGER NOT NULL DEFAULT 0,
+      sales_cash      INTEGER NOT NULL DEFAULT 0,
+      total_revenue   INTEGER NOT NULL DEFAULT 0,
+      total_rent_paid INTEGER NOT NULL DEFAULT 0,
+      total_tax_paid  INTEGER NOT NULL DEFAULT 0,
+      status          TEXT    NOT NULL DEFAULT 'active',
+      inactive_since  INTEGER,
+      last_rent_at    INTEGER NOT NULL,
+      created_at      INTEGER NOT NULL,
+      config_json     TEXT    NOT NULL DEFAULT '{}'
+    );
+    CREATE INDEX IF NOT EXISTS idx_pbiz_city ON businesses_player(city, status);
+    CREATE INDEX IF NOT EXISTS idx_pbiz_owner ON businesses_player(owner_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_pbiz_name_unique ON businesses_player(name COLLATE NOCASE);
+
+    -- ── Player ↔ player trades ───────────────────────────────────────
+    -- A direct trade between two players. Each side has an offer JSON
+    -- with shape { items: [{kind, item_id, qty}], cash }.
+    -- Confirmation is per-side; editing your own offer auto-resets BOTH
+    -- confirmation locks so neither player can get sneaked. Atomic swap
+    -- happens in /complete.
+    --
+    -- status:
+    --   pending   — initiator created, recipient hasn't accepted yet
+    --   active    — recipient accepted; both can edit / confirm
+    --   completed — atomic swap succeeded
+    --   cancelled — either side declined / cancelled
+    --   expired   — auto-cancelled after idle timeout
+    CREATE TABLE IF NOT EXISTS trades (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      initiator_id          INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      recipient_id          INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      status                TEXT    NOT NULL DEFAULT 'pending',
+      initiator_offer_json  TEXT    NOT NULL DEFAULT '{"items":[],"cash":0}',
+      recipient_offer_json  TEXT    NOT NULL DEFAULT '{"items":[],"cash":0}',
+      initiator_confirmed   INTEGER NOT NULL DEFAULT 0,
+      recipient_confirmed   INTEGER NOT NULL DEFAULT 0,
+      created_at            INTEGER NOT NULL,
+      last_active_at        INTEGER NOT NULL,
+      ended_at              INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_trades_initiator_status ON trades(initiator_id, status);
+    CREATE INDEX IF NOT EXISTS idx_trades_recipient_status ON trades(recipient_id, status);
+
+    CREATE TABLE IF NOT EXISTS trade_messages (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      trade_id    INTEGER NOT NULL REFERENCES trades(id) ON DELETE CASCADE,
+      sender_id   INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      body        TEXT    NOT NULL,
+      created_at  INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_trade_messages_trade ON trade_messages(trade_id, id);
+
+    -- One shop listing = one offer line. qty represents stack size for
+    -- non-unique items (later: per-instance modified items will live
+    -- under a separate item_instances table referenced by id).
+    --
+    -- kind         — 'misc' for now (next phase adds 'weapon'/'vehicle'/...)
+    -- source       — 'wholesale' (bought from wholesaler at retail-set
+    --                price) or 'inventory' (owner moved their own item in)
+    CREATE TABLE IF NOT EXISTS shop_listings (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      business_id INTEGER NOT NULL REFERENCES businesses_player(id) ON DELETE CASCADE,
+      kind        TEXT    NOT NULL,
+      item_id     TEXT    NOT NULL,
+      source      TEXT    NOT NULL,
+      qty         INTEGER NOT NULL,
+      price_each  INTEGER NOT NULL,
+      listed_at   INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_listing_biz ON shop_listings(business_id);
+
     -- ── Player-driven Job Board ──────────────────────────────────────
     -- A newspaper-style classifieds board, scoped to one city per ad.
     -- The server holds no contract / no escrow — it's pure connective
@@ -473,6 +578,27 @@ export function initDb() {
     const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(r => r.name);
     if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
   };
+  addColumnIfMissing('users', 'email', 'TEXT');
+  // Phase 2: equipped weapon can now be a per-instance modded weapon.
+  // When this column is non-null, it overrides the stock equipped_weapon
+  // catalogue id for combat purposes.
+  addColumnIfMissing('characters', 'equipped_weapon_instance', 'INTEGER REFERENCES weapon_instances(id) ON DELETE SET NULL');
+  // Phase 2: next-of-kin death model. 'alive' is the default; 'pending_heir'
+  // means the character has been killed and is waiting for the player to
+  // create their heir (name/avatar/city) before the row revives.
+  addColumnIfMissing('characters', 'status', "TEXT NOT NULL DEFAULT 'alive'");
+  // Phase 2D: vehicles can be customized in place (already per-instance
+  // rows). mods_json is the same shape as weapon_instances.mods_json.
+  addColumnIfMissing('vehicles_owned', 'mods_json', "TEXT NOT NULL DEFAULT '{}'");
+  // Phase 2F: shop listings can now reference per-instance items
+  // (weapon_instances row or vehicles_owned row). instance_id is null
+  // for stacked items (misc/weapon/armour/ammo/drug); set when kind is
+  // 'weapon_instance' or 'vehicle'.
+  addColumnIfMissing('shop_listings', 'instance_id', 'INTEGER');
+  addColumnIfMissing('businesses_player', 'description', 'TEXT');
+  // Case-insensitive unique on email — only enforced when set, since the
+  // column is nullable for any pre-migration accounts.
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(email COLLATE NOCASE) WHERE email IS NOT NULL');
   addColumnIfMissing('characters', 'last_health_tick', 'INTEGER');
   addColumnIfMissing('businesses_owned', 'custom_name', 'TEXT');
   addColumnIfMissing('businesses_owned', 'scale',       'INTEGER NOT NULL DEFAULT 1');

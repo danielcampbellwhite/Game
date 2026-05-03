@@ -21,11 +21,16 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ownedRows = db.prepare("SELECT item_id, qty FROM inventory WHERE char_id = ? AND kind = 'misc'")
     .all(ch.id);
   const ownedMap = Object.fromEntries(ownedRows.map(r => [r.item_id, r.qty]));
-  const items = MISC_ITEMS.map(i => ({
-    ...i,
-    cityCost: Math.floor(i.cost * cityMul),
-    owned: ownedMap[i.id] || 0,
-  }));
+  // Wholesale-only items live in the player-shop economy now — Murphy's
+  // doesn't sell them anymore, but players can still *use* any they
+  // already have (and resellers buy from the wholesaler endpoint).
+  const items = MISC_ITEMS
+    .filter(i => !i.wholesale_only)
+    .map(i => ({
+      ...i,
+      cityCost: Math.floor(i.cost * cityMul),
+      owned: ownedMap[i.id] || 0,
+    }));
   res.json({ items, cityName: cityById(ch.city)?.name });
 });
 

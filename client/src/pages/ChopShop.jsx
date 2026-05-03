@@ -46,24 +46,30 @@ export default function ChopShop() {
         <Card title="Your garage">
           <div className="grid sm:grid-cols-2 gap-3">
             {data.vehicles.map(v => (
-              <div key={v.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+              <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-medium">{v.maker} {v.name}</div>
+                    <div className="font-medium">{v.maker} {v.name}{v.is_modified && <span className="ml-2 text-[10px] uppercase text-yellow-300">🔧 modded</span>}</div>
                     <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.book)} · {v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'}</div>
                     <div className="text-[10px] text-ink-100/40">{v.cityName}</div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                  <button disabled={busy === `chop-${v.id}`} className="btn btn-money"
-                    onClick={() => sell(v, 'chop')}>
-                    Chop · {fmt(v.chopPrice)}
-                  </button>
-                  <button disabled={busy === `dealer-${v.id}`} className="btn btn-primary"
-                    onClick={() => sell(v, 'dealer')}>
-                    Dealer · {fmt(v.dealerPrice)}
-                  </button>
-                </div>
+                {v.is_modified ? (
+                  <p className="text-[11px] text-yellow-300 mt-3">
+                    Customised — list it on a player shop, or strip the mods first.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                    <button disabled={busy === `chop-${v.id}`} className="btn btn-money"
+                      onClick={() => sell(v, 'chop')}>
+                      Chop · {fmt(v.chopPrice)}
+                    </button>
+                    <button disabled={busy === `dealer-${v.id}`} className="btn btn-primary"
+                      onClick={() => sell(v, 'dealer')}>
+                      Dealer · {fmt(v.dealerPrice)}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -19,6 +19,8 @@ function decorateForSale(row) {
   if (!v) return null;
   const cityMul = cityById(row.city)?.businessMul || 1.0;
   const book = Math.floor(v.bookPrice * cityMul);
+  let modded = false;
+  try { modded = Object.keys(JSON.parse(row.mods_json || '{}')).length > 0; } catch {}
   return {
     id: row.id,
     vehicle_id: v.id,
@@ -32,6 +34,7 @@ function decorateForSale(row) {
     acquired_via: row.acquired_via,
     city: row.city,
     cityName: cityById(row.city)?.name,
+    is_modified: modded,
   };
 }
 
@@ -57,6 +60,16 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   if (!row) return res.status(404).json({ error: 'Vehicle not owned' });
   const v = vehicleById(row.vehicle_id);
   if (!v) return res.status(404).json({ error: 'Vehicle missing' });
+  // Modded vehicles can only move through the player economy.
+  let modCount = 0;
+  try { modCount = Object.keys(JSON.parse(row.mods_json || '{}')).length; } catch {}
+  if (modCount > 0) {
+    return res.status(400).json({ error: 'Customised cars don\'t fit through here. Strip the mods or list it on a player shop.' });
+  }
+  // Already listed in a player shop — prevent silent corruption where
+  // chopping deletes the row but the listing still references it.
+  const listed = db.prepare("SELECT id FROM shop_listings WHERE kind = 'vehicle' AND instance_id = ?").get(row.id);
+  if (listed) return res.status(400).json({ error: 'This car is listed in a player shop — delist it first.' });
 
   const cityMul = cityById(row.city)?.businessMul || 1.0;
   const book = Math.floor(v.bookPrice * cityMul);

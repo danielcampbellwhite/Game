@@ -50,6 +50,15 @@ export default function Player() {
     finally { setBusy(null); }
   }
 
+  async function startTrade() {
+    setBusy('trade'); setMsg(null);
+    try {
+      const r = await api.post('/trades', { target_id: parseInt(id, 10) });
+      nav(`/trades/${r.trade.id}`);
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   // My gang membership (cached for the Invite button visibility/eligibility).
   const [myGang, setMyGang] = useState(null);
   useEffect(() => {
@@ -129,18 +138,30 @@ export default function Player() {
               disabled={busy === 'challenge-knockout'}
               onClick={() => challenge('knockout')}
               className="btn text-xs"
-              title={p.city !== character?.city ? 'Different city — fly to them first' : 'Bare-knuckle fight, both online'}>
-              {busy === 'challenge-knockout' ? '…' : '⚔ Attack'}
+              title={p.city !== character?.city ? 'Different city — fly to them first.' : 'Mutual combat — they must accept; turn-based fight in the Fight Club.'}>
+              {busy === 'challenge-knockout' ? '…' : '⚔ Challenge'}
             </button>
-            {data.murder_eligible && (
-              <button
-                disabled={busy === 'challenge-murder'}
-                onClick={() => challenge('murder')}
-                className="btn text-xs"
-                title="Permadeath — winner takes all cash on hand. Only available because your gangs are at war in this city.">
-                {busy === 'challenge-murder' ? '…' : '☠️ Murder'}
-              </button>
-            )}
+            <button
+              disabled={p.city !== character?.city}
+              onClick={() => nav(`/rob/${p.id}`)}
+              className="btn text-xs"
+              title={p.city !== character?.city ? 'Different city — fly to them first.' : "Mug them on the spot — async. Win and you steal all their cash + put them in hospital."}>
+              🤜 Rob
+            </button>
+            <button
+              disabled={p.city !== character?.city}
+              onClick={() => nav(`/murder/${p.id}`)}
+              className="btn text-xs"
+              title={p.city !== character?.city ? 'Different city — fly to them first.' : 'Async assassination attempt with your equipped weapon. Permadeath on success.'}>
+              ☠️ Murder
+            </button>
+            <button
+              disabled={busy === 'trade' || p.city !== character?.city}
+              onClick={startTrade}
+              className="btn text-xs"
+              title={p.city !== character?.city ? 'You must both be in the same city to trade.' : 'Open a trade window with this player.'}>
+              {busy === 'trade' ? '…' : '🤝 Trade'}
+            </button>
             {/* Invite to my gang — only if I'm officer+ and target has no gang */}
             {(myGang?.role === 'leader' || myGang?.role === 'officer') && !p.gang && (
               <button disabled={busy === 'invite'} onClick={invite} className="btn text-xs">

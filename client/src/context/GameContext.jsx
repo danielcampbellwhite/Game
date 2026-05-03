@@ -63,10 +63,10 @@ export function GameProvider({ children }) {
     } finally { setLoading(false); }
   };
 
-  const register = async (username, password) => {
+  const register = async (username, email, password) => {
     setLoading(true);
     try {
-      const data = await api.post('/auth/register', { username, password });
+      const data = await api.post('/auth/register', { username, email, password });
       setToken(data.token);
       setTokenState(data.token);
       return data;

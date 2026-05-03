@@ -83,6 +83,7 @@ export default function Login() {
   const nav = useNavigate();
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -95,7 +96,7 @@ export default function Login() {
         const r = await login(username, password);
         nav(r.hasCharacter ? '/' : '/create');
       } else {
-        await register(username, password);
+        await register(username, email, password);
         nav('/create');
       }
     } catch (e) { setErr(e.message); }
@@ -116,6 +117,9 @@ export default function Login() {
         </div>
         <form onSubmit={submit} className="space-y-3">
           <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username" autoFocus className="w-full" />
+          {mode === 'register' && (
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email (for account recovery)" type="email" autoComplete="email" className="w-full" />
+          )}
           <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" className="w-full" />
           {err && <p className="text-blood-400 text-xs">{err}</p>}
           <button disabled={busy} type="submit" className="btn btn-primary w-full">

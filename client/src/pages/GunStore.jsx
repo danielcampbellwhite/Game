@@ -18,6 +18,48 @@ const AMMO_LABEL = {
   '50cal':  '.50 cal',
 };
 
+function AmmoCard({ a, character, buy, sell, busy }) {
+  const [sellQty, setSellQty] = useState(0);
+  const owned = a.owned || 0;
+  const ratePerRound = a.sellBackPerRound;
+  const sellPayout = sellQty * ratePerRound;
+
+  // Default the sell input to "all" the first time the player has stock.
+  useEffect(() => {
+    setSellQty(prev => (prev === 0 || prev > owned) ? owned : prev);
+  }, [owned]);
+
+  return (
+    <div className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+      <div className="flex items-baseline justify-between">
+        <div className="font-medium">{a.name}</div>
+        {owned > 0 && <span className="text-[10px] text-ink-100/55 tabular-nums">{owned} on hand</span>}
+      </div>
+      <div className="text-[11px] text-ink-100/60">{a.packSize} rounds / pack · £{a.cost}/round</div>
+      <div className="text-money-400 tabular-nums mt-1">{fmt(a.packCost)}/pack</div>
+      <button disabled={character.cash < a.packCost || busy === `ammo-${a.id}`} className="btn btn-money w-full text-xs mt-2"
+        onClick={() => buy('ammo', a, 1)}>
+        {busy === `ammo-${a.id}` ? '…' : 'Buy pack'}
+      </button>
+      {owned > 0 && (
+        <div className="mt-3 pt-3 border-t border-ink-100/10">
+          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Sell back · {fmt(ratePerRound)}/round</div>
+          <div className="flex gap-2">
+            <input type="number" min="1" max={owned} value={sellQty}
+              onChange={e => setSellQty(Math.max(1, Math.min(owned, parseInt(e.target.value, 10) || 1)))}
+              className="flex-1 text-xs" />
+            <button disabled={busy === `sell-${a.id}` || sellQty < 1 || sellQty > owned}
+              onClick={() => sell(a, sellQty)}
+              className="btn btn-ghost text-xs">
+              {busy === `sell-${a.id}` ? '…' : `Sell · ${fmt(sellPayout)}`}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GunStore() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
@@ -36,6 +78,18 @@ export default function GunStore() {
       const label = kind === 'ammo' ? `${item.packSize * qty} ${item.name}` : `${item.maker ? item.maker + ' ' : ''}${item.name}`;
       setMsg(`Bought ${label}.`);
       await refresh();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function sellAmmo(item, qty) {
+    setBusy(`sell-${item.id}`); setMsg(null);
+    try {
+      const r = await api.post('/gunstore/sell', { item_id: item.id, qty });
+      setMsg(`Sold ${qty}× ${item.name} back for ${fmt(r.payout)}.`);
+      await refresh();
+      await load();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
   }
@@ -110,19 +164,10 @@ export default function GunStore() {
         </div>
       </Card>
 
-      <Card title="🔋 Ammo">
+      <Card title="🔋 Ammo"
+        subtitle={`Surplus rounds buy back at ${Math.round((data.ammoSellBackPct || 0.5) * 100)}% of base — useful for clearing stock you no longer need.`}>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {data.ammo.map(a => (
-            <div key={a.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
-              <div className="font-medium">{a.name}</div>
-              <div className="text-[11px] text-ink-100/60">{a.packSize} rounds / pack · £{a.cost}/round</div>
-              <div className="text-money-400 tabular-nums mt-1">{fmt(a.packCost)}/pack</div>
-              <button disabled={character.cash < a.packCost || busy === `ammo-${a.id}`} className="btn btn-money w-full text-xs mt-2"
-                onClick={() => buy('ammo', a, 1)}>
-                Buy pack
-              </button>
-            </div>
-          ))}
+          {data.ammo.map(a => <AmmoCard key={a.id} a={a} character={character} buy={buy} sell={sellAmmo} busy={busy} />)}
         </div>
       </Card>
     </div>

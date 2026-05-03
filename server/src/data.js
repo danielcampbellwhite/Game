@@ -73,16 +73,6 @@ export const CRIMES = [
   { id: 'gta_hyper',    name: 'Midnight Run',         tier: 'gta', energy: 20, nerve: 12, level: 60, base: 32, vehicleTier: 7, xp: 2400, risk: 'extreme',  cooldownSec: 36000 /* 10h */ },
 ];
 
-// Permanent employment. Stat gates determine eligibility. `hourly` is the
-// passive pay rate (capped 24h pending). `task` is the flavour for the
-// daily check-in. Skip a check-in for 48h and you're fired.
-// `hourly` is the per-real-hour wage (a full game day's salary). Field name
-// kept for code stability — UI renders this as "/day".
-//
-// `schedule` defines the shift pattern in UTC. `days` is JS day-of-week (Sun=0
-// … Sat=6); `startHour` is when the shift opens; `durationHours` how long it
-// runs (can cross midnight). The player must check in once during each open
-// shift on a working day or get fired on the next API call.
 export const DRUGS = [
   { id: 'weed',    name: 'Weed',    base: 100,    levelGate: 1  },
   { id: 'mdma',    name: 'MDMA',    base: 350,    levelGate: 8  },
@@ -575,38 +565,6 @@ export const UNIVERSITY_COURSES = [
   { id: 'private',    name: 'Private Tutor',       emoji: '👨‍🏫',  energy: 12, baseCost: 2200, gain: 7, cooldownSec: 72 * 3600,   desc: 'One-on-one with a specialist.' },               // 3 days
 ];
 
-// On-demand boosts. `cat` groups them on the UI: cafe / bar / food / pharmacy / smoke.
-// `effects` are added to current vitals up to caps. Cooldowns are per-item per-character.
-export const CONSUMABLES = [
-  // ☕ Café — energy
-  { id: 'coffee',       cat: 'cafe',     name: 'Coffee',          emoji: '☕',  cost: 80,    effects: { energy: 10 },                cooldownMin: 5  },
-  { id: 'energy_drink', cat: 'cafe',     name: 'Energy Drink',    emoji: '⚡',  cost: 300,   effects: { energy: 25 },                cooldownMin: 30 },
-  { id: 'pre_workout',  cat: 'cafe',     name: 'Pre-Workout Mix', emoji: '💪',  cost: 1200,  effects: { energy: 50, nerve: 1 },      cooldownMin: 90 },
-  // 🍺 Bar — happiness, light nerve
-  { id: 'beer',         cat: 'bar',      name: 'Beer',            emoji: '🍺',  cost: 50,    effects: { happiness: 6 },              cooldownMin: 10 },
-  { id: 'whiskey',      cat: 'bar',      name: 'Whiskey',         emoji: '🥃',  cost: 220,   effects: { happiness: 15, nerve: 2 },   cooldownMin: 30 },
-  { id: 'champagne',    cat: 'bar',      name: 'Champagne',       emoji: '🍾',  cost: 900,   effects: { happiness: 35 },             cooldownMin: 60 },
-  // 🍴 Restaurant — energy + happiness
-  { id: 'burger',       cat: 'food',     name: 'Diner Burger',    emoji: '🍔',  cost: 60,    effects: { energy: 8, happiness: 3 },   cooldownMin: 20 },
-  { id: 'steak',        cat: 'food',     name: 'Ribeye Steak',    emoji: '🥩',  cost: 380,   effects: { energy: 20, happiness: 10 }, cooldownMin: 45 },
-  { id: 'tasting',      cat: 'food',     name: 'Tasting Menu',    emoji: '🍽️',  cost: 2800,  effects: { energy: 35, happiness: 30 }, cooldownMin: 120 },
-  // 💊 Pharmacy — health, nerve
-  { id: 'painkillers',  cat: 'pharmacy', name: 'Painkillers',     emoji: '💊',  cost: 500,   effects: { health: 25 },                cooldownMin: 30 },
-  { id: 'first_aid',    cat: 'pharmacy', name: 'First Aid Kit',   emoji: '🩹',  cost: 1500,  effects: { health: 60 },                cooldownMin: 60 },
-  { id: 'adrenaline',   cat: 'pharmacy', name: 'Adrenaline Shot', emoji: '💉',  cost: 2200,  effects: { nerve: 5, health: 10 },      cooldownMin: 90 },
-  // 🚬 Smoke — happiness
-  { id: 'cigar',        cat: 'smoke',    name: 'Premium Cigar',   emoji: '🚬',  cost: 150,   effects: { happiness: 12 },             cooldownMin: 30 },
-  { id: 'cuban',        cat: 'smoke',    name: 'Cuban Cigar',     emoji: '🚬',  cost: 700,   effects: { happiness: 25, nerve: 1 },   cooldownMin: 60 },
-];
-
-export const CONSUMABLE_CATS = {
-  cafe:     { name: 'Café',       emoji: '☕'  },
-  bar:      { name: 'Bar',        emoji: '🍺' },
-  food:     { name: 'Restaurant', emoji: '🍴' },
-  pharmacy: { name: 'Pharmacy',   emoji: '💊' },
-  smoke:    { name: 'Tobacco',    emoji: '🚬' },
-};
-
 // Using your own stash. Drug effects mirror their street appeal — heroin = bliss + crash, meth = wired but miserable.
 // Stronger effects come with longer cooldowns. No addiction model yet — easy to add later.
 export const DRUG_USE_EFFECTS = {
@@ -641,7 +599,6 @@ export const propertyById = id => byId(PROPERTIES, id);
 export const stockById = id => byId(STOCKS, id);
 export const enemyById = id => byId(ENEMIES, id);
 export const ammoById = id => byId(AMMO, id);
-export const consumableById = id => byId(CONSUMABLES, id);
 
 export function rankFor(rep) {
   let r = RANKS[0];
@@ -706,9 +663,21 @@ export function crimeCooldownSec(crime) {
 // no direct effect; a few have light vital effects so the page is useful
 // outside missions. `effects` applies to vitals on /use; `oneShotCash`
 // describes a randomised cash payout (lottery scratchers).
+// `wholesale_only: true` items aren't shown in Murphy's General Store —
+// they're stocked exclusively via the player-shop wholesaler at 60% of
+// `cost`. Shop owners then resell at any retail price they choose.
+// Mission props (lockpicks, gas cans, burner phones, etc.) stay in
+// Murphy's so they don't get bottlenecked behind the player economy.
 export const MISC_ITEMS = [
-  { id: 'flowers',         name: 'Bouquet of Flowers', emoji: '💐', cost: 35,  desc: 'A cheap mood-lifter. Use to bump happiness.', effects: { happiness: 5 } },
-  { id: 'chocolate_box',   name: 'Box of Chocolates',  emoji: '🍫', cost: 80,  desc: 'A small indulgence.',                          effects: { happiness: 8 } },
+  // ── Consumables — wholesaler-only, sold by player shops ──
+  { id: 'flowers',         name: 'Bouquet of Flowers', emoji: '💐', cost: 35,  desc: 'A cheap mood-lifter. Use to bump happiness.',  effects: { happiness: 5 },             wholesale_only: true },
+  { id: 'chocolate_box',   name: 'Box of Chocolates',  emoji: '🍫', cost: 80,  desc: 'A small indulgence.',                          effects: { happiness: 8 },             wholesale_only: true },
+  { id: 'coffee',          name: 'Espresso Shot',      emoji: '☕', cost: 60,  desc: 'A jolt of caffeine to keep you grinding.',     effects: { energy: 10 },               wholesale_only: true },
+  { id: 'energy_drink',    name: 'Energy Drink',       emoji: '🥤', cost: 120, desc: 'Sugar and taurine in a can.',                  effects: { energy: 18 },               wholesale_only: true },
+  { id: 'cigar',           name: 'Cuban Cigar',        emoji: '🚬', cost: 90,  desc: 'Steadies your hand for the next move.',        effects: { nerve: 2, happiness: 4 },    wholesale_only: true },
+  { id: 'whisky',          name: 'Single Malt',        emoji: '🥃', cost: 160, desc: 'Fortifies your spirit, dents your liver.',     effects: { nerve: 3, happiness: 6, health: -3 }, wholesale_only: true },
+  { id: 'sandwich',        name: 'Deli Sandwich',      emoji: '🥪', cost: 50,  desc: 'A proper feed.',                               effects: { health: 8, happiness: 3 },   wholesale_only: true },
+  { id: 'painkillers',     name: 'Painkillers',        emoji: '💊', cost: 140, desc: 'Knocks the edge off a beating.',               effects: { health: 18 },                wholesale_only: true },
   { id: 'lottery_ticket',  name: 'Lottery Scratcher',  emoji: '🎟️', cost: 50,  desc: 'Scratch & pray. Prizes from £50 all the way up to a £100,000 jackpot.',
     // Tiered weighted draw — see /general-store /use. Long-run EV is
     // £46.50, ~7% under the £50 ticket price, so the house edges ahead
@@ -746,6 +715,263 @@ export const MISC_ITEMS = [
 ];
 
 export const miscItemById = id => byId(MISC_ITEMS, id);
+
+// ── Player shops ───────────────────────────────────────────────────────
+//
+// Single-size, no rent, no slot cap. Friction is the upfront founding
+// cost + the 5% sales tax skimmed off every sale. Identical items
+// (same kind + item_id) stack into a single listing line, so a shop
+// with 1,000 coffees still shows just one row.
+export const SHOP_FOUNDING_COST = 10000;
+// 5% sales tax disappears at every shop sale. Pure money-sink.
+export const SHOP_SALES_TAX_PCT = 0.05;
+// Wholesaler price is this fraction of base retail cost.
+export const WHOLESALE_PRICE_PCT = 0.60;
+// Maximum player businesses per character per city.
+export const PLAYER_BIZ_PER_CITY_MAX = 5;
+// Shop name length bounds.
+export const SHOP_NAME_MIN = 3;
+export const SHOP_NAME_MAX = 32;
+// Optional shop description (newspaper-ad style blurb).
+export const SHOP_DESC_MAX = 280;
+
+// ── Weapon customisation (Phase 2) ─────────────────────────────────────
+//
+// Each mod targets a specific slot and is compatible with one or more
+// weapon categories. Stat deltas are applied additively on top of the
+// base weapon's `dmg`. Cost is the install price (one-time, not refunded
+// on uninstall). Paint mods are cosmetic-only — no stat delta, but the
+// custom name appears in your loadout.
+//
+// Slots:
+//   barrel    — biggest dmg lever
+//   scope     — accuracy / dmg trade-offs (small)
+//   magazine  — minor dmg or capacity-style buffs
+//   grip      — small all-round bonus
+//   paint     — cosmetic only
+//
+// Compatibility uses the `categories` field — any weapon whose
+// `category` (from WEAPONS) is in the mod's list can wear it.
+export const WEAPON_MOD_SLOTS = ['barrel', 'scope', 'magazine', 'grip', 'paint'];
+
+export const WEAPON_MOD_CATALOGUE = [
+  // ── Pistols (and revolvers share their barrel/grip/paint mods) ──
+  { id: 'barrel_pistol_compact',  slot: 'barrel',   name: 'Compact Pistol Barrel',   emoji: '🔧', cost: 600,   compat: ['pistol'],                       stats: { dmg: -1, accuracy: 6 } },
+  { id: 'barrel_pistol_long',     slot: 'barrel',   name: 'Long Pistol Barrel',      emoji: '🔧', cost: 850,   compat: ['pistol'],                       stats: { dmg: 3 } },
+  { id: 'barrel_pistol_threaded', slot: 'barrel',   name: 'Threaded Pistol Barrel',  emoji: '🔧', cost: 1200,  compat: ['pistol'],                       stats: { dmg: 1, accuracy: 2 } },
+  { id: 'barrel_revolver_match',  slot: 'barrel',   name: 'Match-Grade Revolver Barrel', emoji: '🔧', cost: 1400, compat: ['revolver'],                  stats: { dmg: 4, accuracy: 3 } },
+
+  // ── SMGs ──
+  { id: 'barrel_smg_compensator', slot: 'barrel',   name: 'SMG Compensator',         emoji: '🔧', cost: 1100,  compat: ['smg'],                          stats: { dmg: 2, accuracy: 3 } },
+  { id: 'barrel_smg_flash',       slot: 'barrel',   name: 'Flash Hider (SMG)',       emoji: '🔧', cost: 900,   compat: ['smg'],                          stats: { dmg: 1, accuracy: 2 } },
+
+  // ── Shotguns ──
+  { id: 'barrel_shotgun_choke',   slot: 'barrel',   name: 'Choke Tube',              emoji: '🔧', cost: 800,   compat: ['shotgun'],                      stats: { dmg: 2, accuracy: 4 } },
+  { id: 'barrel_shotgun_sawn',    slot: 'barrel',   name: 'Sawn-off Conversion',     emoji: '🔧', cost: 600,   compat: ['shotgun'],                      stats: { dmg: 5, accuracy: -4 } },
+
+  // ── Rifles ──
+  { id: 'barrel_rifle_heavy',     slot: 'barrel',   name: 'Heavy Rifle Barrel',      emoji: '🔧', cost: 2200,  compat: ['rifle'],                        stats: { dmg: 6 } },
+  { id: 'barrel_rifle_bull',      slot: 'barrel',   name: 'Bull Barrel (Rifle)',     emoji: '🔧', cost: 2500,  compat: ['rifle'],                        stats: { dmg: 3, accuracy: 5 } },
+  { id: 'barrel_rifle_threaded',  slot: 'barrel',   name: 'Threaded Rifle Barrel',   emoji: '🔧', cost: 2000,  compat: ['rifle'],                        stats: { dmg: 2, accuracy: 2 } },
+
+  // ── Snipers ──
+  { id: 'barrel_sniper_match',    slot: 'barrel',   name: 'Match Sniper Barrel',     emoji: '🔧', cost: 6000,  compat: ['sniper'],                       stats: { dmg: 10, accuracy: 4 } },
+  { id: 'barrel_sniper_fluted',   slot: 'barrel',   name: 'Fluted Sniper Barrel',    emoji: '🔧', cost: 5000,  compat: ['sniper'],                       stats: { dmg: 6, accuracy: 6 } },
+
+  // ── Scopes ──
+  { id: 'scope_micro_red_dot', slot: 'scope', name: 'Micro Red Dot',          emoji: '🎯', cost: 600,  compat: ['pistol', 'smg', 'shotgun'],     stats: { accuracy: 5 } },
+  { id: 'scope_reflex',        slot: 'scope', name: 'Reflex Sight',           emoji: '🎯', cost: 1000, compat: ['pistol', 'smg', 'shotgun', 'rifle'], stats: { accuracy: 7 } },
+  { id: 'scope_acog',          slot: 'scope', name: '4× ACOG',                emoji: '🎯', cost: 2200, compat: ['rifle', 'sniper'],              stats: { dmg: 1, accuracy: 9 } },
+  { id: 'scope_holographic',   slot: 'scope', name: 'Holographic Sight',      emoji: '🎯', cost: 1500, compat: ['rifle', 'shotgun', 'smg'],      stats: { accuracy: 8 } },
+  { id: 'scope_long_range',    slot: 'scope', name: '12× Long-Range Scope',   emoji: '🎯', cost: 3500, compat: ['sniper'],                       stats: { dmg: 2, accuracy: 12 } },
+  { id: 'scope_thermal',       slot: 'scope', name: 'Thermal Scope',          emoji: '🎯', cost: 8000, compat: ['rifle', 'sniper'],              stats: { dmg: 3, accuracy: 10 } },
+
+  // ── Magazines ──
+  { id: 'mag_extended_pistol', slot: 'magazine', name: 'Extended Pistol Mag', emoji: '🔫', cost: 350,  compat: ['pistol'],                          stats: { dmg: 1 } },
+  { id: 'mag_extended_smg',    slot: 'magazine', name: 'Extended SMG Mag',    emoji: '🔫', cost: 450,  compat: ['smg'],                             stats: { dmg: 1 } },
+  { id: 'mag_drum_smg',        slot: 'magazine', name: 'SMG Drum Mag',        emoji: '🔫', cost: 1200, compat: ['smg'],                             stats: { dmg: 2 } },
+  { id: 'mag_extended_rifle',  slot: 'magazine', name: 'Extended Rifle Mag',  emoji: '🔫', cost: 600,  compat: ['rifle'],                           stats: { dmg: 2 } },
+  { id: 'mag_drum_rifle',      slot: 'magazine', name: 'Rifle Drum Mag',      emoji: '🔫', cost: 1800, compat: ['rifle'],                           stats: { dmg: 3 } },
+  { id: 'mag_tube_shotgun',    slot: 'magazine', name: 'Shotgun Tube Ext.',   emoji: '🔫', cost: 700,  compat: ['shotgun'],                         stats: { dmg: 2 } },
+  { id: 'mag_speedloader',     slot: 'magazine', name: 'Speedloader',         emoji: '🔫', cost: 400,  compat: ['revolver'],                        stats: { dmg: 1 } },
+  { id: 'mag_extended_sniper', slot: 'magazine', name: 'Extended Sniper Mag', emoji: '🔫', cost: 2400, compat: ['sniper'],                          stats: { dmg: 3 } },
+
+  // ── Grips (most categories share) ──
+  { id: 'grip_rubber',         slot: 'grip', name: 'Rubber Grip',           emoji: '✊', cost: 250,  compat: ['pistol', 'revolver'],            stats: { accuracy: 3 } },
+  { id: 'grip_hogue',          slot: 'grip', name: 'Hogue Grip',            emoji: '✊', cost: 450,  compat: ['pistol', 'revolver'],            stats: { accuracy: 5 } },
+  { id: 'grip_vertical',       slot: 'grip', name: 'Vertical Foregrip',     emoji: '✊', cost: 600,  compat: ['rifle', 'smg', 'shotgun'],       stats: { accuracy: 4 } },
+  { id: 'grip_angled',         slot: 'grip', name: 'Angled Foregrip',       emoji: '✊', cost: 700,  compat: ['rifle', 'smg', 'shotgun'],       stats: { accuracy: 5 } },
+  { id: 'grip_bipod',          slot: 'grip', name: 'Bipod',                 emoji: '✊', cost: 1500, compat: ['rifle', 'sniper'],               stats: { accuracy: 8 } },
+  { id: 'grip_wrapped_melee',  slot: 'grip', name: 'Wrapped Grip',          emoji: '✊', cost: 200,  compat: ['melee'],                         stats: { dmg: 2 } },
+
+  // ── Paint (cosmetic, all categories) ──
+  { id: 'paint_matte_black',   slot: 'paint', name: 'Matte Black Finish',    emoji: '🎨', cost: 150,  compat: ['pistol','revolver','smg','shotgun','rifle','sniper','melee'], stats: {} },
+  { id: 'paint_stainless',     slot: 'paint', name: 'Stainless Steel',       emoji: '🎨', cost: 200,  compat: ['pistol','revolver','smg','shotgun','rifle','sniper','melee'], stats: {} },
+  { id: 'paint_gold',          slot: 'paint', name: 'Gold Plated',           emoji: '🎨', cost: 5000, compat: ['pistol','revolver','smg','shotgun','rifle','sniper','melee'], stats: {} },
+  { id: 'paint_camo',          slot: 'paint', name: 'Woodland Camo',         emoji: '🎨', cost: 350,  compat: ['rifle','sniper','smg','shotgun'],                              stats: {} },
+  { id: 'paint_skull',         slot: 'paint', name: 'Skull Engraving',       emoji: '🎨', cost: 800,  compat: ['pistol','revolver','melee'],                                   stats: {} },
+];
+
+export const weaponModById = id => WEAPON_MOD_CATALOGUE.find(m => m.id === id) || null;
+
+// All mods compatible with a specific weapon, given its category.
+export function modsForWeapon(weapon) {
+  if (!weapon) return [];
+  return WEAPON_MOD_CATALOGUE.filter(m => m.compat.includes(weapon.category));
+}
+
+// Apply a mods_json map to the base weapon's stats. Returns a copy with
+// `dmg` (+ deltas), `accuracy` (sum of mod accuracies, default 0), plus
+// a `mods` array describing what's installed for the UI.
+export function applyMods(baseWeapon, modsJson) {
+  let mods = {};
+  try { mods = JSON.parse(modsJson || '{}'); } catch {}
+  const installed = [];
+  let dmgDelta = 0;
+  let accuracy = 0;
+  for (const slot of WEAPON_MOD_SLOTS) {
+    const id = mods[slot];
+    if (!id) continue;
+    const def = weaponModById(id);
+    if (!def) continue;
+    installed.push({ slot, id, name: def.name, emoji: def.emoji });
+    dmgDelta += def.stats?.dmg || 0;
+    accuracy += def.stats?.accuracy || 0;
+  }
+  return {
+    ...baseWeapon,
+    dmg: Math.max(1, (baseWeapon.dmg || 0) + dmgDelta),
+    accuracy,           // additive; absent on stock weapons (treat as 0)
+    is_modified: installed.length > 0,
+    mods: installed,
+  };
+}
+
+// ── Vehicle customisation (Phase 2D) ───────────────────────────────────
+//
+// Vehicle mods don't affect any combat/gameplay system — driving
+// mechanics don't exist in this game. Their value is purely:
+//   1. Cosmetic / showcase — players can flex modded cars on profiles
+//   2. Resale boost — modded cars are stuck in the player economy (chop
+//      shop and the dealer refuse them) and the owner can list them at
+//      higher prices. Mod stats sum into a `bookPrice` boost.
+//
+// Compatibility is by `min_tier` — cheap mods fit any car; high-end
+// mods need a tier-N+ vehicle. Vehicle tiers run 1 (beater) to 7 (hyper).
+export const VEHICLE_MOD_SLOTS = ['engine', 'tires', 'paint', 'body', 'exhaust', 'interior'];
+
+export const VEHICLE_MOD_CATALOGUE = [
+  // ── Engine ──
+  { id: 'engine_turbo',         slot: 'engine',  name: 'Turbocharger',     emoji: '⚙️', cost: 15000, min_tier: 3, stats: { power: 25, value: 18000 } },
+  { id: 'engine_supercharger',  slot: 'engine',  name: 'Supercharger',     emoji: '⚙️', cost: 28000, min_tier: 4, stats: { power: 40, value: 32000 } },
+  { id: 'engine_race_tune',     slot: 'engine',  name: 'Race ECU Tune',    emoji: '⚙️', cost: 50000, min_tier: 5, stats: { power: 60, value: 60000 } },
+  { id: 'engine_swap_v8',       slot: 'engine',  name: 'V8 Engine Swap',   emoji: '⚙️', cost: 95000, min_tier: 5, stats: { power: 90, value: 110000 } },
+
+  // ── Tires ──
+  { id: 'tires_performance',    slot: 'tires',   name: 'Performance Tires', emoji: '🛞', cost: 4000,  min_tier: 1, stats: { handling: 15, value: 5000 } },
+  { id: 'tires_summer',         slot: 'tires',   name: 'Summer Slicks',    emoji: '🛞', cost: 8000,  min_tier: 3, stats: { handling: 22, value: 9500 } },
+  { id: 'tires_racing',         slot: 'tires',   name: 'Racing Slicks',    emoji: '🛞', cost: 14000, min_tier: 4, stats: { handling: 32, value: 16000 } },
+  { id: 'tires_offroad',        slot: 'tires',   name: 'Off-Road Tires',   emoji: '🛞', cost: 6500,  min_tier: 1, stats: { handling: 12, value: 7000 } },
+
+  // ── Paint ──
+  { id: 'paint_matte_car',      slot: 'paint',   name: 'Matte Black',      emoji: '🎨', cost: 6000,  min_tier: 1, stats: { value: 8000 } },
+  { id: 'paint_pearl_white',    slot: 'paint',   name: 'Pearl White',      emoji: '🎨', cost: 9000,  min_tier: 1, stats: { value: 12000 } },
+  { id: 'paint_candy',          slot: 'paint',   name: 'Candy Red',        emoji: '🎨', cost: 11000, min_tier: 1, stats: { value: 15000 } },
+  { id: 'paint_chrome',         slot: 'paint',   name: 'Chrome Wrap',      emoji: '🎨', cost: 30000, min_tier: 4, stats: { value: 40000 } },
+  { id: 'paint_holo',           slot: 'paint',   name: 'Holographic Wrap', emoji: '🎨', cost: 45000, min_tier: 5, stats: { value: 60000 } },
+
+  // ── Body ──
+  { id: 'body_lip',             slot: 'body',    name: 'Front Lip',        emoji: '🚘', cost: 3000,  min_tier: 1, stats: { value: 4000 } },
+  { id: 'body_spoiler',         slot: 'body',    name: 'Carbon Spoiler',   emoji: '🚘', cost: 5500,  min_tier: 3, stats: { handling: 6, value: 8000 } },
+  { id: 'body_widebody',        slot: 'body',    name: 'Wide-Body Kit',    emoji: '🚘', cost: 22000, min_tier: 4, stats: { handling: 4, value: 28000 } },
+  { id: 'body_roll_cage',       slot: 'body',    name: 'Steel Roll Cage',  emoji: '🚘', cost: 8000,  min_tier: 1, stats: { value: 6000 } },
+  { id: 'body_armor',           slot: 'body',    name: 'Armored Plating',  emoji: '🚘', cost: 35000, min_tier: 3, stats: { value: 28000 } },
+
+  // ── Exhaust ──
+  { id: 'exhaust_pipes',        slot: 'exhaust', name: 'Straight Pipes',   emoji: '💨', cost: 3500,  min_tier: 1, stats: { power: 8, value: 4500 } },
+  { id: 'exhaust_performance',  slot: 'exhaust', name: 'Performance Cat-Back', emoji: '💨', cost: 7500, min_tier: 2, stats: { power: 14, value: 10000 } },
+  { id: 'exhaust_titanium',     slot: 'exhaust', name: 'Titanium Exhaust', emoji: '💨', cost: 14000, min_tier: 4, stats: { power: 18, value: 18000 } },
+
+  // ── Interior ──
+  { id: 'interior_leather',     slot: 'interior', name: 'Bespoke Leather',  emoji: '🛋️', cost: 8000,  min_tier: 2, stats: { value: 12000 } },
+  { id: 'interior_alcantara',   slot: 'interior', name: 'Alcantara Trim',   emoji: '🛋️', cost: 12000, min_tier: 4, stats: { value: 18000 } },
+  { id: 'interior_racing',      slot: 'interior', name: 'Racing Bucket Seats', emoji: '🛋️', cost: 5500,  min_tier: 3, stats: { handling: 8, value: 7000 } },
+  { id: 'interior_sound',       slot: 'interior', name: 'Premium Sound System', emoji: '🛋️', cost: 7000,  min_tier: 1, stats: { value: 9500 } },
+  { id: 'interior_carbon',      slot: 'interior', name: 'Carbon Fiber Trim', emoji: '🛋️', cost: 10000, min_tier: 4, stats: { value: 14000 } },
+];
+
+export const vehicleModById = id => VEHICLE_MOD_CATALOGUE.find(m => m.id === id) || null;
+
+// All mods compatible with a given vehicle (tier-gated).
+export function modsForVehicle(vehicle) {
+  if (!vehicle) return [];
+  const tier = vehicle.tier || 1;
+  return VEHICLE_MOD_CATALOGUE.filter(m => tier >= (m.min_tier || 1));
+}
+
+// Apply a mods_json blob to the base vehicle. Returns a copy with
+// power/handling totals, value-boosted bookPrice, and the installed
+// mods array for the UI.
+export function applyVehicleMods(vehicle, modsJson) {
+  let mods = {};
+  try { mods = JSON.parse(modsJson || '{}'); } catch {}
+  const installed = [];
+  let power = 0, handling = 0, valueDelta = 0;
+  for (const slot of VEHICLE_MOD_SLOTS) {
+    const id = mods[slot];
+    if (!id) continue;
+    const def = vehicleModById(id);
+    if (!def) continue;
+    installed.push({ slot, id, name: def.name, emoji: def.emoji });
+    power += def.stats?.power || 0;
+    handling += def.stats?.handling || 0;
+    valueDelta += def.stats?.value || 0;
+  }
+  return {
+    ...vehicle,
+    power,
+    handling,
+    bookPrice: (vehicle.bookPrice || 0) + valueDelta,
+    base_book_price: vehicle.bookPrice || 0,
+    value_delta: valueDelta,
+    is_modified: installed.length > 0,
+    mods: installed,
+  };
+}
+
+// Quick check: does this vehicle have any mods installed?
+export function isVehicleModified(modsJson) {
+  try {
+    const m = JSON.parse(modsJson || '{}');
+    return Object.keys(m).length > 0;
+  } catch { return false; }
+}
+
+// ── Player-to-player trades ────────────────────────────────────────────
+// Same 5% sink as shop sales — applied to cash flowing in either
+// direction at trade completion. Items don't pay tax.
+export const TRADE_TAX_PCT = 0.05;
+// Auto-cancel an active trade if no activity for this long.
+export const TRADE_IDLE_TTL_MS = 5 * 60 * 1000;
+// Hard cap on items per side (prevents 1000-item denial-of-service offers).
+export const TRADE_MAX_ITEMS_PER_SIDE = 20;
+// Trade chat constraints.
+export const TRADE_CHAT_MAX = 240;
+
+// Wholesaler catalogue — everything in MISC_ITEMS flagged wholesale_only,
+// priced at the wholesale percentage of base cost. Filtered server-side
+// so the shape is consistent between this and the live response.
+export function wholesaleCatalogue() {
+  return MISC_ITEMS.filter(i => i.wholesale_only).map(i => ({
+    id: i.id,
+    name: i.name,
+    emoji: i.emoji,
+    desc: i.desc,
+    effects: i.effects || null,
+    base_cost: i.cost,
+    wholesale_cost: Math.max(1, Math.floor(i.cost * WHOLESALE_PRICE_PCT)),
+  }));
+}
 
 // ── Daily Missions ──────────────────────────────────────────────────────
 //

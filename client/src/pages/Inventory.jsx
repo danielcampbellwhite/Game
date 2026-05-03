@@ -190,7 +190,9 @@ export default function Inventory() {
 
       {/* ── Weapons ───────────────────────────────────────────────── */}
       {tab === 'weapons' && (
-        <Card title="🔫 Weapons" subtitle="Equip one at a time. Ranged weapons need ammo of the matching type.">
+        <Card title="🔫 Weapons"
+          subtitle="Equip one at a time. Ranged weapons need ammo of the matching type."
+          right={<Link to="/customize/weapons" className="btn btn-ghost text-xs">🔧 Customize</Link>}>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border ${eq.weapon === 'fists' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
               <div className="font-medium">Fists</div>
@@ -320,6 +322,7 @@ export default function Inventory() {
         <Card title="🚗 Vehicles" subtitle={`${inv.vehicles.length} cars across your garages — sell stolen ones at the Chop Shop, trade in legit ones the same place.`}
           right={
             <div className="flex gap-2 text-xs">
+              <Link className="btn btn-ghost" to="/customize/vehicles">🔧 Customize</Link>
               <Link className="btn btn-ghost" to="/dealership">→ Car Dealer</Link>
               <Link className="btn btn-ghost" to="/chop-shop">→ Chop Shop</Link>
             </div>
@@ -329,12 +332,23 @@ export default function Inventory() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {inv.vehicles.map(v => (
-                <div key={v.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
-                  <div className="font-medium">{v.maker} {v.name}</div>
-                  <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.bookPrice)}</div>
+                <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="font-medium">{v.maker} {v.name}</div>
+                    {v.is_modified && <span className="text-[10px] uppercase text-yellow-300">🔧 modded</span>}
+                  </div>
+                  <div className="text-[11px] text-ink-100/60">
+                    Tier {v.tier} · book {fmt(v.bookPrice)}
+                    {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
+                  </div>
                   <div className="text-[10px] text-ink-100/40 mt-0.5">
                     {v.acquired_via === 'stolen' ? '🥷 stolen' : '💼 bought'} · in {v.cityName}
                   </div>
+                  {v.mods?.length > 0 && (
+                    <div className="text-[10px] text-ink-100/55 mt-1 truncate">
+                      {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

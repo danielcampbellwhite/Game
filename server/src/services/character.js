@@ -173,7 +173,7 @@ const SAVE_STMT = `
     travel_until = ?, travel_to = ?,
     last_tick = ?, last_health_tick = ?, last_daily = ?, login_streak = ?,
     bank_last_interest = ?,
-    equipped_weapon = ?, equipped_armour = ?,
+    equipped_weapon = ?, equipped_armour = ?, equipped_weapon_instance = ?,
     prestige = ?,
     strength_buff = ?, strength_buff_at = ?,
     defence_buff = ?, defence_buff_at = ?,
@@ -199,7 +199,7 @@ export function saveCharacter(ch) {
     ch.travel_until, ch.travel_to,
     ch.last_tick, ch.last_health_tick, ch.last_daily, ch.login_streak,
     ch.bank_last_interest,
-    ch.equipped_weapon, ch.equipped_armour,
+    ch.equipped_weapon, ch.equipped_armour, ch.equipped_weapon_instance ?? null,
     ch.prestige,
     ch.strength_buff || 0, ch.strength_buff_at || null,
     ch.defence_buff  || 0, ch.defence_buff_at  || null,
@@ -213,6 +213,22 @@ export function saveCharacter(ch) {
 // Hard level cap. Players keep doing everything (gaining cash/rep/items),
 // but the level number freezes here and shows as "999+" client-side.
 export const MAX_LEVEL = 999;
+
+// Newly-created characters are immune to PvP attacks (rob, async murder,
+// live PvP) for this long. Resets when a player rolls a new character
+// after a death.
+export const NEW_CHAR_PROTECTION_MS = 3 * 24 * 60 * 60 * 1000;
+export const NEW_CHAR_PROTECTION_DAYS = 3;
+export function isNewCharProtected(ch, now = Date.now()) {
+  if (!ch?.created_at) return false;
+  return (now - ch.created_at) < NEW_CHAR_PROTECTION_MS;
+}
+// Hours until the protection lifts (rounded up). Returns 0 if expired.
+export function newCharProtectionHoursLeft(ch, now = Date.now()) {
+  const remaining = NEW_CHAR_PROTECTION_MS - (now - (ch?.created_at || 0));
+  if (remaining <= 0) return 0;
+  return Math.ceil(remaining / (60 * 60 * 1000));
+}
 
 export function awardXp(ch, xp) {
   if (ch.level >= MAX_LEVEL) { ch.xp = 0; return 0; }
@@ -318,6 +334,8 @@ export function publicCharacter(ch) {
     hospital_until: ch.hospital_until, hospital_reason: ch.hospital_reason || null,
     travel_until: ch.travel_until, travel_to: ch.travel_to,
     equipped_weapon: ch.equipped_weapon, equipped_armour: ch.equipped_armour,
+    equipped_weapon_instance: ch.equipped_weapon_instance ?? null,
+    status: ch.status || 'alive',
     login_streak: ch.login_streak, last_daily: ch.last_daily,
     prestige: ch.prestige,
   };
