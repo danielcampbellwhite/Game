@@ -591,6 +591,20 @@ export function initDb() {
   // Gender — picked at creation. NULL means legacy/unset (existing
   // pre-migration rows). New characters are required to pick one.
   addColumnIfMissing('characters', 'gender', 'TEXT');
+  // Gang faction allegiance — gangs are sub-divisions of a faction.
+  // Stamped from the founder's faction at creation; backfill below
+  // copies it from the leader's character row for existing gangs.
+  addColumnIfMissing('gangs', 'faction', 'TEXT');
+  // One-time backfill: any gang without a faction inherits its leader's.
+  // Idempotent — the WHERE filters out anything already populated.
+  try {
+    db.exec(`
+      UPDATE gangs SET faction = (
+        SELECT c.faction FROM characters c WHERE c.id = gangs.leader_id
+      )
+      WHERE faction IS NULL
+    `);
+  } catch {}
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps
   // jail-on-fail probability. Stored as a snapshot value plus the

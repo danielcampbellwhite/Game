@@ -6,6 +6,7 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import { useEventStream } from '../hooks/useEventStream.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import FactionBadge from '../components/FactionBadge.jsx';
 
 function FoundForm({ onCreated }) {
   const { refresh } = useGame();
@@ -66,17 +67,22 @@ export default function Gangs() {
   const [showFound, setShowFound] = useState(false);
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
+  // 'all' | 'mine' | 'fraudster' | 'mafia' | 'cartel'. Default to 'mine'
+  // when the player is aligned so they immediately see their faction's
+  // gangs; falls back to 'all' for unaligned characters.
+  const [factionFilter, setFactionFilter] = useState('mine');
   useScrollOnMessage(msg);
 
   async function load() {
+    const q = factionFilter && factionFilter !== 'all' ? `?faction=${factionFilter}` : '';
     const [g, inv] = await Promise.all([
-      api.get('/gangs'),
+      api.get('/gangs' + q),
       api.get('/gangs/invites'),
     ]);
     setData(g);
     setInvites(inv.invites || []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [factionFilter]);
 
   useEventStream('gang.invite', () => load());
   useEventStream('gang.disbanded', () => load());
@@ -169,17 +175,43 @@ export default function Gangs() {
         </Card>
       )}
 
-      <Card title=" Gang directory" subtitle={`${data.gangs.length} gang${data.gangs.length === 1 ? '' : 's'} active`}>
+      <Card title="Gang directory"
+        subtitle={`${data.gangs.length} gang${data.gangs.length === 1 ? '' : 's'} · gangs are sub-divisions of factions`}>
+        {/* Faction filter — default 'mine' so the page opens to your own
+            faction's gangs. Unaligned characters see "all" by default. */}
+        <div className="flex flex-wrap gap-1 mb-3 text-[11px] uppercase tracking-wide">
+          {[
+            { id: 'mine',      label: data.your_faction ? 'My faction' : 'My faction (none)' },
+            { id: 'all',       label: 'All' },
+            { id: 'fraudster', label: 'Fraudster' },
+            { id: 'mafia',     label: 'Mafia' },
+            { id: 'cartel',    label: 'Cartel' },
+          ].map(opt => (
+            <button key={opt.id}
+              onClick={() => setFactionFilter(opt.id)}
+              className={`px-2 py-1 rounded-md border ${factionFilter === opt.id ? 'border-blood-500 bg-blood-700/20 text-white' : 'border-ink-100/10 hover:bg-ink-800/60 text-ink-100/70'}`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         {!data.gangs.length ? (
-          <p className="text-sm text-ink-100/55">No gangs founded yet. Be the first.</p>
+          <p className="text-sm text-ink-100/55">
+            {factionFilter === 'mine' && data.your_faction
+              ? `No gangs in your faction yet. Be the first to plant the flag.`
+              : 'No gangs match this filter.'}
+          </p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
             {data.gangs.map(g => (
               <Link key={g.id} to={`/gangs/${g.id}`}
                 className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-baseline justify-between gap-2 flex-wrap">
                   <span className="font-medium">{g.name}</span>
-                  <span className="text-[10px] font-mono text-ink-100/55">[{g.tag}]</span>
+                  <div className="flex items-center gap-2">
+                    <FactionBadge faction={g.faction} />
+                    <span className="text-[10px] font-mono text-ink-100/55">[{g.tag}]</span>
+                  </div>
                 </div>
                 <div className="text-[11px] text-ink-100/55 mt-1 line-clamp-2">{g.description || <span className="italic text-ink-100/40">No description.</span>}</div>
                 <div className="text-[10px] text-ink-100/45 mt-2 flex justify-between">

@@ -25,21 +25,38 @@ function broadcastGang(gangId, type, extra = {}) {
 //  Discovery 
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
-  const rows = db.prepare(`
+  // Optional ?faction=fraudster|mafia|cartel filters to gangs of that
+  // faction. ?faction=mine resolves to the caller's own faction (or
+  // returns no rows if they're unaligned).
+  const factionParam = (req.query.faction || '').toString();
+  let factionFilter = null;
+  if (factionParam === 'mine') {
+    factionFilter = req.character.faction || '__none__';   // unaligned → no rows
+  } else if (factionParam) {
+    factionFilter = factionParam;
+  }
+
+  const sql = `
     SELECT g.*, COUNT(m.char_id) AS member_count
     FROM gangs g LEFT JOIN gang_members m ON m.gang_id = g.id
+    ${factionFilter ? 'WHERE g.faction = ?' : ''}
     GROUP BY g.id
     ORDER BY member_count DESC, g.founded_at DESC
     LIMIT 50
-  `).all();
+  `;
+  const rows = factionFilter
+    ? db.prepare(sql).all(factionFilter)
+    : db.prepare(sql).all();
   res.json({
     gangs: rows.map(g => ({
       id: g.id, name: g.name, tag: g.tag,
       description: g.description, leader_id: g.leader_id,
+      faction: g.faction || null,
       member_count: g.member_count, treasury: g.treasury,
       reputation: g.reputation, founded_at: g.founded_at,
     })),
     you: publicMyMembership(req.character.id),
+    your_faction: req.character.faction || null,
   });
 });
 

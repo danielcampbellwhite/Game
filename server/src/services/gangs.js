@@ -92,10 +92,14 @@ export function foundGang(founder, { name, tag, description }) {
   if (loadGangByName(cleanName)) return { error: 'That gang name is taken.' };
   if (loadGangByTag(cleanTag))   return { error: 'That gang tag is taken.' };
   const now = Date.now();
+  // Stamp the gang's faction from the founder. Gangs are subdivisions
+  // of factions — a Mafia founder makes a Mafia gang. Unaligned founders
+  // can still create a gang (faction = NULL), but it won't appear in
+  // any faction's "your faction" filter until claimed.
   const r = db.prepare(`
-    INSERT INTO gangs (name, tag, description, leader_id, treasury, reputation, founded_at)
-    VALUES (?, ?, ?, ?, 0, 0, ?)
-  `).run(cleanName, cleanTag, description || null, founder.id, now);
+    INSERT INTO gangs (name, tag, description, leader_id, treasury, reputation, faction, founded_at)
+    VALUES (?, ?, ?, ?, 0, 0, ?, ?)
+  `).run(cleanName, cleanTag, description || null, founder.id, founder.faction || null, now);
   const gangId = r.lastInsertRowid;
   db.prepare(`
     INSERT INTO gang_members (char_id, gang_id, role, title, joined_at, contributed)
