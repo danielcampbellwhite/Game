@@ -10,9 +10,10 @@
 
 import { Router } from 'express';
 import crypto from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { STAT_CAPS } from '../data.js';
+import { STAT_CAPS, CITIES } from '../data.js';
 import { saveCharacter, applyTick, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 
@@ -202,5 +203,136 @@ function applyEdits(ch, body, opts = {}) {
 
   return changes.join(', ');
 }
+
+// ── NPC seeding ──────────────────────────────────────────────────────
+//
+// Generates randomised users + characters to populate the world. Each
+// seeded user gets username `npc_<random>` so /purge-seeded can find
+// and remove them later. Characters are backdated 30 days so they're
+// past the 3-day new-character protection window and immediately
+// targetable for robbery/murder/PvP.
+
+const FIRST_NAMES = [
+  'Vito', 'Tony', 'Marco', 'Sal', 'Rocco', 'Carmine', 'Frank', 'Gino', 'Luca', 'Enzo',
+  'Dante', 'Bruno', 'Dominic', 'Angelo', 'Vinny', 'Joey', 'Paulie', 'Sonny', 'Mickey', 'Nico',
+  'Aleksei', 'Dmitri', 'Yuri', 'Vlad', 'Igor', 'Pavel', 'Boris', 'Sergei',
+  'Liam', 'Connor', 'Aiden', 'Declan', 'Cillian', 'Sean', 'Patrick', 'Donal',
+  'Hiroshi', 'Kenji', 'Takeshi', 'Akira', 'Ryo', 'Daisuke',
+  'Carlos', 'Diego', 'Hector', 'Rafael', 'Mateo', 'Joaquin',
+  'Marcus', 'Jamal', 'Tyrone', 'Devon', 'Andre', 'Reggie',
+  'Jacques', 'Pierre', 'Henri', 'Claude', 'Antoine',
+];
+const LAST_NAMES = [
+  'Corleone', 'Soprano', 'Gambino', 'Romano', 'Conti', 'Rizzo', 'Marino', 'Russo', 'Esposito', 'Vitale',
+  'Falcone', 'Gallo', 'Lombardi', 'Marchetti', 'Bianchi', 'Greco', 'Costa', 'Riva', 'Verdi',
+  'Volkov', 'Sokolov', 'Petrov', 'Ivanov', 'Romanov', 'Belov',
+  'O\'Connor', 'O\'Brien', 'Murphy', 'Walsh', 'Byrne', 'Doyle', 'Lynch', 'Brady',
+  'Tanaka', 'Yamamoto', 'Watanabe', 'Sato', 'Saito',
+  'Reyes', 'Vega', 'Cruz', 'Mendoza', 'Ortiz', 'Salazar',
+  'Washington', 'Jackson', 'Carter', 'Reed', 'Brooks',
+  'Dubois', 'Laurent', 'Moreau',
+];
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function randomBase62(len) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+router.post('/seed-players', requireAuth, requireAdmin, (req, res) => {
+  const count = Math.max(1, Math.min(500, Math.floor(Number(req.body?.count) || 50)));
+  // One bcrypt hash shared across all NPCs — they never log in. Hashing
+  // 500 separate passwords would take minutes; this finishes instantly.
+  const dummyHash = bcrypt.hashSync(randomBase62(32), 10);
+  const cityIds = CITIES.map(c => c.id);
+  const past = Date.now() - 30 * 24 * 60 * 60 * 1000; // 30 days ago
+
+  const insertUser = db.prepare(`
+    INSERT INTO users (username, email, password_hash, created_at, is_admin)
+    VALUES (?, NULL, ?, ?, 0)
+  `);
+  const insertChar = db.prepare(`
+    INSERT INTO characters (
+      user_id, name, avatar, city,
+      level, xp, energy, max_energy, nerve, max_nerve, health, max_health,
+      happiness, strength, defence, speed, intelligence,
+      reputation, cash, bank, dirty_cash,
+      last_tick, last_health_tick, bank_last_interest,
+      equipped_weapon, equipped_armour,
+      created_at, last_active_at
+    ) VALUES (?, ?, '', ?, ?, 0, ?, ?, ?, ?, ?, ?, 50, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, 'fists', 'none', ?, ?)
+  `);
+  const nameTaken = db.prepare('SELECT 1 AS x FROM characters WHERE name = ? COLLATE NOCASE');
+
+  const created = [];
+  // Wrap everything in one transaction — way faster than 500 implicit
+  // commits, and a partial failure won't leave half-seeded rows behind.
+  const tx = db.transaction(() => {
+    for (let i = 0; i < count; i++) {
+      let placed = false;
+      for (let attempt = 0; attempt < 8 && !placed; attempt++) {
+        const first = pick(FIRST_NAMES);
+        const last = pick(LAST_NAMES);
+        // Append a numeric suffix on the second-and-later attempts so
+        // dupes get a fighting chance to land.
+        const name = attempt === 0 ? `${first} ${last}` : `${first} ${last} ${rand(10, 99)}`;
+        if (nameTaken.get(name)) continue;
+        const username = `npc_${randomBase62(8)}`;
+        try {
+          const userInfo = insertUser.run(username, dummyHash, past);
+          const userId = userInfo.lastInsertRowid;
+
+          const level = rand(5, 50);
+          const maxEnergy = 100 + 5 * (level - 1);
+          const maxNerve  = 10 + Math.floor(level / 5);
+          const maxHealth = 100 + 5 * (level - 1);
+          const statBudget = level * 0.6;
+          const stats = {
+            strength:     Math.min(STAT_CAPS.strength,     1 + Math.floor(Math.random() * statBudget)),
+            defence:      Math.min(STAT_CAPS.defence,      1 + Math.floor(Math.random() * statBudget)),
+            speed:        Math.min(STAT_CAPS.speed,        1 + Math.floor(Math.random() * statBudget)),
+            intelligence: Math.min(STAT_CAPS.intelligence, 1 + Math.floor(Math.random() * level * 1.2)),
+          };
+          const city = pick(cityIds);
+          const cash = rand(500, 50_000);
+          const reputation = rand(0, level * 100);
+
+          insertChar.run(
+            userId, name, city,
+            level, maxEnergy, maxEnergy, maxNerve, maxNerve, maxHealth, maxHealth,
+            stats.strength, stats.defence, stats.speed, stats.intelligence,
+            reputation, cash,
+            past, past, past,
+            past, past,
+          );
+          created.push({ user_id: userId, username, name, city, level });
+          placed = true;
+        } catch (e) {
+          // UNIQUE-constraint collisions on username are the only retryable
+          // failure here. Anything else is a programmer error — surface it.
+          if (!String(e.message).includes('UNIQUE')) throw e;
+        }
+      }
+    }
+  });
+  tx();
+
+  res.json({
+    ok: true,
+    requested: count,
+    created: created.length,
+    sample: created.slice(0, 5),
+  });
+});
+
+router.post('/purge-seeded', requireAuth, requireAdmin, (_req, res) => {
+  // ON DELETE CASCADE on characters.user_id (and all owned tables that
+  // reference char_id) means deleting users wipes everything cleanly.
+  const r = db.prepare("DELETE FROM users WHERE username LIKE 'npc_%'").run();
+  res.json({ ok: true, deleted: r.changes });
+});
 
 export default router;

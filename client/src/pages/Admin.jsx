@@ -107,6 +107,9 @@ export default function Admin() {
   const [filter, setFilter] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [err, setErr] = useState(null);
+  const [seedCount, setSeedCount] = useState(50);
+  const [seedBusy, setSeedBusy] = useState(false);
+  const [seedMsg, setSeedMsg] = useState(null);
 
   async function load() {
     try {
@@ -115,6 +118,27 @@ export default function Admin() {
     } catch (e) { setErr(e.message); }
   }
   useEffect(() => { if (character?.is_admin) load(); }, [character?.is_admin]);
+
+  async function seed() {
+    setSeedBusy(true); setSeedMsg(null);
+    try {
+      const r = await api.post('/admin/seed-players', { count: parseInt(seedCount, 10) || 50 });
+      setSeedMsg(`Created ${r.created} of ${r.requested} requested NPCs.`);
+      await load();
+    } catch (e) { setSeedMsg(e.message); }
+    finally { setSeedBusy(false); }
+  }
+
+  async function purge() {
+    if (!confirm('Delete every NPC seeded by /admin/seed-players? This cascades to their inventory/vehicles/etc.')) return;
+    setSeedBusy(true); setSeedMsg(null);
+    try {
+      const r = await api.post('/admin/purge-seeded', {});
+      setSeedMsg(`Deleted ${r.deleted} seeded users.`);
+      await load();
+    } catch (e) { setSeedMsg(e.message); }
+    finally { setSeedBusy(false); }
+  }
 
   // Defer the gate check until character is loaded; otherwise an admin
   // refreshing the page would briefly bounce to /.
@@ -130,13 +154,35 @@ export default function Admin() {
 
   return (
     <div className="space-y-4">
-      <Card title="🛠 Admin Panel"
+      <Card title="Admin Panel"
         subtitle="God mode. Edits apply immediately and are written to the system log of the targeted character."
         right={<button onClick={load} className="btn btn-ghost text-xs">↻ Refresh</button>}>
         <p className="text-[11px] text-ink-100/55">
           Logged in as <b>{character.name}</b> (admin). Pick a player below to edit their stats, money, level, or release them from jail/hospital.
         </p>
         {err && <p className="text-blood-400 text-xs mt-2">{err}</p>}
+      </Card>
+
+      <Card title="Populate world"
+        subtitle="Generate randomised NPC players. They're real DB rows — robbable, murderable, messageable — backdated 30 days so they're past new-character protection.">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-[10px] uppercase text-ink-100/60">Count</label>
+          <input type="number" min="1" max="500" value={seedCount}
+            onChange={e => setSeedCount(e.target.value)}
+            disabled={seedBusy}
+            className="w-24 text-sm" />
+          <button disabled={seedBusy} onClick={seed} className="btn btn-money text-xs">
+            {seedBusy ? '…' : 'Seed NPCs'}
+          </button>
+          <button disabled={seedBusy} onClick={purge} className="btn text-xs">
+            Purge all NPCs
+          </button>
+        </div>
+        {seedMsg && <p className="text-money-400 text-xs mt-2">{seedMsg}</p>}
+        <p className="text-[10px] text-ink-100/40 mt-2">
+          Seeded users have <code>username</code> starting with <code>npc_</code>.
+          Purge wipes them along with everything they own (cascade delete).
+        </p>
       </Card>
 
       <div className="grid lg:grid-cols-3 gap-4">
