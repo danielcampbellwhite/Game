@@ -37,7 +37,7 @@ Run this, substituting your token:
 fetch('/api/admin/promote-self', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer ' + localStorage.getItem('token'),
+    'Authorization': 'Bearer ' + localStorage.getItem('mafia_token'),
     'X-Admin-Token': 'PASTE_YOUR_ADMIN_TOKEN_HERE'
   }
 }).then(r => r.json()).then(console.log)
