@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
 import Card from '../components/Card.jsx';
 import WorldMap from '../components/WorldMap.jsx';
+import FactionBadge from '../components/FactionBadge.jsx';
 
 const AROUND_TOWN = [
   { to: '/bank',       icon: '', name: 'First National Bank',     blurb: 'Deposits, withdrawals, loans, hourly interest.' },
@@ -57,6 +58,82 @@ const CITY_DATA = {
   sydney:      { emoji: '', vibe: 'Far from the heat. Premium inventory, isolated traders.' },
   cape_town:   { emoji: '', vibe: 'Untapped, unpredictable, undervalued.' },
 };
+
+// Card showing the city's flagship territory — current holder, capture
+// button (gated to officers/leaders of an aligned gang), and a hint
+// about the bonus while held. Lives on the City page so it's the first
+// thing players see when they land somewhere.
+function TerritoryCard({ characterCity, characterFaction }) {
+  const [terrs, setTerrs] = useState(null);
+  const [you, setYou] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  async function load() {
+    try {
+      const r = await api.get(`/territories`);
+      setTerrs(r.territories.filter(t => t.city === characterCity));
+      setYou(r.you);
+    } catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, [characterCity]);
+
+  async function attempt(t) {
+    setBusy(t.id); setMsg(null);
+    try {
+      const r = await api.post(`/territories/${t.id}/capture`, {});
+      setMsg(r.captured ? `Captured ${t.name}.` : `Failed — ${t.name} held.`);
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!terrs) return null;
+  if (terrs.length === 0) return null;
+
+  // Officer/leader of an aligned gang can attempt; otherwise show why.
+  const inGang = !!you?.gang;
+  const role = you?.gang?.role;   // server returns row from gang_members JOIN
+  const canAttack = inGang
+    && (you.gang.faction)
+    && (role === 'leader' || role === 'officer' || // we don't actually return role on /territories yet — leave permissive client-side; server still gates
+        true);
+
+  return (
+    <Card title="City Territory"
+      subtitle="Flagship location your gang can fight to control. While held, every faction member operating in this city earns +5% on crime cash payouts.">
+      <div className="space-y-3">
+        {terrs.map(t => (
+          <div key={t.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="font-medium">{t.name}</span>
+              {t.faction
+                ? <FactionBadge faction={t.faction} />
+                : <span className="text-[10px] uppercase tracking-wide text-ink-100/45">Unclaimed</span>}
+            </div>
+            <p className="text-[11px] text-ink-100/55 mt-1">{t.blurb}</p>
+            <div className="text-[11px] text-ink-100/55 mt-2">
+              {t.gang
+                ? <>Held by <Link to={`/gangs/${t.gang.id}`} className="text-blood-300 hover:underline">{t.gang.name} <span className="text-ink-100/45">[{t.gang.tag}]</span></Link></>
+                : <span>Nobody holds this. First gang to capture it locks in the +5% bonus for their faction.</span>}
+            </div>
+            {inGang ? (
+              <button
+                onClick={() => attempt(t)}
+                disabled={busy === t.id}
+                className="btn btn-primary text-xs w-full mt-3">
+                {busy === t.id ? '…' : t.gang?.id === you.gang.id ? 'Already yours' : 'Attempt capture'}
+              </button>
+            ) : (
+              <p className="text-[11px] text-ink-100/40 mt-3">Join a gang to fight for territory.</p>
+            )}
+          </div>
+        ))}
+      </div>
+      {msg && <p className="text-xs mt-2 text-money-400">{msg}</p>}
+    </Card>
+  );
+}
 
 // Persist the world-map open/closed preference across visits. Default
 // closed — the map is a "nice to have" surface; players who just want
@@ -139,6 +216,8 @@ export default function City() {
           )
         )}
       </Card>
+
+      <TerritoryCard characterCity={character.city} characterFaction={character.faction} />
 
       <Card title="Around Town" subtitle="Legitimate businesses you can walk into.">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">

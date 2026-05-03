@@ -8,6 +8,7 @@ import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
 import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
 import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
+import { factionHoldsTerritoryInCity, FACTION_BONUS_CRIME } from '../services/territories.js';
 
 const router = Router();
 
@@ -124,10 +125,13 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       result = { ok: true, success: true, vehicle: v, xp: xpGain, levels: lvls };
     } else {
       const cityMul = cityById(ch.city)?.businessMul || 1.0;
-      const payout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul);
+      // Territory-control bonus: faction-wide +5% crime cash if the
+      // player's faction holds at least one location in this city.
+      const territoryBonus = factionHoldsTerritoryInCity(ch.faction, ch.city) ? (1 + FACTION_BONUS_CRIME) : 1.0;
+      const payout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus);
       if (crime.dirty) ch.dirty_cash += payout;
       else ch.cash += payout;
-      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (dirty)' : ''} +${xpGain}xp.`, { crime: crime.id, payout, xp: xpGain });
+      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (dirty)' : ''} +${xpGain}xp${territoryBonus > 1 ? ' (faction turf bonus)' : ''}.`, { crime: crime.id, payout, xp: xpGain, territoryBonus });
       result = { ok: true, success: true, payout, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
     }
   } else {

@@ -94,6 +94,33 @@ export const FACTION_IDS = FACTIONS.map(f => f.id);
 // non-binary / unspecified.
 export const GENDERS = ['male', 'female'];
 
+// Territories — flagship locations within each city that gangs fight to
+// control. One per city for the v1 scaffold; bonus is "crime_cash_5"
+// (5% bonus to crime payouts for any faction member operating in the
+// city while a gang of that faction holds the location).
+//
+// Data is static; live ownership lives in the `territories` DB table.
+// The composite key is (city, id) — id is unique per city.
+export const TERRITORIES = [
+  { id: 'docks',     city: 'new_york',    name: 'The East River Docks',   blurb: 'Container ships, longshoremen, and very flexible customs paperwork.', bonus: 'crime_cash_5' },
+  { id: 'studio',    city: 'los_angeles', name: 'The Studio Backlot',     blurb: 'A film backlot that doubles as a perfectly legitimate cash-laundering venue.', bonus: 'crime_cash_5' },
+  { id: 'marina',    city: 'miami',       name: 'South Beach Marina',     blurb: 'Yachts in, product out. The water doesn\'t ask questions.', bonus: 'crime_cash_5' },
+  { id: 'trenchtown',city: 'kingston',    name: 'Trench Town Yard',       blurb: 'Where the dub plates spin and the herb moves at volume.', bonus: 'crime_cash_5' },
+  { id: 'rocinha',   city: 'rio',         name: 'Rocinha Rooftops',       blurb: 'Highest favela in the city — every line of sight is a checkpoint.', bonus: 'crime_cash_5' },
+  { id: 'square',    city: 'london',      name: 'The Square Mile',        blurb: 'Banks, courts, and a discreet line into every City brokerage.', bonus: 'crime_cash_5' },
+  { id: 'opera',     city: 'paris',       name: 'The Opera District',     blurb: 'Art auctions on top, fence networks below.', bonus: 'crime_cash_5' },
+  { id: 'depot',     city: 'berlin',      name: 'Warschauer Depot',       blurb: 'A converted rail depot. Hosts techno raves and quiet pickups.', bonus: 'crime_cash_5' },
+  { id: 'kremlin',   city: 'moscow',      name: 'Kremlin Quarter',        blurb: 'Adjacent to power. Adjacent to wealth. Adjacent to the basement bratva.', bonus: 'crime_cash_5' },
+  { id: 'souk',      city: 'dubai',       name: 'The Gold Souk',          blurb: 'Where dirty cash becomes 24-carat receipts.', bonus: 'crime_cash_5' },
+  { id: 'shibuya',   city: 'tokyo',       name: 'Shibuya Backstreets',    blurb: 'The yakuza\'s home turf. Bright lights, darker alleys.', bonus: 'crime_cash_5' },
+  { id: 'wharf',     city: 'hong_kong',   name: 'Victoria Wharf',         blurb: 'Container terminal at midnight. Triads run the cranes.', bonus: 'crime_cash_5' },
+  { id: 'harbour',   city: 'sydney',      name: 'Darling Harbour Pier',   blurb: 'Sun, salt, and serious money flowing through the night clubs.', bonus: 'crime_cash_5' },
+  { id: 'waterfront',city: 'cape_town',   name: 'Atlantic Waterfront',    blurb: 'Tourists by day, smugglers by night. The harbour pays both.', bonus: 'crime_cash_5' },
+];
+
+export const territoryById = id => TERRITORIES.find(t => t.id === id) || null;
+export const territoriesInCity = city => TERRITORIES.filter(t => t.city === city);
+
 // Crimes — energy/nerve cost, level gate, success base, payout range, xp
 export const CRIMES = [
   //  Street crimes 

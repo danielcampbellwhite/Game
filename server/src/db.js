@@ -605,6 +605,25 @@ export function initDb() {
       WHERE faction IS NULL
     `);
   } catch {}
+
+  // ── Territories — fine-grained, per-location gang ownership ──────
+  // Distinct from `turf_holds` (whole-city holds won via gang_wars).
+  // Each row is a sub-location inside a city; gang_id is NULL when the
+  // location is unclaimed. `faction` is denormalized from gang.faction
+  // at capture time so we can apply faction-wide bonuses without a JOIN.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS territories (
+      city            TEXT    NOT NULL,
+      location_id     TEXT    NOT NULL,
+      gang_id         INTEGER REFERENCES gangs(id) ON DELETE SET NULL,
+      faction         TEXT,
+      captured_at     INTEGER,
+      last_attempt_at INTEGER,
+      PRIMARY KEY (city, location_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_territories_gang    ON territories(gang_id);
+    CREATE INDEX IF NOT EXISTS idx_territories_faction ON territories(city, faction);
+  `);
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps
   // jail-on-fail probability. Stored as a snapshot value plus the
