@@ -15,11 +15,14 @@ const ENERGY_COST = 10;
 const ATTACKER_COOLDOWN_MS = 60 * 60 * 1000;       // 1h between robberies (per attacker)
 const TARGET_COOLDOWN_MS   = 30 * 60 * 1000;       // 30m immunity (per target)
 
-// Outcome jail times in minutes.
-const JAIL_WIN  = [5, 15];
-const JAIL_LOSE = [15, 30];
 // Hospital time on win (target).
 const HOSPITAL_MIN = [10, 30];
+// Cash steal range — random share of target's cash on hand.
+const CASH_PCT_MIN = 0.50;
+const CASH_PCT_MAX = 1.00;
+// Probability the victim sees who robbed them. The attacker is never
+// told the outcome — they don't know if they got away clean.
+const REVEAL_PCT = 0.50;
 
 // In-memory cooldown tables. Wiped on restart.
 const attackerCooldowns = new Map();
@@ -102,52 +105,65 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   targetCooldowns.set(target.id, now);
 
   if (win) {
-    const cashTaken = target.cash || 0;
-    target.cash = 0;
+    // Random share of cash on hand — keeps marginal robberies thrilling.
+    const robPct = CASH_PCT_MIN + Math.random() * (CASH_PCT_MAX - CASH_PCT_MIN);
+    const cashTaken = Math.floor((target.cash || 0) * robPct);
+    target.cash = (target.cash || 0) - cashTaken;
     ch.cash += cashTaken;
+
     const hospitalMins = rng(HOSPITAL_MIN[0], HOSPITAL_MIN[1]);
     target.health = 1;
     target.hospital_until = now + hospitalMins * 60 * 1000;
-    target.hospital_reason = `Mugged in the alley by ${ch.name}.`;
 
-    const jailMinutes = rng(JAIL_WIN[0], JAIL_WIN[1]);
-    ch.jail_until = now + jailMinutes * 60 * 1000;
-    ch.jail_reason = `Caught after robbing ${target.name}.`;
+    // Reveal coin-flip. Result is stored only in the victim's log /
+    // notification — attacker is never told either way.
+    const revealed = Math.random() < REVEAL_PCT;
+    const robberLabel = revealed ? ch.name : 'an unknown assailant';
+    target.hospital_reason = `Mugged in the alley by ${robberLabel}.`;
 
     const xp = 25 + Math.floor(target.level / 2);
     awardXp(ch, xp);
     ch.reputation += xp / 5;
     bumpMission(ch, 'rob_player', 1);
 
-    writeLog(ch.id, 'pvp', `🤜 You robbed ${target.name} for £${cashTaken.toLocaleString()} — jailed ${jailMinutes}m.`,
+    // Attacker log: never mentions reveal status, never mentions jail.
+    writeLog(ch.id, 'pvp', `🤜 You robbed ${target.name} for £${cashTaken.toLocaleString()}.`,
       { target: target.id, cashTaken }, true);
-    writeLog(target.id, 'pvp', `🤜 You were robbed by ${ch.name} — lost £${cashTaken.toLocaleString()}, hospitalised ${hospitalMins}m.`,
-      { attacker: ch.id, cashTaken }, true);
+    writeLog(target.id, 'pvp',
+      `🤜 You were robbed by ${robberLabel} — lost £${cashTaken.toLocaleString()}, hospitalised ${hospitalMins}m.`,
+      { attacker_id: revealed ? ch.id : null, cashTaken, revealed }, true);
 
     saveCharacter(ch);
     saveCharacter(target);
-    sendEvent(target.id, 'pvp.attacked', { by: { id: ch.id, name: ch.name }, outcome: 'robbed', cashTaken, hospitalMins });
+    sendEvent(target.id, 'pvp.attacked', {
+      by: revealed ? { id: ch.id, name: ch.name } : null,
+      outcome: 'robbed', cashTaken, hospitalMins,
+    });
+    // Attacker response: deliberately omits the `revealed` flag.
     return res.json({
       ok: true, win: true,
-      cashTaken, hospitalMins, jailMinutes,
+      cashTaken, hospitalMins,
       character: publicCharacter(ch),
     });
   }
 
-  // Lose: target gets alerted, attacker jailed.
-  const jailMinutes = rng(JAIL_LOSE[0], JAIL_LOSE[1]);
-  ch.jail_until = now + jailMinutes * 60 * 1000;
-  ch.jail_reason = `Caught attempting to rob ${target.name}.`;
+  // Lose: target gets alerted (with same reveal coin-flip), no jail.
+  const revealed = Math.random() < REVEAL_PCT;
+  const robberLabel = revealed ? ch.name : 'an unknown assailant';
 
-  writeLog(ch.id, 'pvp', `❌ ${target.name} fought you off — caught and jailed ${jailMinutes}m.`,
+  writeLog(ch.id, 'pvp', `❌ ${target.name} fought you off — got away with nothing.`,
     { target: target.id }, true);
-  writeLog(target.id, 'pvp', `🛡 You fought off a robbery attempt by ${ch.name}.`,
-    { attacker: ch.id }, true);
+  writeLog(target.id, 'pvp',
+    `🛡 You fought off a robbery attempt by ${robberLabel}.`,
+    { attacker_id: revealed ? ch.id : null, revealed }, true);
 
   saveCharacter(ch);
-  sendEvent(target.id, 'pvp.attacked', { by: { id: ch.id, name: ch.name }, outcome: 'rob_failed' });
+  sendEvent(target.id, 'pvp.attacked', {
+    by: revealed ? { id: ch.id, name: ch.name } : null,
+    outcome: 'rob_failed',
+  });
   res.json({
-    ok: true, win: false, jailMinutes,
+    ok: true, win: false,
     character: publicCharacter(ch),
   });
 });

@@ -30,8 +30,8 @@ function hospitalCostFor(target, now) {
 
 // Bust-out chance scales with intelligence so brains beat brawn here.
 // Range: 30%..60%. Failed busts land the rescuer in jail.
-const BUST_BASE_PCT = 0.30;
-const BUST_INT_PCT  = 0.30;   // full +30% at intelligence 100+
+const BUST_BASE_PCT = 0.75;
+const BUST_INT_PCT  = 0.20;   // full +20% at intelligence 100+ (caps at 95%)
 const BUST_FAIL_JAIL_MIN_S = 180;
 const BUST_FAIL_JAIL_MAX_S = 600;
 const BUST_COOLDOWN_MS = 5 * 60 * 1000;  // 5m between bust attempts (per buster)

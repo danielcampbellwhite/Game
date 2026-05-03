@@ -26,15 +26,9 @@ const CASH_PCT_KILL          = 1.00;   // killer takes everything on the body
 const CASH_PCT_SEVERE_WOUND  = 0.10;
 const CASH_PCT_WOUND         = 0.00;
 
-// Jail times — every outcome lands you in trouble; severity scales with
-// how bad the result was. min/max in minutes.
-const JAIL_MIN = {
-  kill:         [60, 180],
-  severe_wound: [30,  90],
-  wound:        [15,  45],
-  miss:         [30,  90],
-};
-
+// No jail time on any outcome. The attacker walks away clean (cooldowns
+// + ammo + energy cost are the only friction).
+//
 // In-memory cooldown tables. Wiped on restart, which is fine — it just
 // means a freshly-deployed server gives everyone a clean slate.
 const attackerCooldowns = new Map();    // attackerId -> last attempt ms
@@ -198,16 +192,6 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   else if (damageRatio >= 0.2)               outcome = 'wound';
   else                                        outcome = 'miss';
 
-  // Always face jail — you tried to kill someone.
-  const [jailMin, jailMax] = JAIL_MIN[outcome];
-  const jailMinutes = rng(jailMin, jailMax);
-  ch.jail_until = now + jailMinutes * 60 * 1000;
-  ch.jail_reason = outcome === 'miss'
-    ? `Caught attempting to murder ${target.name}.`
-    : outcome === 'kill'
-      ? `Suspected of murdering ${target.name}.`
-      : `Charged with attempted murder of ${target.name}.`;
-
   // ── Apply target effects per outcome ─────────────────────────────
   let cashTaken = 0;
   let cashPct = 0;
@@ -224,8 +208,8 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     ch.reputation += 20 + (target.level || 1) * 2;
     bumpMission(ch, 'combat_win', 1, { enemy: `murder_${target.id}` });
 
-    writeLog(ch.id, 'pvp', `☠️ You murdered ${target.name} — took £${cashTaken.toLocaleString()}, jailed ${jailMinutes}m.`, { target: target.id, outcome, cashTaken }, true);
-    writeLog(target.id, 'pvp', `☠️ Murdered by ${ch.name} — lost everything, reset to level 10.`, { attacker: ch.id, outcome }, true);
+    writeLog(ch.id, 'pvp', `☠️ You murdered ${target.name} — took £${cashTaken.toLocaleString()}.`, { target: target.id, outcome, cashTaken }, true);
+    writeLog(target.id, 'pvp', `☠️ Murdered by ${ch.name} — lost everything, must roll a new character.`, { attacker: ch.id, outcome }, true);
 
     // Save attacker, then soft-death the target. The killer already
     // pulled their cut of cash above; softDeath wipes the rest.
@@ -234,7 +218,7 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     succession = softSuccession;
     return res.json({
       ok: true,
-      outcome, hits, strikes, totalDamage, bulletsUsed, jailMinutes,
+      outcome, hits, strikes, totalDamage, bulletsUsed,
       cashTaken, succession,
       character: publicCharacter(ch),
       log: roundLog,
@@ -260,7 +244,7 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     ch.reputation += xp / 5;
 
     writeLog(ch.id, 'pvp',
-      `🩸 You ${outcome === 'severe_wound' ? 'critically' : ''} wounded ${target.name} — took £${cashTaken.toLocaleString()}, jailed ${jailMinutes}m.`,
+      `🩸 You ${outcome === 'severe_wound' ? 'critically ' : ''}wounded ${target.name} — took £${cashTaken.toLocaleString()}.`,
       { target: target.id, outcome, cashTaken }, true);
     writeLog(target.id, 'pvp',
       `🩸 You were ${outcome === 'severe_wound' ? 'critically wounded' : 'wounded'} by ${ch.name}. Hospitalised ${hospitalMins}m.`,
@@ -271,21 +255,21 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     sendEvent(target.id, 'pvp.attacked', { by: { id: ch.id, name: ch.name }, outcome, hospitalMins });
     return res.json({
       ok: true,
-      outcome, hits, strikes, totalDamage, bulletsUsed, jailMinutes,
+      outcome, hits, strikes, totalDamage, bulletsUsed,
       cashTaken,
       character: publicCharacter(ch),
       log: roundLog,
     });
   }
 
-  // Miss / fail.
-  writeLog(ch.id, 'pvp', `❌ Failed murder attempt on ${target.name} — caught and jailed ${jailMinutes}m.`, { target: target.id, outcome }, true);
-  writeLog(target.id, 'pvp', `⚠ ${ch.name} tried to kill you — they're behind bars now.`, { attacker: ch.id, outcome }, true);
+  // Miss / fail — no jail, just bullets and energy spent.
+  writeLog(ch.id, 'pvp', `❌ Failed murder attempt on ${target.name} — they got away.`, { target: target.id, outcome }, true);
+  writeLog(target.id, 'pvp', `⚠ ${ch.name} tried to kill you and missed.`, { attacker: ch.id, outcome }, true);
   saveCharacter(ch);
   sendEvent(target.id, 'pvp.attacked', { by: { id: ch.id, name: ch.name }, outcome: 'miss' });
   return res.json({
     ok: true,
-    outcome, hits, strikes, totalDamage, bulletsUsed, jailMinutes,
+    outcome, hits, strikes, totalDamage, bulletsUsed,
     cashTaken: 0,
     character: publicCharacter(ch),
     log: roundLog,

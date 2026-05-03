@@ -13,7 +13,10 @@ function OutcomeBanner({ result }) {
       <div className="rounded-md border border-money-500 bg-money-700/15 text-money-100 p-3">
         <div className="font-display text-lg">🤜 Robbery successful</div>
         <div className="text-xs mt-1 tabular-nums">
-          Took {fmt(result.cashTaken)} · they're in hospital {result.hospitalMins} min · you're jailed {result.jailMinutes} min.
+          Took {fmt(result.cashTaken)} · they're in hospital {result.hospitalMins} min.
+        </div>
+        <div className="text-[11px] mt-2 text-money-200/80 italic">
+          You slipped away. There's no telling whether they got a good look at you.
         </div>
       </div>
     );
@@ -21,7 +24,7 @@ function OutcomeBanner({ result }) {
   return (
     <div className="rounded-md border border-blood-500 bg-blood-700/15 text-blood-100 p-3">
       <div className="font-display text-lg">❌ Robbery failed</div>
-      <div className="text-xs mt-1 tabular-nums">Caught and jailed {result.jailMinutes} min.</div>
+      <div className="text-xs mt-1">They fought you off — got away with nothing.</div>
     </div>
   );
 }
@@ -87,11 +90,11 @@ export default function Rob() {
 
       <Card title="Outcomes">
         <ul className="text-xs space-y-1 text-ink-100/75">
-          <li><b className="text-money-400">Win</b> — take 100% of their cash on hand. They're hospitalised 10–30 min. You're jailed 5–15 min.</li>
-          <li><b className="text-blood-400">Lose</b> — caught. Jailed 15–30 min. They get a notification.</li>
+          <li><b className="text-money-400">Win</b> — take a random <b>50%–100%</b> of their cash on hand. They're hospitalised 10–30 min. <span className="text-yellow-300">50/50 chance they recognise you</span> — and you'll never know which.</li>
+          <li><b className="text-blood-400">Lose</b> — they fought you off. They get notified (50/50 reveal); you walk away empty-handed.</li>
         </ul>
         <p className="text-[11px] text-ink-100/45 mt-2">
-          1h cooldown on you afterwards · 30m immunity for them. New characters are protected for the first <b>3 days</b> after creation.
+          No jail time on either outcome. 1h cooldown on you afterwards · 30m immunity for them. New characters are protected for the first <b>3 days</b> after creation. Works on online and offline targets.
         </p>
       </Card>
 

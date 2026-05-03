@@ -8,7 +8,7 @@ import { fmt } from '../components/Money.jsx';
 
 function OutcomeBanner({ result }) {
   if (!result) return null;
-  const { outcome, hits, strikes, totalDamage, bulletsUsed, jailMinutes, cashTaken } = result;
+  const { outcome, hits, strikes, totalDamage, bulletsUsed, cashTaken } = result;
   const palette = outcome === 'kill'
     ? 'border-blood-500 bg-blood-700/20 text-blood-100'
     : outcome === 'severe_wound'
@@ -28,9 +28,9 @@ function OutcomeBanner({ result }) {
       <div className="text-xs mt-1 tabular-nums">
         Hits {hits}/{strikes} · damage {totalDamage}{bulletsUsed > 0 ? ` · ${bulletsUsed} bullets used` : ''}
       </div>
-      <div className="text-[11px] mt-1">
-        Jailed {jailMinutes} min{cashTaken > 0 && ` · took ${fmt(cashTaken)}`}.
-      </div>
+      {cashTaken > 0 && (
+        <div className="text-[11px] mt-1">Took {fmt(cashTaken)}.</div>
+      )}
     </div>
   );
 }
@@ -85,9 +85,9 @@ export default function Murder() {
         subtitle={`Target: ${target.avatar} ${target.name} (Lvl ${target.level}) · ${target.cityName}`}
         right={<Link to={`/players/${target.id}`} className="btn btn-ghost text-xs">← Back to profile</Link>}>
         <p className="text-xs text-ink-100/55">
-          Asynchronous — you don't need them online. They get notified the moment it's over.
-          You're committing a crime: <b>every outcome lands you in jail</b>. The bigger the
-          mess, the longer the sentence.
+          Asynchronous — works whether they're online or offline. They get notified the
+          moment it's over. <b>No jail time</b> on any outcome — your only friction is
+          ammo, energy, and a 24h cooldown.
         </p>
       </Card>
 
@@ -140,10 +140,10 @@ export default function Murder() {
 
       <Card title="Outcomes" subtitle="Roll resolves immediately on commit. There's no live combat — they don't fight back.">
         <ul className="text-xs space-y-1 text-ink-100/75">
-          <li>☠️ <b className="text-blood-400">Kill</b> — total damage ≥ 100% of their max HP. Permadeath: they have to roll a new character at level 10. You take <b>100%</b> of their cash on hand. Jail 60–180 min.</li>
-          <li>🩸 <b className="text-yellow-300">Critical wound</b> — ≥ 50% of max HP. They get hospitalised 60–180 min. You take 10% of their cash. Jail 30–90 min.</li>
-          <li>🩹 <b className="text-yellow-200">Wound</b> — ≥ 20% of max HP. Hospital 15–45 min. No cash. Jail 15–45 min.</li>
-          <li>❌ <b>Miss</b> — caught with nothing to show. Jail 30–90 min.</li>
+          <li>☠️ <b className="text-blood-400">Kill</b> — total damage ≥ 100% of their max HP. Permadeath: they have to roll a new character at level 10. You take <b>100%</b> of their cash on hand.</li>
+          <li>🩸 <b className="text-yellow-300">Critical wound</b> — ≥ 50% of max HP. They get hospitalised 60–180 min. You take 10% of their cash.</li>
+          <li>🩹 <b className="text-yellow-200">Wound</b> — ≥ 20% of max HP. Hospital 15–45 min. No cash transfer.</li>
+          <li>❌ <b>Miss</b> — they get notified, ammo + energy spent, you walk away.</li>
         </ul>
         <p className="text-[11px] text-ink-100/45 mt-2">
           24h cooldown on you afterwards; 24h immunity for them. New characters are protected for the first <b>3 days</b> after creation.
