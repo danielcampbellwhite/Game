@@ -184,8 +184,7 @@ export default function Crimes() {
       <PlayerCrimes character={character} />
 
       <Card title="Multiplayer Crimes (Heists)"
-        subtitle="Crew-led organised crime. Bigger payouts than anything you can pull alone — but you need bodies and the right stat profile in each seat."
-        right={<Link to="/oc" className="btn btn-primary text-xs">Open heist board →</Link>}>
+        subtitle="Crew-led organised crime. Bigger payouts than anything you can pull alone — but you need bodies and the right stat profile in each seat.">
         <ul className="text-xs space-y-1 text-ink-100/75 list-disc pl-5">
           <li><b className="text-blood-300">Pick a heist</b> from the catalogue (jewellery store, bank vault, casino, etc.). Each defines named roles — Driver, Hacker, Muscle, Lookout — with a minimum stat requirement per seat.</li>
           <li><b className="text-blood-300">Recruit your crew.</b> As leader, invite players to fill each role. Their stats must clear the role's minimum or they can't accept.</li>
@@ -195,6 +194,9 @@ export default function Crimes() {
         <p className="text-[11px] text-ink-100/45 mt-2">
           Heists are async — crew members don't all need to be online at the same time. Once a role is accepted, the seat is locked until execution or cancellation.
         </p>
+        <Link to="/oc" className="btn btn-primary text-xs w-full mt-3 block text-center">
+          Open heist board →
+        </Link>
       </Card>
 
       {orderedTiers.map(tier => (
