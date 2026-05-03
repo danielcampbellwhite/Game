@@ -251,13 +251,6 @@ export default function Nav() {
             )}
           </Link>
           <NotificationBell />
-          {character?.is_admin && (
-            <Link to="/admin"
-              className="px-2 py-1 rounded-md text-[11px] uppercase tracking-wide text-blood-400 hover:bg-ink-800/60 transition"
-              title="God mode">
-              Admin
-            </Link>
-          )}
           {/* Mobile-only hamburger — toggles the nav-links drawer below.
               Desktop (md+) renders the nav links inline so this is hidden. */}
           <button

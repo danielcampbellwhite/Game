@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGame } from './context/GameContext.jsx';
 import Nav from './components/Nav.jsx';
 import Login from './pages/Login.jsx';
@@ -87,13 +87,23 @@ function Footer() {
   if (!token || !character) return null;
   return (
     <footer className="border-t border-ink-100/10 bg-ink-950/85 backdrop-blur">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
         <span className="text-[10px] uppercase tracking-wide text-ink-100/40">Mafia Life</span>
-        <button
-          onClick={() => { logout(); nav('/login'); }}
-          className="btn btn-ghost text-xs">
-          Sign out
-        </button>
+        <div className="flex items-center gap-2">
+          {character.is_admin && (
+            <Link
+              to="/admin"
+              className="px-2 py-1 rounded-md text-[11px] uppercase tracking-wide text-blood-400 hover:bg-ink-800/60 transition"
+              title="God mode">
+              Admin
+            </Link>
+          )}
+          <button
+            onClick={() => { logout(); nav('/login'); }}
+            className="btn btn-ghost text-xs">
+            Sign out
+          </button>
+        </div>
       </div>
     </footer>
   );
