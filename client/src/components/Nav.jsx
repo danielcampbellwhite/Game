@@ -8,7 +8,6 @@ import { fmt } from './Money.jsx';
 const links = [
   { to: '/inventory', label: 'Inventory' },
   { to: '/missions',  label: 'Missions'  },
-  { to: '/jobs',      label: 'Job Board' },
   { to: '/city',      label: 'City'      },
   { to: '/crimes',    label: 'Crimes'    },
   { to: '/oc',        label: 'Heists'    },

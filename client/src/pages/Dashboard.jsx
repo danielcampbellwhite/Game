@@ -11,33 +11,112 @@ import FactionBadge from '../components/FactionBadge.jsx';
 
 // ── Evidence Board ─────────────────────────────────────────────────
 //
-// Detective-style "person of interest" board: the player sits in the
-// centre, and red strings connect them to every major game surface
-// the main nav exposes. Replaces the inventory-duplicating dashboard
-// with a single hero element that doubles as a launcher.
+// Detective-style "person of interest" board. The player's silhouette
+// sits at the centre as a stylised gangster bust; red strings fan out
+// to a ring of pinned articles that act as the main-nav launcher.
 //
-// Layout: a single aspect-square container. Strings are drawn in an
-// SVG layer; nodes are absolutely-positioned <Link>s on top so they're
-// clickable. Both layers use viewport-relative percent coordinates so
-// the whole thing scales proportionally on mobile.
+// Articles alternate between two visual styles:
+//   - newspaper clipping  — cream paper, serif headline, kicker line
+//   - notepad page        — pale yellow paper, ruled lines, red margin
+//
+// Layout: aspect-square container. SVG strings layer on the bottom;
+// HTML article cards positioned absolutely on top using polar
+// coordinates around the centre.
+
 const NODES = [
-  { to: '/city',      label: 'City'       },
-  { to: '/inventory', label: 'Inventory'  },
-  { to: '/missions',  label: 'Missions'   },
-  { to: '/jobs',      label: 'Job Board'  },
-  { to: '/crimes',    label: 'Crimes'     },
-  { to: '/oc',        label: 'Heists'     },
-  { to: '/combat',    label: 'Fight Club' },
-  { to: '/gangs',     label: 'Gangs'      },
-  { to: '/wars',      label: 'Turf Wars'  },
-  { to: '/players',   label: 'Players'    },
-  { to: '/trades',    label: 'Trades'     },
+  { to: '/city',      label: 'City',       teaser: 'Streets & shops',    style: 'paper' },
+  { to: '/inventory', label: 'Inventory',  teaser: 'Your loadout',       style: 'note'  },
+  { to: '/missions',  label: 'Missions',   teaser: 'Daily ops',          style: 'paper' },
+  { to: '/crimes',    label: 'Crimes',     teaser: 'Quick scores',       style: 'note'  },
+  { to: '/oc',        label: 'Heists',     teaser: 'Crew jobs',          style: 'paper' },
+  { to: '/combat',    label: 'Fight Club', teaser: 'Knuckles only',      style: 'note'  },
+  { to: '/gangs',     label: 'Gangs',      teaser: 'Crews & politics',   style: 'paper' },
+  { to: '/wars',      label: 'Turf Wars',  teaser: 'Active fronts',      style: 'note'  },
+  { to: '/players',   label: 'Players',    teaser: 'Find someone',       style: 'paper' },
+  { to: '/trades',    label: 'Trades',     teaser: 'Deals on the side',  style: 'note'  },
 ];
 
+// Deterministic per-node tilts so refreshes don't shuffle the board.
+const ROT = [-4, 3, -2, 5, -3, 4, -5, 2, -3, 4];
+
+// Stylised fedora-and-suit silhouette for the centre. Sized via parent
+// container; viewBox keeps the shape proportional. The tie pop of red
+// echoes the strings and faction badge palette.
+function GangsterBust() {
+  return (
+    <svg viewBox="0 0 100 130" preserveAspectRatio="xMidYMid meet" className="w-full h-full">
+      {/* drop shadow */}
+      <ellipse cx="50" cy="128" rx="42" ry="3" fill="rgba(0,0,0,0.4)" />
+      {/* fedora brim */}
+      <ellipse cx="50" cy="36" rx="42" ry="6" fill="#0a0908" />
+      {/* fedora crown */}
+      <path d="M 26 35 C 26 14, 38 10, 50 10 C 62 10, 74 14, 74 35 Z" fill="#0a0908" />
+      {/* hat band */}
+      <ellipse cx="50" cy="33" rx="25" ry="2" fill="#1f1d1b" />
+      {/* head shadow under brim */}
+      <ellipse cx="50" cy="49" rx="14" ry="11" fill="#0a0908" opacity="0.92" />
+      {/* neck */}
+      <rect x="42" y="58" width="16" height="9" fill="#0a0908" />
+      {/* shoulders / coat */}
+      <path d="M 8 96 C 8 80, 22 67, 36 64 L 50 78 L 64 64 C 78 67, 92 80, 92 96 L 92 130 L 8 130 Z" fill="#0a0908" />
+      {/* lapel left */}
+      <path d="M 36 64 L 50 78 L 46 100 L 38 76 Z" fill="#1f1d1b" />
+      {/* lapel right */}
+      <path d="M 64 64 L 50 78 L 54 100 L 62 76 Z" fill="#1f1d1b" />
+      {/* shirt collar */}
+      <path d="M 46 76 L 54 76 L 53 84 L 47 84 Z" fill="#e7e5e4" />
+      {/* tie */}
+      <path d="M 47 80 L 53 80 L 55 110 L 50 118 L 45 110 Z" fill="#991b1b" />
+    </svg>
+  );
+}
+
+function ArticleNode({ node, x, y, rotation, lockedOut }) {
+  const isPaper = node.style === 'paper';
+  return (
+    <Link
+      to={node.to}
+      onClick={(e) => { if (lockedOut) e.preventDefault(); }}
+      aria-disabled={lockedOut}
+      className={`absolute select-none transition
+        ${lockedOut ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110 hover:!rotate-0 hover:z-20'}`}
+      style={{
+        left: `${x}%`, top: `${y}%`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+      }}>
+      {isPaper ? (
+        <div className="w-28 sm:w-32 bg-amber-50 border border-stone-700/30 shadow-lg shadow-black/60 rounded-sm overflow-hidden">
+          <div className="px-2 pt-1.5 pb-0.5 text-[7px] uppercase tracking-[0.2em] text-blood-800 border-b border-stone-800/40 font-medium">
+            The Daily
+          </div>
+          <div className="px-2 py-1.5">
+            <div className="font-display text-[14px] sm:text-base text-stone-900 leading-tight">{node.label}</div>
+            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
+          </div>
+        </div>
+      ) : (
+        <div className="w-28 sm:w-32 bg-amber-100 border border-stone-700/30 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative">
+          {/* red left margin */}
+          <div className="absolute left-2 top-0 bottom-0 w-px bg-blood-600/70" />
+          {/* horizontal rule lines */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(transparent 0px, transparent 9px, rgba(31,29,27,0.18) 10px)',
+            }} />
+          <div className="relative px-3 py-2 pl-4">
+            <div className="font-display text-[14px] sm:text-base text-stone-900 leading-tight">{node.label}</div>
+            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-1">{node.teaser}</div>
+          </div>
+        </div>
+      )}
+    </Link>
+  );
+}
+
 function EvidenceBoard({ character, lockedOut }) {
-  // Polar coordinates around the centre, starting from the top
-  // (-90°) and going clockwise. radius is in percentage of the
-  // container's half-width — 38 leaves room for the node circles.
+  // Polar layout — start at the top (-90°) and walk clockwise so the
+  // first node sits straight above the silhouette.
   const RADIUS = 38;
   const positions = NODES.map((_, i) => {
     const angle = ((-90 + (i * 360 / NODES.length)) * Math.PI) / 180;
@@ -49,7 +128,7 @@ function EvidenceBoard({ character, lockedOut }) {
 
   return (
     <div className="relative w-full max-w-3xl mx-auto aspect-square">
-      {/* Backdrop: subtle radial vignette to evoke a lit corkboard. */}
+      {/* Backdrop — corkboard-feeling vignette */}
       <div
         className="absolute inset-0 rounded-2xl border border-ink-100/10"
         style={{
@@ -61,7 +140,7 @@ function EvidenceBoard({ character, lockedOut }) {
         }}
       />
 
-      {/* String layer — drawn first so nodes/avatar render on top. */}
+      {/* String layer — drawn before nodes so they render on top. */}
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
@@ -71,56 +150,42 @@ function EvidenceBoard({ character, lockedOut }) {
             key={NODES[i].to}
             x1="50" y1="50"
             x2={p.x} y2={p.y}
-            stroke="rgba(220, 38, 38, 0.45)"
+            stroke="rgba(220, 38, 38, 0.5)"
             strokeWidth="0.25"
             strokeDasharray="0.9 0.5"
             strokeLinecap="round"
           />
         ))}
-        {/* Centre pin — small disc behind the avatar to feel like a thumbtack. */}
-        <circle cx="50" cy="50" r="0.7" fill="#fbbf24" opacity="0.6" />
+        {/* Centre thumbtack */}
+        <circle cx="50" cy="50" r="0.7" fill="#fbbf24" opacity="0.7" />
       </svg>
 
-      {/* Node layer — clickable Links, positioned with %s. */}
-      {NODES.map((n, i) => {
-        const p = positions[i];
-        return (
-          <Link
-            key={n.to}
-            to={n.to}
-            onClick={(e) => { if (lockedOut) e.preventDefault(); }}
-            aria-disabled={lockedOut}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 select-none
-              w-16 h-16 sm:w-20 sm:h-20
-              rounded-full border-2
-              flex items-center justify-center text-center text-[10px] sm:text-xs uppercase tracking-wide
-              transition
-              ${lockedOut
-                ? 'border-ink-100/15 bg-ink-950/70 text-ink-100/30 cursor-not-allowed'
-                : 'border-blood-500/50 bg-ink-950/85 text-ink-100/85 hover:border-blood-400 hover:bg-ink-900 hover:scale-110 hover:text-white shadow-md shadow-black/40 backdrop-blur'}`}
-            style={{ left: `${p.x}%`, top: `${p.y}%` }}>
-            <span className="px-1 leading-tight">{n.label}</span>
-          </Link>
-        );
-      })}
+      {/* Article nodes */}
+      {NODES.map((n, i) => (
+        <ArticleNode
+          key={n.to}
+          node={n}
+          x={positions[i].x}
+          y={positions[i].y}
+          rotation={ROT[i % ROT.length]}
+          lockedOut={lockedOut}
+        />
+      ))}
 
-      {/* Centre — the player. Larger circle, blood-red gradient. */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        <div
-          className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-blood-500
-            bg-gradient-to-br from-blood-700 via-blood-800 to-blood-900
-            flex flex-col items-center justify-center text-center
-            shadow-2xl shadow-blood-500/40 px-2">
-          <div className="font-display text-base sm:text-xl leading-tight text-white truncate max-w-[90%]">
+      {/* Centre — gangster silhouette + nameplate */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+        <div className="w-24 h-32 sm:w-32 sm:h-40 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
+          <GangsterBust />
+        </div>
+        {/* Nameplate — looks like a paper label tape stuck to the bust. */}
+        <div className="-mt-3 px-3 py-1 rounded-sm bg-amber-50 border border-stone-700/40 shadow-md text-center max-w-[12rem]">
+          <div className="font-display text-sm sm:text-base text-stone-900 leading-tight truncate">
             {character.name}
           </div>
-          <div className="text-[9px] sm:text-[10px] uppercase tracking-wide text-blood-100/85 mt-0.5">
-            Lvl {character.at_max_level ? '999+' : character.level}
+          <div className="text-[10px] uppercase tracking-wide text-stone-700 leading-tight">
+            Lvl {character.at_max_level ? '999+' : character.level} · {character.rank}
           </div>
-          <div className="text-[9px] sm:text-[10px] text-blood-100/70 leading-tight">
-            {character.rank}
-          </div>
-          <div className="mt-1">
+          <div className="mt-1 flex justify-center">
             <FactionBadge faction={character.faction} />
           </div>
         </div>
@@ -161,7 +226,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Status banner — only when the player is locked out of normal play. */}
       {lockedOut && (
         <Card title="Status">
           {inJail && (
@@ -184,10 +248,8 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* The board — central hero element, replaces the old inventory dump. */}
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 
-      {/* Two-column row: daily reward + recent activity. */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Daily reward">
           {daily?.ready ? (

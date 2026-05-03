@@ -17,6 +17,7 @@ const AROUND_TOWN = [
   { to: '/university', icon: '', name: 'Northbridge University',    blurb: 'Programmes that permanently raise intelligence.', hideWhen: c => c.intelligence >= (c.stat_caps?.intelligence || Infinity) },
   { to: '/general-store', icon: '', name: "Murphy's General Store",   blurb: 'Odds, ends, and props. Most are mission gear; a few lift your mood.' },
   { to: '/businesses',    icon: '', name: 'Business Office',          blurb: 'Found new fronts and manage your empire.' },
+  { to: '/jobs',          icon: '', name: 'Job Board',                 blurb: 'Permanent employment — apply for a job and bring in passive cash on a daily check-in.' },
   { to: '/shops',         icon: '', name: 'Player Shops',             blurb: 'Browse player-run shops — or set up your own storefront.' },
   { to: '/travel',     icon: '', name: 'International Airport',    blurb: 'Flights to 11 other cities — economy, business, first class.' },
   { to: '/hospital',   icon: '', name: 'Saint Mary\'s Trauma Centre', blurb: 'Top up health on demand, or cover the bill for another patient.' },
