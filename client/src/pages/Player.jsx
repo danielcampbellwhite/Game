@@ -110,12 +110,15 @@ export default function Player() {
             <div className="text-xs text-ink-100/60">
               {p.rank} · Level {p.at_max_level ? '999+' : p.level}{p.prestige ? ` · ⭐ ${p.prestige}` : ''}
             </div>
-            <div className="text-[11px] text-ink-100/45 mt-1">
+            <div className="text-[11px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2">
               {p.online
                 ? <span className="text-money-400">● online now</span>
                 : <span>last seen {timeAgo(p.last_active_at)}</span>}
-              {' · '}
-              <span>{p.city.replace(/_/g, ' ')}</span>
+              {p.same_city && (
+                <span className="px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300 uppercase tracking-wide text-[10px]">
+                  in your city
+                </span>
+              )}
             </div>
             {p.gang && (
               <div className="text-[11px] mt-1">
@@ -137,28 +140,28 @@ export default function Player() {
               disabled={busy === 'challenge-knockout'}
               onClick={() => challenge('knockout')}
               className="btn text-xs"
-              title={p.city !== character?.city ? 'Different city — fly to them first.' : 'Mutual combat — they must accept; turn-based fight in the Fight Club.'}>
+              title={!p.same_city ? "Not in your city — find them first." : 'Mutual combat — they must accept; turn-based fight in the Fight Club.'}>
               {busy === 'challenge-knockout' ? '…' : 'Challenge'}
             </button>
             <button
-              disabled={p.city !== character?.city}
+              disabled={!p.same_city}
               onClick={() => nav(`/rob/${p.id}`)}
               className="btn text-xs"
-              title={p.city !== character?.city ? 'Different city — fly to them first.' : "Mug them on the spot — async. Win and you steal all their cash + put them in hospital."}>
+              title={!p.same_city ? "Not in your city — find them first." : "Mug them on the spot — async. Win and you steal all their cash + put them in hospital."}>
               Rob
             </button>
             <button
-              disabled={p.city !== character?.city}
+              disabled={!p.same_city}
               onClick={() => nav(`/murder/${p.id}`)}
               className="btn text-xs"
-              title={p.city !== character?.city ? 'Different city — fly to them first.' : 'Async assassination attempt with your equipped weapon. Permadeath on success.'}>
+              title={!p.same_city ? "Not in your city — find them first." : 'Async assassination attempt with your equipped weapon. Permadeath on success.'}>
               Murder
             </button>
             <button
-              disabled={busy === 'trade' || p.city !== character?.city}
+              disabled={busy === 'trade' || !p.same_city}
               onClick={startTrade}
               className="btn text-xs"
-              title={p.city !== character?.city ? 'You must both be in the same city to trade.' : 'Open a trade window with this player.'}>
+              title={!p.same_city ? "Not in your city — find them first." : 'Open a trade window with this player.'}>
               {busy === 'trade' ? '…' : 'Trade'}
             </button>
             {/* Invite to my gang — only if I'm officer+ and target has no gang */}

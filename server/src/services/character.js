@@ -300,7 +300,12 @@ export function computeNetWorth(ch) {
 // is supplied by routes that have services/gangs.js loaded. Pages that
 // don't pass one (e.g. the rare path that doesn't care) will simply omit
 // the gang field.
-export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null) {
+// Public-safe view of another character. The player's actual city is
+// deliberately hidden — players have to fly somewhere and search the
+// city's listings to find each other. We surface a `same_city` boolean
+// so callers can render an "in your city" hint and gate same-city
+// actions (rob / murder / fight / trade) without leaking location.
+export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null, viewerCity = null) {
   const atMax = ch.level >= MAX_LEVEL;
   const lastActive = ch.last_active_at || 0;
   const ACTIVE_WINDOW_MS = 60 * 1000;
@@ -309,7 +314,7 @@ export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null) 
     id: ch.id,
     name: ch.name,
     avatar: ch.avatar,
-    city: ch.city,
+    same_city: viewerCity != null ? viewerCity === ch.city : null,
     level: atMax ? 999 : ch.level,
     at_max_level: atMax,
     rank: rankFor(ch.reputation).name,

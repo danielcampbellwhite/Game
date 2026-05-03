@@ -62,7 +62,7 @@ export default function Rob() {
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <Card title="Robbery"
-        subtitle={`Target: ${target.name} (Lvl ${target.level}) · ${target.cityName}`}
+        subtitle={`Target: ${target.name} (Lvl ${target.level})`}
         right={<Link to={`/players/${target.id}`} className="btn btn-ghost text-xs">← Back to profile</Link>}>
         <p className="text-xs text-ink-100/55">
           One roll. Asynchronous — they don't need to be online. Win and you take all

@@ -28,7 +28,7 @@ router.get('/search', requireAuth, requireCharacter, (req, res) => {
       ORDER BY last_active_at DESC NULLS LAST, id DESC
       LIMIT ?
     `).all(ch.id, limit);
-    return res.json({ players: rows.map(r => publicProfileFor(r, ch.id, gangBadgeFor)) });
+    return res.json({ players: rows.map(r => publicProfileFor(r, ch.id, gangBadgeFor, ch.city)) });
   }
   if (q.length < 2) return res.status(400).json({ error: 'Search at least 2 characters' });
   const like = q.replace(/[%_]/g, '\\$&') + '%';
@@ -42,7 +42,7 @@ router.get('/search', requireAuth, requireCharacter, (req, res) => {
       last_active_at DESC NULLS LAST
     LIMIT ?
   `).all(ch.id, like, subLike, like, limit);
-  res.json({ players: rows.map(r => publicProfileFor(r, ch.id, gangBadgeFor)) });
+  res.json({ players: rows.map(r => publicProfileFor(r, ch.id, gangBadgeFor, ch.city)) });
 });
 
 router.get('/:id', requireAuth, requireCharacter, (req, res) => {
@@ -120,7 +120,7 @@ router.get('/:id', requireAuth, requireCharacter, (req, res) => {
     }).filter(Boolean);
 
   res.json({
-    profile: publicProfileFor(target, req.character.id, gangBadgeFor),
+    profile: publicProfileFor(target, req.character.id, gangBadgeFor, req.character.city),
     blocks_you: !!blocked,
     you_block: !!youBlocked,
     // Murder is gated to opposing-gang members during an active war in the

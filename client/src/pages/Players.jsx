@@ -17,14 +17,19 @@ function PlayerRow({ p }) {
     <Link to={`/players/${p.id}`}
       className="flex items-center gap-3 p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
           <span className="font-medium truncate">{p.name}</span>
           <span className="text-[10px] uppercase text-ink-100/40">L{p.at_max_level ? '999+' : p.level}</span>
           {p.online
             ? <span className="text-[10px] uppercase tracking-wide text-money-400">● online</span>
             : <span className="text-[10px] text-ink-100/40">{timeAgo(p.last_active_at)}</span>}
+          {p.same_city && (
+            <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300">
+              in your city
+            </span>
+          )}
         </div>
-        <div className="text-[11px] text-ink-100/55">{p.rank} · {p.city.replace(/_/g, ' ')}</div>
+        <div className="text-[11px] text-ink-100/55">{p.rank}</div>
       </div>
     </Link>
   );
@@ -57,7 +62,7 @@ export default function Players() {
 
   return (
     <div className="space-y-4">
-      <Card title="🌐 Players" subtitle="Search by name to find anyone — online or offline.">
+      <Card title="Players" subtitle="Search by name to find anyone — online or offline. Locations are private; fly somewhere to see who's there.">
         <input
           type="search"
           value={q}

@@ -43,7 +43,7 @@ function winChance(aEff, tEff) {
 function eligibility(attacker, target, now) {
   if (!target) return 'Target not found.';
   if (attacker.id === target.id) return "You can't rob yourself.";
-  if (attacker.city !== target.city) return `You must be in ${cityById(target.city)?.name} to attempt this.`;
+  if (attacker.city !== target.city) return `Not in your city — you'll have to find them.`;
   if (isNewCharProtected(target, now)) {
     const hrs = newCharProtectionHoursLeft(target, now);
     return `${target.name} is a new character — protected for the first ${NEW_CHAR_PROTECTION_DAYS} days (${hrs}h to go).`;
@@ -76,7 +76,8 @@ router.get('/info', requireAuth, requireCharacter, (req, res) => {
   res.json({
     target: {
       id: target.id, name: target.name, avatar: target.avatar,
-      level: target.level, city: target.city, cityName: cityById(target.city)?.name,
+      level: target.level,
+      // City deliberately omitted — locations are private.
     },
     attacker: { city: ch.city, energy: ch.energy },
     cost: { energy: ENERGY_COST },

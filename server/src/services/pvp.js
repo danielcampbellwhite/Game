@@ -397,8 +397,8 @@ export function publicFight(fight, viewerId) {
       max_hp: youAreAttacker ? fight.attacker_max_hp : fight.target_max_hp,
     },
     opponent: youAreAttacker
-      ? publicProfileFor(tgt, viewerId, gangBadgeFor)
-      : publicProfileFor(att, viewerId, gangBadgeFor),
+      ? publicProfileFor(tgt, viewerId, gangBadgeFor, att?.city)
+      : publicProfileFor(att, viewerId, gangBadgeFor, tgt?.city),
     opponent_hp: youAreAttacker ? fight.target_hp : fight.attacker_hp,
     opponent_max_hp: youAreAttacker ? fight.target_max_hp : fight.attacker_max_hp,
     log: JSON.parse(fight.log_json || '[]'),
@@ -411,11 +411,13 @@ export function publicChallenge(ch, viewerId) {
   const isAttacker = viewerId === ch.attacker_id;
   const otherId = isAttacker ? ch.target_id : ch.attacker_id;
   const other = loadCharacterById(otherId);
+  // Look up viewer city for the same_city tag in the public profile.
+  const viewer = loadCharacterById(viewerId);
   return {
     id: ch.id,
     mode: ch.mode || 'knockout',
     you_role: isAttacker ? 'attacker' : 'target',
-    other: other ? publicProfileFor(other, viewerId, gangBadgeFor) : null,
+    other: other ? publicProfileFor(other, viewerId, gangBadgeFor, viewer?.city) : null,
     expires_at: ch.expires_at,
     status: ch.status,
   };

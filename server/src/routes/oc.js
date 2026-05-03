@@ -12,8 +12,10 @@ import { sendEvent } from '../services/events.js';
 
 const router = Router();
 
-function profileResolver(member, viewerId) {
-  return publicProfileFor(member, viewerId, gangBadgeFor);
+// Build a resolver closed over the viewer's city so publicPlan's call
+// of resolver(member, viewerId) carries the same_city flag through.
+function makeProfileResolver(viewerCity) {
+  return (member, viewerId) => publicProfileFor(member, viewerId, gangBadgeFor, viewerCity);
 }
 
 function broadcastPlan(planId, type, extra = {}) {
@@ -37,7 +39,7 @@ router.get('/plans/active', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const plans = activePlansFor(ch.id);
   res.json({
-    plans: plans.map(p => publicPlan(p, ch.id, profileResolver)),
+    plans: plans.map(p => publicPlan(p, ch.id, makeProfileResolver(req.character.city))),
   });
 });
 
@@ -45,7 +47,7 @@ router.get('/plans/:id', requireAuth, requireCharacter, (req, res) => {
   const id = parseInt(req.params.id, 10);
   const p = loadPlan(id);
   if (!p) return res.status(404).json({ error: 'Plan not found.' });
-  res.json({ plan: publicPlan(p, req.character.id, profileResolver) });
+  res.json({ plan: publicPlan(p, req.character.id, makeProfileResolver(req.character.city)) });
 });
 
 // ── Create / cancel ───────────────────────────────────────────────────
@@ -54,7 +56,7 @@ router.post('/plans', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const result = createPlan(ch, req.body?.crime_id);
   if (result.error) return res.status(400).json({ error: result.error });
-  res.json({ ok: true, plan: publicPlan(result.plan, ch.id, profileResolver) });
+  res.json({ ok: true, plan: publicPlan(result.plan, ch.id, makeProfileResolver(req.character.city)) });
 });
 
 router.post('/plans/:id/cancel', requireAuth, requireCharacter, (req, res) => {
@@ -111,7 +113,7 @@ router.post('/plans/:id/accept', requireAuth, requireCharacter, (req, res) => {
   const r = assignRole(p, roleId, ch.id);
   if (r.error) return res.status(409).json({ error: r.error });
   broadcastPlan(p.id, 'oc.role_filled', { role_id: roleId, char: { id: ch.id, name: ch.name, avatar: ch.avatar } });
-  res.json({ ok: true, plan: publicPlan(loadPlan(p.id), ch.id, profileResolver) });
+  res.json({ ok: true, plan: publicPlan(loadPlan(p.id), ch.id, makeProfileResolver(req.character.city)) });
 });
 
 router.post('/plans/:id/leave', requireAuth, requireCharacter, (req, res) => {

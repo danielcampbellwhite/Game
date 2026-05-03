@@ -61,7 +61,7 @@ function PvpChallengeSection({ character }) {
     try {
       const r = await api.get('/players/search');
       // Same-city only; hide self.
-      setPlayers(r.players.filter(p => p.city === character.city && p.id !== character.id));
+      setPlayers(r.players.filter(p => p.same_city && p.id !== character.id));
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
   }

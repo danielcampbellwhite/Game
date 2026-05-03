@@ -63,7 +63,7 @@ function ammoOnHand(charId, ammoType) {
 function eligibility(attacker, target, now) {
   if (!target) return 'Target not found.';
   if (attacker.id === target.id) return "You can't murder yourself.";
-  if (attacker.city !== target.city) return `You must be in ${cityById(target.city)?.name} to attempt this.`;
+  if (attacker.city !== target.city) return `Not in your city — you'll have to find them.`;
   if (isNewCharProtected(target, now)) {
     const hrs = newCharProtectionHoursLeft(target, now);
     return `${target.name} is a new character — protected for the first ${NEW_CHAR_PROTECTION_DAYS} days (${hrs}h to go).`;
@@ -100,8 +100,8 @@ router.get('/info', requireAuth, requireCharacter, (req, res) => {
       name: target.name,
       avatar: target.avatar,
       level: target.level,
-      city: target.city,
-      cityName: cityById(target.city)?.name,
+      // City deliberately omitted — locations are private. Same-city
+      // status is implicit in eligibility_error (Not in your city → flight).
     },
     attacker: {
       city: ch.city,

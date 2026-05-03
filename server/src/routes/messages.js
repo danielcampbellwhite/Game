@@ -48,7 +48,7 @@ router.get('/:threadId', requireAuth, requireCharacter, (req, res) => {
   const otherId = otherParty(t, req.character.id);
   const other = loadCharacterById(otherId);
   res.json({
-    thread: { id: t.id, other: other ? publicProfileFor(other, req.character.id) : null },
+    thread: { id: t.id, other: other ? publicProfileFor(other, req.character.id, null, req.character.city) : null },
     messages: messages.reverse().map(m => ({ ...m, mine: m.sender_id === req.character.id })),
   });
 });

@@ -38,7 +38,10 @@ function PlayerCrimes({ character }) {
     setBusy(true);
     try {
       const r = await api.get('/players/search');
-      setPlayers(r.players.filter(p => p.city === character.city && p.id !== character.id));
+      // Show only same-city targets — server tags them with same_city.
+      // Cross-city targets aren't actionable (rob/murder require same city)
+      // and their location is private, so listing them would just confuse.
+      setPlayers(r.players.filter(p => p.same_city && p.id !== character.id));
     } finally { setBusy(false); }
   }
 
