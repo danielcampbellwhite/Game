@@ -20,7 +20,7 @@ export default function ChopShop() {
     try {
       const r = await api.post('/chopshop/sell', { id: v.id, where });
       if (r.busted) setMsg(` STING — lost the ${v.maker} ${v.name} and jailed ${r.jailMin}m!`);
-      else setMsg(`Sold ${v.maker} ${v.name} for ${fmt(r.payout)}${r.dirty ? ' (dirty)' : ''}.`);
+      else setMsg(`Sold ${v.maker} ${v.name} for ${fmt(r.payout)}.`);
       await refresh(); await load();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
@@ -37,7 +37,7 @@ export default function ChopShop() {
           The <span className="text-blood-400">black-market dealer</span> launders the title and gets you
           <b> {(data.dealerRate * 100).toFixed(0)}%</b> — but there's a small chance it's an undercover sting.
         </p>
-        <p className="text-[11px] text-ink-100/50 mt-2">Stolen cars pay out in <span className="text-blood-400">dirty cash</span>. Legally bought cars (ones you trade in) pay clean.</p>
+        <p className="text-[11px] text-ink-100/50 mt-2">Both options pay out in clean cash — the chop shop and dealer launder the chassis paperwork before settling up.</p>
       </Card>
 
       {!data.vehicles.length ? (

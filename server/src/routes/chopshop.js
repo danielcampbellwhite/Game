@@ -87,14 +87,15 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
     return res.json({ ok: true, busted: true, jailMin, character: publicCharacter(ch) });
   }
 
-  // Stolen cars sell for dirty cash; legally-owned cars sell for clean.
-  if (row.acquired_via === 'stolen') ch.dirty_cash += payout;
-  else ch.cash += payout;
+  // All vehicle sales pay clean cash now — chop shop / black-market
+  // dealer launder the chassis themselves before payout. Dirty cash
+  // only comes from illegal businesses (drug labs, pawn shop, etc.).
+  ch.cash += payout;
 
   db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id);
-  writeLog(ch.id, 'chop', `Sold ${v.maker} ${v.name} at the ${where === 'chop' ? 'chop shop' : 'black-market dealer'} for £${payout.toLocaleString()}${row.acquired_via === 'stolen' ? ' (dirty)' : ''}.`, { vehicle: v.id, payout, where });
+  writeLog(ch.id, 'chop', `Sold ${v.maker} ${v.name} at the ${where === 'chop' ? 'chop shop' : 'black-market dealer'} for £${payout.toLocaleString()}.`, { vehicle: v.id, payout, where });
   saveCharacter(ch);
-  res.json({ ok: true, payout, dirty: row.acquired_via === 'stolen', character: publicCharacter(ch) });
+  res.json({ ok: true, payout, character: publicCharacter(ch) });
 });
 
 export default router;
