@@ -40,13 +40,50 @@ function timeAgo(ms) {
   return `${Math.floor(s / 86400)}d`;
 }
 
+// Two-tone Web Audio chime — synthesised on the fly so we don't need an
+// asset file. AudioContext is lazy and reused; browsers suspend it until
+// the first user gesture, so the first call after page-load is silent
+// but subsequent ones (after the user has clicked anything) ring.
+let _audioCtx = null;
+function playNotificationSound() {
+  try {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return;
+    if (!_audioCtx) _audioCtx = new Ctor();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    const ctx = _audioCtx;
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, now);
+    o.frequency.setValueAtTime(660, now + 0.12);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+    o.connect(g).connect(ctx.destination);
+    o.start(now);
+    o.stop(now + 0.34);
+  } catch {}
+}
+
 function NotificationBell() {
   const [data, setData] = useState({ items: [], unreadCount: 0 });
   const [open, setOpen] = useState(false);
   const ref = useRef();
+  // Prev unreadCount so we can detect *new* alerts and chime once.
+  // null on first load so the initial fetch doesn't ring on page-open.
+  const prevUnreadRef = useRef(null);
 
   async function load() {
-    try { setData(await api.get('/notifications')); } catch {}
+    try {
+      const r = await api.get('/notifications');
+      if (prevUnreadRef.current !== null && r.unreadCount > prevUnreadRef.current) {
+        playNotificationSound();
+      }
+      prevUnreadRef.current = r.unreadCount;
+      setData(r);
+    } catch {}
   }
   useEffect(() => {
     load();
@@ -137,16 +174,26 @@ export default function Nav() {
   const { logout, character } = useGame();
   const nav = useNavigate();
   const [dmUnread, setDmUnread] = useState(0);
+  // Prev DM count for chiming on increases. null on mount so the initial
+  // fetch doesn't ring; SSE deltas after that *should* ring.
+  const prevDmRef = useRef(null);
+  function applyDmUnread(n) {
+    if (prevDmRef.current !== null && n > prevDmRef.current) {
+      playNotificationSound();
+    }
+    prevDmRef.current = n;
+    setDmUnread(n);
+  }
 
   useEffect(() => {
     if (!character) return;
-    api.get('/messages/unread').then(r => setDmUnread(r.total_unread || 0)).catch(() => {});
+    api.get('/messages/unread').then(r => applyDmUnread(r.total_unread || 0)).catch(() => {});
   }, [character?.id]);
   useEventStream('dm.received', (p) => {
-    if (p?.total_unread != null) setDmUnread(p.total_unread);
+    if (p?.total_unread != null) applyDmUnread(p.total_unread);
   });
   useEventStream('dm.unread', (p) => {
-    if (p?.total_unread != null) setDmUnread(p.total_unread);
+    if (p?.total_unread != null) applyDmUnread(p.total_unread);
   });
 
   const now = Date.now();
