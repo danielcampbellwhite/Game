@@ -83,6 +83,20 @@ function PlayerEditor({ player, onSaved }) {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-ink-100/10">
+        <label className="text-[10px] uppercase text-ink-100/60">Faction</label>
+        <select
+          defaultValue={player.faction || ''}
+          onChange={e => applyAction({ faction: e.target.value }, `Faction → ${e.target.value || 'cleared'}`)}
+          disabled={busy}
+          className="text-xs">
+          <option value="">— unaligned —</option>
+          <option value="fraudster">Fraudster</option>
+          <option value="mafia">Mafia</option>
+          <option value="cartel">Cartel</option>
+        </select>
+      </div>
+
       <div className="flex flex-wrap gap-2 pt-2 border-t border-ink-100/10">
         <button disabled={busy} onClick={saveFields} className="btn btn-primary text-xs">
           {busy ? '…' : 'Save fields'}

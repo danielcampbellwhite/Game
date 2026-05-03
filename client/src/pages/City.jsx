@@ -95,11 +95,28 @@ export default function City() {
       <Card>
         <div className="flex items-baseline gap-3">
           <div className="text-4xl">{meta.emoji}</div>
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="font-display text-3xl">{cityName}</div>
             <p className="text-xs text-ink-100/60">{meta.vibe}</p>
           </div>
         </div>
+        {(() => {
+          const here = worldCities?.cities.find(c => c.id === character.city);
+          if (!here) return null;
+          // Faction headcount in your current city — quick read on who
+          // dominates the streets you're walking.
+          const f = here.factions || {};
+          const total = (f.fraudster || 0) + (f.mafia || 0) + (f.cartel || 0);
+          if (total === 0) return null;
+          return (
+            <div className="mt-3 pt-3 border-t border-ink-100/10 flex flex-wrap gap-x-4 gap-y-1 text-[11px] tabular-nums">
+              <span className="text-ink-100/50 uppercase text-[10px] tracking-wide">Factions in city</span>
+              <span className="text-gold-400">Fraudster <b>{f.fraudster || 0}</b></span>
+              <span className="text-blood-400">Mafia <b>{f.mafia || 0}</b></span>
+              <span className="text-money-400">Cartel <b>{f.cartel || 0}</b></span>
+            </div>
+          );
+        })()}
       </Card>
 
       <Card

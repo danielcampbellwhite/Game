@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { STAT_CAPS, CITIES } from '../data.js';
+import { STAT_CAPS, CITIES, FACTION_IDS } from '../data.js';
 import { saveCharacter, applyTick, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 
@@ -64,7 +64,7 @@ router.post('/buff-self', requireAuth, requireAdmin, requireCharacter, (req, res
 router.get('/players', requireAuth, requireAdmin, (_req, res) => {
   const rows = db.prepare(`
     SELECT
-      c.id, c.user_id, c.name, c.city, c.level, c.status,
+      c.id, c.user_id, c.name, c.city, c.faction, c.level, c.status,
       c.cash, c.bank, c.dirty_cash,
       c.strength, c.defence, c.speed, c.intelligence,
       c.health, c.max_health, c.energy, c.max_energy, c.nerve, c.max_nerve,
@@ -168,6 +168,16 @@ function applyEdits(ch, body, opts = {}) {
     ch.health = ch.max_health;
     ch.happiness = 100;
     changes.push('vitals=full');
+  }
+  // String-typed faction. Empty string clears it (back to unaligned).
+  if (body.faction !== undefined) {
+    if (body.faction === '' || body.faction === null) {
+      ch.faction = null;
+      changes.push('faction=cleared');
+    } else if (FACTION_IDS.includes(body.faction)) {
+      ch.faction = body.faction;
+      changes.push(`faction=${body.faction}`);
+    }
   }
 
   // Direct numeric writes — clamped to bounds.

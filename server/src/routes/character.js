@@ -3,7 +3,8 @@ import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { loadCharacter, applyTick, publicCharacter } from '../services/character.js';
 import { recentLog, writeLog } from '../services/log.js';
-import { CITIES, AVATARS, cityById } from '../data.js';
+import { CITIES, AVATARS, cityById, FACTION_IDS } from '../data.js';
+import { applyFactionPerks } from '../services/factions.js';
 
 const router = Router();
 
@@ -35,14 +36,16 @@ function validateStartingStats(input) {
   return { ok: true, stats: out };
 }
 
-router.get('/options', (_req, res) => {
-  res.json({ cities: CITIES, avatars: AVATARS });
+router.get('/options', async (_req, res) => {
+  const { FACTIONS } = await import('../data.js');
+  res.json({ cities: CITIES, avatars: AVATARS, factions: FACTIONS });
 });
 
 router.post('/create', requireAuth, (req, res) => {
-  const { name, avatar, city, stats } = req.body || {};
+  const { name, avatar, city, stats, faction } = req.body || {};
   if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
+  if (!faction || !FACTION_IDS.includes(faction)) return res.status(400).json({ error: 'Pick a faction' });
   // Avatar is no longer surfaced in the UI — accept either an empty
   // string or a known avatar id (legacy data).
   const avatarVal = (avatar || '').trim();
@@ -58,16 +61,17 @@ router.post('/create', requireAuth, (req, res) => {
   const now = Date.now();
   const info = db.prepare(`
     INSERT INTO characters (
-      user_id, name, avatar, city,
+      user_id, name, avatar, city, faction,
       strength, defence, speed, intelligence,
       last_tick, last_health_tick, bank_last_interest,
       equipped_weapon, equipped_armour, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fists', 'none', ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fists', 'none', ?)
   `).run(
-    req.user.id, name, avatarVal, city,
+    req.user.id, name, avatarVal, city, faction,
     sv.stats.strength, sv.stats.defence, sv.stats.speed, sv.stats.intelligence,
     now, now, now, now,
   );
+  applyFactionPerks(info.lastInsertRowid, faction);
   writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}.`);
   const ch = loadCharacter(req.user.id);
   applyTick(ch);
@@ -92,13 +96,14 @@ router.get('/', requireAuth, (req, res) => {
 // level-10 newcomer with default stats and a fresh 3-day protection
 // window from `created_at = now`.
 router.post('/new-character', requireAuth, (req, res) => {
-  const { name, avatar, city, stats } = req.body || {};
+  const { name, avatar, city, stats, faction } = req.body || {};
   const ch = db.prepare('SELECT * FROM characters WHERE user_id = ?').get(req.user.id);
   if (!ch) return res.status(404).json({ error: 'No character to replace.' });
   if (ch.status !== 'pending_new_character') return res.status(409).json({ error: 'Your character is alive — no new character to roll.' });
 
   if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
+  if (!faction || !FACTION_IDS.includes(faction)) return res.status(400).json({ error: 'Pick a faction' });
   const avatarVal = (avatar || '').trim();
   if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
   const trimmed = String(name).trim();
@@ -118,7 +123,7 @@ router.post('/new-character', requireAuth, (req, res) => {
 
   db.prepare(`
     UPDATE characters SET
-      name = ?, avatar = ?, city = ?,
+      name = ?, avatar = ?, city = ?, faction = ?,
       status = 'alive',
       level = 10, xp = 0,
       energy = ?, max_energy = ?,
@@ -143,7 +148,7 @@ router.post('/new-character', requireAuth, (req, res) => {
       last_active_at = ?, created_at = ?
     WHERE id = ?
   `).run(
-    trimmed, avatarVal, city,
+    trimmed, avatarVal, city, faction,
     maxEnergy, maxEnergy,
     maxNerve, maxNerve,
     maxHealth, maxHealth,
@@ -152,6 +157,7 @@ router.post('/new-character', requireAuth, (req, res) => {
     ch.id,
   );
 
+  applyFactionPerks(ch.id, faction);
   writeLog(ch.id, 'system', `${trimmed} starts fresh — level 10. Welcome to ${cityById(city).name}.`);
   const fresh = loadCharacter(req.user.id);
   applyTick(fresh);

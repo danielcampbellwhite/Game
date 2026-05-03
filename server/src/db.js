@@ -583,6 +583,11 @@ export function initDb() {
   // (gated by ADMIN_TOKEN) is granted admin; thereafter the flag is the
   // source of truth and ADMIN_TOKEN is only needed for re-bootstrap.
   addColumnIfMissing('users', 'is_admin', 'INTEGER NOT NULL DEFAULT 0');
+  // Faction allegiance — picked at character creation, locked for the
+  // life of the character. NULL means legacy/unaligned (existing chars
+  // before this migration); an admin or a future "pick faction" prompt
+  // can assign one later.
+  addColumnIfMissing('characters', 'faction', 'TEXT');
   // Phase 2: equipped weapon can now be a per-instance modded weapon.
   // When this column is non-null, it overrides the stock equipped_weapon
   // catalogue id for combat purposes.

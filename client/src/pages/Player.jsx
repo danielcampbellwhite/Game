@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import FactionBadge from '../components/FactionBadge.jsx';
 
 function timeAgo(ts) {
   if (!ts) return 'never';
@@ -110,10 +111,11 @@ export default function Player() {
             <div className="text-xs text-ink-100/60">
               {p.rank} · Level {p.at_max_level ? '999+' : p.level}{p.prestige ? ` · ⭐ ${p.prestige}` : ''}
             </div>
-            <div className="text-[11px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2">
+            <div className="text-[11px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
               {p.online
                 ? <span className="text-money-400">● online now</span>
                 : <span>last seen {timeAgo(p.last_active_at)}</span>}
+              <FactionBadge faction={p.faction} />
               {p.same_city && (
                 <span className="px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300 uppercase tracking-wide text-[10px]">
                   in your city

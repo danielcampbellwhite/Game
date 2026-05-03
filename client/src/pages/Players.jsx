@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import Card from '../components/Card.jsx';
+import FactionBadge from '../components/FactionBadge.jsx';
 
 function timeAgo(ts) {
   if (!ts) return 'never';
@@ -23,6 +24,7 @@ function PlayerRow({ p }) {
           {p.online
             ? <span className="text-[10px] uppercase tracking-wide text-money-400">● online</span>
             : <span className="text-[10px] text-ink-100/40">{timeAgo(p.last_active_at)}</span>}
+          <FactionBadge faction={p.faction} />
           {p.same_city && (
             <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300">
               in your city

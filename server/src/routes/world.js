@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { CITIES } from '../data.js';
+import { CITIES, FACTION_IDS } from '../data.js';
 import { db } from '../db.js';
 import { getDrugMarketForCity } from '../services/market.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
@@ -26,15 +26,32 @@ router.get('/cities', requireAuth, requireCharacter, (req, res) => {
   const cutoff = now - ONLINE_WINDOW_MS;
   const totals = db.prepare('SELECT city, COUNT(*) AS c FROM characters GROUP BY city').all();
   const onlines = db.prepare('SELECT city, COUNT(*) AS c FROM characters WHERE last_active_at >= ? GROUP BY city').all(cutoff);
-  const totalMap  = Object.fromEntries(totals.map(r => [r.city, r.c]));
-  const onlineMap = Object.fromEntries(onlines.map(r => [r.city, r.c]));
+  // Per-city faction headcount — used by the city page to show which
+  // factions are most entrenched where. NULL faction is bucketed under
+  // "unaligned" but not surfaced in the response (we just don't sum it).
+  const factionRows = db.prepare(
+    "SELECT city, faction, COUNT(*) AS c FROM characters WHERE faction IS NOT NULL GROUP BY city, faction"
+  ).all();
+  const totalMap   = Object.fromEntries(totals.map(r => [r.city, r.c]));
+  const onlineMap  = Object.fromEntries(onlines.map(r => [r.city, r.c]));
+  const factionMap = {};
+  for (const r of factionRows) {
+    factionMap[r.city] = factionMap[r.city] || {};
+    factionMap[r.city][r.faction] = r.c;
+  }
   res.json({
     you: req.character.city,
-    cities: CITIES.map(c => ({
-      ...c,
-      players: totalMap[c.id]  || 0,
-      online:  onlineMap[c.id] || 0,
-    })),
+    cities: CITIES.map(c => {
+      // Stable shape: every city gets every faction id with at least 0,
+      // so the client can iterate without null checks.
+      const factions = Object.fromEntries(FACTION_IDS.map(f => [f, factionMap[c.id]?.[f] || 0]));
+      return {
+        ...c,
+        players: totalMap[c.id]  || 0,
+        online:  onlineMap[c.id] || 0,
+        factions,
+      };
+    }),
   });
 });
 

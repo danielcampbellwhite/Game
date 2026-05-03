@@ -37,6 +37,58 @@ export const CITIES = [
 // smileys, astronauts, rockstars, etc.
 export const AVATARS = ['🕴️', '🤵', '🥷', '🕵️', '🧔', '👮', '💂', '👤', '💀', '🎩', '🤴', '👴'];
 
+// Factions — picked at character creation, locked for the life of the
+// character. Identity drives future systems: turf control, member-only
+// crimes, faction-vs-faction wars over locations within cities.
+//
+// `palette` keys map to the custom Tailwind colours in tailwind.config.js
+// (gold/blood/money) so badges/borders stay consistent across the UI.
+export const FACTIONS = [
+  {
+    id: 'fraudster',
+    name: 'Fraudster',
+    blurb: 'Sophisticated grifters. Brain over brawn — paper crimes, social engineering, long cons.',
+    palette: 'gold',
+    perks: {
+      stats: { intelligence: 5, strength: -2 },
+      cash: 10000,
+      items: [{ kind: 'misc', item_id: 'burner_phone', qty: 2 }],
+      pros: ['+5 Intelligence', '+£10,000 starting cash', '2× Burner Phone'],
+      cons: ['-2 Strength'],
+    },
+  },
+  {
+    id: 'mafia',
+    name: 'Mafia',
+    blurb: 'Old-world crime families. Loyalty, honour, and a reputation that opens doors and breaks legs.',
+    palette: 'blood',
+    perks: {
+      stats: { strength: 3, defence: 2, intelligence: -3 },
+      cash: 3000,
+      equip_weapon: 'switchblade',
+      items: [{ kind: 'weapon', item_id: 'switchblade', qty: 1 }],
+      pros: ['+3 Strength', '+2 Defence', 'Switchblade equipped'],
+      cons: ['-3 Intelligence'],
+    },
+  },
+  {
+    id: 'cartel',
+    name: 'Cartel',
+    blurb: 'Latin American syndicates. Volume, distribution, and ruthless control of supply lines.',
+    palette: 'money',
+    perks: {
+      stats: { strength: 2, speed: 2, defence: -2 },
+      dirty_cash: 5000,
+      items: [{ kind: 'drug', item_id: 'weed', qty: 50 }],
+      pros: ['+2 Strength', '+2 Speed', '+£5,000 dirty cash', '50× Weed'],
+      cons: ['-2 Defence'],
+    },
+  },
+];
+
+export const factionById = id => FACTIONS.find(f => f.id === id) || null;
+export const FACTION_IDS = FACTIONS.map(f => f.id);
+
 // Crimes — energy/nerve cost, level gate, success base, payout range, xp
 export const CRIMES = [
   // ── Street crimes ──────────────────────────────────────────────

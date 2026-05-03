@@ -3,13 +3,15 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import StatAllocator, { initialStats, pointsRemaining, STAT_POINTS } from '../components/StatAllocator.jsx';
+import FactionPicker from '../components/FactionPicker.jsx';
 
 export default function CharacterCreate() {
   const { createCharacter } = useGame();
   const nav = useNavigate();
-  const [opts, setOpts] = useState({ cities: [] });
+  const [opts, setOpts] = useState({ cities: [], factions: [] });
   const [name, setName] = useState('');
   const [city, setCity] = useState(null);
+  const [faction, setFaction] = useState(null);
   const [stats, setStats] = useState(initialStats);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -22,14 +24,14 @@ export default function CharacterCreate() {
   }, []);
 
   const remaining = pointsRemaining(stats);
-  const canSubmit = !busy && name.trim() && remaining === 0;
+  const canSubmit = !busy && name.trim() && faction && remaining === 0;
 
   async function submit(e) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
       // Avatar field is no longer surfaced in the UI; submitted as empty.
-      await createCharacter({ name, avatar: '', city, stats });
+      await createCharacter({ name, avatar: '', city, stats, faction });
       nav('/');
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -56,10 +58,14 @@ export default function CharacterCreate() {
             ))}
           </div>
         </div>
+        <FactionPicker factions={opts.factions || []} value={faction} onChange={setFaction} />
         <StatAllocator value={stats} onChange={setStats} />
         {err && <p className="text-blood-400 text-xs">{err}</p>}
         <button disabled={!canSubmit} type="submit" className="btn btn-primary w-full">
-          {busy ? '...' : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}` : 'Hit the streets'}
+          {busy ? '...'
+            : !faction ? 'Pick a faction'
+            : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}`
+            : 'Hit the streets'}
         </button>
       </form>
     </div>
