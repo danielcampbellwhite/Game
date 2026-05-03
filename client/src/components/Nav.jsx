@@ -10,7 +10,6 @@ const links = [
   { to: '/missions',  label: 'Missions'  },
   { to: '/city',      label: 'City'      },
   { to: '/crimes',    label: 'Crimes'    },
-  { to: '/oc',        label: 'Heists'    },
   { to: '/combat',    label: 'Fight Club'},
   { to: '/gangs',     label: 'Gangs'     },
   { to: '/wars',      label: 'Turf Wars' },
