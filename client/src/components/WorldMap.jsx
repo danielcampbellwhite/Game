@@ -6,20 +6,20 @@ import worldTopology from 'world-atlas/countries-110m.json';
 // Real lat/lng for each game city. react-simple-maps takes [lng, lat]
 // (GeoJSON convention) — note the order in the Marker props below.
 const CITY_COORDS = {
-  new_york:    { lat: 40.7,  lng: -74.0  },
+  new_york:    { lat: 40.7,  lng:  -74.0 },
   los_angeles: { lat: 34.1,  lng: -118.2 },
-  miami:       { lat: 25.8,  lng: -80.2  },
-  rio:         { lat: -22.9, lng: -43.2  },
-  london:      { lat: 51.5,  lng:  -0.1  },
-  paris:       { lat: 48.9,  lng:   2.4  },
-  berlin:      { lat: 52.5,  lng:  13.4  },
-  moscow:      { lat: 55.8,  lng:  37.6  },
-  dubai:       { lat: 25.3,  lng:  55.3  },
-  tokyo:       { lat: 35.7,  lng: 139.7  },
-  hong_kong:   { lat: 22.3,  lng: 114.2  },
-  bangkok:     { lat: 13.8,  lng: 100.5  },
-  mumbai:      { lat: 19.1,  lng:  72.9  },
-  cape_town:   { lat: -33.9, lng:  18.4  },
+  miami:       { lat: 25.8,  lng:  -80.2 },
+  kingston:    { lat: 18.0,  lng:  -76.8 },
+  rio:         { lat: -22.9, lng:  -43.2 },
+  london:      { lat: 51.5,  lng:   -0.1 },
+  paris:       { lat: 48.9,  lng:    2.4 },
+  berlin:      { lat: 52.5,  lng:   13.4 },
+  moscow:      { lat: 55.8,  lng:   37.6 },
+  dubai:       { lat: 25.3,  lng:   55.3 },
+  tokyo:       { lat: 35.7,  lng:  139.7 },
+  hong_kong:   { lat: 22.3,  lng:  114.2 },
+  sydney:      { lat: -33.9, lng:  151.2 },
+  cape_town:   { lat: -33.9, lng:   18.4 },
 };
 
 // Style passed to every <Geography> — keep all three states identical so

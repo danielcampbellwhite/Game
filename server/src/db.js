@@ -692,7 +692,6 @@ export function initDb() {
   // ids on the left, the UPDATE is a no-op.
   const CITY_REMAP = {
     liverpool:    'london',
-    sydney:       'tokyo',
     las_vegas:    'miami',
     mexico_city:  'miami',
     amsterdam:    'berlin',
@@ -704,13 +703,17 @@ export function initDb() {
     johannesburg: 'cape_town',
     monaco:       'paris',
     singapore:    'hong_kong',
-    manila:       'bangkok',
-    havana:       'miami',
+    manila:       'sydney',
+    havana:       'kingston',
     marseille:    'paris',
     naples:       'paris',
     prague:       'berlin',
     dublin:       'london',
     sao_paulo:    'rio',
+    // 2026-05 swap: Mumbai/Bangkok dropped, Sydney (Oceania) and
+    // Kingston (Caribbean) added in their place.
+    mumbai:       'sydney',
+    bangkok:      'kingston',
   };
   // (table, column) pairs to remap. Each is wrapped in try/catch so a
   // missing table on a fresh deploy doesn't crash startup.

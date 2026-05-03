@@ -15,6 +15,7 @@ export const CITIES = [
   { id: 'new_york',    name: 'New York',     emoji: '🗽', drugMul: 1.10, businessMul: 1.20, flightBase: 1500 },
   { id: 'los_angeles', name: 'Los Angeles',  emoji: '🌴', drugMul: 1.20, businessMul: 1.25, flightBase: 1600 },
   { id: 'miami',       name: 'Miami',        emoji: '🌴', drugMul: 1.15, businessMul: 1.10, flightBase: 1200 },
+  { id: 'kingston',    name: 'Kingston',     emoji: '🪘', drugMul: 0.85, businessMul: 0.80, flightBase: 1700 },
   { id: 'rio',         name: 'Rio',          emoji: '🏖️', drugMul: 0.80, businessMul: 0.85, flightBase: 1800 },
   // ── Europe ───────────────────────────────────────────────────
   { id: 'london',      name: 'London',       emoji: '🎡', drugMul: 1.05, businessMul: 1.15, flightBase: 1400 },
@@ -26,8 +27,8 @@ export const CITIES = [
   // ── Asia ─────────────────────────────────────────────────────
   { id: 'tokyo',       name: 'Tokyo',        emoji: '🗼', drugMul: 1.25, businessMul: 1.30, flightBase: 2200 },
   { id: 'hong_kong',   name: 'Hong Kong',    emoji: '🐉', drugMul: 1.30, businessMul: 1.35, flightBase: 2400 },
-  { id: 'bangkok',     name: 'Bangkok',      emoji: '🛕', drugMul: 0.70, businessMul: 0.75, flightBase: 2400 },
-  { id: 'mumbai',      name: 'Mumbai',       emoji: '🪷', drugMul: 0.65, businessMul: 0.75, flightBase: 2200 },
+  // ── Oceania ──────────────────────────────────────────────────
+  { id: 'sydney',      name: 'Sydney',       emoji: '🦘', drugMul: 1.20, businessMul: 1.05, flightBase: 2600 },
   // ── Africa ───────────────────────────────────────────────────
   { id: 'cape_town',   name: 'Cape Town',    emoji: '🦁', drugMul: 0.75, businessMul: 0.80, flightBase: 2100 },
 ];

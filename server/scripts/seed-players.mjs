@@ -58,10 +58,11 @@ function randName(used) {
 }
 
 const CITIES = [
-  'new_york','los_angeles','miami','rio',
+  'new_york','los_angeles','miami','kingston','rio',
   'london','paris','berlin','moscow',
   'dubai',
-  'tokyo','hong_kong','bangkok','mumbai',
+  'tokyo','hong_kong',
+  'sydney',
   'cape_town',
 ];
 const AVATARS = ['🕴️','🤵','🥷','🕵️','🧔','👮','💂','👤','💀','🎩','🤴','👴'];

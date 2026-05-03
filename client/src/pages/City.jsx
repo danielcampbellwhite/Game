@@ -46,6 +46,7 @@ const CITY_DATA = {
   new_york:    { emoji: '🗽', vibe: 'Concrete jungle. Big banks, big rents, bigger appetites.' },
   los_angeles: { emoji: '🌴', vibe: 'Sun-bleached deals and Hollywood smiles. Everyone\'s working an angle.' },
   miami:       { emoji: '🌴', vibe: 'Coke, sun, and Cubans. The 80s never ended.' },
+  kingston:    { emoji: '🪘', vibe: 'Reggae, rum, and ganja. Easy product, easygoing law.' },
   rio:         { emoji: '🏖️', vibe: 'Carnival energy, favela networks, cheap product.' },
   london:      { emoji: '🎡', vibe: 'Old money, older syndicates. The financial heart of Europe.' },
   paris:       { emoji: '🗼', vibe: 'Couture on top, catacombs underneath.' },
@@ -54,8 +55,7 @@ const CITY_DATA = {
   dubai:       { emoji: '🏙️', vibe: 'Gold-plated playground. Demand is sky-high, so are flight prices.' },
   tokyo:       { emoji: '🗼', vibe: 'Neon-lit and tightly run. Premium prices, premium pulls.' },
   hong_kong:   { emoji: '🐉', vibe: 'Vertical money. Triads in the shadows, banks reaching the sky.' },
-  bangkok:     { emoji: '🛕', vibe: 'Wild markets, lax laws, bargain everything.' },
-  mumbai:      { emoji: '🪷', vibe: 'Dense, dirt-cheap, and constantly moving. Underground deals everywhere.' },
+  sydney:      { emoji: '🦘', vibe: 'Far from the heat. Premium inventory, isolated traders.' },
   cape_town:   { emoji: '🦁', vibe: 'Untapped, unpredictable, undervalued.' },
 };
 
