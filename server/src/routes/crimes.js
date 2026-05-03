@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { CRIMES, crimeById, cityById, crimeCooldownSec, rollVehicleFromTier } from '../data.js';
+import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier } from '../data.js';
 import { saveCharacter, awardXp, publicCharacter } from '../services/character.js';
 import { bumpMission } from '../services/missions.js';
 import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
+import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
 
 const router = Router();
 
@@ -38,6 +39,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       const cooldownSec = turfPerk ? Math.max(15, Math.floor(baseCd * TURF_CRIME_COOLDOWN_MUL)) : baseCd;
       const used = cdMap[c.id] || 0;
       const cooldownUntil = used + cooldownSec * 1000;
+      // Requirements: annotate with current ownership counts so the client
+      // can render "you have X / Y" chips and dim the Attempt button
+      // without a second roundtrip.
+      const requires = annotateRequirements(ch.id, crimeRequirements(c));
+      const requirementsMet = requires.every(r => r.ok);
       return {
         ...c,
         locked: ch.level < c.level,
@@ -45,6 +51,8 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
         cooldownSec,
         cooldownUntil,
         ready: Date.now() >= cooldownUntil,
+        requires,
+        requirementsMet,
       };
     }),
   });
@@ -70,8 +78,23 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     if (now < readyAt) return res.status(429).json({ error: 'Crime is on cooldown', cooldownUntil: readyAt });
   }
 
+  // Item requirements (e.g. ATM Skim needs an ATM Skimmer in inventory).
+  // Checked before any state mutation; consumed after commit-point so the
+  // tool is destroyed even if the crime fails.
+  const requires = crimeRequirements(crime);
+  const reqCheck = checkRequirements(ch.id, requires);
+  if (!reqCheck.ok) {
+    const m = reqCheck.missing[0];
+    return res.status(400).json({
+      error: `Missing required item: ${m.name} (have ${m.have}, need ${m.need})`,
+      missing: reqCheck.missing,
+    });
+  }
+
   ch.energy -= crime.energy;
   ch.nerve  -= crime.nerve;
+  // Consume crime tools — destroyed regardless of success/failure.
+  const consumed = consumeRequirements(ch.id, requires);
 
   const intelBonus = (crime.intelBonus || 0) * (ch.intelligence * 0.3);
   const success = Math.max(5, Math.min(95, crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus));
@@ -135,7 +158,7 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   const cooldownUntil = now + cdSec * 1000;
 
   saveCharacter(ch);
-  res.json({ ...result, cooldownUntil, character: publicCharacter(ch) });
+  res.json({ ...result, consumed, cooldownUntil, character: publicCharacter(ch) });
 });
 
 export default router;

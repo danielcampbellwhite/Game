@@ -54,7 +54,8 @@ export const CRIMES = [
   { id: 'snatch_grab',    name: 'Phone Snatch',         tier: 'street', energy: 1, nerve: 0, level: 2,  base: 72, min: 40,    max: 180,   xp: 6,   risk: 'tiny' },
   { id: 'bike_theft',     name: 'Steal a Pushbike',     tier: 'street', energy: 2, nerve: 0, level: 2,  base: 68, min: 60,    max: 250,   xp: 8,   risk: 'tiny' },
   { id: 'mugging',        name: 'Mugging',              tier: 'street', energy: 3, nerve: 1, level: 4,  base: 60, min: 200,   max: 800,   xp: 12,  risk: 'low'  },
-  { id: 'atm_skim',       name: 'ATM Skim',             tier: 'street', energy: 3, nerve: 1, level: 4,  base: 55, min: 280,   max: 1100,  xp: 14,  risk: 'low',  intelBonus: 0.8 },
+  { id: 'atm_skim',       name: 'ATM Skim',             tier: 'street', energy: 3, nerve: 1, level: 4,  base: 55, min: 280,   max: 1100,  xp: 14,  risk: 'low',  intelBonus: 0.8,
+    requires: [{ kind: 'misc', item_id: 'atm_skimmer', qty: 1, consumed: true }] },
   { id: 'cat_converter',  name: 'Cat Converter Theft',  tier: 'street', energy: 3, nerve: 1, level: 5,  base: 60, min: 250,   max: 950,   xp: 14,  risk: 'low'  },
   { id: 'scam',           name: 'Online Scam',          tier: 'street', energy: 3, nerve: 0, level: 5,  base: 50, min: 400,   max: 1800,  xp: 18,  risk: 'low',  intelBonus: 1.0 },
   { id: 'breakin',        name: 'House Break-In',       tier: 'street', energy: 4, nerve: 1, level: 6,  base: 55, min: 600,   max: 2200,  xp: 20,  risk: 'low'  },
@@ -810,6 +811,13 @@ export function crimeCooldownSec(crime) {
   return Math.max(30, Math.round(20 + Math.pow(lvl, 1.6) * 4));
 }
 
+// Crime requirements — items the player must hold in inventory to commit
+// the crime. See services/items.js for the consumption logic. Returns []
+// for crimes that don't gate on items so callers don't need null checks.
+export function crimeRequirements(crime) {
+  return Array.isArray(crime?.requires) ? crime.requires : [];
+}
+
 // ── General Store: miscellaneous items ──────────────────────────────────
 //
 // `kind = 'misc'` rows in the inventory table. Most are mission props with
@@ -856,6 +864,9 @@ export const MISC_ITEMS = [
       { chance: 0.00004, amount: 50000  },
       { chance: 0.00001, amount: 100000 },
     ] },
+  // ── Crime tools — single-use props consumed when committing certain crimes ──
+  { id: 'atm_skimmer',     name: 'ATM Skimmer',        emoji: '💳', cost: 600, desc: 'Card-cloning rig glued over an ATM\'s reader. Consumed on use.', crimeTool: true },
+
   { id: 'lockpick_set',    name: 'Lockpick Set',       emoji: '🗝️', cost: 180, desc: 'Required for some jobs. Single-use.',          missionOnly: true },
   { id: 'burner_phone',    name: 'Burner Phone',       emoji: '📱', cost: 120, desc: 'Untraceable. Burned after one call.',          missionOnly: true },
   { id: 'duct_tape',       name: 'Duct Tape',          emoji: '🩹', cost: 40,  desc: 'Holds the world together.',                    missionOnly: true },

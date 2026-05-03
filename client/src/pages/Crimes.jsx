@@ -144,6 +144,11 @@ export default function Crimes() {
               {last.result.success === false && last.result.jailed && <p className="text-yellow-400">Caught — jailed {last.result.jail_min} min.</p>}
               {last.result.success === false && last.result.hospital && <p className="text-blue-300">Hurt — hospital {last.result.hosp_min} min.</p>}
               {last.result.success === false && last.result.escaped && <p className="text-ink-100/70">Failed but escaped clean.</p>}
+              {last.result.consumed?.length > 0 && (
+                <p className="text-[11px] text-ink-100/50 mt-1">
+                  Used up: {last.result.consumed.map(c => `${c.qty}× ${c.name}`).join(', ')}.
+                </p>
+              )}
             </div>
           )}
         </Card>
@@ -155,7 +160,8 @@ export default function Crimes() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {grouped[tier].map(c => {
               const onCd = !c.ready;
-              const cant = c.locked || character.energy < c.energy || character.nerve < c.nerve || onCd;
+              const reqsMet = c.requirementsMet !== false;
+              const cant = c.locked || character.energy < c.energy || character.nerve < c.nerve || onCd || !reqsMet;
               return (
                 <div key={c.id} className={`rounded-lg p-3 border ${c.locked ? 'border-ink-100/5 opacity-60' : onCd ? 'border-ink-100/10 opacity-70' : 'border-ink-100/10'} bg-ink-950/40`}>
                   <div className="flex justify-between items-start">
@@ -166,15 +172,28 @@ export default function Crimes() {
                     Energy {c.energy}{c.nerve ? ` · Nerve ${c.nerve}` : ''} · {c.tier === 'gta' ? `Tier ${c.vehicleTier} car` : `${fmt(c.min)}–${fmt(c.max)}`} · {c.xp}xp · risk: {c.risk}
                   </div>
                   <div className="text-[10px] text-ink-100/40 mt-0.5">cooldown {cooldownLabel(c.cooldownSec)}</div>
+                  {c.requires?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {c.requires.map(r => (
+                        <span key={r.item_id}
+                          className={`text-[10px] px-1.5 py-0.5 rounded border ${r.ok ? 'border-money-500/40 text-money-300' : 'border-blood-500/50 text-blood-300'}`}
+                          title={r.consumed ? 'Single-use — destroyed on commit.' : 'Required to commit.'}>
+                          {r.consumed ? '× ' : ''}{r.name} {r.have}/{r.need}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <button disabled={cant || busyId === c.id} onClick={() => commit(c)}
                     className="btn btn-primary w-full mt-3 text-xs">
                     {busyId === c.id
                       ? '...'
                       : c.locked
                         ? 'Locked'
-                        : onCd
-                          ? <>Ready in <Timer until={c.cooldownUntil} onExpire={load} /></>
-                          : 'Attempt'}
+                        : !reqsMet
+                          ? 'Need items'
+                          : onCd
+                            ? <>Ready in <Timer until={c.cooldownUntil} onExpire={load} /></>
+                            : 'Attempt'}
                   </button>
                 </div>
               );
