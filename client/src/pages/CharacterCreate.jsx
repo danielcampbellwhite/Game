@@ -12,9 +12,11 @@ export default function CharacterCreate() {
   const [name, setName] = useState('');
   const [city, setCity] = useState(null);
   const [faction, setFaction] = useState(null);
+  const [gender, setGender] = useState(null);
   const [stats, setStats] = useState(initialStats);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [rolling, setRolling] = useState(false);
 
   useEffect(() => {
     api.get('/character/options').then(d => {
@@ -24,17 +26,26 @@ export default function CharacterCreate() {
   }, []);
 
   const remaining = pointsRemaining(stats);
-  const canSubmit = !busy && name.trim() && faction && remaining === 0;
+  const canSubmit = !busy && name.trim() && faction && gender && remaining === 0;
 
   async function submit(e) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
       // Avatar field is no longer surfaced in the UI; submitted as empty.
-      await createCharacter({ name, avatar: '', city, stats, faction });
+      await createCharacter({ name, avatar: '', city, stats, faction, gender });
       nav('/');
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
+  }
+
+  async function rollName() {
+    setRolling(true);
+    try {
+      const q = gender ? `?gender=${gender}` : '';
+      const r = await api.get(`/character/random-name${q}`);
+      if (r?.name) setName(r.name);
+    } catch {} finally { setRolling(false); }
   }
 
   return (
@@ -44,8 +55,27 @@ export default function CharacterCreate() {
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="text-xs uppercase text-ink-100/60">Name</label>
-          <input value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder="Vito Corleone" className="w-full" />
+          <div className="flex gap-2">
+            <input value={name} onChange={e => setName(e.target.value)} maxLength={32} placeholder="Vito Corleone" className="flex-1" />
+            <button type="button" onClick={rollName} disabled={rolling} className="btn btn-ghost text-xs whitespace-nowrap">
+              {rolling ? '…' : '🎲 Random'}
+            </button>
+          </div>
+          {!gender && <p className="text-[10px] text-ink-100/40 mt-1">Pick a gender below to weight the random names.</p>}
         </div>
+
+        <div>
+          <label className="text-xs uppercase text-ink-100/60 block mb-1">Gender</label>
+          <div className="grid grid-cols-2 gap-2">
+            {['male', 'female'].map(g => (
+              <button type="button" key={g} onClick={() => setGender(g)}
+                className={`p-2 rounded-lg border text-center capitalize ${gender === g ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="text-xs uppercase text-ink-100/60 block mb-1">Starting city</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -64,6 +94,7 @@ export default function CharacterCreate() {
         <button disabled={!canSubmit} type="submit" className="btn btn-primary w-full">
           {busy ? '...'
             : !faction ? 'Pick a faction'
+            : !gender ? 'Pick a gender'
             : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}`
             : 'Hit the streets'}
         </button>

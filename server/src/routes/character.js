@@ -3,7 +3,7 @@ import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { loadCharacter, applyTick, publicCharacter } from '../services/character.js';
 import { recentLog, writeLog } from '../services/log.js';
-import { CITIES, AVATARS, cityById, FACTION_IDS } from '../data.js';
+import { CITIES, AVATARS, cityById, FACTION_IDS, GENDERS } from '../data.js';
 import { applyFactionPerks } from '../services/factions.js';
 
 const router = Router();
@@ -38,19 +38,77 @@ function validateStartingStats(input) {
 
 router.get('/options', async (_req, res) => {
   const { FACTIONS } = await import('../data.js');
-  res.json({ cities: CITIES, avatars: AVATARS, factions: FACTIONS });
+  res.json({ cities: CITIES, avatars: AVATARS, factions: FACTIONS, genders: GENDERS });
+});
+
+// ── Gangster name generator ─────────────────────────────────────────
+// Used by the character-creation form's "🎲 Random" button. Pulls
+// first/last from gender-aware buckets and occasionally adds a colourful
+// nickname (e.g. "Vinny 'The Knife' Marino"). No DB hit; pure RNG over
+// curated lists, so collisions with existing names are possible — the
+// client just calls again if the player doesn't like the result.
+const FIRST_M = [
+  'Vito', 'Tony', 'Marco', 'Sal', 'Rocco', 'Carmine', 'Frank', 'Gino', 'Luca', 'Enzo',
+  'Dante', 'Bruno', 'Dominic', 'Angelo', 'Vinny', 'Joey', 'Paulie', 'Sonny', 'Mickey', 'Nico',
+  'Aleksei', 'Dmitri', 'Yuri', 'Vlad', 'Igor', 'Pavel', 'Boris', 'Sergei',
+  'Liam', 'Connor', 'Aiden', 'Declan', 'Cillian', 'Sean', 'Patrick',
+  'Hiroshi', 'Kenji', 'Takeshi', 'Akira',
+  'Carlos', 'Diego', 'Hector', 'Rafael', 'Mateo',
+  'Marcus', 'Jamal', 'Tyrone', 'Devon', 'Reggie',
+];
+const FIRST_F = [
+  'Donna', 'Connie', 'Rosa', 'Maria', 'Gianna', 'Lucia', 'Sofia', 'Bianca', 'Giulia', 'Valentina',
+  'Carmela', 'Angelica', 'Isabella', 'Stella', 'Mia', 'Vita', 'Nico',
+  'Tatiana', 'Anastasia', 'Katya', 'Irina', 'Natasha', 'Nadia', 'Vera',
+  'Siobhan', 'Saoirse', 'Niamh', 'Aoife', 'Maeve',
+  'Yuki', 'Mei', 'Hana',
+  'Lupita', 'Carmen', 'Esperanza', 'Selena', 'Camila',
+  'Aaliyah', 'Imani', 'Nia', 'Zara',
+];
+const LAST_GANGSTER = [
+  'Corleone', 'Soprano', 'Gambino', 'Romano', 'Conti', 'Rizzo', 'Marino', 'Russo', 'Esposito', 'Vitale',
+  'Falcone', 'Gallo', 'Lombardi', 'Marchetti', 'Bianchi', 'Greco', 'Costa', 'Riva',
+  'Volkov', 'Sokolov', 'Petrov', 'Ivanov', 'Romanov', 'Belov',
+  "O'Connor", "O'Brien", 'Murphy', 'Walsh', 'Byrne', 'Doyle', 'Lynch',
+  'Tanaka', 'Yamamoto', 'Watanabe', 'Sato',
+  'Reyes', 'Vega', 'Cruz', 'Mendoza', 'Salazar',
+  'Washington', 'Jackson', 'Carter',
+];
+const NICKNAMES = [
+  'The Knife', 'The Bull', 'Bulldog', 'The Snake', 'Iceman', 'The Wolf',
+  'Lucky', 'Bones', 'Knuckles', 'The Hammer', 'Slim', 'Fingers',
+  'The Saint', 'Big', 'Fat', 'Three Fingers', 'Tommy Guns', 'The Shark',
+  'Whitey', 'Red', 'Smiley', 'The Rat', 'The Cat',
+];
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+router.get('/random-name', (req, res) => {
+  const gender = (req.query.gender || '').toString();
+  const firsts = gender === 'female' ? FIRST_F : FIRST_M;
+  const first = pick(firsts);
+  const last  = pick(LAST_GANGSTER);
+  // 1 in 5 names get a nickname injected. Keep it sparse so it stays
+  // a treat rather than a tax on every roll.
+  const includeNick = Math.random() < 0.2;
+  const name = includeNick
+    ? `${first} '${pick(NICKNAMES)}' ${last}`
+    : `${first} ${last}`;
+  // Hard cap matches the validator (2-32). Drop the nickname if it busts.
+  if (name.length > 32) return res.json({ name: `${first} ${last}` });
+  res.json({ name });
 });
 
 router.post('/create', requireAuth, (req, res) => {
-  const { name, avatar, city, stats, faction } = req.body || {};
+  const { name, avatar, city, stats, faction, gender } = req.body || {};
   if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
   if (!faction || !FACTION_IDS.includes(faction)) return res.status(400).json({ error: 'Pick a faction' });
+  if (!gender || !GENDERS.includes(gender)) return res.status(400).json({ error: 'Pick a gender' });
   // Avatar is no longer surfaced in the UI — accept either an empty
   // string or a known avatar id (legacy data).
   const avatarVal = (avatar || '').trim();
   if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
-  if (name.length < 2 || name.length > 24) return res.status(400).json({ error: 'Name length 2-24' });
+  if (name.length < 2 || name.length > 32) return res.status(400).json({ error: 'Name length 2-32' });
   const sv = validateStartingStats(stats);
   if (!sv.ok) return res.status(400).json({ error: sv.error });
   const exists = db.prepare('SELECT id FROM characters WHERE user_id = ?').get(req.user.id);
@@ -61,13 +119,13 @@ router.post('/create', requireAuth, (req, res) => {
   const now = Date.now();
   const info = db.prepare(`
     INSERT INTO characters (
-      user_id, name, avatar, city, faction,
+      user_id, name, avatar, city, faction, gender,
       strength, defence, speed, intelligence,
       last_tick, last_health_tick, bank_last_interest,
       equipped_weapon, equipped_armour, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fists', 'none', ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fists', 'none', ?)
   `).run(
-    req.user.id, name, avatarVal, city, faction,
+    req.user.id, name, avatarVal, city, faction, gender,
     sv.stats.strength, sv.stats.defence, sv.stats.speed, sv.stats.intelligence,
     now, now, now, now,
   );
@@ -96,7 +154,7 @@ router.get('/', requireAuth, (req, res) => {
 // level-10 newcomer with default stats and a fresh 3-day protection
 // window from `created_at = now`.
 router.post('/new-character', requireAuth, (req, res) => {
-  const { name, avatar, city, stats, faction } = req.body || {};
+  const { name, avatar, city, stats, faction, gender } = req.body || {};
   const ch = db.prepare('SELECT * FROM characters WHERE user_id = ?').get(req.user.id);
   if (!ch) return res.status(404).json({ error: 'No character to replace.' });
   if (ch.status !== 'pending_new_character') return res.status(409).json({ error: 'Your character is alive — no new character to roll.' });
@@ -104,10 +162,11 @@ router.post('/new-character', requireAuth, (req, res) => {
   if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
   if (!faction || !FACTION_IDS.includes(faction)) return res.status(400).json({ error: 'Pick a faction' });
+  if (!gender || !GENDERS.includes(gender)) return res.status(400).json({ error: 'Pick a gender' });
   const avatarVal = (avatar || '').trim();
   if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
   const trimmed = String(name).trim();
-  if (trimmed.length < 2 || trimmed.length > 24) return res.status(400).json({ error: 'Name length 2-24' });
+  if (trimmed.length < 2 || trimmed.length > 32) return res.status(400).json({ error: 'Name length 2-32' });
   const sv = validateStartingStats(stats);
   if (!sv.ok) return res.status(400).json({ error: sv.error });
   const taken = db.prepare('SELECT id FROM characters WHERE name = ? COLLATE NOCASE AND id != ?').get(trimmed, ch.id);
@@ -123,7 +182,7 @@ router.post('/new-character', requireAuth, (req, res) => {
 
   db.prepare(`
     UPDATE characters SET
-      name = ?, avatar = ?, city = ?, faction = ?,
+      name = ?, avatar = ?, city = ?, faction = ?, gender = ?,
       status = 'alive',
       level = 10, xp = 0,
       energy = ?, max_energy = ?,
@@ -148,7 +207,7 @@ router.post('/new-character', requireAuth, (req, res) => {
       last_active_at = ?, created_at = ?
     WHERE id = ?
   `).run(
-    trimmed, avatarVal, city, faction,
+    trimmed, avatarVal, city, faction, gender,
     maxEnergy, maxEnergy,
     maxNerve, maxNerve,
     maxHealth, maxHealth,

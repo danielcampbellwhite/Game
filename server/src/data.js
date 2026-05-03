@@ -89,6 +89,11 @@ export const FACTIONS = [
 export const factionById = id => FACTIONS.find(f => f.id === id) || null;
 export const FACTION_IDS = FACTIONS.map(f => f.id);
 
+// Gender — picked at creation, locked thereafter. Display-only; doesn't
+// affect mechanics today. Two-option set; expand here if you ever want
+// non-binary / unspecified.
+export const GENDERS = ['male', 'female'];
+
 // Crimes — energy/nerve cost, level gate, success base, payout range, xp
 export const CRIMES = [
   // ── Street crimes ──────────────────────────────────────────────

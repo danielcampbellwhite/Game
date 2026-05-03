@@ -170,7 +170,7 @@ function settleOverdueLoans(ch, now) {
 
 const SAVE_STMT = `
   UPDATE characters SET
-    name = ?, avatar = ?, city = ?, faction = ?,
+    name = ?, avatar = ?, city = ?, faction = ?, gender = ?,
     level = ?, xp = ?,
     energy = ?, max_energy = ?,
     nerve = ?, max_nerve = ?,
@@ -196,7 +196,7 @@ const SAVE_STMT = `
 
 export function saveCharacter(ch) {
   db.prepare(SAVE_STMT).run(
-    ch.name, ch.avatar, ch.city, ch.faction || null,
+    ch.name, ch.avatar, ch.city, ch.faction || null, ch.gender || null,
     ch.level, ch.xp,
     ch.energy, ch.max_energy,
     ch.nerve, ch.max_nerve,
@@ -357,6 +357,7 @@ export function publicCharacter(ch) {
     login_streak: ch.login_streak, last_daily: ch.last_daily,
     prestige: ch.prestige,
     faction: ch.faction || null,
+    gender: ch.gender || null,
     // Live, decayed heat — computed fresh from the stored snapshot so
     // the dashboard ticks down as the player idles.
     heat: Math.round(effectiveHeat(ch)),

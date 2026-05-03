@@ -588,6 +588,9 @@ export function initDb() {
   // before this migration); an admin or a future "pick faction" prompt
   // can assign one later.
   addColumnIfMissing('characters', 'faction', 'TEXT');
+  // Gender — picked at creation. NULL means legacy/unset (existing
+  // pre-migration rows). New characters are required to pick one.
+  addColumnIfMissing('characters', 'gender', 'TEXT');
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps
   // jail-on-fail probability. Stored as a snapshot value plus the
