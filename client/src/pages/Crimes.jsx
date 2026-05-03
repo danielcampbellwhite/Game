@@ -189,7 +189,7 @@ export default function Crimes() {
             {grouped[tier].map(c => {
               const onCd = !c.ready;
               const reqsMet = c.requirementsMet !== false;
-              const cant = c.locked || character.energy < c.energy || character.nerve < c.nerve || onCd || !reqsMet;
+              const cant = c.locked || character.energy < c.energy || onCd || !reqsMet;
               return (
                 <div key={c.id} className={`rounded-lg p-3 border ${c.locked ? 'border-ink-100/5 opacity-60' : onCd ? 'border-ink-100/10 opacity-70' : 'border-ink-100/10'} bg-ink-950/40`}>
                   <div className="flex justify-between items-start">
@@ -197,7 +197,7 @@ export default function Crimes() {
                     <div className="text-[10px] text-ink-100/50">Lvl {c.level}+</div>
                   </div>
                   <div className="text-[11px] text-ink-100/60 mt-1">
-                    Energy {c.energy}{c.nerve ? ` · Nerve ${c.nerve}` : ''} · {c.tier === 'gta' ? `Tier ${c.vehicleTier} car` : `${fmt(c.min)}–${fmt(c.max)}`} · {c.xp}xp · risk: {c.risk}
+                    Energy {c.energy} · {c.tier === 'gta' ? `Tier ${c.vehicleTier} car` : `${fmt(c.min)}–${fmt(c.max)}`} · {c.xp}xp · risk: {c.risk}
                   </div>
                   <div className="text-[10px] text-ink-100/40 mt-0.5">cooldown {cooldownLabel(c.cooldownSec)}</div>
                   {c.requires?.length > 0 && (

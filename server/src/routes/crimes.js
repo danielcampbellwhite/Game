@@ -65,7 +65,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   if (!crime) return res.status(400).json({ error: 'Unknown crime' });
   if (ch.level < crime.level) return res.status(403).json({ error: `Requires level ${crime.level}` });
   if (ch.energy < crime.energy) return res.status(400).json({ error: 'Not enough energy' });
-  if (ch.nerve < crime.nerve) return res.status(400).json({ error: 'Not enough nerve' });
 
   // Cooldown check (turf perk same as in GET above)
   const baseCd = crimeCooldownSec(crime);
@@ -93,7 +92,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   }
 
   ch.energy -= crime.energy;
-  ch.nerve  -= crime.nerve;
   // Consume crime tools — destroyed regardless of success/failure.
   const consumed = consumeRequirements(ch.id, requires);
 
