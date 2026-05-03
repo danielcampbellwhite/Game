@@ -240,8 +240,21 @@ export default function Nav() {
             onClick={onClickGuard}
             aria-label="Messages"
             title="Messages"
-            className={`relative px-2 py-1 rounded-md transition text-base ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-ink-100/75'}`}>
-            ✉
+            className={`relative px-2 py-1 rounded-md transition flex items-center justify-center ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-white'}`}>
+            {/* Inline SVG envelope — pure white, bigger than the
+                emoji glyph it replaces, scales cleanly across DPRs. */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-6 h-6 sm:w-7 sm:h-7"
+              aria-hidden>
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="M3 7l9 6 9-6" />
+            </svg>
             {dmUnread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
                 {dmUnread > 99 ? '99+' : dmUnread}
