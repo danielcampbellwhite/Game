@@ -428,9 +428,22 @@ export const BUSINESSES = [
   { id: 'chop_shop',    name: 'Chop Shop',           emoji: '',  illegal: true,  baseCost: 130000,  baseHourly: 4200,  levelGate: 12, launderRate: null  },
   { id: 'strip_club',   name: 'Strip Club',          emoji: '',  illegal: true,  baseCost: 280000,  baseHourly: 5800,  levelGate: 18, launderRate: 0.78  },
   { id: 'counterfeit',  name: 'Counterfeit Lab',     emoji: '',  illegal: true,  baseCost: 350000,  baseHourly: 7200,  levelGate: 24, launderRate: null  },
-  { id: 'drug_lab',     name: 'Drug Lab',            emoji: '',  illegal: true,  baseCost: 420000,  baseHourly: 9500,  levelGate: 26, launderRate: null  },
   { id: 'underground',  name: 'Underground Casino',  emoji: '',  illegal: true,  baseCost: 800000,  baseHourly: 14000, levelGate: 32, launderRate: 0.74  },
-  { id: 'cartel_lab',   name: 'Cartel Operation',    emoji: '',  illegal: true,  baseCost: 1800000, baseHourly: 32000, levelGate: 48, launderRate: null  },
+  // ── Drug producers ────────────────────────────────────────────────
+  // baseHourly = 0 — these don't pay cash on collect. Instead the
+  // `produces` field tells routes/businesses.js how many drug units
+  // to deposit into the player's inventory each hour. Players sell
+  // the drugs themselves via the Drugs page in any city of their
+  // choice — the trade game is in WHERE they sell, not in production.
+  { id: 'weed_farm',    name: 'Weed Farm',           emoji: '',  illegal: true,  baseCost: 180000,  baseHourly: 0, levelGate: 12, launderRate: null, produces: { drug: 'weed',    perHour: 10 } },
+  { id: 'mdma_lab',     name: 'MDMA Lab',            emoji: '',  illegal: true,  baseCost: 320000,  baseHourly: 0, levelGate: 18, launderRate: null, produces: { drug: 'mdma',    perHour: 5  } },
+  // drug_lab id kept for backwards-compat with existing rows; renamed
+  // to "Meth Lab" and switched to producing meth instead of generic
+  // dirty cash.
+  { id: 'drug_lab',     name: 'Meth Lab',            emoji: '',  illegal: true,  baseCost: 420000,  baseHourly: 0, levelGate: 26, launderRate: null, produces: { drug: 'meth',    perHour: 4  } },
+  { id: 'coke_kitchen', name: 'Cocaine Kitchen',     emoji: '',  illegal: true,  baseCost: 900000,  baseHourly: 0, levelGate: 32, launderRate: null, produces: { drug: 'cocaine', perHour: 3  } },
+  // cartel_lab id kept for backwards-compat. Top-tier producer.
+  { id: 'cartel_lab',   name: 'Cartel Operation',    emoji: '',  illegal: true,  baseCost: 1800000, baseHourly: 0, levelGate: 48, launderRate: null, produces: { drug: 'heroin',  perHour: 2  } },
 ];
 
 // Slider scoring. All callers must use this — never compute ad-hoc.

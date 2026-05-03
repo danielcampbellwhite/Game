@@ -25,23 +25,13 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   res.json({ market, inventory, city: ch.city, useEffects });
 });
 
-router.post('/buy', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
-  const ch = req.character;
-  const drug = drugById(req.body?.drug_id);
-  const qty = Math.max(1, parseInt(req.body?.qty || 0, 10));
-  if (!drug) return res.status(400).json({ error: 'Unknown drug' });
-  if (ch.level < drug.levelGate) return res.status(403).json({ error: `Requires level ${drug.levelGate}` });
-  const price = getDrugPrice(ch.city, drug.id);
-  const cost = price * qty;
-  if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost}` });
-  ch.cash -= cost;
-  db.prepare(`
-    INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, 'drug', ?, ?)
-    ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
-  `).run(ch.id, drug.id, qty);
-  writeLog(ch.id, 'drugs', `Bought ${qty} ${drug.name} @ £${price} (-£${cost}).`);
-  saveCharacter(ch);
-  res.json({ ok: true, character: publicCharacter(ch) });
+// Drug buying was removed — drugs are now produced exclusively by
+// illegal businesses (weed farm, MDMA lab, meth lab, cocaine kitchen,
+// cartel operation). The player's only interface with the drug market
+// is selling what they've produced. Keep the route stub returning 410
+// so any cached client code surfaces a clear error rather than a 404.
+router.post('/buy', requireAuth, requireCharacter, (_req, res) => {
+  res.status(410).json({ error: 'The black market no longer sells. Set up a Weed Farm or Meth Lab — drugs come from your own production now.' });
 });
 
 router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {

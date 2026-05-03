@@ -118,8 +118,12 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
                 <div className={`tabular-nums ${preview && character.cash < preview.cost ? 'text-blood-400' : 'text-money-400'}`}>{fmt(preview?.cost)}</div>
               </div>
               <div>
-                <div className="text-[10px] uppercase text-ink-100/50">Hourly</div>
-                <div className={`tabular-nums ${picked.illegal ? 'text-blood-400' : 'text-money-400'}`}>{fmt(preview?.hourly)}</div>
+                <div className="text-[10px] uppercase text-ink-100/50">{picked.produces ? 'Output' : 'Hourly'}</div>
+                <div className={`tabular-nums ${picked.illegal ? 'text-blood-400' : 'text-money-400'}`}>
+                  {picked.produces
+                    ? `${picked.produces.perHour}/hr ${picked.produces.drug}`
+                    : fmt(preview?.hourly)}
+                </div>
               </div>
               {picked.illegal && (
                 <div>
@@ -128,8 +132,12 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
                 </div>
               )}
               <div>
-                <div className="text-[10px] uppercase text-ink-100/50">Payback (cap 24h)</div>
-                <div className="tabular-nums">{preview?.hourly ? `${Math.ceil(preview.cost / preview.hourly)} h` : '—'}</div>
+                <div className="text-[10px] uppercase text-ink-100/50">{picked.produces ? 'Sells (base)' : 'Payback (cap 24h)'}</div>
+                <div className="tabular-nums">
+                  {picked.produces
+                    ? `~£${picked.produces.perHour}× base`
+                    : preview?.hourly ? `${Math.ceil(preview.cost / preview.hourly)} h` : '—'}
+                </div>
               </div>
             </div>
             {err && <p className="text-blood-400 text-xs mt-2">{err}</p>}
@@ -191,12 +199,22 @@ export default function Businesses() {
                   {b.illegal && <span className="text-blood-400 text-[10px] uppercase">illegal</span>}
                 </div>
                 <div className="text-[11px] text-ink-100/60 mt-1">
-                  {fmt(b.hourly)}/hr · pending: <span className={b.illegal ? 'text-blood-400' : 'text-money-400'}>{fmt(b.pending)}</span>
+                  {b.produces ? (
+                    <>
+                      {b.produces.perHour.toFixed(1)} {b.produces.drug}/hr · pending: <span className="text-blood-400">{b.pendingDrug?.qty || 0} {b.produces.drug}</span>
+                    </>
+                  ) : (
+                    <>
+                      {fmt(b.hourly)}/hr · pending: <span className={b.illegal ? 'text-blood-400' : 'text-money-400'}>{fmt(b.pending)}</span>
+                    </>
+                  )}
                   {b.illegal && b.raidChance > 0 && <span className="ml-2 text-yellow-400">raid {(b.raidChance * 100).toFixed(1)}%</span>}
                 </div>
                 <div className="text-[10px] text-ink-100/40 mt-0.5">scale {b.scale} · risk {b.risk} · quality {b.quality}</div>
                 <div className="flex gap-2 mt-2">
-                  <button disabled={busy === `c${b.id}` || b.pending <= 0} className="btn btn-money text-xs flex-1"
+                  <button
+                    disabled={busy === `c${b.id}` || (b.produces ? !b.pendingDrug?.qty : b.pending <= 0)}
+                    className="btn btn-money text-xs flex-1"
                     onClick={() => action('collect', { id: b.id }, `c${b.id}`)}>Collect</button>
                   <button disabled={busy === `u${b.id}` || character.cash < b.upgradeCost || b.level >= 10} className="btn text-xs flex-1"
                     onClick={() => action('upgrade', { id: b.id }, `u${b.id}`)}>

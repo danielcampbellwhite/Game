@@ -16,13 +16,28 @@ function decoratedHourly(template, sliders, level, city) {
   return Math.floor(hourly * (1 + 0.15 * (level - 1)));
 }
 
-function pendingFor(row) {
-  const template = businessById(row.business_id);
-  if (!template) return 0;
+// Hours since last collect, capped at COLLECT_CAP_HOURS so an
+// abandoned business doesn't print money/drugs forever.
+function elapsedHours(row) {
   const elapsedMs = Date.now() - row.last_collected;
   const cappedMs = Math.min(elapsedMs, COLLECT_CAP_HOURS * 60 * 60 * 1000);
-  const hours = cappedMs / (60 * 60 * 1000);
-  return Math.floor(decoratedHourly(template, row, row.level, row.city) * hours);
+  return cappedMs / (60 * 60 * 1000);
+}
+
+function pendingFor(row) {
+  const template = businessById(row.business_id);
+  if (!template || template.produces) return 0;   // drug producers pay drugs, not cash
+  return Math.floor(decoratedHourly(template, row, row.level, row.city) * elapsedHours(row));
+}
+
+// Drug producers — returns null for non-producers, or { drug, qty }
+// when the template defines a `produces` field.
+function pendingDrugFor(row) {
+  const template = businessById(row.business_id);
+  if (!template?.produces) return null;
+  const perHour = template.produces.perHour * (1 + 0.15 * (row.level - 1));
+  const qty = Math.floor(perHour * elapsedHours(row));
+  return { drug: template.produces.drug, qty };
 }
 
 function decorateOwned(row) {
@@ -42,10 +57,15 @@ function decorateOwned(row) {
     scale: row.scale,
     risk: row.risk,
     quality: row.quality,
-    hourly: Math.floor(stats.hourly * (1 + 0.15 * (row.level - 1))),
+    hourly: template.produces ? 0 : Math.floor(stats.hourly * (1 + 0.15 * (row.level - 1))),
     upgradeCost: Math.floor(stats.upgradeCost * row.level * 1.4),
     raidChance: stats.raidChance,
     pending: pendingFor(row),
+    pendingDrug: pendingDrugFor(row),
+    produces: template.produces ? {
+      drug: template.produces.drug,
+      perHour: template.produces.perHour * (1 + 0.15 * (row.level - 1)),
+    } : null,
     last_collected: row.last_collected,
     launderRate: template.launderRate || null,
   };
@@ -128,16 +148,18 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
   if (!template) return res.status(404).json({ error: 'Template missing' });
   const stats = computeBusiness(template, row.scale, row.risk, row.quality, row.city);
   const earnings = pendingFor(row);
-  if (earnings <= 0) return res.status(400).json({ error: 'Nothing to collect yet' });
+  const drugYield = pendingDrugFor(row);
+  if (!template.produces && earnings <= 0) return res.status(400).json({ error: 'Nothing to collect yet' });
+  if (template.produces && (!drugYield || drugYield.qty <= 0)) return res.status(400).json({ error: 'Nothing to collect yet' });
 
   // Raid roll. Quality reduces it; risk slider raises it.
   const raid = template.illegal && Math.random() < stats.raidChance;
   const businessName = row.custom_name || template.name;
 
   if (raid) {
-    // Confiscation: the business is destroyed. Pending earnings are lost,
-    // build cost is gone, and the row is removed. There's a 40% chance
-    // the player also catches a sentence on the way out.
+    // Confiscation: the business is destroyed. Pending take is lost,
+    // build cost is gone, and the row is removed. 40% chance the
+    // player also catches a sentence.
     db.prepare('DELETE FROM businesses_owned WHERE id = ?').run(row.id);
     let jailMin = 0;
     if (Math.random() < 0.4) {
@@ -145,17 +167,33 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
       ch.jail_until = Date.now() + jailMin * 60 * 1000;
       ch.jail_reason = `Police raided "${businessName}" while you were on site — sentenced to ${jailMin} minutes.`;
     }
+    const lostNote = template.produces
+      ? `${drugYield.qty} ${drugYield.drug}`
+      : `£${earnings.toLocaleString()}`;
     writeLog(
       ch.id,
       'business',
-      ` RAID at "${businessName}" — business confiscated, lost £${earnings.toLocaleString()} pending${jailMin ? `, jailed ${jailMin}m` : ''}.`,
-      { biz: row.id, lost: earnings, jailMin, confiscated: true },
+      ` RAID at "${businessName}" — business confiscated, lost ${lostNote} pending${jailMin ? `, jailed ${jailMin}m` : ''}.`,
+      { biz: row.id, lost: earnings, drugLost: drugYield, jailMin, confiscated: true },
       true,
     );
     saveCharacter(ch);
-    return res.json({ ok: true, raided: true, confiscated: true, lost: earnings, jailMin, character: publicCharacter(ch) });
+    return res.json({ ok: true, raided: true, confiscated: true, lost: earnings, drugLost: drugYield, jailMin, character: publicCharacter(ch) });
   }
 
+  // ── Drug-producing business: deposit drug units into inventory ──
+  if (template.produces) {
+    db.prepare(`
+      INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, 'drug', ?, ?)
+      ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
+    `).run(ch.id, drugYield.drug, drugYield.qty);
+    db.prepare('UPDATE businesses_owned SET last_collected = ? WHERE id = ?').run(Date.now(), row.id);
+    writeLog(ch.id, 'business', `Collected ${drugYield.qty} ${drugYield.drug} from "${businessName}".`, { biz: row.id, drug: drugYield.drug, qty: drugYield.qty });
+    saveCharacter(ch);
+    return res.json({ ok: true, drug: drugYield, character: publicCharacter(ch) });
+  }
+
+  // ── Cash-producing business: standard payout ──
   // Faction-controlled business territory in the city where the
   // business operates → bonus on the collected earnings.
   const bizMul = factionBonusMul(ch.faction, row.city, 'business');
