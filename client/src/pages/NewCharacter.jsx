@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card.jsx';
 import StatAllocator, { initialStats, pointsRemaining, STAT_POINTS } from '../components/StatAllocator.jsx';
 import FactionPicker from '../components/FactionPicker.jsx';
+import StarterPicker, { emptyStarter, starterComplete } from '../components/StarterPicker.jsx';
 
 // New-character creation. Reached when the player's character has been
 // murdered (status === 'pending_new_character'). Player picks a fresh
@@ -19,6 +20,7 @@ export default function NewCharacter() {
   const [faction, setFaction] = useState(null);
   const [gender, setGender] = useState(null);
   const [stats, setStats] = useState(initialStats);
+  const [starter, setStarter] = useState(emptyStarter);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const [rolling, setRolling] = useState(false);
@@ -31,13 +33,23 @@ export default function NewCharacter() {
   }, []);
 
   const remaining = pointsRemaining(stats);
-  const canSubmit = !busy && name.trim() && faction && gender && remaining === 0;
+  useEffect(() => { setStarter(s => ({ ...s, house_id: null })); }, [city]);
+  const starterOk = starterComplete(starter) && (() => {
+    const cars = opts?.starter?.cars || [];
+    const houses = (opts?.starter?.housesByCity && opts.starter.housesByCity[city]) || [];
+    const bizs = opts?.starter?.businesses || [];
+    const carP   = cars.find(c => c.id === starter.car_id)?.price || 0;
+    const houseP = houses.find(h => h.id === starter.house_id)?.price || 0;
+    const bizP   = bizs.find(b => b.id === starter.business_id)?.price || 0;
+    return (carP + houseP + bizP) <= (opts?.starter?.budget || 0);
+  })();
+  const canSubmit = !busy && name.trim() && faction && gender && remaining === 0 && starterOk;
 
   async function submit(e) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
-      await api.post('/character/new-character', { name, avatar: '', city, stats, faction, gender });
+      await api.post('/character/new-character', { name, avatar: '', city, stats, faction, gender, starter });
       await refresh();
       nav('/');
     } catch (e) { setErr(e.message); }
@@ -106,6 +118,7 @@ export default function NewCharacter() {
           </div>
           <FactionPicker factions={opts.factions || []} value={faction} onChange={setFaction} />
           <StatAllocator value={stats} onChange={setStats} />
+          <StarterPicker starter={opts.starter} city={city} value={starter} onChange={setStarter} />
           <p className="text-[11px] text-ink-100/55">
             Starting level <b>10</b> · {STAT_POINTS} stat points to spend · cash <b>£500</b> · empty inventory.
           </p>
@@ -115,6 +128,7 @@ export default function NewCharacter() {
               : !faction ? 'Pick a faction'
               : !gender ? 'Pick a gender'
               : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}`
+              : !starterOk ? 'Finish your starter pack'
               : 'Hit the streets'}
           </button>
         </form>

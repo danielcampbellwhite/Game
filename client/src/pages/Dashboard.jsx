@@ -7,7 +7,6 @@ import Card from '../components/Card.jsx';
 import LogFeed from '../components/LogFeed.jsx';
 import { fmt } from '../components/Money.jsx';
 import Timer from '../components/Timer.jsx';
-import FactionBadge from '../components/FactionBadge.jsx';
 
 // ── Evidence Board ─────────────────────────────────────────────────
 //
@@ -171,22 +170,11 @@ function EvidenceBoard({ character, lockedOut }) {
         />
       ))}
 
-      {/* Centre — gangster silhouette + nameplate */}
+      {/* Centre — gangster silhouette only. Identity info lives in the
+          top-bar character chip, no need to duplicate it here. */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
-        <div className="w-24 h-32 sm:w-32 sm:h-40 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
+        <div className="w-28 h-36 sm:w-36 sm:h-48 drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]">
           <GangsterBust />
-        </div>
-        {/* Nameplate — looks like a paper label tape stuck to the bust. */}
-        <div className="-mt-3 px-3 py-1 rounded-sm bg-amber-50 border border-stone-700/40 shadow-md text-center max-w-[12rem]">
-          <div className="font-display text-sm sm:text-base text-stone-900 leading-tight truncate">
-            {character.name}
-          </div>
-          <div className="text-[10px] uppercase tracking-wide text-stone-700 leading-tight">
-            Lvl {character.at_max_level ? '999+' : character.level} · {character.rank}
-          </div>
-          <div className="mt-1 flex justify-center">
-            <FactionBadge faction={character.faction} />
-          </div>
         </div>
       </div>
     </div>

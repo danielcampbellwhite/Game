@@ -172,6 +172,62 @@ export const TERRITORIES = [
 export const territoryById = id => TERRITORIES.find(t => t.id === id) || null;
 export const territoriesInCity = city => TERRITORIES.filter(t => t.city === city);
 
+// ── Starter packages ──────────────────────────────────────────────
+//
+// Brand-new characters get a one-time STARTER_BUDGET to spend across
+// three picks — a car, a house in their starting city, and a small
+// business. Curated catalogues below restrict the choices to entry-
+// tier items so nobody starts with a hyperexotic or a luxury hotel.
+//
+// All three picks are required and the total must not exceed the
+// budget. Server-side validation in routes/character.js is the source
+// of truth; the client mirrors the catalogues for the picker UI via
+// /api/character/options.
+export const STARTER_BUDGET = 150_000;
+
+// Tier-1 cars only — resolved against VEHICLES at runtime.
+export const STARTER_CAR_IDS = [
+  'ford_fiesta', 'toyota_yaris', 'chevy_spark',
+  'kia_rio',     'nissan_versa', 'honda_fit',
+];
+
+// Cheapest businesses by baseCost. Level gates skipped for the
+// starter pick — it's a one-shot allowance, not a discovery shop.
+export const STARTER_BUSINESS_IDS = [
+  'cafe', 'car_wash', 'diner', 'pawn_shop',
+];
+
+export function starterCars() {
+  return STARTER_CAR_IDS
+    .map(id => {
+      const v = vehicleById(id);
+      return v ? { id, name: `${v.maker} ${v.name}`, price: v.bookPrice, tier: v.tier } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.price - b.price);
+}
+
+// Cheapest tier-1 properties in the chosen starting city, capped at 4.
+// Player must own a property in their starting city so the bonus
+// applies where they live.
+export function starterHousesForCity(city) {
+  return PROPERTIES
+    .filter(p => p.city === city && p.tier === 1)
+    .sort((a, b) => a.cost - b.cost)
+    .slice(0, 4)
+    .map(p => ({ id: p.id, name: p.name, address: p.address || null, price: p.cost }));
+}
+
+export function starterBusinesses() {
+  return STARTER_BUSINESS_IDS
+    .map(id => {
+      const b = BUSINESSES.find(x => x.id === id);
+      return b ? { id, name: b.name, price: b.baseCost, illegal: !!b.illegal } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.price - b.price);
+}
+
 // Crimes — energy/nerve cost, level gate, success base, payout range, xp
 export const CRIMES = [
   //  Street crimes 

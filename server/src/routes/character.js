@@ -3,7 +3,7 @@ import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { loadCharacter, applyTick, publicCharacter } from '../services/character.js';
 import { recentLog, writeLog } from '../services/log.js';
-import { CITIES, AVATARS, cityById, FACTION_IDS, GENDERS } from '../data.js';
+import { CITIES, AVATARS, cityById, FACTION_IDS, GENDERS, STARTER_BUDGET, STARTER_CAR_IDS, STARTER_BUSINESS_IDS, starterCars, starterHousesForCity, starterBusinesses } from '../data.js';
 import { applyFactionPerks } from '../services/factions.js';
 
 const router = Router();
@@ -16,6 +16,46 @@ const STAT_BASE = 1;
 const STAT_POINTS = 10;
 const STAT_MAX = STAT_BASE + STAT_POINTS;
 const STAT_KEYS = ['strength', 'defence', 'speed', 'intelligence'];
+
+// Validates a starter pack { car_id, house_id, business_id } against
+// the curated lists. Returns { ok, picks, error }. Picks are the
+// resolved objects (with prices) ready to insert.
+function validateStarter(input, city) {
+  if (!input || typeof input !== 'object') return { ok: false, error: 'Pick a car, a house, and a business.' };
+  const cars = starterCars();
+  const houses = starterHousesForCity(city);
+  const bizs = starterBusinesses();
+  const car   = cars.find(c => c.id === input.car_id);
+  const house = houses.find(h => h.id === input.house_id);
+  const biz   = bizs.find(b => b.id === input.business_id);
+  if (!car)   return { ok: false, error: 'Pick a starter car.' };
+  if (!house) return { ok: false, error: `Pick a starter house in ${city.replace(/_/g, ' ')}.` };
+  if (!biz)   return { ok: false, error: 'Pick a starter business.' };
+  const total = car.price + house.price + biz.price;
+  if (total > STARTER_BUDGET) {
+    return { ok: false, error: `Over budget by £${(total - STARTER_BUDGET).toLocaleString()}.` };
+  }
+  return { ok: true, picks: { car, house, biz, total } };
+}
+
+// Insert vehicle / property / business rows for a freshly-created
+// character. Used by both /create and /new-character so the starter
+// loadout flows through every creation path identically.
+function applyStarterPack(charId, city, picks) {
+  const now = Date.now();
+  db.prepare(`
+    INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at)
+    VALUES (?, ?, 'bought', ?, ?)
+  `).run(charId, picks.car.id, city, now);
+  db.prepare(`
+    INSERT INTO properties_owned (char_id, property_id, city)
+    VALUES (?, ?, ?)
+  `).run(charId, picks.house.id, city);
+  db.prepare(`
+    INSERT INTO businesses_owned (char_id, business_id, city, last_collected)
+    VALUES (?, ?, ?, ?)
+  `).run(charId, picks.biz.id, city, now);
+}
 
 // Returns { ok, stats, error } where stats is the validated, integer-
 // coerced object. Falsy / missing input is treated as "all base" and
@@ -38,7 +78,22 @@ function validateStartingStats(input) {
 
 router.get('/options', async (_req, res) => {
   const { FACTIONS } = await import('../data.js');
-  res.json({ cities: CITIES, avatars: AVATARS, factions: FACTIONS, genders: GENDERS });
+  // Per-city starter house lists — keyed by city id so the client can
+  // swap them as the player picks a starting city without another
+  // round-trip.
+  const housesByCity = Object.fromEntries(CITIES.map(c => [c.id, starterHousesForCity(c.id)]));
+  res.json({
+    cities: CITIES,
+    avatars: AVATARS,
+    factions: FACTIONS,
+    genders: GENDERS,
+    starter: {
+      budget: STARTER_BUDGET,
+      cars: starterCars(),
+      housesByCity,
+      businesses: starterBusinesses(),
+    },
+  });
 });
 
 //  Gangster name generator 
@@ -99,7 +154,7 @@ router.get('/random-name', (req, res) => {
 });
 
 router.post('/create', requireAuth, (req, res) => {
-  const { name, avatar, city, stats, faction, gender } = req.body || {};
+  const { name, avatar, city, stats, faction, gender, starter } = req.body || {};
   if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
   if (!faction || !FACTION_IDS.includes(faction)) return res.status(400).json({ error: 'Pick a faction' });
@@ -111,6 +166,8 @@ router.post('/create', requireAuth, (req, res) => {
   if (name.length < 2 || name.length > 32) return res.status(400).json({ error: 'Name length 2-32' });
   const sv = validateStartingStats(stats);
   if (!sv.ok) return res.status(400).json({ error: sv.error });
+  const starterCheck = validateStarter(starter, city);
+  if (!starterCheck.ok) return res.status(400).json({ error: starterCheck.error });
   const exists = db.prepare('SELECT id FROM characters WHERE user_id = ?').get(req.user.id);
   if (exists) return res.status(409).json({ error: 'Character already exists' });
   // Names must be globally unique across all characters (case-insensitive).
@@ -130,7 +187,8 @@ router.post('/create', requireAuth, (req, res) => {
     now, now, now, now,
   );
   applyFactionPerks(info.lastInsertRowid, faction);
-  writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}.`);
+  applyStarterPack(info.lastInsertRowid, city, starterCheck.picks);
+  writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}. Starter pack: ${starterCheck.picks.car.name}, ${starterCheck.picks.house.name}, ${starterCheck.picks.biz.name}.`);
   const ch = loadCharacter(req.user.id);
   applyTick(ch);
   res.json({ character: publicCharacter(ch) });
@@ -154,7 +212,7 @@ router.get('/', requireAuth, (req, res) => {
 // level-10 newcomer with default stats and a fresh 3-day protection
 // window from `created_at = now`.
 router.post('/new-character', requireAuth, (req, res) => {
-  const { name, avatar, city, stats, faction, gender } = req.body || {};
+  const { name, avatar, city, stats, faction, gender, starter } = req.body || {};
   const ch = db.prepare('SELECT * FROM characters WHERE user_id = ?').get(req.user.id);
   if (!ch) return res.status(404).json({ error: 'No character to replace.' });
   if (ch.status !== 'pending_new_character') return res.status(409).json({ error: 'Your character is alive — no new character to roll.' });
@@ -169,6 +227,8 @@ router.post('/new-character', requireAuth, (req, res) => {
   if (trimmed.length < 2 || trimmed.length > 32) return res.status(400).json({ error: 'Name length 2-32' });
   const sv = validateStartingStats(stats);
   if (!sv.ok) return res.status(400).json({ error: sv.error });
+  const starterCheck2 = validateStarter(starter, city);
+  if (!starterCheck2.ok) return res.status(400).json({ error: starterCheck2.error });
   const taken = db.prepare('SELECT id FROM characters WHERE name = ? COLLATE NOCASE AND id != ?').get(trimmed, ch.id);
   if (taken) return res.status(409).json({ error: 'That name is taken — pick another.' });
 
@@ -217,7 +277,8 @@ router.post('/new-character', requireAuth, (req, res) => {
   );
 
   applyFactionPerks(ch.id, faction);
-  writeLog(ch.id, 'system', `${trimmed} starts fresh — level 10. Welcome to ${cityById(city).name}.`);
+  applyStarterPack(ch.id, city, starterCheck2.picks);
+  writeLog(ch.id, 'system', `${trimmed} starts fresh — level 10. Welcome to ${cityById(city).name}. Starter pack: ${starterCheck2.picks.car.name}, ${starterCheck2.picks.house.name}, ${starterCheck2.picks.biz.name}.`);
   const fresh = loadCharacter(req.user.id);
   applyTick(fresh);
   res.json({ character: publicCharacter(fresh) });
