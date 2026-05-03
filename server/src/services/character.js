@@ -2,6 +2,7 @@ import { db } from '../db.js';
 import { PROPERTIES, propertyById, xpForNext, rankFor, businessById, computeBusiness, vehicleById, STAT_CAPS } from '../data.js';
 import { getStockPrice } from './market.js';
 import { buffSnapshot } from './buffs.js';
+import { effectiveHeat } from './heat.js';
 import { writeLog } from './log.js';
 
 const ENERGY_REGEN_MS = 5 * 60 * 1000;   // 1 energy per 5 min
@@ -188,7 +189,8 @@ const SAVE_STMT = `
     defence_buff = ?, defence_buff_at = ?,
     speed_buff = ?, speed_buff_at = ?,
     accuracy_buff = ?, accuracy_buff_at = ?,
-    strength_progress = ?, defence_progress = ?, speed_progress = ?
+    strength_progress = ?, defence_progress = ?, speed_progress = ?,
+    heat = ?, heat_updated_at = ?
   WHERE id = ?
 `;
 
@@ -215,6 +217,7 @@ export function saveCharacter(ch) {
     ch.speed_buff    || 0, ch.speed_buff_at    || null,
     ch.accuracy_buff || 0, ch.accuracy_buff_at || null,
     ch.strength_progress || 0, ch.defence_progress || 0, ch.speed_progress || 0,
+    ch.heat || 0, ch.heat_updated_at || null,
     ch.id,
   );
 }
@@ -354,6 +357,9 @@ export function publicCharacter(ch) {
     login_streak: ch.login_streak, last_daily: ch.last_daily,
     prestige: ch.prestige,
     faction: ch.faction || null,
+    // Live, decayed heat — computed fresh from the stored snapshot so
+    // the dashboard ticks down as the player idles.
+    heat: Math.round(effectiveHeat(ch)),
     is_admin: !!ch.is_admin,
   };
 }

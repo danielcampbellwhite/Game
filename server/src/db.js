@@ -588,6 +588,13 @@ export function initDb() {
   // before this migration); an admin or a future "pick faction" prompt
   // can assign one later.
   addColumnIfMissing('characters', 'faction', 'TEXT');
+  // Police heat — accumulates with each crime, decays passively over
+  // time. 0 means clean; high heat shrinks success chances and bumps
+  // jail-on-fail probability. Stored as a snapshot value plus the
+  // timestamp it was taken; current heat = stored - elapsed minutes,
+  // floored at 0. See services/heat.js.
+  addColumnIfMissing('characters', 'heat',            'REAL NOT NULL DEFAULT 0');
+  addColumnIfMissing('characters', 'heat_updated_at', 'INTEGER');
   // Phase 2: equipped weapon can now be a per-instance modded weapon.
   // When this column is non-null, it overrides the stock equipped_weapon
   // catalogue id for combat purposes.

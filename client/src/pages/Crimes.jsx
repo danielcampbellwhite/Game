@@ -134,8 +134,33 @@ export default function Crimes() {
   const grouped = list.reduce((m, c) => ((m[c.tier] = m[c.tier] || []).push(c), m), {});
   const orderedTiers = TIER_ORDER.filter(t => grouped[t]);
 
+  // Heat readout — colour shifts as the player heats up. Shown right at
+  // the top so players see the cost of stacking attempts before they
+  // fire off another one.
+  const heat = character?.heat || 0;
+  const heatColor =
+    heat >= 70 ? 'text-blood-400'
+    : heat >= 40 ? 'text-gold-400'
+    : 'text-money-400';
+
   return (
     <div className="space-y-4">
+      <Card title="Heat" subtitle="Each crime attracts attention. High heat shaves your success chance and bumps jail risk on failure. Decays ~1/min while you lay low.">
+        <div className="flex items-baseline gap-3">
+          <div className={`font-display text-3xl tabular-nums ${heatColor}`}>{heat}</div>
+          <div className="text-[11px] text-ink-100/55 uppercase tracking-wide">/ 100</div>
+        </div>
+        <div className="h-1.5 mt-2 rounded-full bg-ink-100/10 overflow-hidden">
+          <div
+            className={
+              heat >= 70 ? 'bg-blood-500 h-full' :
+              heat >= 40 ? 'bg-gold-500 h-full' :
+              'bg-money-500 h-full'
+            }
+            style={{ width: `${Math.min(100, heat)}%` }}
+          />
+        </div>
+      </Card>
       {last && (
         <Card title="Last attempt">
           {last.error ? <p className="text-blood-400 text-sm">{last.error}</p> : (

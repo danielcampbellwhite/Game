@@ -7,6 +7,7 @@ import { bumpMission } from '../services/missions.js';
 import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
 import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
+import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
 
 const router = Router();
 
@@ -96,8 +97,13 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   // Consume crime tools — destroyed regardless of success/failure.
   const consumed = consumeRequirements(ch.id, requires);
 
+  // Snapshot heat before this commit. Higher heat shaves the success
+  // base and inflates jail risk on failure (see RISK_TABLE pull below).
+  const heatNow = effectiveHeat(ch);
+  const heatPenalty = heatNow * HEAT_SUCCESS_PENALTY;
+
   const intelBonus = (crime.intelBonus || 0) * (ch.intelligence * 0.3);
-  const success = Math.max(5, Math.min(95, crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus));
+  const success = Math.max(5, Math.min(95, crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus - heatPenalty));
   const roll = Math.random() * 100;
 
   let result;
@@ -127,16 +133,21 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       result = { ok: true, success: true, payout, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
     }
   } else {
-    // failure: jail/hospital based on risk
+    // failure: jail/hospital based on risk. Heat amplifies jail
+    // probability — clamped so it can't push past `risk.jail + risk.hosp`
+    // (otherwise an "escape clean" outcome could disappear entirely).
     const risk = RISK_TABLE[crime.risk] || RISK_TABLE.low;
+    const jailFloor = risk.jail;
+    const jailCeil  = Math.min(risk.jail + risk.hosp, jailFloor * (1 + heatNow * HEAT_JAIL_MULTIPLIER));
+    const adjustedJail = Math.max(jailFloor, jailCeil);
     const consequence = Math.random();
-    if (consequence < risk.jail) {
+    if (consequence < adjustedJail) {
       const mins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
       ch.jail_until = Date.now() + mins * 60 * 1000;
       ch.jail_reason = `Caught red-handed attempting "${crime.name}" — sentenced to ${mins} minutes.`;
       writeLog(ch.id, 'crime', `Caught attempting "${crime.name}". Jailed for ${mins} min.`, { crime: crime.id, jail_min: mins }, true);
       result = { ok: true, success: false, jailed: true, jail_min: mins };
-    } else if (consequence < risk.jail + risk.hosp) {
+    } else if (consequence < adjustedJail + risk.hosp) {
       const mins = Math.floor(risk.hospMin * (1 + Math.random() * 0.7));
       ch.hospital_until = Date.now() + mins * 60 * 1000;
       ch.health = Math.max(1, Math.floor(ch.health * 0.3));
@@ -157,8 +168,20 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   `).run(ch.id, cooldownKey(crime.id), now);
   const cooldownUntil = now + cdSec * 1000;
 
+  // Bump heat after the outcome is decided. The amount is risk-tier
+  // based; heat increment is the same whether you succeeded or failed
+  // (the cops know what you tried).
+  const heatBefore = heatNow;
+  const heatAfter  = addHeat(ch, HEAT_BY_RISK[crime.risk] || 5);
+
   saveCharacter(ch);
-  res.json({ ...result, consumed, cooldownUntil, character: publicCharacter(ch) });
+  res.json({
+    ...result,
+    consumed,
+    cooldownUntil,
+    heat: { before: Math.round(heatBefore), after: Math.round(heatAfter) },
+    character: publicCharacter(ch),
+  });
 });
 
 export default router;
