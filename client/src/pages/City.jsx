@@ -100,22 +100,27 @@ function TerritoryCard({ characterCity, characterFaction }) {
         true);
 
   return (
-    <Card title="City Territory"
-      subtitle="Flagship location your gang can fight to control. While held, every faction member operating in this city earns +5% on crime cash payouts.">
-      <div className="space-y-3">
+    <Card title="City Territories"
+      subtitle="Three locations per city. Hold them and faction members operating here earn the matching bonus.">
+      <div className="grid sm:grid-cols-3 gap-3">
         {terrs.map(t => (
-          <div key={t.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
+          <div key={t.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 flex flex-col">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="font-medium">{t.name}</span>
               {t.faction
                 ? <FactionBadge faction={t.faction} />
                 : <span className="text-[10px] uppercase tracking-wide text-ink-100/45">Unclaimed</span>}
             </div>
-            <p className="text-[11px] text-ink-100/55 mt-1">{t.blurb}</p>
-            <div className="text-[11px] text-ink-100/55 mt-2">
+            <p className="text-[11px] text-ink-100/55 mt-1 flex-1">{t.blurb}</p>
+            {t.bonus && (
+              <div className="text-[10px] uppercase tracking-wide text-money-400 mt-2">
+                +{Math.round(t.bonus.pct * 100)}% {bonusLabel(t.bonus.type)}
+              </div>
+            )}
+            <div className="text-[11px] text-ink-100/55 mt-1">
               {t.gang
                 ? <>Held by <Link to={`/gangs/${t.gang.id}`} className="text-blood-300 hover:underline">{t.gang.name} <span className="text-ink-100/45">[{t.gang.tag}]</span></Link></>
-                : <span>Nobody holds this. First gang to capture it locks in the +5% bonus for their faction.</span>}
+                : <span className="italic text-ink-100/40">Unclaimed.</span>}
             </div>
             {inGang ? (
               <button
@@ -125,7 +130,7 @@ function TerritoryCard({ characterCity, characterFaction }) {
                 {busy === t.id ? '…' : t.gang?.id === you.gang.id ? 'Already yours' : 'Attempt capture'}
               </button>
             ) : (
-              <p className="text-[11px] text-ink-100/40 mt-3">Join a gang to fight for territory.</p>
+              <p className="text-[11px] text-ink-100/40 mt-3">Join a gang to fight for it.</p>
             )}
           </div>
         ))}
@@ -133,6 +138,15 @@ function TerritoryCard({ characterCity, characterFaction }) {
       {msg && <p className="text-xs mt-2 text-money-400">{msg}</p>}
     </Card>
   );
+}
+
+function bonusLabel(type) {
+  switch (type) {
+    case 'crime_cash': return 'crime cash';
+    case 'gambling':   return 'gambling winnings';
+    case 'business':   return 'business income';
+    default:           return type;
+  }
 }
 
 // Persist the world-map open/closed preference across visits. Default

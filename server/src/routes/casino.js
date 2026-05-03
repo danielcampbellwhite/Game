@@ -5,6 +5,7 @@ import { rouletteColor, ROULETTE_PAYOUTS, rollSlot } from '../data-casino.js';
 import { drawCard, cardLabel, handTotal, isBlackjack, dealerPlay, settle } from '../services/blackjack.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import { factionBonusMul } from '../services/territories.js';
 
 const router = Router();
 
@@ -31,11 +32,13 @@ router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacte
   else if (betType === 'number') won = (parseInt(betValue, 10) === number);
 
   ch.cash -= stake;
-  const payout = won ? stake * ROULETTE_PAYOUTS[betType] : 0;
+  // Faction-controlled gambling territory in this city → bonus on wins.
+  const gamblingMul = factionBonusMul(ch.faction, ch.city, 'gambling');
+  const payout = won ? Math.floor(stake * ROULETTE_PAYOUTS[betType] * gamblingMul) : 0;
   ch.cash += payout;
 
   writeLog(ch.id, 'casino',
-    won ? `Roulette: ${number} ${color} — ${betType} bet won £${payout.toLocaleString()}.`
+    won ? `Roulette: ${number} ${color} — ${betType} bet won £${payout.toLocaleString()}${gamblingMul > 1 ? ` (turf +${Math.round((gamblingMul - 1) * 100)}%)` : ''}.`
         : `Roulette: ${number} ${color} — ${betType} bet lost £${stake.toLocaleString()}.`);
   saveCharacter(ch);
   res.json({ ok: true, number, color, won, payout, character: publicCharacter(ch) });
@@ -51,7 +54,8 @@ router.post('/slots/spin', requireAuth, requireCharacter, requireFreeCharacter, 
 
   const reels = [rollSlot(), rollSlot(), rollSlot()];
   const allMatch = reels[0].id === reels[1].id && reels[1].id === reels[2].id;
-  const payout = allMatch ? stake * reels[0].mul : 0;
+  const gamblingMul = factionBonusMul(ch.faction, ch.city, 'gambling');
+  const payout = allMatch ? Math.floor(stake * reels[0].mul * gamblingMul) : 0;
   ch.cash += payout;
 
   writeLog(ch.id, 'casino',

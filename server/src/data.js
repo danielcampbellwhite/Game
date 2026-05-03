@@ -94,28 +94,79 @@ export const FACTION_IDS = FACTIONS.map(f => f.id);
 // non-binary / unspecified.
 export const GENDERS = ['male', 'female'];
 
-// Territories — flagship locations within each city that gangs fight to
-// control. One per city for the v1 scaffold; bonus is "crime_cash_5"
-// (5% bonus to crime payouts for any faction member operating in the
-// city while a gang of that faction holds the location).
+// Territories — named locations inside cities that aligned gangs fight
+// to control. Three locations per city, each with a distinct bonus.
 //
-// Data is static; live ownership lives in the `territories` DB table.
-// The composite key is (city, id) — id is unique per city.
+// Bonus shape: { type, pct } where type ∈ { 'crime_cash', 'gambling',
+// 'business' } and pct is the multiplier delta (0.05 = +5%). Held by a
+// faction → applies to every faction member operating in that city.
+//
+// Stacking: hold multiple locations of the same type in a city → the
+// pcts sum (so all-three Crime locations would be +15% if we ever add
+// duplicates; today each city has one of each type).
+//
+// Faction-wide aggregate (see services/territories.js): faction global
+// crime-cash multiplier scales with the unique cities they hold at
+// least one location in.
+const TERR = (id, city, name, blurb, type, pct) => ({ id, city, name, blurb, bonus: { type, pct } });
+
 export const TERRITORIES = [
-  { id: 'docks',     city: 'new_york',    name: 'The East River Docks',   blurb: 'Container ships, longshoremen, and very flexible customs paperwork.', bonus: 'crime_cash_5' },
-  { id: 'studio',    city: 'los_angeles', name: 'The Studio Backlot',     blurb: 'A film backlot that doubles as a perfectly legitimate cash-laundering venue.', bonus: 'crime_cash_5' },
-  { id: 'marina',    city: 'miami',       name: 'South Beach Marina',     blurb: 'Yachts in, product out. The water doesn\'t ask questions.', bonus: 'crime_cash_5' },
-  { id: 'trenchtown',city: 'kingston',    name: 'Trench Town Yard',       blurb: 'Where the dub plates spin and the herb moves at volume.', bonus: 'crime_cash_5' },
-  { id: 'rocinha',   city: 'rio',         name: 'Rocinha Rooftops',       blurb: 'Highest favela in the city — every line of sight is a checkpoint.', bonus: 'crime_cash_5' },
-  { id: 'square',    city: 'london',      name: 'The Square Mile',        blurb: 'Banks, courts, and a discreet line into every City brokerage.', bonus: 'crime_cash_5' },
-  { id: 'opera',     city: 'paris',       name: 'The Opera District',     blurb: 'Art auctions on top, fence networks below.', bonus: 'crime_cash_5' },
-  { id: 'depot',     city: 'berlin',      name: 'Warschauer Depot',       blurb: 'A converted rail depot. Hosts techno raves and quiet pickups.', bonus: 'crime_cash_5' },
-  { id: 'kremlin',   city: 'moscow',      name: 'Kremlin Quarter',        blurb: 'Adjacent to power. Adjacent to wealth. Adjacent to the basement bratva.', bonus: 'crime_cash_5' },
-  { id: 'souk',      city: 'dubai',       name: 'The Gold Souk',          blurb: 'Where dirty cash becomes 24-carat receipts.', bonus: 'crime_cash_5' },
-  { id: 'shibuya',   city: 'tokyo',       name: 'Shibuya Backstreets',    blurb: 'The yakuza\'s home turf. Bright lights, darker alleys.', bonus: 'crime_cash_5' },
-  { id: 'wharf',     city: 'hong_kong',   name: 'Victoria Wharf',         blurb: 'Container terminal at midnight. Triads run the cranes.', bonus: 'crime_cash_5' },
-  { id: 'harbour',   city: 'sydney',      name: 'Darling Harbour Pier',   blurb: 'Sun, salt, and serious money flowing through the night clubs.', bonus: 'crime_cash_5' },
-  { id: 'waterfront',city: 'cape_town',   name: 'Atlantic Waterfront',    blurb: 'Tourists by day, smugglers by night. The harbour pays both.', bonus: 'crime_cash_5' },
+  // ── New York ───────────────────────────────────────────────────────
+  TERR('ny_docks',    'new_york',    'The East River Docks',     'Container ships, longshoremen, and very flexible customs paperwork.',     'crime_cash', 0.05),
+  TERR('ny_strip',    'new_york',    'Atlantic City Strip',      'Casinos and the limos that ferry whales between them.',                   'gambling',   0.05),
+  TERR('ny_wallst',   'new_york',    'Wall Street Penthouses',   'Fronts, fixers, and a discreet line into every brokerage.',               'business',   0.05),
+  // ── Los Angeles ────────────────────────────────────────────────────
+  TERR('la_studio',   'los_angeles', 'The Studio Backlot',       'Film backlot doubling as a wholly legitimate cash-laundering venue.',     'crime_cash', 0.05),
+  TERR('la_sunset',   'los_angeles', 'Sunset Strip Casinos',     'Pool parties, baccarat tables, and quiet rooms upstairs.',                'gambling',   0.05),
+  TERR('la_beverly',  'los_angeles', 'Beverly Hills Offices',    'Boutique law firms, talent agencies, and shell-company HQs.',             'business',   0.05),
+  // ── Miami ──────────────────────────────────────────────────────────
+  TERR('mia_marina',  'miami',       'South Beach Marina',       'Yachts in, product out. The water doesn\'t ask questions.',               'crime_cash', 0.05),
+  TERR('mia_collins', 'miami',       'Collins Avenue Casinos',   'Neon, mojitos, and high-stakes poker until sunrise.',                     'gambling',   0.05),
+  TERR('mia_brickell','miami',       'Brickell Skyscrapers',     'Banks, condos, and a perfect view of the offshore lanes.',                'business',   0.05),
+  // ── Kingston ───────────────────────────────────────────────────────
+  TERR('kgn_yard',    'kingston',    'Trench Town Yard',         'Where the dub plates spin and the herb moves at volume.',                 'crime_cash', 0.05),
+  TERR('kgn_strip',   'kingston',    'Half Way Tree Bookies',    'Reggae bass and roulette wheels in equal measure.',                       'gambling',   0.05),
+  TERR('kgn_newkings','kingston',    'New Kingston Towers',      'High-rise hotels and the import-export agencies that prop them up.',      'business',   0.05),
+  // ── Rio ────────────────────────────────────────────────────────────
+  TERR('rio_rocinha', 'rio',         'Rocinha Rooftops',         'Highest favela in the city — every line of sight is a checkpoint.',       'crime_cash', 0.05),
+  TERR('rio_copa',    'rio',         'Copacabana Casinos',       'Beachfront slots and the tourists who can\'t look away.',                 'gambling',   0.05),
+  TERR('rio_centro',  'rio',         'Centro Office Towers',     'Skyscrapers full of registered fronts and unregistered owners.',          'business',   0.05),
+  // ── London ─────────────────────────────────────────────────────────
+  TERR('ldn_docks',   'london',      'Canary Wharf Docks',       'Old wharves, new buildings — both moving cash unseen.',                   'crime_cash', 0.05),
+  TERR('ldn_mayfair', 'london',      'Mayfair Members\' Clubs',  'High-stakes poker rooms behind doors that won\'t open for you.',          'gambling',   0.05),
+  TERR('ldn_square',  'london',      'The Square Mile',          'Banks, courts, and a quiet line into every City brokerage.',              'business',   0.05),
+  // ── Paris ──────────────────────────────────────────────────────────
+  TERR('par_pigalle', 'paris',       'Pigalle Backstreets',      'Showgirls on the strip, fences in the alleys behind them.',               'crime_cash', 0.05),
+  TERR('par_casino',  'paris',       'Le Casino du Palais',      'Belle Époque tables and very modern money behind them.',                  'gambling',   0.05),
+  TERR('par_opera',   'paris',       'The Opera District',       'Art auctions on top, fence networks below.',                              'business',   0.05),
+  // ── Berlin ─────────────────────────────────────────────────────────
+  TERR('ber_depot',   'berlin',      'Warschauer Depot',         'Converted rail depot — techno raves on top, quiet pickups underneath.',   'crime_cash', 0.05),
+  TERR('ber_kudamm',  'berlin',      'Kurfürstendamm Casinos',   'Cold marble, colder dealers. Plenty of money to launder.',                'gambling',   0.05),
+  TERR('ber_mitte',   'berlin',      'Mitte Office District',    'Glass towers, lawyers in dark suits, holding companies stacked deep.',    'business',   0.05),
+  // ── Moscow ─────────────────────────────────────────────────────────
+  TERR('msk_kremlin', 'moscow',      'Kremlin Quarter',          'Adjacent to power, adjacent to wealth, adjacent to the bratva basement.', 'crime_cash', 0.05),
+  TERR('msk_arbat',   'moscow',      'New Arbat Casinos',        'Glass facades hiding very old card games.',                               'gambling',   0.05),
+  TERR('msk_moscow_city','moscow',   'Moscow City Towers',       'Neo-soviet skyline housing oligarch holding companies.',                  'business',   0.05),
+  // ── Dubai ──────────────────────────────────────────────────────────
+  TERR('dxb_souk',    'dubai',       'The Gold Souk',            'Where dirty cash becomes 24-carat receipts.',                             'crime_cash', 0.05),
+  TERR('dxb_atlantis','dubai',       'Atlantis Casinos',         'Underwater rooms and overground stakes.',                                 'gambling',   0.05),
+  TERR('dxb_difc',    'dubai',       'DIFC Towers',              'The Financial Centre. Where old families park their new money.',          'business',   0.05),
+  // ── Tokyo ──────────────────────────────────────────────────────────
+  TERR('tok_shibuya', 'tokyo',       'Shibuya Backstreets',      'The yakuza\'s home turf. Bright lights, darker alleys.',                  'crime_cash', 0.05),
+  TERR('tok_kabuki',  'tokyo',       'Kabukichō Pachinko',       'Three thousand machines and a money-laundering pipeline behind every wall.','gambling', 0.05),
+  TERR('tok_marunouchi','tokyo',     'Marunouchi District',      'Banks, conglomerates, and the boardrooms above them.',                    'business',   0.05),
+  // ── Hong Kong ──────────────────────────────────────────────────────
+  TERR('hk_wharf',    'hong_kong',   'Victoria Wharf',           'Container terminal at midnight. Triads run the cranes.',                  'crime_cash', 0.05),
+  TERR('hk_jockey',   'hong_kong',   'Happy Valley Track',       'Horseraces, casinos in the suites, and ledgers nobody can read.',         'gambling',   0.05),
+  TERR('hk_central',  'hong_kong',   'Central Skyscrapers',      'Concentrated wealth — banks stacked vertically into the clouds.',         'business',   0.05),
+  // ── Sydney ─────────────────────────────────────────────────────────
+  TERR('syd_harbour', 'sydney',      'Darling Harbour Pier',     'Sun, salt, and serious money flowing through the night clubs.',           'crime_cash', 0.05),
+  TERR('syd_star',    'sydney',      'The Star Casino',          'Harbourside high-rollers and a back-of-house that\'s always busy.',       'gambling',   0.05),
+  TERR('syd_cbd',     'sydney',      'Sydney CBD Towers',        'Mining money, harbour-view boardrooms, and the lawyers who know all of it.','business', 0.05),
+  // ── Cape Town ──────────────────────────────────────────────────────
+  TERR('cpt_waterfront','cape_town', 'Atlantic Waterfront',      'Tourists by day, smugglers by night. The harbour pays both.',             'crime_cash', 0.05),
+  TERR('cpt_grand',   'cape_town',   'GrandWest Casino',         'Locals hit the slots, foreigners hit the high-roller rooms.',             'gambling',   0.05),
+  TERR('cpt_century', 'cape_town',   'Century City Offices',     'Trade with Africa runs through here. So does the cash to back it.',       'business',   0.05),
 ];
 
 export const territoryById = id => TERRITORIES.find(t => t.id === id) || null;

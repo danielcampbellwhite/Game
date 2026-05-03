@@ -21,7 +21,11 @@ import { TERRITORIES, territoryById, territoriesInCity } from '../data.js';
 export const ENERGY_COST            = 8;
 export const CAPTURE_COOLDOWN_MS    = 60 * 60 * 1000;   // 1h between attempts vs the same location
 export const DEFENDER_BONUS         = 1.25;             // defender's POWER multiplier
-export const FACTION_BONUS_CRIME    = 0.05;             // crime_cash_5 → +5%
+
+// Faction-wide aggregate: each unique city where the faction holds at
+// least one location contributes this much to a global crime-cash
+// multiplier. With 14 cities → up to +7% on top of any local bonus.
+export const FACTION_GLOBAL_PER_CITY = 0.005;
 
 // Per-gang power: sum of member levels. Empty gangs have power = 0.
 // We could include reputation / online presence; keeping it level-only
@@ -157,12 +161,54 @@ export function capture(attacker, gang, locationId) {
   };
 }
 
-// True iff the player's faction holds AT LEAST ONE territory in their
-// current city. Used by the crime payout bump in routes/crimes.js.
+// Sum of bonuses of `type` across all territories the given faction
+// holds in the given city. Returns a multiplier ≥ 1.0 ready to drop
+// into a payout formula. e.g. factionBonusMul('mafia', 'new_york',
+// 'crime_cash') → 1.05 if Mafia holds the Docks, 1.0 otherwise.
+export function factionBonusMul(faction, city, type) {
+  if (!faction) return 1.0;
+  const rows = db.prepare(`
+    SELECT t.location_id FROM territories t WHERE t.city = ? AND t.faction = ?
+  `).all(city, faction);
+  let pct = 0;
+  for (const r of rows) {
+    const meta = territoryById(r.location_id);
+    if (meta?.bonus?.type === type) pct += meta.bonus.pct || 0;
+  }
+  return 1 + pct;
+}
+
+// Faction-wide aggregate crime-cash bonus. Counts unique cities the
+// faction holds at least one location in and grants
+// FACTION_GLOBAL_PER_CITY per city. Returns a multiplier ≥ 1.0.
+export function factionGlobalCrimeMul(faction) {
+  if (!faction) return 1.0;
+  const r = db.prepare(`
+    SELECT COUNT(DISTINCT city) AS n FROM territories WHERE faction = ?
+  `).get(faction);
+  const n = r?.n || 0;
+  return 1 + (n * FACTION_GLOBAL_PER_CITY);
+}
+
+// Backwards-compat wrapper used by older call sites — kept until the
+// crime payout site is fully on factionBonusMul + factionGlobalCrimeMul.
 export function factionHoldsTerritoryInCity(faction, city) {
   if (!faction) return false;
   const r = db.prepare(
     'SELECT 1 AS x FROM territories WHERE city = ? AND faction = ? LIMIT 1'
   ).get(city, faction);
   return !!r;
+}
+
+// Snapshot — list which cities a faction holds at least one location
+// in. Used for client-side display of "your faction's empire".
+export function factionEmpire(faction) {
+  if (!faction) return { cities: [], total_locations: 0 };
+  const rows = db.prepare(
+    'SELECT city, COUNT(*) AS n FROM territories WHERE faction = ? GROUP BY city'
+  ).all(faction);
+  return {
+    cities: rows.map(r => ({ city: r.city, locations: r.n })),
+    total_locations: rows.reduce((s, r) => s + r.n, 0),
+  };
 }

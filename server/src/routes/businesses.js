@@ -4,6 +4,7 @@ import { requireAuth, requireCharacter, requireFreeCharacter } from '../middlewa
 import { BUSINESSES, businessById, cityById, computeBusiness } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import { factionBonusMul } from '../services/territories.js';
 
 const router = Router();
 
@@ -155,10 +156,14 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
     return res.json({ ok: true, raided: true, confiscated: true, lost: earnings, jailMin, character: publicCharacter(ch) });
   }
 
-  if (template.illegal) ch.dirty_cash += earnings;
-  else ch.cash += earnings;
+  // Faction-controlled business territory in the city where the
+  // business operates → bonus on the collected earnings.
+  const bizMul = factionBonusMul(ch.faction, row.city, 'business');
+  const finalEarnings = Math.floor(earnings * bizMul);
+  if (template.illegal) ch.dirty_cash += finalEarnings;
+  else ch.cash += finalEarnings;
   db.prepare('UPDATE businesses_owned SET last_collected = ? WHERE id = ?').run(Date.now(), row.id);
-  writeLog(ch.id, 'business', `Collected £${earnings.toLocaleString()} from "${businessName}"${template.illegal ? ' (dirty)' : ''}.`);
+  writeLog(ch.id, 'business', `Collected £${finalEarnings.toLocaleString()} from "${businessName}"${template.illegal ? ' (dirty)' : ''}${bizMul > 1 ? ` (turf +${Math.round((bizMul - 1) * 100)}%)` : ''}.`);
   saveCharacter(ch);
   res.json({ ok: true, earnings, character: publicCharacter(ch) });
 });
