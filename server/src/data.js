@@ -23,6 +23,23 @@ export const CITIES = [
   { id: 'mexico_city', name: 'Mexico City', emoji: '🌮', drugMul: 0.65, businessMul: 0.75, flightBase: 1700 },
   { id: 'amsterdam', name: 'Amsterdam', emoji: '🚲', drugMul: 0.80, businessMul: 1.05, flightBase: 1500 },
   { id: 'detroit',   name: 'Detroit',   emoji: '🏚️', drugMul: 0.70, businessMul: 0.65, flightBase: 1300 },
+  // ── Expansion ────────────────────────────────────────────────────────
+  { id: 'chicago',     name: 'Chicago',      emoji: '🌬️', drugMul: 1.05, businessMul: 1.10, flightBase: 1400 },
+  { id: 'los_angeles', name: 'Los Angeles',  emoji: '🌴', drugMul: 1.20, businessMul: 1.25, flightBase: 1600 },
+  { id: 'seoul',       name: 'Seoul',        emoji: '🥢', drugMul: 1.20, businessMul: 1.30, flightBase: 2300 },
+  { id: 'shanghai',    name: 'Shanghai',     emoji: '🏯', drugMul: 1.25, businessMul: 1.35, flightBase: 2400 },
+  { id: 'mumbai',      name: 'Mumbai',       emoji: '🪷', drugMul: 0.65, businessMul: 0.75, flightBase: 2200 },
+  { id: 'istanbul',    name: 'Istanbul',     emoji: '🕌', drugMul: 0.95, businessMul: 0.95, flightBase: 1700 },
+  { id: 'johannesburg',name: 'Johannesburg', emoji: '🦓', drugMul: 0.70, businessMul: 0.75, flightBase: 2200 },
+  { id: 'monaco',      name: 'Monaco',       emoji: '🛥️', drugMul: 1.50, businessMul: 1.65, flightBase: 1800 },
+  { id: 'singapore',   name: 'Singapore',    emoji: '🦁', drugMul: 1.30, businessMul: 1.40, flightBase: 2400 },
+  { id: 'manila',      name: 'Manila',       emoji: '🌺', drugMul: 0.70, businessMul: 0.75, flightBase: 2400 },
+  { id: 'havana',      name: 'Havana',       emoji: '🚬', drugMul: 0.85, businessMul: 0.85, flightBase: 1700 },
+  { id: 'marseille',   name: 'Marseille',    emoji: '⚓', drugMul: 0.95, businessMul: 1.00, flightBase: 1500 },
+  { id: 'naples',      name: 'Naples',       emoji: '🍕', drugMul: 0.95, businessMul: 0.95, flightBase: 1500 },
+  { id: 'prague',      name: 'Prague',       emoji: '🏰', drugMul: 0.90, businessMul: 0.95, flightBase: 1500 },
+  { id: 'dublin',      name: 'Dublin',       emoji: '🍀', drugMul: 0.95, businessMul: 1.00, flightBase: 1400 },
+  { id: 'sao_paulo',   name: 'São Paulo',    emoji: '🏟️', drugMul: 0.80, businessMul: 0.85, flightBase: 1900 },
 ];
 
 // Serious / criminal / mysterious. Suits, silhouettes, sterner faces — no
@@ -135,6 +152,46 @@ export const WEAPONS = [
   { id: 'hk_psg1',        name: 'PSG-1',             maker: 'Heckler & Koch',  category: 'sniper',   dmg: 90,  level: 50, cost: 320000, ammoType: '308'   },
   { id: 'barrett_m82',    name: 'M82A1',             maker: 'Barrett',         category: 'sniper',   dmg: 105, level: 55, cost: 380000, ammoType: '50cal' },
   { id: 'mcmillan_tac50', name: 'TAC-50',            maker: 'McMillan',        category: 'sniper',   dmg: 130, level: 65, cost: 620000, ammoType: '50cal' },
+
+  // ── Expansion ─────────────────────────────────────────────────────
+  // ── Melee — extra variety ──
+  { id: 'tire_iron',      name: 'Tire Iron',                                    category: 'melee',    dmg: 11,  level: 2,  cost: 95,     ammoType: null    },
+  { id: 'wrench',         name: 'Pipe Wrench',                                  category: 'melee',    dmg: 13,  level: 2,  cost: 180,    ammoType: null    },
+  { id: 'taser',          name: 'Stun Baton',                                   category: 'melee',    dmg: 17,  level: 5,  cost: 950,    ammoType: null    },
+  { id: 'tomahawk',       name: 'Tomahawk',                                     category: 'melee',    dmg: 19,  level: 7,  cost: 1800,   ammoType: null    },
+  { id: 'kukri',          name: 'Kukri',                                        category: 'melee',    dmg: 24,  level: 10, cost: 4200,   ammoType: null    },
+
+  // ── Pistols — 9mm continued ──
+  { id: 'walther_ppk',    name: 'PPK',               maker: 'Walther',         category: 'pistol',   dmg: 17,  level: 5,  cost: 2200,   ammoType: '9mm'   },
+  { id: 'cz_75',          name: 'CZ 75 SP-01',       maker: 'CZ',              category: 'pistol',   dmg: 22,  level: 9,  cost: 4500,   ammoType: '9mm'   },
+  { id: 'fn_fnx9',        name: 'FNX-9',             maker: 'FN Herstal',      category: 'pistol',   dmg: 25,  level: 11, cost: 6000,   ammoType: '9mm'   },
+  // ── Pistols — .45 ACP continued ──
+  { id: 'desert_eagle',   name: 'Desert Eagle',      maker: 'Magnum Research', category: 'pistol',   dmg: 34,  level: 15, cost: 11000,  ammoType: '45acp' },
+  { id: 'fn_57',          name: 'Five-seveN',        maker: 'FN Herstal',      category: 'pistol',   dmg: 28,  level: 12, cost: 7400,   ammoType: '45acp' },
+
+  // ── Revolvers — extra ──
+  { id: 'sw_500',         name: 'Model 500',         maker: 'Smith & Wesson',  category: 'revolver', dmg: 42,  level: 19, cost: 18000,  ammoType: '357'   },
+  { id: 'ruger_redhawk',  name: 'Redhawk',           maker: 'Ruger',           category: 'revolver', dmg: 38,  level: 17, cost: 15500,  ammoType: '357'   },
+
+  // ── SMGs continued ──
+  { id: 'mac10',          name: 'MAC-10',            maker: 'Cobray',          category: 'smg',      dmg: 30,  level: 12, cost: 9500,   ammoType: '45acp' },
+  { id: 'p90',            name: 'P90',               maker: 'FN Herstal',      category: 'smg',      dmg: 44,  level: 20, cost: 28000,  ammoType: '9mm'   },
+  { id: 'vector',         name: 'Vector .45',        maker: 'KRISS',           category: 'smg',      dmg: 48,  level: 23, cost: 36000,  ammoType: '45acp' },
+
+  // ── Shotguns continued ──
+  { id: 'sawn_off',       name: 'Sawn-off Double-Barrel',                     category: 'shotgun',  dmg: 36,  level: 12, cost: 9500,   ammoType: 'shells'},
+  { id: 'aa12',           name: 'AA-12',             maker: 'Auto Assault',    category: 'shotgun',  dmg: 56,  level: 30, cost: 75000,  ammoType: 'shells'},
+
+  // ── Rifles continued ──
+  { id: 'sig_mcx',        name: 'MCX Spear',         maker: 'SIG Sauer',       category: 'rifle',    dmg: 60,  level: 30, cost: 95000,  ammoType: '556'   },
+  { id: 'hk416',          name: 'HK416',             maker: 'Heckler & Koch',  category: 'rifle',    dmg: 64,  level: 33, cost: 105000, ammoType: '556'   },
+  { id: 'galil',          name: 'Galil ACE',         maker: 'IWI',             category: 'rifle',    dmg: 68,  level: 35, cost: 95000,  ammoType: '762'   },
+  { id: 'sig_716',        name: 'SIG 716i',          maker: 'SIG Sauer',       category: 'rifle',    dmg: 78,  level: 42, cost: 165000, ammoType: '762'   },
+
+  // ── Sniper Rifles continued ──
+  { id: 'awm',            name: 'AWM',               maker: 'Accuracy Int.',   category: 'sniper',   dmg: 95,  level: 52, cost: 380000, ammoType: '308'   },
+  { id: 'cheytac_m200',   name: 'M200 Intervention', maker: 'CheyTac',         category: 'sniper',   dmg: 115, level: 58, cost: 480000, ammoType: '50cal' },
+  { id: 'barrett_m107',   name: 'M107',              maker: 'Barrett',         category: 'sniper',   dmg: 145, level: 75, cost: 850000, ammoType: '50cal' },
 ];
 
 export const WEAPON_CATEGORIES = {
@@ -482,6 +539,102 @@ export const PROPERTIES = [
   { id: 'det_bloomfield',  city: 'detroit', name: 'Bloomfield Hills Estate',    address: '2200 Long Lake Rd',         cost: 1400000,  ...T(3) },
   { id: 'det_birmingham',  city: 'detroit', name: 'Birmingham Compound',        address: '1834 Stanley Blvd',         cost: 4200000,  ...T(4) },
   { id: 'det_st_clair',    city: 'detroit', name: 'Lake St. Clair Country Estate', address: '22 Tashmoo Dr',         cost: 4800000,  ...T(4) },
+
+  // ─── Chicago ───────────────────────────────────────────
+  { id: 'chi_pilsen',     city: 'chicago', name: 'Pilsen Walk-up',           address: '1721 W 18th St',           cost: 56000,    ...T(1) },
+  { id: 'chi_uptown',     city: 'chicago', name: 'Uptown Greystone',         address: '4520 N Magnolia Ave',      cost: 320000,   ...T(2) },
+  { id: 'chi_gold_coast', city: 'chicago', name: 'Gold Coast Penthouse',     address: '1300 N State Pkwy PH',     cost: 2100000,  ...T(3) },
+  { id: 'chi_lincoln',    city: 'chicago', name: 'Lincoln Park Mansion',     address: '2230 N Lakeview Ave',      cost: 9500000,  ...T(4) },
+
+  // ─── Los Angeles ───────────────────────────────────────────
+  { id: 'la_silverlake',  city: 'los_angeles', name: 'Silver Lake Bungalow', address: '2317 Sunset Blvd',         cost: 220000,   ...T(1) },
+  { id: 'la_weho',        city: 'los_angeles', name: 'West Hollywood Condo', address: '8717 Burton Way #4B',      cost: 850000,   ...T(2) },
+  { id: 'la_bel_air',     city: 'los_angeles', name: 'Bel Air Hilltop',      address: '10100 Sunset Blvd',        cost: 5800000,  ...T(3) },
+  { id: 'la_beverly',     city: 'los_angeles', name: 'Beverly Hills Estate', address: '1011 N Roxbury Dr',        cost: 18000000, ...T(4) },
+
+  // ─── Seoul ───────────────────────────────────────────
+  { id: 'seo_hongdae',    city: 'seoul', name: 'Hongdae Studio',             address: '352 Yanghwa-ro',           cost: 78000,    ...T(1) },
+  { id: 'seo_itaewon',    city: 'seoul', name: 'Itaewon Apt',                address: '180 Itaewon-ro',           cost: 480000,   ...T(2) },
+  { id: 'seo_gangnam',    city: 'seoul', name: 'Gangnam High-rise',          address: '521 Teheran-ro',           cost: 3400000,  ...T(3) },
+  { id: 'seo_seongbuk',   city: 'seoul', name: 'Seongbuk-dong Estate',       address: '88 Seongbukro 30-gil',     cost: 12500000, ...T(4) },
+
+  // ─── Shanghai ───────────────────────────────────────────
+  { id: 'sha_jingan',     city: 'shanghai', name: 'Jing\'an Lane House',     address: '328 Anyi Rd',              cost: 92000,    ...T(1) },
+  { id: 'sha_xuhui',      city: 'shanghai', name: 'Xuhui Apartment',         address: '1788 Hengshan Rd',         cost: 560000,   ...T(2) },
+  { id: 'sha_bund',       city: 'shanghai', name: 'The Bund Penthouse',      address: '120 Zhongshan E1 Rd PH',   cost: 4200000,  ...T(3) },
+  { id: 'sha_sheshan',    city: 'shanghai', name: 'Sheshan Villa Compound',  address: '288 Yuxiu Rd',             cost: 14500000, ...T(4) },
+
+  // ─── Mumbai ───────────────────────────────────────────
+  { id: 'mum_dharavi',    city: 'mumbai', name: 'Dharavi Bedsit',            address: 'Lane 4, 90 Feet Rd',       cost: 14000,    ...T(1) },
+  { id: 'mum_andheri',    city: 'mumbai', name: 'Andheri 1BHK',              address: 'Lokhandwala Complex',      cost: 110000,   ...T(2) },
+  { id: 'mum_bandra',     city: 'mumbai', name: 'Bandra Sea-facing Flat',    address: '32 Pali Hill',             cost: 720000,   ...T(3) },
+  { id: 'mum_malabar',    city: 'mumbai', name: 'Malabar Hill Bungalow',     address: '11 Walkeshwar Rd',         cost: 3800000,  ...T(4) },
+
+  // ─── Istanbul ───────────────────────────────────────────
+  { id: 'ist_kadikoy',    city: 'istanbul', name: 'Kadıköy Studio',          address: 'Moda Caddesi 84',          cost: 36000,    ...T(1) },
+  { id: 'ist_beyoglu',    city: 'istanbul', name: 'Beyoğlu Walk-up',         address: 'İstiklal Caddesi 220',     cost: 240000,   ...T(2) },
+  { id: 'ist_bebek',      city: 'istanbul', name: 'Bebek Bosphorus Apt',     address: 'Cevdetpaşa Caddesi 14',    cost: 1700000,  ...T(3) },
+  { id: 'ist_yali',       city: 'istanbul', name: 'Bosphorus Yalı',          address: 'Yeniköy Caddesi 88',       cost: 7800000,  ...T(4) },
+
+  // ─── Johannesburg ───────────────────────────────────────────
+  { id: 'jhb_yeoville',   city: 'johannesburg', name: 'Yeoville Bedsit',     address: '12 Rockey St',             cost: 16000,    ...T(1) },
+  { id: 'jhb_melville',   city: 'johannesburg', name: 'Melville Townhouse',  address: '7th Street, House 32',     cost: 140000,   ...T(2) },
+  { id: 'jhb_sandton',    city: 'johannesburg', name: 'Sandton Penthouse',   address: 'Rivonia Rd PH-12',         cost: 980000,   ...T(3) },
+  { id: 'jhb_bryanston',  city: 'johannesburg', name: 'Bryanston Compound',  address: '184 Main Rd',              cost: 4200000,  ...T(4) },
+
+  // ─── Monaco ───────────────────────────────────────────
+  { id: 'mco_studio',     city: 'monaco', name: 'Fontvieille Studio',        address: '4 Avenue des Papalins',    cost: 380000,   ...T(1) },
+  { id: 'mco_condamine',  city: 'monaco', name: 'La Condamine Apt',          address: '17 Rue Princesse Caroline',cost: 1800000,  ...T(2) },
+  { id: 'mco_carre_or',   city: 'monaco', name: 'Carré d\'Or Penthouse',     address: '1 Avenue Princesse Grace PH', cost: 12500000, ...T(3) },
+  { id: 'mco_roc',        city: 'monaco', name: 'Cap d\'Ail Cliff Villa',    address: '88 Boulevard du Général de Gaulle', cost: 35000000, ...T(4) },
+
+  // ─── Singapore ───────────────────────────────────────────
+  { id: 'sgp_geylang',    city: 'singapore', name: 'Geylang HDB',            address: '88 Geylang Lor 24',        cost: 110000,   ...T(1) },
+  { id: 'sgp_tiong',      city: 'singapore', name: 'Tiong Bahru Loft',       address: '78 Eng Hoon St #06-12',    cost: 720000,   ...T(2) },
+  { id: 'sgp_orchard',    city: 'singapore', name: 'Orchard Penthouse',      address: '1 Cuscaden Rd PH',         cost: 4800000,  ...T(3) },
+  { id: 'sgp_sentosa',    city: 'singapore', name: 'Sentosa Cove Villa',     address: '12 Cove Way',              cost: 16500000, ...T(4) },
+
+  // ─── Manila ───────────────────────────────────────────
+  { id: 'mnl_tondo',      city: 'manila', name: 'Tondo Walk-up',             address: '215 Juan Luna St',         cost: 12000,    ...T(1) },
+  { id: 'mnl_makati',     city: 'manila', name: 'Makati Studio',             address: '6750 Ayala Ave #1408',     cost: 95000,    ...T(2) },
+  { id: 'mnl_bgc',        city: 'manila', name: 'BGC High-rise Apt',         address: '32nd St, Fort Bonifacio',  cost: 720000,   ...T(3) },
+  { id: 'mnl_forbes',     city: 'manila', name: 'Forbes Park Mansion',       address: '128 Acacia Ave',           cost: 3400000,  ...T(4) },
+
+  // ─── Havana ───────────────────────────────────────────
+  { id: 'hav_centro',     city: 'havana', name: 'Centro Habana Bedsit',      address: 'Calle Galiano 312',        cost: 22000,    ...T(1) },
+  { id: 'hav_vedado',     city: 'havana', name: 'Vedado Apartment',          address: 'Calle 23 #1455',           cost: 180000,   ...T(2) },
+  { id: 'hav_miramar',    city: 'havana', name: 'Miramar Villa',             address: '5ta Avenida y Calle 28',   cost: 1100000,  ...T(3) },
+  { id: 'hav_country',    city: 'havana', name: 'Cubanacán Country Estate',  address: 'Calle 188 esquina 13',     cost: 4200000,  ...T(4) },
+
+  // ─── Marseille ───────────────────────────────────────────
+  { id: 'mrs_panier',     city: 'marseille', name: 'Le Panier Walk-up',      address: 'Rue du Refuge 12',         cost: 38000,    ...T(1) },
+  { id: 'mrs_endoume',    city: 'marseille', name: 'Endoume Apt',            address: 'Boulevard Tellene 88',     cost: 280000,   ...T(2) },
+  { id: 'mrs_corniche',   city: 'marseille', name: 'Corniche Sea-View',      address: 'Promenade J.F. Kennedy 220', cost: 1900000, ...T(3) },
+  { id: 'mrs_cassis',     city: 'marseille', name: 'Cassis Cliff Villa',     address: 'Route des Crêtes',         cost: 6800000,  ...T(4) },
+
+  // ─── Naples ───────────────────────────────────────────
+  { id: 'nap_quartieri',  city: 'naples', name: 'Quartieri Spagnoli Bedsit', address: 'Vico Lungo Gelso 14',      cost: 30000,    ...T(1) },
+  { id: 'nap_vomero',     city: 'naples', name: 'Vomero Apartment',          address: 'Via Luca Giordano 88',     cost: 220000,   ...T(2) },
+  { id: 'nap_posillipo',  city: 'naples', name: 'Posillipo Sea View',        address: 'Via Petrarca 145',         cost: 1500000,  ...T(3) },
+  { id: 'nap_capri',      city: 'naples', name: 'Capri Cliff Compound',      address: 'Via Tragara 12',           cost: 8200000,  ...T(4) },
+
+  // ─── Prague ───────────────────────────────────────────
+  { id: 'prg_zizkov',     city: 'prague', name: 'Žižkov Walk-up',            address: 'Bořivojova 88',            cost: 42000,    ...T(1) },
+  { id: 'prg_vinohrady',  city: 'prague', name: 'Vinohrady Apt',             address: 'Korunní 22',               cost: 320000,   ...T(2) },
+  { id: 'prg_mala',       city: 'prague', name: 'Malá Strana Loft',          address: 'Nerudova 14',              cost: 1700000,  ...T(3) },
+  { id: 'prg_strahov',    city: 'prague', name: 'Strahov Hilltop Villa',     address: 'Strahovská 220',           cost: 5800000,  ...T(4) },
+
+  // ─── Dublin ───────────────────────────────────────────
+  { id: 'dub_libertys',   city: 'dublin', name: 'The Liberties Bedsit',      address: 'Cork St 88',               cost: 56000,    ...T(1) },
+  { id: 'dub_temple',     city: 'dublin', name: 'Temple Bar Apt',            address: 'Eustace St 14',            cost: 380000,   ...T(2) },
+  { id: 'dub_ballsbridge',city: 'dublin', name: 'Ballsbridge Townhouse',     address: 'Shrewsbury Rd 22',         cost: 1900000,  ...T(3) },
+  { id: 'dub_killiney',   city: 'dublin', name: 'Killiney Hill Estate',      address: 'Killiney Hill Rd',         cost: 8500000,  ...T(4) },
+
+  // ─── São Paulo ───────────────────────────────────────────
+  { id: 'sao_bras',       city: 'sao_paulo', name: 'Brás Walk-up',           address: 'Rua Oriente 220',          cost: 24000,    ...T(1) },
+  { id: 'sao_pinheiros',  city: 'sao_paulo', name: 'Pinheiros Loft',         address: 'Rua Teodoro Sampaio 88',   cost: 180000,   ...T(2) },
+  { id: 'sao_jardins',    city: 'sao_paulo', name: 'Jardins Penthouse',      address: 'Alameda Lorena 1255 PH',   cost: 1200000,  ...T(3) },
+  { id: 'sao_morumbi',    city: 'sao_paulo', name: 'Morumbi Mansion',        address: 'Rua Itacolomi 388',        cost: 5500000,  ...T(4) },
 ];
 
 // Tickers across sectors. `vol` controls how spiky the random walk is — low
@@ -712,6 +865,54 @@ export const MISC_ITEMS = [
   { id: 'flashlight',      name: 'Tactical Flashlight',emoji: '🔦', cost: 60,  desc: 'Dark places, bright ideas.',                   missionOnly: true },
   { id: 'gas_can',         name: 'Gas Can',            emoji: '⛽', cost: 100, desc: 'Combustible. Not for the squeamish.',          missionOnly: true },
   { id: 'usb_drive',       name: 'USB Drive',          emoji: '💾', cost: 150, desc: 'Encrypted payload, ready to drop.',            missionOnly: true },
+
+  // ── Wholesale-only consumables (expansion) ──
+  { id: 'protein_shake',  name: 'Protein Shake',       emoji: '🥛', cost: 110, desc: 'Post-gym fuel.',                           effects: { energy: 12, happiness: 2 },        wholesale_only: true },
+  { id: 'pizza_slice',    name: 'Pizza Slice',         emoji: '🍕', cost: 70,  desc: 'Greasy, glorious, immediate.',             effects: { energy: 6, happiness: 6 },          wholesale_only: true },
+  { id: 'sushi_box',      name: 'Sushi Box',           emoji: '🍣', cost: 220, desc: 'Premium fuel for the discerning hood.',    effects: { health: 6, energy: 8, happiness: 8 }, wholesale_only: true },
+  { id: 'kebab',          name: 'Late-Night Kebab',    emoji: '🥙', cost: 90,  desc: 'Soaks up the night.',                      effects: { energy: 8, happiness: 4 },          wholesale_only: true },
+  { id: 'donut',          name: 'Glazed Donut',        emoji: '🍩', cost: 30,  desc: 'Cop bait.',                                 effects: { energy: 4, happiness: 3 },          wholesale_only: true },
+  { id: 'champagne_b',    name: 'Bottle of Champagne', emoji: '🍾', cost: 800, desc: 'For the close of a big deal.',             effects: { happiness: 25, nerve: 2, health: -2 }, wholesale_only: true },
+  { id: 'beer_six',       name: 'Six-Pack of Beer',    emoji: '🍺', cost: 180, desc: 'Liquid courage at scale.',                 effects: { happiness: 10, nerve: 1 },          wholesale_only: true },
+  { id: 'tequila',        name: 'Bottle of Tequila',   emoji: '🍶', cost: 320, desc: 'For when whisky is too refined.',          effects: { nerve: 4, happiness: 8, health: -4 }, wholesale_only: true },
+  { id: 'caviar',         name: 'Tin of Caviar',       emoji: '🥄', cost: 1500, desc: 'Pure flex.',                              effects: { happiness: 35 },                    wholesale_only: true },
+  { id: 'pre_workout',    name: 'Pre-Workout',         emoji: '🏋️', cost: 220, desc: 'Cracks open the throttle on your training.', effects: { energy: 25, nerve: 1 },           wholesale_only: true },
+  { id: 'first_aid',      name: 'First Aid Kit',       emoji: '🩹', cost: 380, desc: 'Patch yourself up after the alley scrap.', effects: { health: 35 },                       wholesale_only: true },
+  { id: 'adrenaline',     name: 'Adrenaline Shot',     emoji: '💉', cost: 600, desc: 'Bring it.',                                 effects: { nerve: 6, health: 12 },             wholesale_only: true },
+  { id: 'vitamins',       name: 'Daily Vitamins',      emoji: '💊', cost: 45,  desc: 'A small but consistent edge.',             effects: { health: 4, energy: 4 },             wholesale_only: true },
+  { id: 'condoms',        name: 'Pack of Condoms',     emoji: '🪶', cost: 25,  desc: 'A man\'s gotta plan.',                      effects: { happiness: 3 },                    wholesale_only: true },
+  { id: 'concert_ticket', name: 'Concert Ticket',      emoji: '🎫', cost: 250, desc: 'Two hours of glorious noise.',             effects: { happiness: 20 },                    wholesale_only: true },
+  { id: 'movie_ticket',   name: 'Movie Ticket',        emoji: '🎬', cost: 60,  desc: 'A bit of escapism.',                       effects: { happiness: 8 },                     wholesale_only: true },
+  { id: 'spa_day',        name: 'Spa Day Voucher',     emoji: '🧖', cost: 700, desc: 'Reset the body and mind.',                 effects: { happiness: 25, energy: 12, health: 12 }, wholesale_only: true },
+  { id: 'massage',        name: 'Deep Tissue Massage', emoji: '💆', cost: 380, desc: 'Knots out, focus in.',                     effects: { health: 10, happiness: 14 },        wholesale_only: true },
+  { id: 'sleeping_pills', name: 'Sleeping Pills',      emoji: '🌙', cost: 90,  desc: 'Reset the energy meter.',                  effects: { energy: 35, happiness: -2 },        wholesale_only: true },
+  { id: 'gym_membership', name: 'Day Pass — Iron Foundry', emoji: '🏋️‍♂️', cost: 320, desc: 'Walk in fresh.',                effects: { energy: 18, health: 4 },            wholesale_only: true },
+
+  // ── New mission props (Murphy's catalogue) ──
+  { id: 'bolt_cutters',   name: 'Bolt Cutters',        emoji: '✂️',  cost: 220, desc: 'Padlocks, fences, gates.',                missionOnly: true },
+  { id: 'ski_goggles',    name: 'Ski Goggles',         emoji: '🥽', cost: 90,  desc: 'For when the masks aren\'t enough.',       missionOnly: true },
+  { id: 'rope',           name: 'Climbing Rope',       emoji: '🪢', cost: 60,  desc: 'Fire-escape special.',                     missionOnly: true },
+  { id: 'walkie',         name: 'Walkie-Talkie',       emoji: '📻', cost: 140, desc: 'Comms for the crew.',                       missionOnly: true },
+  { id: 'fake_id',        name: 'Fake ID',             emoji: '🪪', cost: 250, desc: 'New name, new face on paper.',             missionOnly: true },
+  { id: 'cash_bag',       name: 'Money Bag',           emoji: '💰', cost: 30,  desc: 'For the cinematic getaway.',                missionOnly: true },
+  { id: 'pry_bar',        name: 'Pry Bar',             emoji: '🪛', cost: 80,  desc: 'Doors, windows, vending machines.',         missionOnly: true },
+  { id: 'wire_cutters',   name: 'Wire Cutters',        emoji: '✂️',  cost: 60,  desc: 'For alarm wires and other inconveniences.', missionOnly: true },
+  { id: 'silencer',       name: 'Suppressor',          emoji: '🔇', cost: 380, desc: 'For when subtlety is required.',           missionOnly: true },
+  { id: 'crowbar2',       name: 'Crowbar',             emoji: '🪛', cost: 120, desc: 'Old reliable.',                             missionOnly: true },
+
+  // ── Big-money one-shot prizes (rare expansion) ──
+  { id: 'scratch_gold',   name: 'Gold Scratcher',      emoji: '🎟️', cost: 250, desc: 'Premium card. £0 to £500,000 jackpot.',
+    prizes: [
+      { chance: 0.50000, amount: 0      },
+      { chance: 0.30000, amount: 250    },
+      { chance: 0.10000, amount: 500    },
+      { chance: 0.05000, amount: 1000   },
+      { chance: 0.03000, amount: 2500   },
+      { chance: 0.01500, amount: 5000   },
+      { chance: 0.00400, amount: 25000  },
+      { chance: 0.00099, amount: 100000 },
+      { chance: 0.00001, amount: 500000 },
+    ] },
 ];
 
 export const miscItemById = id => byId(MISC_ITEMS, id);
@@ -982,25 +1183,43 @@ export function wholesaleCatalogue() {
 //
 // `tier` is purely cosmetic ('easy' / 'med' / 'hard') and influences the
 // roll mix — we always pick one of each tier for variety.
+// Item-use missions (cracksman, ghost_caller, arsonist, data_drop) used
+// to be over-tuned — players could just buy the prop for £100 and claim
+// thousands of cash. Rewards now match the friction (≈ item cost).
 export const DAILY_MISSIONS = [
   // ── easy ──
   { id: 'streetwise',  tier: 'easy', name: 'Streetwise',     emoji: '🥷',  desc: 'Pull off 5 successful street-tier crimes.',          target: 5, type: 'crime_success', meta: { tier: 'street' }, xp: 60,  cash: 250  },
   { id: 'gym_rat',     tier: 'easy', name: 'Gym Rat',        emoji: '🏋️',  desc: 'Complete 3 gym training sessions.',                  target: 3, type: 'gym_session',                              xp: 50,  cash: 200  },
   { id: 'scholar',     tier: 'easy', name: 'Scholar',        emoji: '🎓',  desc: 'Take 2 university courses.',                         target: 2, type: 'university_class',                         xp: 70,  cash: 250  },
-  { id: 'prep_kit',    tier: 'easy', name: 'Prep Kit',       emoji: '🎒',  desc: 'Use any 3 items from the General Store.',            target: 3, type: 'misc_use_any',                             xp: 50,  cash: 200  },
+  { id: 'prep_kit',    tier: 'easy', name: 'Prep Kit',       emoji: '🎒',  desc: 'Use any 3 items from the General Store.',            target: 3, type: 'misc_use_any',                             xp: 40,  cash: 150  },
+  { id: 'pickpocket',  tier: 'easy', name: 'Light Fingers',  emoji: '👛',  desc: 'Lift 8 wallets — street-tier crimes.',               target: 8, type: 'crime_success', meta: { tier: 'street' }, xp: 90,  cash: 350  },
+  { id: 'gym_grinder', tier: 'easy', name: 'Iron Discipline',emoji: '🏋️‍♂️', desc: 'Complete 6 gym sessions.',                        target: 6, type: 'gym_session',                              xp: 110, cash: 400  },
+  { id: 'lottery_luck',tier: 'easy', name: 'Try Your Luck',  emoji: '🎟️',  desc: 'Scratch 3 lottery tickets.',                         target: 3, type: 'misc_use', meta: { item: 'lottery_ticket' }, xp: 60, cash: 200 },
+  { id: 'first_round', tier: 'easy', name: 'First Round',    emoji: '🍺',  desc: 'Buy a round — use 4 items at any player shop.',      target: 4, type: 'misc_use_any',                             xp: 70,  cash: 250  },
 
   // ── med ──
   { id: 'shadow',      tier: 'med',  name: 'Shadow Operator',emoji: '💻',  desc: 'Complete 3 successful cyber-tier crimes.',           target: 3, type: 'crime_success', meta: { tier: 'cyber' },  xp: 220, cash: 1200 },
   { id: 'joyride',     tier: 'med',  name: 'Joyride',        emoji: '🚗',  desc: 'Steal 2 vehicles via Grand Theft Auto.',             target: 2, type: 'crime_success', meta: { tier: 'gta' },    xp: 200, cash: 1000 },
   { id: 'pusher',      tier: 'med',  name: 'Pusher',         emoji: '💊',  desc: 'Sell drugs 5 times.',                                target: 5, type: 'drug_sale',                                xp: 200, cash: 800  },
   { id: 'bruiser',     tier: 'med',  name: 'Bruiser',        emoji: '🥊',  desc: 'Win 2 fights at the Fight Club.',                    target: 2, type: 'combat_win',                               xp: 240, cash: 1200 },
-  { id: 'ghost_caller',tier: 'med',  name: 'Ghost Caller',   emoji: '📱',  desc: 'Burn 2 burner phones.',                              target: 2, type: 'misc_use', meta: { item: 'burner_phone' }, xp: 220, cash: 1100 },
-  { id: 'cracksman',   tier: 'med',  name: 'Cracksman',      emoji: '🗝️',  desc: 'Use a Lockpick Set.',                                target: 1, type: 'misc_use', meta: { item: 'lockpick_set' }, xp: 200, cash: 1000 },
+  { id: 'ghost_caller',tier: 'med',  name: 'Ghost Caller',   emoji: '📱',  desc: 'Burn 2 burner phones.',                              target: 2, type: 'misc_use', meta: { item: 'burner_phone' }, xp: 80, cash: 400 },
+  { id: 'cracksman',   tier: 'med',  name: 'Cracksman',      emoji: '🗝️',  desc: 'Use a Lockpick Set.',                                target: 1, type: 'misc_use', meta: { item: 'lockpick_set' }, xp: 70, cash: 300 },
+  { id: 'mugger',      tier: 'med',  name: 'Mugger',         emoji: '🤜',  desc: 'Successfully rob another player.',                   target: 1, type: 'rob_player',                               xp: 220, cash: 1000 },
+  { id: 'cyber_run',   tier: 'med',  name: 'Cyber Run',      emoji: '🖥️',  desc: 'Complete 5 cyber-tier crimes.',                      target: 5, type: 'crime_success', meta: { tier: 'cyber' },  xp: 320, cash: 1500 },
+  { id: 'gta_streak',  tier: 'med',  name: 'GTA Streak',     emoji: '🚙',  desc: 'Steal 4 vehicles.',                                  target: 4, type: 'crime_success', meta: { tier: 'gta' },    xp: 380, cash: 1800 },
+  { id: 'pharmacist',  tier: 'med',  name: 'Pharmacist',     emoji: '🩹',  desc: 'Use 4 first-aid kits.',                              target: 4, type: 'misc_use', meta: { item: 'first_aid' },  xp: 180, cash: 700  },
+  { id: 'sober_grind', tier: 'med',  name: 'Sober Grind',    emoji: '☕',  desc: 'Drink 6 espressos.',                                 target: 6, type: 'misc_use', meta: { item: 'coffee' },     xp: 150, cash: 600  },
+  { id: 'chemist',     tier: 'med',  name: 'Chemistry Set',  emoji: '🧪',  desc: 'Sell drugs 10 times.',                               target: 10, type: 'drug_sale',                              xp: 360, cash: 1500 },
 
   // ── hard ──
   { id: 'big_score',   tier: 'hard', name: 'Big Score',      emoji: '💰',  desc: 'Pull off 1 major-tier crime.',                       target: 1, type: 'crime_success', meta: { tier: 'major' },  xp: 600, cash: 4000 },
-  { id: 'arsonist',    tier: 'hard', name: 'Arsonist',       emoji: '🔥',  desc: 'Empty a Gas Can on the right doorstep.',             target: 1, type: 'misc_use', meta: { item: 'gas_can' },     xp: 400, cash: 2500 },
-  { id: 'data_drop',   tier: 'hard', name: 'Data Drop',      emoji: '💾',  desc: 'Plant 2 USB drives.',                                target: 2, type: 'misc_use', meta: { item: 'usb_drive' },   xp: 500, cash: 3000 },
+  { id: 'arsonist',    tier: 'hard', name: 'Arsonist',       emoji: '🔥',  desc: 'Empty a Gas Can on the right doorstep.',             target: 1, type: 'misc_use', meta: { item: 'gas_can' },     xp: 150, cash: 600 },
+  { id: 'data_drop',   tier: 'hard', name: 'Data Drop',      emoji: '💾',  desc: 'Plant 2 USB drives.',                                target: 2, type: 'misc_use', meta: { item: 'usb_drive' },   xp: 200, cash: 800 },
+  { id: 'major_score', tier: 'hard', name: 'Major Score',    emoji: '💎',  desc: 'Pull off 3 major-tier crimes.',                      target: 3, type: 'crime_success', meta: { tier: 'major' },  xp: 1500, cash: 10000 },
+  { id: 'fightclub_champ', tier: 'hard', name: 'Fight Club Champ', emoji: '🏆', desc: 'Win 5 fights at the Fight Club.',              target: 5, type: 'combat_win',                              xp: 800, cash: 4000 },
+  { id: 'serial_mug',  tier: 'hard', name: 'Serial Mugger',  emoji: '🥊',  desc: 'Successfully rob 3 players.',                        target: 3, type: 'rob_player',                              xp: 900, cash: 4500 },
+  { id: 'kingpin',     tier: 'hard', name: 'Kingpin',        emoji: '👑',  desc: 'Sell drugs 25 times.',                               target: 25, type: 'drug_sale',                              xp: 1200, cash: 6500 },
+  { id: 'mad_scientist', tier: 'hard', name: 'Mad Scientist',emoji: '⚗️',  desc: 'Use 4 USB drives.',                                  target: 4, type: 'misc_use', meta: { item: 'usb_drive' }, xp: 350, cash: 1500 },
 ];
 
 export const missionById = id => byId(DAILY_MISSIONS, id);

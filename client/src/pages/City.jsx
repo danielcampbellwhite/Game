@@ -61,6 +61,22 @@ const CITY_DATA = {
   mexico_city: { emoji: '🌮', vibe: 'Sprawling capital. Cartel reach is long, prices are short.' },
   amsterdam:   { emoji: '🚲', vibe: 'Canals, coffee shops, and conveniently lax laws.' },
   detroit:     { emoji: '🏚️', vibe: 'Motor City ruins. Cheapest streets in the catalogue.' },
+  chicago:     { emoji: '🌬️', vibe: 'Old-school mob town. Wind, snow, and quiet menace.' },
+  los_angeles: { emoji: '🌴', vibe: 'Sun-bleached deals and Hollywood smiles. Everyone\'s working an angle.' },
+  seoul:       { emoji: '🥢', vibe: 'Bright neon, polite faces, gangs in the basement.' },
+  shanghai:    { emoji: '🏯', vibe: 'Skyscrapers and back-alley markets. Triads in the shadows.' },
+  mumbai:      { emoji: '🪷', vibe: 'Dense, dirt-cheap, and constantly moving. Underground deals everywhere.' },
+  istanbul:    { emoji: '🕌', vibe: 'Where Europe meets Asia — and the Mediterranean fences meet the Black Sea smugglers.' },
+  johannesburg:{ emoji: '🦓', vibe: 'High walls, fast cars, faster getaways. Untamed and lucrative.' },
+  monaco:      { emoji: '🛥️', vibe: 'Yachts, casinos, and the cleanest dirty money on Earth.' },
+  singapore:   { emoji: '🦁', vibe: 'Spotless on the surface. Triad and tycoon money beneath.' },
+  manila:      { emoji: '🌺', vibe: 'Cheap streets, low oversight. The wild side of Southeast Asia.' },
+  havana:      { emoji: '🚬', vibe: 'Vintage cars, slower hustle. Sanctioned cash makes for thin margins.' },
+  marseille:   { emoji: '⚓', vibe: 'Mediterranean port. Heroin, hash, and hard men.' },
+  naples:      { emoji: '🍕', vibe: 'Camorra country. Pizza on the surface, contraband below.' },
+  prague:      { emoji: '🏰', vibe: 'Cobblestones and crypto. Smugglers love the borders.' },
+  dublin:      { emoji: '🍀', vibe: 'Friendly accents, ruthless gangs. Cheap but watch your back.' },
+  sao_paulo:   { emoji: '🏟️', vibe: 'Sprawling concrete. PCC reach is wide; opportunities wider.' },
 };
 
 // Persist the world-map open/closed preference across visits. Default

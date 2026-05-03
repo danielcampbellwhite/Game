@@ -24,6 +24,22 @@ const CITY_COORDS = {
   mexico_city: { lat: 19.4,  lng: -99.1  },
   amsterdam:   { lat: 52.4,  lng:   4.9  },
   detroit:     { lat: 42.3,  lng: -83.0  },
+  chicago:     { lat: 41.9,  lng: -87.6  },
+  los_angeles: { lat: 34.1,  lng: -118.2 },
+  seoul:       { lat: 37.6,  lng: 127.0  },
+  shanghai:    { lat: 31.2,  lng: 121.5  },
+  mumbai:      { lat: 19.1,  lng:  72.9  },
+  istanbul:    { lat: 41.0,  lng:  29.0  },
+  johannesburg:{ lat: -26.2, lng:  28.0  },
+  monaco:      { lat: 43.7,  lng:   7.4  },
+  singapore:   { lat:  1.3,  lng: 103.8  },
+  manila:      { lat: 14.6,  lng: 121.0  },
+  havana:      { lat: 23.1,  lng: -82.4  },
+  marseille:   { lat: 43.3,  lng:   5.4  },
+  naples:      { lat: 40.8,  lng:  14.3  },
+  prague:      { lat: 50.1,  lng:  14.4  },
+  dublin:      { lat: 53.3,  lng:  -6.3  },
+  sao_paulo:   { lat: -23.6, lng: -46.6  },
 };
 
 // Style passed to every <Geography> — keep all three states identical so

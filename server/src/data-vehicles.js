@@ -136,6 +136,51 @@ export const VEHICLES = [
   { id: 'lambo_sian',         name: 'Sián FKP 37',      maker: 'Lamborghini', tier: 7, bookPrice: 3600000 },
   { id: 'ferrari_laferrari',  name: 'LaFerrari',        maker: 'Ferrari',     tier: 7, bookPrice: 1500000 },
   { id: 'amg_one',            name: 'AMG One',          maker: 'Mercedes',    tier: 7, bookPrice: 2700000 },
+
+  // ── Expansion ─────────────────────────────────────────────────────
+  // Tier 1 — beaters
+  { id: 'lada_riva',          name: 'Riva',             maker: 'Lada',        tier: 1, bookPrice: 1200   },
+  { id: 'fiat_panda',         name: 'Panda',            maker: 'Fiat',        tier: 1, bookPrice: 1800   },
+  { id: 'dacia_logan',        name: 'Logan',            maker: 'Dacia',       tier: 1, bookPrice: 2400   },
+  { id: 'kia_picanto',        name: 'Picanto',          maker: 'Kia',         tier: 1, bookPrice: 3200   },
+
+  // Tier 2 — compacts
+  { id: 'honda_civic',        name: 'Civic',            maker: 'Honda',       tier: 2, bookPrice: 18000  },
+  { id: 'mazda_3',            name: 'Mazda 3',          maker: 'Mazda',       tier: 2, bookPrice: 22000  },
+  { id: 'toyota_corolla',     name: 'Corolla',          maker: 'Toyota',      tier: 2, bookPrice: 21000  },
+  { id: 'hyundai_i30',        name: 'i30',              maker: 'Hyundai',     tier: 2, bookPrice: 24000  },
+
+  // Tier 3 — hot hatches / SUVs
+  { id: 'vw_golf_gti',        name: 'Golf GTI',         maker: 'Volkswagen',  tier: 3, bookPrice: 38000  },
+  { id: 'subaru_wrx',         name: 'WRX STI',          maker: 'Subaru',      tier: 3, bookPrice: 44000  },
+  { id: 'mini_jcw',           name: 'JCW',              maker: 'Mini',        tier: 3, bookPrice: 41000  },
+  { id: 'jeep_wrangler',      name: 'Wrangler',         maker: 'Jeep',        tier: 3, bookPrice: 46000  },
+
+  // Tier 4 — premium
+  { id: 'audi_a6',            name: 'A6',               maker: 'Audi',        tier: 4, bookPrice: 75000  },
+  { id: 'bmw_5',              name: '5 Series',         maker: 'BMW',         tier: 4, bookPrice: 78000  },
+  { id: 'mercedes_e',         name: 'E-Class',          maker: 'Mercedes',    tier: 4, bookPrice: 82000  },
+  { id: 'lexus_es',           name: 'ES 350',           maker: 'Lexus',       tier: 4, bookPrice: 68000  },
+  { id: 'genesis_g80',        name: 'G80',              maker: 'Genesis',     tier: 4, bookPrice: 72000  },
+
+  // Tier 5 — luxury
+  { id: 'porsche_panamera',   name: 'Panamera',         maker: 'Porsche',     tier: 5, bookPrice: 165000 },
+  { id: 'maserati_quattro',   name: 'Quattroporte',     maker: 'Maserati',    tier: 5, bookPrice: 145000 },
+  { id: 'aston_db11',         name: 'DB11',             maker: 'Aston Martin',tier: 5, bookPrice: 220000 },
+  { id: 'audi_rs7',           name: 'RS7',              maker: 'Audi',        tier: 5, bookPrice: 130000 },
+
+  // Tier 6 — exotic
+  { id: 'lambo_urus',         name: 'Urus',             maker: 'Lamborghini', tier: 6, bookPrice: 280000 },
+  { id: 'ferrari_roma',       name: 'Roma',             maker: 'Ferrari',     tier: 6, bookPrice: 230000 },
+  { id: 'mclaren_720s',       name: '720S',             maker: 'McLaren',     tier: 6, bookPrice: 320000 },
+  { id: 'porsche_911_turbo',  name: '911 Turbo S',      maker: 'Porsche',     tier: 6, bookPrice: 250000 },
+
+  // Tier 7 — hyper
+  { id: 'rimac_nevera',       name: 'Nevera',           maker: 'Rimac',       tier: 7, bookPrice: 2400000 },
+  { id: 'lotus_evija',        name: 'Evija',            maker: 'Lotus',       tier: 7, bookPrice: 2200000 },
+  { id: 'aston_one_77',       name: 'One-77',           maker: 'Aston Martin',tier: 7, bookPrice: 1800000 },
+  { id: 'ferrari_812sf',      name: '812 Superfast',    maker: 'Ferrari',     tier: 7, bookPrice: 360000  },
+  { id: 'mclaren_speedtail',  name: 'Speedtail',        maker: 'McLaren',     tier: 7, bookPrice: 2300000 },
 ];
 
 export const VEHICLE_BY_ID = Object.fromEntries(VEHICLES.map(v => [v.id, v]));
