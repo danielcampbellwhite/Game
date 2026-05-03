@@ -12,15 +12,17 @@ import { factionBonusMul, factionGlobalCrimeMul } from '../services/territories.
 
 const router = Router();
 
-// "Punisher" tier — jail-on-fail dominates at high tiers. Escape-clean is
-// nearly impossible for major scores, and sentences scale aggressively so
-// jailbreaks (lawyer / bribe) become meaningful late game.
+// Most failures should be "got away clean, just lost the take" — heat
+// carries the long-term cost. Jail and hospital are the rare, expensive
+// outcomes for unlucky rolls or already-hot players.
+//
+// (jail + hosp + escape) sums to <= 1; whatever is left is escape-clean.
 const RISK_TABLE = {
-  tiny:    { jail: 0.15, hosp: 0.05, jailMin: 3,   hospMin: 2  },
-  low:     { jail: 0.25, hosp: 0.12, jailMin: 8,   hospMin: 5  },
-  med:     { jail: 0.40, hosp: 0.22, jailMin: 18,  hospMin: 12 },
-  high:    { jail: 0.55, hosp: 0.30, jailMin: 45,  hospMin: 25 },
-  extreme: { jail: 0.70, hosp: 0.25, jailMin: 120, hospMin: 50 },
+  tiny:    { jail: 0.05, hosp: 0.02, jailMin: 3,   hospMin: 2  },
+  low:     { jail: 0.10, hosp: 0.05, jailMin: 8,   hospMin: 5  },
+  med:     { jail: 0.18, hosp: 0.10, jailMin: 18,  hospMin: 12 },
+  high:    { jail: 0.30, hosp: 0.15, jailMin: 45,  hospMin: 25 },
+  extreme: { jail: 0.45, hosp: 0.20, jailMin: 120, hospMin: 50 },
 };
 
 function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -175,11 +177,14 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   `).run(ch.id, cooldownKey(crime.id), now);
   const cooldownUntil = now + cdSec * 1000;
 
-  // Bump heat after the outcome is decided. The amount is risk-tier
-  // based; heat increment is the same whether you succeeded or failed
-  // (the cops know what you tried).
+  // Bump heat after the outcome is decided. Skip the heat add when
+  // the player was jailed — jail is already the consequence; double-
+  // dipping with heat would punish twice for the same failure.
+  // Success / hospital / escape-clean all bump heat.
   const heatBefore = heatNow;
-  const heatAfter  = addHeat(ch, HEAT_BY_RISK[crime.risk] || 5);
+  const heatAfter  = result.jailed
+    ? heatBefore
+    : addHeat(ch, HEAT_BY_RISK[crime.risk] || 5);
 
   saveCharacter(ch);
   res.json({
