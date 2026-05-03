@@ -65,6 +65,11 @@ const MAX_ZOOM = 8;
 const ZOOM_STEP = 1.6;
 
 export default function WorldMap({ cities, you }) {
+  // Headline totals — shown beneath the map so the player can see
+  // "world is alive" without scanning every dot.
+  const totalPlayers = cities.reduce((n, c) => n + (c.players || 0), 0);
+  const totalOnline  = cities.reduce((n, c) => n + (c.online  || 0), 0);
+  const populatedCities = cities.filter(c => (c.players || 0) > 0).length;
   // hover: { id, x, y } where x/y are in container-pixel space (relative
   // to the wrapper div), used to position the absolute-positioned tip.
   const [hover, setHover] = useState(null);
@@ -143,8 +148,13 @@ export default function WorldMap({ cities, you }) {
               if (!coords) return null;
               const isYou = city.id === you;
               const isOnline = (city.online || 0) > 0;
+              const players = city.players || 0;
               const strokeColor = isYou ? '#facc15' : isOnline ? '#ef4444' : 'rgba(255,255,255,0.55)';
               const fillColor   = isYou ? 'rgba(250,204,21,0.9)' : isOnline ? 'rgba(239,68,68,0.85)' : 'rgba(255,255,255,0.4)';
+              // Label colour mirrors the dot status so a glance reads
+              // "active city" vs "quiet city" without having to compare
+              // against neighbouring dots.
+              const labelColor = isYou ? '#fde047' : isOnline ? '#fca5a5' : 'rgba(255,255,255,0.7)';
 
               return (
                 <Marker key={city.id} coordinates={[coords.lng, coords.lat]}>
@@ -164,6 +174,24 @@ export default function WorldMap({ cities, you }) {
                     style={{ cursor: 'default' }}
                   />
                   <circle r={dotR} fill={fillColor} stroke={strokeColor} strokeWidth={stroke} pointerEvents="none" />
+                  {players > 0 && (
+                    <text
+                      x={(dotR + 3) / position.zoom}
+                      y={3 / position.zoom}
+                      fontSize={10 / position.zoom}
+                      fontWeight={600}
+                      fill={labelColor}
+                      // paintOrder + black halo keeps the count legible
+                      // when it sits over a country fill of any colour.
+                      style={{
+                        pointerEvents: 'none',
+                        paintOrder: 'stroke',
+                        stroke: 'rgba(0,0,0,0.7)',
+                        strokeWidth: 2.5 / position.zoom,
+                      }}>
+                      {players}
+                    </text>
+                  )}
                 </Marker>
               );
             })}
@@ -215,6 +243,15 @@ export default function WorldMap({ cities, you }) {
           )}
         </div>
       )}
+
+      <div className="mt-3 rounded-md border border-ink-100/10 bg-ink-950/40 px-3 py-2 flex flex-wrap items-baseline justify-between gap-2 text-xs">
+        <div className="tabular-nums">
+          <span className="text-ink-100/50 uppercase text-[10px] tracking-wide mr-2">Online now</span>
+          <span className="font-display text-lg text-blood-400">{totalOnline}</span>
+          <span className="text-ink-100/45"> / {totalPlayers} player{totalPlayers === 1 ? '' : 's'} across {populatedCities} cit{populatedCities === 1 ? 'y' : 'ies'}</span>
+        </div>
+        <div className="text-[10px] text-ink-100/40 normal-case">Numbers next to each dot are total players in that city.</div>
+      </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] uppercase tracking-wide text-ink-100/55">
         <span className="flex items-center gap-1">
