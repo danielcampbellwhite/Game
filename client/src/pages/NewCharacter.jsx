@@ -3,17 +3,19 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card.jsx';
+import StatAllocator, { initialStats, pointsRemaining, STAT_POINTS } from '../components/StatAllocator.jsx';
 
 // New-character creation. Reached when the player's character has been
 // murdered (status === 'pending_new_character'). Player picks a fresh
-// name + avatar + city; the row revives at level 10 with default stats
-// and gets a fresh 3-day protection window.
+// name + city + stat allocation; the row revives at level 10 and gets
+// a fresh 3-day protection window.
 export default function NewCharacter() {
   const { character, refresh } = useGame();
   const nav = useNavigate();
   const [opts, setOpts] = useState({ cities: [] });
   const [name, setName] = useState('');
   const [city, setCity] = useState(null);
+  const [stats, setStats] = useState(initialStats);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -24,11 +26,14 @@ export default function NewCharacter() {
     });
   }, []);
 
+  const remaining = pointsRemaining(stats);
+  const canSubmit = !busy && name.trim() && remaining === 0;
+
   async function submit(e) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
-      await api.post('/character/new-character', { name, avatar: '', city });
+      await api.post('/character/new-character', { name, avatar: '', city, stats });
       await refresh();
       nav('/');
     } catch (e) { setErr(e.message); }
@@ -68,12 +73,13 @@ export default function NewCharacter() {
               ))}
             </div>
           </div>
+          <StatAllocator value={stats} onChange={setStats} />
           <p className="text-[11px] text-ink-100/55">
-            Starting level <b>10</b> · stats reset to <b>1</b> each · cash <b>£500</b> · empty inventory.
+            Starting level <b>10</b> · {STAT_POINTS} stat points to spend · cash <b>£500</b> · empty inventory.
           </p>
           {err && <p className="text-blood-400 text-xs">{err}</p>}
-          <button disabled={busy || !name.trim()} type="submit" className="btn btn-primary w-full">
-            {busy ? '...' : 'Hit the streets'}
+          <button disabled={!canSubmit} type="submit" className="btn btn-primary w-full">
+            {busy ? '...' : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}` : 'Hit the streets'}
           </button>
         </form>
       </Card>

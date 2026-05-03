@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import StatAllocator, { initialStats, pointsRemaining, STAT_POINTS } from '../components/StatAllocator.jsx';
 
 export default function CharacterCreate() {
   const { createCharacter } = useGame();
@@ -9,6 +10,7 @@ export default function CharacterCreate() {
   const [opts, setOpts] = useState({ cities: [] });
   const [name, setName] = useState('');
   const [city, setCity] = useState(null);
+  const [stats, setStats] = useState(initialStats);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -19,13 +21,15 @@ export default function CharacterCreate() {
     });
   }, []);
 
+  const remaining = pointsRemaining(stats);
+  const canSubmit = !busy && name.trim() && remaining === 0;
+
   async function submit(e) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
       // Avatar field is no longer surfaced in the UI; submitted as empty.
-      // The server accepts an empty string and stores it.
-      await createCharacter({ name, avatar: '', city });
+      await createCharacter({ name, avatar: '', city, stats });
       nav('/');
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -34,7 +38,7 @@ export default function CharacterCreate() {
   return (
     <div className="max-w-2xl mx-auto card">
       <h2 className="font-display text-3xl text-blood-500 mb-1">Create your character</h2>
-      <p className="text-xs text-ink-100/60 mb-4">Pick a name and a place to start your hustle.</p>
+      <p className="text-xs text-ink-100/60 mb-4">Pick a name, a place to start, and spend your {STAT_POINTS} starting stat points.</p>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="text-xs uppercase text-ink-100/60">Name</label>
@@ -52,8 +56,11 @@ export default function CharacterCreate() {
             ))}
           </div>
         </div>
+        <StatAllocator value={stats} onChange={setStats} />
         {err && <p className="text-blood-400 text-xs">{err}</p>}
-        <button disabled={busy || !name} type="submit" className="btn btn-primary w-full">{busy ? '...' : 'Hit the streets'}</button>
+        <button disabled={!canSubmit} type="submit" className="btn btn-primary w-full">
+          {busy ? '...' : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}` : 'Hit the streets'}
+        </button>
       </form>
     </div>
   );

@@ -7,12 +7,40 @@ import { CITIES, AVATARS, cityById } from '../data.js';
 
 const router = Router();
 
+// Starting stat allocation — mirrors client/components/StatAllocator.jsx.
+// Each stat starts at STAT_BASE; the player gets STAT_POINTS to spend
+// across the four base stats. Total spent must equal STAT_POINTS exactly
+// (no leaving points on the table). Cap per stat is BASE + POINTS.
+const STAT_BASE = 1;
+const STAT_POINTS = 10;
+const STAT_MAX = STAT_BASE + STAT_POINTS;
+const STAT_KEYS = ['strength', 'defence', 'speed', 'intelligence'];
+
+// Returns { ok, stats, error } where stats is the validated, integer-
+// coerced object. Falsy / missing input is treated as "all base" and
+// fails validation (since spent === 0 ≠ STAT_POINTS).
+function validateStartingStats(input) {
+  const out = {};
+  for (const k of STAT_KEYS) {
+    const v = Math.floor(Number(input?.[k]));
+    if (!Number.isFinite(v) || v < STAT_BASE || v > STAT_MAX) {
+      return { ok: false, error: `Each stat must be between ${STAT_BASE} and ${STAT_MAX}` };
+    }
+    out[k] = v;
+  }
+  const spent = STAT_KEYS.reduce((s, k) => s + (out[k] - STAT_BASE), 0);
+  if (spent !== STAT_POINTS) {
+    return { ok: false, error: `Spend exactly ${STAT_POINTS} stat points (you spent ${spent}).` };
+  }
+  return { ok: true, stats: out };
+}
+
 router.get('/options', (_req, res) => {
   res.json({ cities: CITIES, avatars: AVATARS });
 });
 
 router.post('/create', requireAuth, (req, res) => {
-  const { name, avatar, city } = req.body || {};
+  const { name, avatar, city, stats } = req.body || {};
   if (!name || !city) return res.status(400).json({ error: 'name, city required' });
   if (!cityById(city)) return res.status(400).json({ error: 'Invalid city' });
   // Avatar is no longer surfaced in the UI — accept either an empty
@@ -20,6 +48,8 @@ router.post('/create', requireAuth, (req, res) => {
   const avatarVal = (avatar || '').trim();
   if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
   if (name.length < 2 || name.length > 24) return res.status(400).json({ error: 'Name length 2-24' });
+  const sv = validateStartingStats(stats);
+  if (!sv.ok) return res.status(400).json({ error: sv.error });
   const exists = db.prepare('SELECT id FROM characters WHERE user_id = ?').get(req.user.id);
   if (exists) return res.status(409).json({ error: 'Character already exists' });
   // Names must be globally unique across all characters (case-insensitive).
@@ -32,8 +62,12 @@ router.post('/create', requireAuth, (req, res) => {
       strength, defence, speed, intelligence,
       last_tick, last_health_tick, bank_last_interest,
       equipped_weapon, equipped_armour, created_at
-    ) VALUES (?, ?, ?, ?, 1, 1, 1, 1, ?, ?, ?, 'fists', 'none', ?)
-  `).run(req.user.id, name, avatarVal, city, now, now, now, now);
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'fists', 'none', ?)
+  `).run(
+    req.user.id, name, avatarVal, city,
+    sv.stats.strength, sv.stats.defence, sv.stats.speed, sv.stats.intelligence,
+    now, now, now, now,
+  );
   writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}.`);
   const ch = loadCharacter(req.user.id);
   applyTick(ch);
@@ -58,7 +92,7 @@ router.get('/', requireAuth, (req, res) => {
 // level-10 newcomer with default stats and a fresh 3-day protection
 // window from `created_at = now`.
 router.post('/new-character', requireAuth, (req, res) => {
-  const { name, avatar, city } = req.body || {};
+  const { name, avatar, city, stats } = req.body || {};
   const ch = db.prepare('SELECT * FROM characters WHERE user_id = ?').get(req.user.id);
   if (!ch) return res.status(404).json({ error: 'No character to replace.' });
   if (ch.status !== 'pending_new_character') return res.status(409).json({ error: 'Your character is alive — no new character to roll.' });
@@ -69,6 +103,8 @@ router.post('/new-character', requireAuth, (req, res) => {
   if (avatarVal && !AVATARS.includes(avatarVal)) return res.status(400).json({ error: 'Invalid avatar' });
   const trimmed = String(name).trim();
   if (trimmed.length < 2 || trimmed.length > 24) return res.status(400).json({ error: 'Name length 2-24' });
+  const sv = validateStartingStats(stats);
+  if (!sv.ok) return res.status(400).json({ error: sv.error });
   const taken = db.prepare('SELECT id FROM characters WHERE name = ? COLLATE NOCASE AND id != ?').get(trimmed, ch.id);
   if (taken) return res.status(409).json({ error: 'That name is taken — pick another.' });
 
@@ -89,7 +125,7 @@ router.post('/new-character', requireAuth, (req, res) => {
       nerve = ?, max_nerve = ?,
       health = ?, max_health = ?,
       happiness = 50,
-      strength = 1, defence = 1, speed = 1, intelligence = 1,
+      strength = ?, defence = ?, speed = ?, intelligence = ?,
       reputation = 0,
       cash = 500, bank = 0, dirty_cash = 0,
       jail_until = NULL, jail_reason = NULL,
@@ -111,6 +147,7 @@ router.post('/new-character', requireAuth, (req, res) => {
     maxEnergy, maxEnergy,
     maxNerve, maxNerve,
     maxHealth, maxHealth,
+    sv.stats.strength, sv.stats.defence, sv.stats.speed, sv.stats.intelligence,
     now, now, now, now, now,
     ch.id,
   );
