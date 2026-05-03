@@ -6,10 +6,10 @@
   color-scheme: dark;
 }
 
-/* Scale the entire UI up ~12.5%. Tailwind classes are rem-based off of html,
+/* Scale the entire UI up ~25%. Tailwind classes are rem-based off of html,
    so bumping html font-size scales every text/icon/spacing class
    proportionally without needing per-component edits. */
-html { font-size: 18px; }
+html { font-size: 20px; }
 
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
