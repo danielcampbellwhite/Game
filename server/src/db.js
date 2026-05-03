@@ -579,6 +579,10 @@ export function initDb() {
     if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
   };
   addColumnIfMissing('users', 'email', 'TEXT');
+  // Admin/god flag. The very first user to call /api/admin/promote-self
+  // (gated by ADMIN_TOKEN) is granted admin; thereafter the flag is the
+  // source of truth and ADMIN_TOKEN is only needed for re-bootstrap.
+  addColumnIfMissing('users', 'is_admin', 'INTEGER NOT NULL DEFAULT 0');
   // Phase 2: equipped weapon can now be a per-instance modded weapon.
   // When this column is non-null, it overrides the stock equipped_weapon
   // catalogue id for combat purposes.

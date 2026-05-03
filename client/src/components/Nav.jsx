@@ -246,6 +246,13 @@ export default function Nav() {
             )}
           </Link>
           <NotificationBell />
+          {character?.is_admin && (
+            <Link to="/admin"
+              className="px-2 py-1 rounded-md text-[11px] uppercase tracking-wide text-blood-400 hover:bg-ink-800/60 transition"
+              title="God mode">
+              Admin
+            </Link>
+          )}
           <button className="btn btn-ghost text-xs" onClick={() => { logout(); nav('/login'); }}>Sign out</button>
         </div>
       </div>

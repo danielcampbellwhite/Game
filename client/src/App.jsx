@@ -48,6 +48,7 @@ import Rob from './pages/Rob.jsx';
 import CustomizeWeapons from './pages/CustomizeWeapons.jsx';
 import CustomizeVehicles from './pages/CustomizeVehicles.jsx';
 import NewCharacter from './pages/NewCharacter.jsx';
+import Admin from './pages/Admin.jsx';
 
 function Protected({ children }) {
   const { token, character } = useGame();
@@ -139,6 +140,7 @@ export default function App() {
           <Route path="/customize/weapons" element={<Protected><CustomizeWeapons /></Protected>} />
           <Route path="/customize/vehicles" element={<Protected><CustomizeVehicles /></Protected>} />
           <Route path="/new-character" element={<Protected><NewCharacter /></Protected>} />
+          <Route path="/admin" element={<Protected><Admin /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

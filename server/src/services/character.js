@@ -11,7 +11,16 @@ const HEALTH_REGEN_MS = 60 * 1000;       // 1 hp per minute (out of hospital)
 const BANK_INTEREST_PER_HOUR = 0.0004146;
 
 export function loadCharacter(userId) {
-  return db.prepare('SELECT * FROM characters WHERE user_id = ?').get(userId);
+  // Stamp the owning user's is_admin flag onto the row so callers can
+  // expose it in publicCharacter without a second query. The flag never
+  // belongs in the characters table itself — it's a per-user attribute.
+  const row = db.prepare(`
+    SELECT c.*, u.is_admin AS is_admin
+    FROM characters c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.user_id = ?
+  `).get(userId);
+  return row;
 }
 
 export function loadCharacterById(id) {
@@ -338,5 +347,6 @@ export function publicCharacter(ch) {
     status: ch.status || 'alive',
     login_streak: ch.login_streak, last_daily: ch.last_daily,
     prestige: ch.prestige,
+    is_admin: !!ch.is_admin,
   };
 }
