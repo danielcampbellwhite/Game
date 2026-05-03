@@ -11,6 +11,12 @@
    proportionally without needing per-component edits. */
 html { font-size: 20px; }
 
+/* Belt-and-braces overflow-x guard. `clip` (rather than hidden) does
+   not establish a containing block, so sticky positioning on the
+   header still works. Catches any stray rotation/scale that pokes a
+   pixel past the viewport — e.g. the evidence-board article cards. */
+html, body { overflow-x: clip; }
+
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;

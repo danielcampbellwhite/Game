@@ -114,8 +114,10 @@ function ArticleNode({ node, x, y, rotation, lockedOut }) {
 
 function EvidenceBoard({ character, lockedOut }) {
   // Polar layout — start at the top (-90°) and walk clockwise so the
-  // first node sits straight above the silhouette.
-  const RADIUS = 38;
+  // first node sits straight above the silhouette. Radius 35 keeps the
+  // article cards (each ~140px wide on desktop) inside the container
+  // even on a 360px-wide phone, avoiding horizontal overflow.
+  const RADIUS = 35;
   const positions = NODES.map((_, i) => {
     const angle = ((-90 + (i * 360 / NODES.length)) * Math.PI) / 180;
     return {
