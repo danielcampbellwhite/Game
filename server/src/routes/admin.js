@@ -266,21 +266,24 @@ router.post('/seed-players', requireAuth, requireAdmin, (req, res) => {
   `);
   const insertChar = db.prepare(`
     INSERT INTO characters (
-      user_id, name, avatar, city,
+      user_id, name, avatar, city, faction,
       level, xp, energy, max_energy, nerve, max_nerve, health, max_health,
       happiness, strength, defence, speed, intelligence,
       reputation, cash, bank, dirty_cash,
       last_tick, last_health_tick, bank_last_interest,
       equipped_weapon, equipped_armour,
       created_at, last_active_at
-    ) VALUES (?, ?, '', ?, ?, 0, ?, ?, ?, ?, ?, ?, 50, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, 'fists', 'none', ?, ?)
+    ) VALUES (?, ?, '', ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 50, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, 'fists', 'none', ?, ?)
   `);
   const nameTaken = db.prepare('SELECT 1 AS x FROM characters WHERE name = ? COLLATE NOCASE');
 
   const created = [];
-  // Wrap everything in one transaction — way faster than 500 implicit
-  // commits, and a partial failure won't leave half-seeded rows behind.
-  const tx = db.transaction(() => {
+  // node:sqlite has no `db.transaction()` wrapper (that's a better-sqlite3
+  // feature), so we BEGIN/COMMIT explicitly. Single transaction is much
+  // faster than 500 implicit commits, and ROLLBACK on partial failure
+  // keeps a half-seeded run from leaving orphan rows.
+  db.exec('BEGIN');
+  try {
     for (let i = 0; i < count; i++) {
       let placed = false;
       for (let attempt = 0; attempt < 8 && !placed; attempt++) {
@@ -307,18 +310,19 @@ router.post('/seed-players', requireAuth, requireAdmin, (req, res) => {
             intelligence: Math.min(STAT_CAPS.intelligence, 1 + Math.floor(Math.random() * level * 1.2)),
           };
           const city = pick(cityIds);
+          const faction = pick(FACTION_IDS);   // distribute NPCs across factions
           const cash = rand(500, 50_000);
           const reputation = rand(0, level * 100);
 
           insertChar.run(
-            userId, name, city,
+            userId, name, city, faction,
             level, maxEnergy, maxEnergy, maxNerve, maxNerve, maxHealth, maxHealth,
             stats.strength, stats.defence, stats.speed, stats.intelligence,
             reputation, cash,
             past, past, past,
             past, past,
           );
-          created.push({ user_id: userId, username, name, city, level });
+          created.push({ user_id: userId, username, name, city, level, faction });
           placed = true;
         } catch (e) {
           // UNIQUE-constraint collisions on username are the only retryable
@@ -327,8 +331,11 @@ router.post('/seed-players', requireAuth, requireAdmin, (req, res) => {
         }
       }
     }
-  });
-  tx();
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
 
   res.json({
     ok: true,
