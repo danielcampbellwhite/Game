@@ -17,6 +17,8 @@
 
 import { db } from '../db.js';
 import { TERRITORIES, territoryById, territoriesInCity } from '../data.js';
+import { writeLog } from './log.js';
+import { sendEvent } from './events.js';
 
 export const ENERGY_COST            = 8;
 export const CAPTURE_COOLDOWN_MS    = 60 * 60 * 1000;   // 1h between attempts vs the same location
@@ -152,6 +154,39 @@ export function capture(attacker, gang, locationId) {
     INSERT INTO consumable_cooldowns (char_id, item_id, used_at) VALUES (?, ?, ?)
     ON CONFLICT(char_id, item_id) DO UPDATE SET used_at = excluded.used_at
   `).run(attacker.id, cdKey, now);
+
+  // ── Notify the losing gang ─────────────────────────────────────
+  // Only fires when a successful capture flipped ownership — taking
+  // unclaimed turf has no defender to ping.
+  if (captured && current.gang_id && current.gang_id !== gang.id) {
+    const losingMembers = db.prepare(
+      'SELECT char_id FROM gang_members WHERE gang_id = ?'
+    ).all(current.gang_id);
+    const cityLabel = meta.city.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const message = `${gang.name} [${gang.tag}] just took "${meta.name}" in ${cityLabel} from your gang.`;
+    for (const m of losingMembers) {
+      writeLog(
+        m.char_id,
+        'gang',
+        message,
+        {
+          location_id: locationId,
+          city: meta.city,
+          attacker_gang_id: gang.id,
+          attacker_gang_name: gang.name,
+          attacker_gang_tag: gang.tag,
+          attacker_char_id: attacker.id,
+        },
+        true,   // notify=true → shows in the bell
+      );
+      sendEvent(m.char_id, 'territory.lost', {
+        location_id: locationId,
+        location_name: meta.name,
+        city: meta.city,
+        attacker: { id: gang.id, name: gang.name, tag: gang.tag },
+      });
+    }
+  }
 
   attacker.energy = Math.max(0, attacker.energy - ENERGY_COST);
   return {
