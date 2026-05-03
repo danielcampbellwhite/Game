@@ -58,9 +58,11 @@ function randName(used) {
 }
 
 const CITIES = [
-  'new_york','london','tokyo','dubai','liverpool','miami','paris','bangkok',
-  'sydney','rio','moscow','cape_town','las_vegas','hong_kong','berlin','mexico_city',
-  'amsterdam','detroit',
+  'new_york','los_angeles','miami','rio',
+  'london','paris','berlin','moscow',
+  'dubai',
+  'tokyo','hong_kong','bangkok','mumbai',
+  'cape_town',
 ];
 const AVATARS = ['🕴️','🤵','🥷','🕵️','🧔','👮','💂','👤','💀','🎩','🤴','👴'];
 

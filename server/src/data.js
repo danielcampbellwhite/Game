@@ -4,42 +4,32 @@ export { VEHICLES, VEHICLE_BY_ID, VEHICLES_BY_TIER, TIER_NAMES, tierEmoji, rollV
 import { VEHICLE_BY_ID } from './data-vehicles.js';
 export const vehicleById = id => VEHICLE_BY_ID[id];
 
+// Curated 14-city roster — top picks across the major regions.
+// Reduced from 34 in 2026-05; the migration in db.js remaps any data
+// rows still pointing at culled cities to their nearest replacement.
+// Property catalogue entries for dropped cities are intentionally left
+// in PROPERTIES below — they're unreachable now (their `city` field
+// won't match any current city) and harmless.
 export const CITIES = [
-  { id: 'new_york',  name: 'New York',  emoji: '🗽', drugMul: 1.10, businessMul: 1.20, flightBase: 1500 },
-  { id: 'london',    name: 'London',    emoji: '🎡', drugMul: 1.05, businessMul: 1.15, flightBase: 1400 },
-  { id: 'tokyo',     name: 'Tokyo',     emoji: '🗼', drugMul: 1.25, businessMul: 1.30, flightBase: 2200 },
-  { id: 'dubai',     name: 'Dubai',     emoji: '🏙️', drugMul: 1.40, businessMul: 1.50, flightBase: 2800 },
-  { id: 'liverpool', name: 'Liverpool', emoji: '⚓', drugMul: 0.85, businessMul: 0.80, flightBase: 1300 },
-  { id: 'miami',     name: 'Miami',     emoji: '🌴', drugMul: 1.15, businessMul: 1.10, flightBase: 1200 },
-  { id: 'paris',     name: 'Paris',     emoji: '🗼', drugMul: 1.00, businessMul: 1.10, flightBase: 1400 },
-  { id: 'bangkok',   name: 'Bangkok',   emoji: '🛕', drugMul: 0.70, businessMul: 0.75, flightBase: 2400 },
-  { id: 'sydney',    name: 'Sydney',    emoji: '🦘', drugMul: 1.20, businessMul: 1.05, flightBase: 2600 },
-  { id: 'rio',       name: 'Rio',       emoji: '🏖️', drugMul: 0.80, businessMul: 0.85, flightBase: 1800 },
-  { id: 'moscow',    name: 'Moscow',    emoji: '☃️', drugMul: 0.90, businessMul: 0.95, flightBase: 2000 },
-  { id: 'cape_town', name: 'Cape Town', emoji: '🦁', drugMul: 0.75, businessMul: 0.80, flightBase: 2100 },
-  { id: 'las_vegas', name: 'Las Vegas', emoji: '🎲', drugMul: 1.10, businessMul: 1.20, flightBase: 1500 },
-  { id: 'hong_kong', name: 'Hong Kong', emoji: '🐉', drugMul: 1.30, businessMul: 1.35, flightBase: 2400 },
-  { id: 'berlin',    name: 'Berlin',    emoji: '🐻', drugMul: 0.95, businessMul: 1.00, flightBase: 1500 },
-  { id: 'mexico_city', name: 'Mexico City', emoji: '🌮', drugMul: 0.65, businessMul: 0.75, flightBase: 1700 },
-  { id: 'amsterdam', name: 'Amsterdam', emoji: '🚲', drugMul: 0.80, businessMul: 1.05, flightBase: 1500 },
-  { id: 'detroit',   name: 'Detroit',   emoji: '🏚️', drugMul: 0.70, businessMul: 0.65, flightBase: 1300 },
-  // ── Expansion ────────────────────────────────────────────────────────
-  { id: 'chicago',     name: 'Chicago',      emoji: '🌬️', drugMul: 1.05, businessMul: 1.10, flightBase: 1400 },
+  // ── Americas ─────────────────────────────────────────────────
+  { id: 'new_york',    name: 'New York',     emoji: '🗽', drugMul: 1.10, businessMul: 1.20, flightBase: 1500 },
   { id: 'los_angeles', name: 'Los Angeles',  emoji: '🌴', drugMul: 1.20, businessMul: 1.25, flightBase: 1600 },
-  { id: 'seoul',       name: 'Seoul',        emoji: '🥢', drugMul: 1.20, businessMul: 1.30, flightBase: 2300 },
-  { id: 'shanghai',    name: 'Shanghai',     emoji: '🏯', drugMul: 1.25, businessMul: 1.35, flightBase: 2400 },
+  { id: 'miami',       name: 'Miami',        emoji: '🌴', drugMul: 1.15, businessMul: 1.10, flightBase: 1200 },
+  { id: 'rio',         name: 'Rio',          emoji: '🏖️', drugMul: 0.80, businessMul: 0.85, flightBase: 1800 },
+  // ── Europe ───────────────────────────────────────────────────
+  { id: 'london',      name: 'London',       emoji: '🎡', drugMul: 1.05, businessMul: 1.15, flightBase: 1400 },
+  { id: 'paris',       name: 'Paris',        emoji: '🗼', drugMul: 1.00, businessMul: 1.10, flightBase: 1400 },
+  { id: 'berlin',      name: 'Berlin',       emoji: '🐻', drugMul: 0.95, businessMul: 1.00, flightBase: 1500 },
+  { id: 'moscow',      name: 'Moscow',       emoji: '☃️', drugMul: 0.90, businessMul: 0.95, flightBase: 2000 },
+  // ── Middle East ──────────────────────────────────────────────
+  { id: 'dubai',       name: 'Dubai',        emoji: '🏙️', drugMul: 1.40, businessMul: 1.50, flightBase: 2800 },
+  // ── Asia ─────────────────────────────────────────────────────
+  { id: 'tokyo',       name: 'Tokyo',        emoji: '🗼', drugMul: 1.25, businessMul: 1.30, flightBase: 2200 },
+  { id: 'hong_kong',   name: 'Hong Kong',    emoji: '🐉', drugMul: 1.30, businessMul: 1.35, flightBase: 2400 },
+  { id: 'bangkok',     name: 'Bangkok',      emoji: '🛕', drugMul: 0.70, businessMul: 0.75, flightBase: 2400 },
   { id: 'mumbai',      name: 'Mumbai',       emoji: '🪷', drugMul: 0.65, businessMul: 0.75, flightBase: 2200 },
-  { id: 'istanbul',    name: 'Istanbul',     emoji: '🕌', drugMul: 0.95, businessMul: 0.95, flightBase: 1700 },
-  { id: 'johannesburg',name: 'Johannesburg', emoji: '🦓', drugMul: 0.70, businessMul: 0.75, flightBase: 2200 },
-  { id: 'monaco',      name: 'Monaco',       emoji: '🛥️', drugMul: 1.50, businessMul: 1.65, flightBase: 1800 },
-  { id: 'singapore',   name: 'Singapore',    emoji: '🦁', drugMul: 1.30, businessMul: 1.40, flightBase: 2400 },
-  { id: 'manila',      name: 'Manila',       emoji: '🌺', drugMul: 0.70, businessMul: 0.75, flightBase: 2400 },
-  { id: 'havana',      name: 'Havana',       emoji: '🚬', drugMul: 0.85, businessMul: 0.85, flightBase: 1700 },
-  { id: 'marseille',   name: 'Marseille',    emoji: '⚓', drugMul: 0.95, businessMul: 1.00, flightBase: 1500 },
-  { id: 'naples',      name: 'Naples',       emoji: '🍕', drugMul: 0.95, businessMul: 0.95, flightBase: 1500 },
-  { id: 'prague',      name: 'Prague',       emoji: '🏰', drugMul: 0.90, businessMul: 0.95, flightBase: 1500 },
-  { id: 'dublin',      name: 'Dublin',       emoji: '🍀', drugMul: 0.95, businessMul: 1.00, flightBase: 1400 },
-  { id: 'sao_paulo',   name: 'São Paulo',    emoji: '🏟️', drugMul: 0.80, businessMul: 0.85, flightBase: 1900 },
+  // ── Africa ───────────────────────────────────────────────────
+  { id: 'cape_town',   name: 'Cape Town',    emoji: '🦁', drugMul: 0.75, businessMul: 0.80, flightBase: 2100 },
 ];
 
 // Serious / criminal / mysterious. Suits, silhouettes, sterner faces — no

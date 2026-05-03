@@ -683,4 +683,59 @@ export function initDb() {
     db.prepare("UPDATE OR IGNORE inventory SET item_id = ? WHERE kind = 'weapon' AND item_id = ?").run(newId, oldId);
     db.prepare("DELETE FROM inventory WHERE kind = 'weapon' AND item_id = ?").run(oldId);
   }
+
+  // ── City roster cull (2026-05): 34 → 14 ────────────────────────────
+  // Any data row still pointing at a dropped city gets remapped to its
+  // nearest geographic / thematic kept neighbour so we don't orphan
+  // characters, vehicles, properties, businesses, gangs, jobs, or
+  // travel destinations. Idempotent — once no rows match the dropped
+  // ids on the left, the UPDATE is a no-op.
+  const CITY_REMAP = {
+    liverpool:    'london',
+    sydney:       'tokyo',
+    las_vegas:    'miami',
+    mexico_city:  'miami',
+    amsterdam:    'berlin',
+    detroit:      'new_york',
+    chicago:      'new_york',
+    seoul:        'tokyo',
+    shanghai:     'hong_kong',
+    istanbul:     'dubai',
+    johannesburg: 'cape_town',
+    monaco:       'paris',
+    singapore:    'hong_kong',
+    manila:       'bangkok',
+    havana:       'miami',
+    marseille:    'paris',
+    naples:       'paris',
+    prague:       'berlin',
+    dublin:       'london',
+    sao_paulo:    'rio',
+  };
+  // (table, column) pairs to remap. Each is wrapped in try/catch so a
+  // missing table on a fresh deploy doesn't crash startup.
+  const cityCols = [
+    ['characters',         'city'],
+    ['characters',         'travel_to'],
+    ['businesses_owned',   'city'],
+    ['businesses_player',  'city'],
+    ['properties_owned',   'city'],
+    ['vehicles_owned',     'city'],
+    ['gangs',              'city'],
+    ['gang_wars',          'contested_city'],
+    ['job_board_listings', 'city'],
+  ];
+  for (const [from, to] of Object.entries(CITY_REMAP)) {
+    for (const [table, col] of cityCols) {
+      try { db.prepare(`UPDATE ${table} SET ${col} = ? WHERE ${col} = ?`).run(to, from); }
+      catch { /* table may not exist yet on first deploy */ }
+    }
+  }
+  // Drug-market prices and turf holds are city-keyed and don't merge
+  // sensibly. Drop the orphan rows; drug prices regenerate on the next
+  // tick, turf for non-existent cities is meaningless.
+  const droppedCities = Object.keys(CITY_REMAP);
+  const placeholders = droppedCities.map(() => '?').join(',');
+  try { db.prepare(`DELETE FROM drug_market WHERE city IN (${placeholders})`).run(...droppedCities); } catch {}
+  try { db.prepare(`DELETE FROM turf_holds  WHERE city IN (${placeholders})`).run(...droppedCities); } catch {}
 }
