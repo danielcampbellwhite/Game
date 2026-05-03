@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
@@ -23,15 +23,15 @@ import Timer from '../components/Timer.jsx';
 // coordinates around the centre.
 
 const NODES = [
-  { to: '/city',      label: 'City',       teaser: 'Streets & shops',    style: 'paper' },
-  { to: '/inventory', label: 'Inventory',  teaser: 'Your loadout',       style: 'note'  },
-  { to: '/missions',  label: 'Missions',   teaser: 'Daily ops',          style: 'paper' },
-  { to: '/crimes',    label: 'Crimes',     teaser: 'Solo & crew jobs',   style: 'note'  },
-  { to: '/combat',    label: 'Fight Club', teaser: 'Knuckles only',      style: 'note'  },
-  { to: '/gangs',     label: 'Gangs',      teaser: 'Crews & politics',   style: 'paper' },
-  { to: '/wars',      label: 'Turf Wars',  teaser: 'Active fronts',      style: 'note'  },
-  { to: '/players',   label: 'Players',    teaser: 'Find someone',       style: 'paper' },
-  { to: '/trades',    label: 'Trades',     teaser: 'Deals on the side',  style: 'note'  },
+  { to: '/city',      label: 'City',       teaser: 'Streets & shops',    style: 'note' },
+  { to: '/inventory', label: 'Inventory',  teaser: 'Your loadout',       style: 'note' },
+  { to: '/missions',  label: 'Missions',   teaser: 'Daily ops',          style: 'note' },
+  { to: '/crimes',    label: 'Crimes',     teaser: 'Solo & crew jobs',   style: 'note' },
+  { to: '/combat',    label: 'Fight Club', teaser: 'Knuckles only',      style: 'note' },
+  { to: '/gangs',     label: 'Gangs',      teaser: 'Crews & politics',   style: 'note' },
+  { to: '/wars',      label: 'Turf Wars',  teaser: 'Active fronts',      style: 'note' },
+  { to: '/players',   label: 'Players',    teaser: 'Find someone',       style: 'note' },
+  { to: '/trades',    label: 'Trades',     teaser: 'Deals on the side',  style: 'note' },
 ];
 
 // Deterministic per-node tilts so refreshes don't shuffle the board.
@@ -69,21 +69,29 @@ function GangsterBust() {
   );
 }
 
-function ArticleNode({ node, x, y, rotation, lockedOut }) {
+function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
   const isPaper = node.style === 'paper';
+  // Focus state pops the card forward — bigger, untilted, brighter
+  // border, on top z-axis. The non-focused-but-something-is-focused
+  // case fades the card to push attention to the highlighted one.
+  const transform =
+    `translate(-50%, -50%) rotate(${focused ? 0 : rotation}deg) scale(${focused ? 1.35 : 1})`;
   return (
     <Link
       to={node.to}
       onClick={(e) => { if (lockedOut) e.preventDefault(); }}
       aria-disabled={lockedOut}
-      className={`absolute select-none transition
-        ${lockedOut ? 'opacity-40 cursor-not-allowed' : 'hover:scale-110 hover:!rotate-0 hover:z-20'}`}
+      className={`absolute select-none
+        transition-[transform,opacity,filter] duration-150 ease-out
+        ${lockedOut ? 'opacity-40 cursor-not-allowed' : ''}
+        ${focused ? 'z-30' : dimmed ? 'opacity-50 z-10' : 'z-10'}`}
       style={{
         left: `${x}%`, top: `${y}%`,
-        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+        transform,
+        filter: focused ? 'drop-shadow(0 0 12px rgba(220, 38, 38, 0.55))' : undefined,
       }}>
       {isPaper ? (
-        <div className="w-28 sm:w-32 bg-amber-50 border border-stone-700/30 shadow-lg shadow-black/60 rounded-sm overflow-hidden">
+        <div className={`w-28 sm:w-32 bg-amber-50 shadow-lg shadow-black/60 rounded-sm overflow-hidden ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
           <div className="px-2 pt-1.5 pb-0.5 text-[7px] uppercase tracking-[0.2em] text-blood-800 border-b border-stone-800/40 font-medium">
             The Daily
           </div>
@@ -93,7 +101,7 @@ function ArticleNode({ node, x, y, rotation, lockedOut }) {
           </div>
         </div>
       ) : (
-        <div className="w-28 sm:w-32 bg-amber-100 border border-stone-700/30 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative">
+        <div className={`w-28 sm:w-32 bg-amber-100 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
           {/* red left margin */}
           <div className="absolute left-2 top-0 bottom-0 w-px bg-blood-600/70" />
           {/* horizontal rule lines */}
@@ -126,8 +134,41 @@ function EvidenceBoard({ character, lockedOut }) {
     };
   });
 
+  // ── Proximity focus ────────────────────────────────────────────
+  // Track the pointer in container-percent coords; the closest node
+  // within FOCUS_THRESHOLD lights up + scales. Works on both touch
+  // (drag your finger across the board to scrub through nodes) and
+  // mouse (hover does the same thing). Tap-to-navigate is unaffected
+  // because the Link's onClick still fires on a regular click.
+  const wrapRef = useRef(null);
+  const [focusedId, setFocusedId] = useState(null);
+  const FOCUS_THRESHOLD = 22;   // %-distance — generous so neighbours don't fight
+
+  function updateFocusFromEvent(e) {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    let bestId = null;
+    let bestDist = Infinity;
+    for (let i = 0; i < positions.length; i++) {
+      const dx = positions[i].x - x;
+      const dy = positions[i].y - y;
+      const d = Math.hypot(dx, dy);
+      if (d < bestDist) { bestDist = d; bestId = NODES[i].to; }
+    }
+    setFocusedId(bestDist < FOCUS_THRESHOLD ? bestId : null);
+  }
+  function clearFocus() { setFocusedId(null); }
+
   return (
-    <div className="relative w-full max-w-3xl mx-auto aspect-square">
+    <div
+      className="relative w-full max-w-3xl mx-auto aspect-square touch-none"
+      ref={wrapRef}
+      onPointerMove={updateFocusFromEvent}
+      onPointerDown={updateFocusFromEvent}
+      onPointerLeave={clearFocus}
+      onPointerCancel={clearFocus}>
       {/* Backdrop — corkboard-feeling vignette */}
       <div
         className="absolute inset-0 rounded-2xl border border-ink-100/10"
@@ -140,22 +181,32 @@ function EvidenceBoard({ character, lockedOut }) {
         }}
       />
 
-      {/* String layer — drawn before nodes so they render on top. */}
+      {/* String layer — drawn before nodes so they render on top.
+          The string to the focused node thickens and brightens. */}
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
         className="absolute inset-0 w-full h-full pointer-events-none">
-        {positions.map((p, i) => (
-          <line
-            key={NODES[i].to}
-            x1="50" y1="50"
-            x2={p.x} y2={p.y}
-            stroke="rgba(220, 38, 38, 0.5)"
-            strokeWidth="0.25"
-            strokeDasharray="0.9 0.5"
-            strokeLinecap="round"
-          />
-        ))}
+        {positions.map((p, i) => {
+          const isFocused = focusedId === NODES[i].to;
+          const stroke = isFocused
+            ? 'rgba(248, 113, 113, 0.95)'
+            : focusedId
+              ? 'rgba(220, 38, 38, 0.18)'
+              : 'rgba(220, 38, 38, 0.5)';
+          return (
+            <line
+              key={NODES[i].to}
+              x1="50" y1="50"
+              x2={p.x} y2={p.y}
+              stroke={stroke}
+              strokeWidth={isFocused ? 0.45 : 0.25}
+              strokeDasharray="0.9 0.5"
+              strokeLinecap="round"
+              style={{ transition: 'stroke 150ms ease, stroke-width 150ms ease' }}
+            />
+          );
+        })}
         {/* Centre thumbtack */}
         <circle cx="50" cy="50" r="0.7" fill="#fbbf24" opacity="0.7" />
       </svg>
@@ -169,6 +220,8 @@ function EvidenceBoard({ character, lockedOut }) {
           y={positions[i].y}
           rotation={ROT[i % ROT.length]}
           lockedOut={lockedOut}
+          focused={focusedId === n.to}
+          dimmed={!!focusedId && focusedId !== n.to}
         />
       ))}
 
