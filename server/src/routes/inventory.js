@@ -5,6 +5,7 @@ import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, c
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { garageSummary, freeGarageSpace } from '../services/garage.js';
+import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 
 // Inter-city shipping: £500 base × tier × (destination flight cost
 // scaled to a 1500 median). Tier-1 short-hop ≈ £500, tier-7 long-haul
@@ -68,6 +69,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       cityName: cityById(r.city)?.name, acquired_at: r.acquired_at,
       is_active: r.id === ch.active_vehicle_id,
       condition: r.condition ?? 100,
+      shipping_until: r.shipping_until && r.shipping_until > Date.now() ? r.shipping_until : null,
     };
   }).filter(Boolean);
 
@@ -146,6 +148,10 @@ router.post('/equip-vehicle', requireAuth, requireCharacter, (req, res) => {
   }
   const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
   if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
+  if (row.shipping_until && row.shipping_until > Date.now()) {
+    const minutes = Math.max(1, Math.ceil((row.shipping_until - Date.now()) / 60000));
+    return res.status(400).json({ error: `That car is still in transit — arrives in ${minutes} min.` });
+  }
   if (row.city !== ch.city) {
     return res.status(400).json({ error: `That car is in ${cityById(row.city)?.name || row.city}. Fly there to drive it.` });
   }
@@ -200,6 +206,9 @@ router.post('/ship-vehicle', requireAuth, requireCharacter, (req, res) => {
   const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
   if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
   if (row.city === to) return res.status(400).json({ error: 'That vehicle is already in that city.' });
+  if (row.shipping_until && row.shipping_until > Date.now()) {
+    return res.status(400).json({ error: 'That car is already in transit. Wait for it to arrive.' });
+  }
   const v = vehicleById(row.vehicle_id);
   if (!v) return res.status(400).json({ error: 'Unknown vehicle.' });
   if (freeGarageSpace(ch.id, to) <= 0) {
@@ -207,11 +216,18 @@ router.post('/ship-vehicle', requireAuth, requireCharacter, (req, res) => {
   }
   const cost = shipCost(v, to);
   if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost.toLocaleString()} to ship.` });
+  // Shipping mirrors a business-class flight on the same route, so a
+  // tier-7 hyper to Hong Kong takes the same 13-ish minutes a player
+  // would spend in the air themselves.
+  const dur = flightDurationMs(row.city, to, FLIGHT_CLASSES.business.durationMul);
+  const arrivesAt = Date.now() + dur;
   ch.cash -= cost;
-  db.prepare('UPDATE vehicles_owned SET city = ? WHERE id = ?').run(to, id);
+  db.prepare('UPDATE vehicles_owned SET city = ?, shipping_until = ? WHERE id = ?')
+    .run(to, dur > 0 ? arrivesAt : null, id);
   saveCharacter(ch);
-  writeLog(ch.id, 'shop', `Shipped ${v.maker} ${v.name} to ${cityById(to).name} for £${cost.toLocaleString()}.`, { vehicle: v.id, from: row.city, to, cost });
-  res.json({ ok: true, cost, character: publicCharacter(ch) });
+  writeLog(ch.id, 'shop', `Shipped ${v.maker} ${v.name} to ${cityById(to).name} for £${cost.toLocaleString()} — arriving in ${Math.max(1, Math.round(dur / 60000))} min.`,
+    { vehicle: v.id, from: row.city, to, cost, durationMs: dur });
+  res.json({ ok: true, cost, durationMs: dur, arrivesAt, character: publicCharacter(ch) });
 });
 
 router.post('/buy', requireAuth, requireCharacter, (req, res) => {

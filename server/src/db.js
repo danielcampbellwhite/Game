@@ -655,6 +655,11 @@ export function initDb() {
   // stolen cars start at 75-100 (rolled at theft time). Selling/repair
   // costs scale with this value.
   addColumnIfMissing('vehicles_owned', 'condition', 'REAL NOT NULL DEFAULT 100');
+  // Set when a car is in transit between cities (paid shipping).
+  // shipping_until > now ⇒ car is locked: can't be equipped, listed,
+  // or re-shipped. The row's `city` already points at the destination
+  // so its garage slot is reserved on arrival; the lock just gates use.
+  addColumnIfMissing('vehicles_owned', 'shipping_until', 'INTEGER');
   // Phase 2F: shop listings can now reference per-instance items
   // (weapon_instances row or vehicles_owned row). instance_id is null
   // for stacked items (misc/weapon/armour/ammo/drug); set when kind is

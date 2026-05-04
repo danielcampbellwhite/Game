@@ -441,6 +441,9 @@ router.post('/:id/listings/inventory', requireAuth, requireCharacter, (req, res)
       if (ch.active_vehicle_id === instanceId) {
         return res.status(400).json({ error: 'Store your car in a garage before listing it.' });
       }
+      if (row.shipping_until && row.shipping_until > Date.now()) {
+        return res.status(400).json({ error: 'That car is still in transit — wait for it to arrive.' });
+      }
       const already = db.prepare("SELECT id FROM shop_listings WHERE kind = 'vehicle' AND instance_id = ?").get(instanceId);
       if (already) return res.status(409).json({ error: 'Already listed in a shop.' });
       db.prepare(`

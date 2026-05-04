@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import Timer from '../components/Timer.jsx';
 import { fmt } from '../components/Money.jsx';
 
 // Per-card vehicle row. Surfaces the active-car state ("driving"
@@ -20,6 +21,7 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
 
   const destinations = garages.filter(g => g.city !== v.city && g.free > 0);
   const inCurrentCity = v.city === currentCity;
+  const inTransit = !!v.shipping_until;
 
   useEffect(() => {
     if (!to) { setQuote(null); return; }
@@ -55,7 +57,13 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
         {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
       </div>
       <div className="text-[10px] text-ink-100/40 mt-0.5 truncate">
-        {v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · {v.is_active ? 'with you' : `garaged in ${v.cityName}`}
+        {v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · {
+          v.is_active
+            ? 'with you'
+            : inTransit
+              ? <>in transit to {v.cityName} · <Timer until={v.shipping_until} prefix="arrives in " onExpire={onChange} /></>
+              : `garaged in ${v.cityName}`
+        }
       </div>
       {typeof v.condition === 'number' && (
         <div className="mt-1 flex items-center gap-2 min-w-0">
@@ -74,7 +82,7 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
         </div>
       )}
       <div className="mt-2 flex flex-col sm:flex-row sm:justify-end sm:flex-wrap gap-2">
-        {v.is_active ? (
+        {inTransit ? null : v.is_active ? (
           <button onClick={() => call('store-vehicle')} disabled={busy}
             className="btn btn-ghost text-[11px] w-full sm:w-auto">{busy ? '…' : 'Store'}</button>
         ) : (

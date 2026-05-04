@@ -4,6 +4,7 @@ import { requireAuth, requireCharacter, requireFreeCharacter } from '../middlewa
 import { CITIES, cityById, landReachableFrom, landDistanceBetween, vehicleById } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 
 const router = Router();
 
@@ -13,21 +14,6 @@ const router = Router();
 const DRIVE_COST_PER_KM       = 0.10;   // £/km
 const DRIVE_MS_PER_KM         = 1500;   // 1.5s per km of road = ~25 min per 1000km
 const CONDITION_LOSS_PER_KM   = 1 / 500; // 1% per 500km
-
-const FLIGHT_CLASSES = {
-  economy:    { mul: 1.0, durationMul: 1.0 },
-  business:   { mul: 2.5, durationMul: 0.5 },
-  first:      { mul: 6.0, durationMul: 0.0 }, // instant
-};
-
-function flightDurationMs(fromCity, toCity, durationMul) {
-  const from = cityById(fromCity);
-  const to = cityById(toCity);
-  if (!from || !to) return 0;
-  // Simple heuristic: distance proxy is sum of indices spread
-  const baseMin = 5 + Math.abs(CITIES.indexOf(from) - CITIES.indexOf(to)) * 2;
-  return Math.floor(baseMin * 60 * 1000 * durationMul);
-}
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
