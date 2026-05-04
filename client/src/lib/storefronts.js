@@ -7,6 +7,7 @@
 
 import gunstoreClerkUS from '../assets/gunstore-clerk.webp';
 import gunstoreClerkLondon from '../assets/gunstore-clerk-london.webp';
+import gunstoreClerkKingston from '../assets/gunstore-clerk-kingston.webp';
 
 const TEX_US = { name: "Tex's Gun Shop", image: gunstoreClerkUS, clerk: 'Tex',
   quote: "Howdy, partner — walk in armed, walk out armoured." };
@@ -16,7 +17,9 @@ export const STOREFRONTS = {
     new_york:    TEX_US,
     los_angeles: TEX_US,
     miami:       TEX_US,
-    kingston:    { name: "Yardman Arms" },
+    kingston:    { name: "Yardie Gun Shop", image: gunstoreClerkKingston,
+                   clerk: 'Bredren',
+                   quote: "Wha gwaan? We don't call 911 — respect the gun, respect life." },
     rio:         { name: "Praça das Armas" },
     london:      { name: "Holland & Holland's Weaponry", image: gunstoreClerkLondon,
                    clerk: 'Mr. Holland',
