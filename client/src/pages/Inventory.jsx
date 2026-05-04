@@ -73,19 +73,19 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
           {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
         </div>
       )}
-      <div className="mt-2 flex flex-wrap justify-end gap-2">
+      <div className="mt-2 flex flex-col sm:flex-row sm:justify-end sm:flex-wrap gap-2">
         {v.is_active ? (
           <button onClick={() => call('store-vehicle')} disabled={busy}
-            className="btn btn-ghost text-[11px]">{busy ? '…' : 'Store'}</button>
+            className="btn btn-ghost text-[11px] w-full sm:w-auto">{busy ? '…' : 'Store'}</button>
         ) : (
           <>
             {inCurrentCity && !hasActive && (
               <button onClick={() => call('equip-vehicle')} disabled={busy}
-                className="btn btn-ghost text-[11px]">{busy ? '…' : 'Drive'}</button>
+                className="btn btn-ghost text-[11px] w-full sm:w-auto">{busy ? '…' : 'Drive'}</button>
             )}
             <button
               onClick={() => setShipping(s => !s)}
-              className="btn btn-ghost text-[11px]"
+              className="btn btn-ghost text-[11px] w-full sm:w-auto"
               disabled={destinations.length === 0 || busy}
               title={destinations.length === 0 ? 'No other city has free garage space' : 'Ship to another city'}>
               {shipping ? 'Cancel' : 'Ship'}
@@ -459,7 +459,7 @@ export default function Inventory() {
           {!inv.vehicles.length ? (
             <p className="text-sm text-ink-100/60">No vehicles yet. Steal one or buy from the dealership.</p>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-w-0">
               {inv.vehicles.map(v => (
                 <VehicleCard key={v.id} v={v} garages={inv.garages || []}
                   currentCity={character?.city}
