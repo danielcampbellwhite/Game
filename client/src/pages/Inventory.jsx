@@ -41,31 +41,31 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
   }
 
   return (
-    <div className={`rounded-lg p-3 border bg-ink-950/40 ${
+    <div className={`min-w-0 rounded-lg p-3 border bg-ink-950/40 overflow-hidden ${
       v.is_active ? 'border-money-500/60 bg-money-600/10'
         : v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'
     }`}>
-      <div className="flex items-baseline justify-between gap-2">
-        <div className="font-medium">{v.maker} {v.name}</div>
-        {v.is_active && <span className="text-[10px] uppercase tracking-wide text-money-300">driving</span>}
-        {!v.is_active && v.is_modified && <span className="text-[10px] uppercase text-yellow-300">modded</span>}
+      <div className="flex items-baseline justify-between gap-2 min-w-0">
+        <div className="font-medium truncate min-w-0">{v.maker} {v.name}</div>
+        {v.is_active && <span className="text-[10px] uppercase tracking-wide text-money-300 shrink-0">driving</span>}
+        {!v.is_active && v.is_modified && <span className="text-[10px] uppercase text-yellow-300 shrink-0">modded</span>}
       </div>
-      <div className="text-[11px] text-ink-100/60">
+      <div className="text-[11px] text-ink-100/60 truncate">
         Tier {v.tier} · book {fmt(v.bookPrice)}
         {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
       </div>
-      <div className="text-[10px] text-ink-100/40 mt-0.5">
+      <div className="text-[10px] text-ink-100/40 mt-0.5 truncate">
         {v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · {v.is_active ? 'with you' : `garaged in ${v.cityName}`}
       </div>
       {typeof v.condition === 'number' && (
-        <div className="mt-1 flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+        <div className="mt-1 flex items-center gap-2 min-w-0">
+          <div className="flex-1 min-w-0 h-1.5 rounded-full bg-ink-800 overflow-hidden">
             <div
               className={v.condition >= 75 ? 'bg-money-500' : v.condition >= 40 ? 'bg-yellow-400' : 'bg-blood-500'}
               style={{ width: `${Math.max(0, Math.min(100, v.condition))}%`, height: '100%' }}
             />
           </div>
-          <span className="text-[10px] text-ink-100/55 tabular-nums w-10 text-right">{Math.round(v.condition)}%</span>
+          <span className="text-[10px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.condition)}%</span>
         </div>
       )}
       {v.mods?.length > 0 && (
@@ -73,10 +73,10 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
           {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
         </div>
       )}
-      <div className="mt-2 flex justify-end gap-2">
+      <div className="mt-2 flex flex-wrap justify-end gap-2">
         {v.is_active ? (
           <button onClick={() => call('store-vehicle')} disabled={busy}
-            className="btn btn-ghost text-[11px]">{busy ? '…' : 'Store in garage'}</button>
+            className="btn btn-ghost text-[11px]">{busy ? '…' : 'Store'}</button>
         ) : (
           <>
             {inCurrentCity && !hasActive && (
