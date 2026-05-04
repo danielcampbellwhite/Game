@@ -130,10 +130,10 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
 
 function EvidenceBoard({ character, lockedOut }) {
   // Polar layout — start at the top (-90°) and walk clockwise so the
-  // first node sits straight above the silhouette. Radius 35 keeps the
-  // article cards (each ~140px wide on desktop) inside the container
-  // even on a 360px-wide phone, avoiding horizontal overflow.
-  const RADIUS = 35;
+  // first node sits straight above the silhouette. Radius 30 pulls the
+  // ring in tight so each card stays fully on-screen on a 360px-wide
+  // phone (cards are ~112px there, otherwise the outermost edge clips).
+  const RADIUS = 30;
   const positions = NODES.map((_, i) => {
     const angle = ((-90 + (i * 360 / NODES.length)) * Math.PI) / 180;
     return {
@@ -241,7 +241,7 @@ function EvidenceBoard({ character, lockedOut }) {
           onClick={() => document.getElementById('character-sheet')
             ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           aria-label="Jump to character sheet"
-          className="w-28 h-36 sm:w-36 sm:h-48 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500 rounded
+          className="w-20 h-28 sm:w-28 sm:h-40 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500 rounded
             drop-shadow-[0_0_14px_rgba(220,38,38,0.55)] drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
           <GangsterBust />
         </button>
