@@ -54,21 +54,39 @@ router.post('/:locationId/capture', requireAuth, requireCharacter, requireFreeCh
   const result = capture(ch, mem, locationId);
   if (result.error) return res.status(400).json({ error: result.error });
 
-  // Persist energy + log
+  // Persist energy + write a flavour log line that reflects the
+  // actual outcome (capture / lost-and-walked / lost-and-hospital /
+  // lost-and-jailed). All notify-flagged so the player sees it in
+  // the bell.
   saveCharacter(ch);
+  let logMsg;
+  if (result.captured) {
+    logMsg = `Captured "${meta.name}" for ${mem.name}.`;
+  } else if (result.failOutcome === 'hospital') {
+    logMsg = `Beaten back trying to take "${meta.name}" — hospitalised ${result.consequenceMins}m.`;
+  } else if (result.failOutcome === 'jail') {
+    logMsg = `Caught attacking "${meta.name}" — jailed ${result.consequenceMins}m.`;
+  } else {
+    logMsg = `Failed to take "${meta.name}". Defenders held the line.`;
+  }
   writeLog(
     ch.id,
     'gang',
-    result.captured
-      ? `Captured "${meta.name}" for ${mem.name}.`
-      : `Failed to capture "${meta.name}". Defender held.`,
-    { location: locationId, captured: result.captured },
+    logMsg,
+    {
+      location: locationId,
+      captured: result.captured,
+      failOutcome: result.failOutcome,
+      consequenceMins: result.consequenceMins,
+    },
     true,
   );
   res.json({
     ok: true,
     captured: result.captured,
     detail: result.detail,
+    failOutcome: result.failOutcome,
+    consequenceMins: result.consequenceMins,
     territory: result.territory,
     character: publicCharacter(ch),
   });

@@ -165,6 +165,12 @@ router.post('/invites/:id/accept', requireAuth, requireCharacter, (req, res) => 
   if (loadMembership(ch.id)) return res.status(409).json({ error: 'You are already in a gang.' });
   const g = loadGang(inv.gang_id);
   if (!g) return res.status(404).json({ error: 'Gang no longer exists.' });
+  // Hard cap on gang size.
+  const MAX_GANG_MEMBERS = 30;
+  const memberCount = db.prepare('SELECT COUNT(*) AS n FROM gang_members WHERE gang_id = ?').get(g.id).n;
+  if (memberCount >= MAX_GANG_MEMBERS) {
+    return res.status(409).json({ error: `That gang is full (${MAX_GANG_MEMBERS}/${MAX_GANG_MEMBERS}).` });
+  }
 
   const now = Date.now();
   db.prepare('UPDATE gang_invites SET status = \'accepted\' WHERE id = ?').run(id);
