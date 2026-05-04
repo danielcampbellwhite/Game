@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import { api } from '../api.js';
 import Card from '../components/Card.jsx';
+import FactionBadge from '../components/FactionBadge.jsx';
 import LogFeed from '../components/LogFeed.jsx';
 import { fmt } from '../components/Money.jsx';
 import Timer from '../components/Timer.jsx';
@@ -236,6 +237,63 @@ function EvidenceBoard({ character, lockedOut }) {
   );
 }
 
+function PrettyCity({ city }) {
+  if (!city) return null;
+  return city.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+}
+
+function CharacterSheet({ c }) {
+  const stats = [
+    ['STR', c.strength],
+    ['DEF', c.defence],
+    ['SPD', c.speed],
+    ['INT', c.intelligence],
+  ];
+  const money = [
+    ['Cash',      c.cash],
+    ['Bank',      c.bank],
+    ['Net worth', c.net_worth],
+  ];
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        {c.avatar && <span className="text-4xl leading-none shrink-0">{c.avatar}</span>}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="font-display text-xl text-ink-50 truncate">{c.name}</h2>
+            <FactionBadge faction={c.faction} />
+          </div>
+          <p className="text-xs text-ink-100/60 mt-0.5">
+            Lvl {c.at_max_level ? '999+' : c.level} · {c.rank}
+            {c.city && <> · <PrettyCity city={c.city} /></>}
+          </p>
+          <p className="text-[10px] uppercase tracking-wide text-ink-100/45 mt-0.5">
+            Reputation <span className="text-gold-400 tabular-nums">{c.reputation.toLocaleString()}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        {money.map(([label, value]) => (
+          <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 leading-tight">
+            <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</div>
+            <div className="text-sm tabular-nums text-money-400 font-medium truncate">{fmt(value)}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-4 gap-2 mt-2">
+        {stats.map(([label, value]) => (
+          <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 text-center leading-tight">
+            <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</div>
+            <div className="text-sm tabular-nums text-ink-50">{value.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const { character, log, refresh } = useGame();
   const [daily, setDaily] = useState(null);
@@ -289,6 +347,8 @@ export default function Dashboard() {
           )}
         </Card>
       )}
+
+      <CharacterSheet c={c} />
 
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 
