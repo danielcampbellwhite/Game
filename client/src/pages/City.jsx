@@ -7,21 +7,21 @@ import WorldMap from '../components/WorldMap.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
 
 const AROUND_TOWN = [
-  { to: '/bank',       icon: '', name: 'First National Bank',     blurb: 'Deposits, withdrawals, loans, hourly interest.' },
-  { to: '/dealership', icon: '', name: 'Premier Auto',             blurb: 'Showroom — buy any of 105 vehicles, titled and clean.' },
+  { to: '/bank',       icon: '', name: 'Bank',                     blurb: 'Deposits, withdrawals, loans, hourly interest.' },
+  { to: '/dealership', icon: '', name: 'Car Dealership',           blurb: 'Showroom — buy any of 105 vehicles, titled and clean.' },
   { to: '/property',   icon: '', name: 'Estate Agent',             blurb: 'Flats, houses, mansions, compounds — passive bonuses.' },
-  { to: '/gun-store',  icon: '', name: 'Smokey\'s Gun Emporium',   blurb: 'Pistols, rifles, shotguns, snipers + ammo.' },
+  { to: '/gun-store',  icon: '', name: 'Weapon Dealer',            blurb: 'Pistols, rifles, shotguns, snipers + ammo.' },
   { to: '/stocks',     icon: '', name: 'Stock Broker',             blurb: 'Live tickers — MetroBank, Titan Arms, SkyJet, Nova.' },
-  { to: '/gym',        icon: '', name: 'Iron Foundry Gym',          blurb: '10 machines for strength, defence, speed — temporary buffs that decay.' },
-  { to: '/range',      icon: '', name: 'Linden Shooting Range',     blurb: 'Burn ammo to train accuracy. Boosts ranged hit chance, decays over time.' },
-  { to: '/university', icon: '', name: 'Northbridge University',    blurb: 'Programmes that permanently raise intelligence.', hideWhen: c => c.intelligence >= (c.stat_caps?.intelligence || Infinity) },
-  { to: '/general-store', icon: '', name: "Murphy's General Store",   blurb: 'Odds, ends, and props. Most are mission gear; a few lift your mood.' },
-  { to: '/businesses',    icon: '', name: 'Business Office',          blurb: 'Found new fronts and manage your empire.' },
-  { to: '/jobs',          icon: '', name: 'Job Board',                 blurb: 'Permanent employment — apply for a job and bring in passive cash on a daily check-in.' },
-  { to: '/shops',         icon: '', name: 'Player Shops',             blurb: 'Browse player-run shops — or set up your own storefront.' },
-  { to: '/travel',     icon: '', name: 'International Airport',    blurb: 'Flights to 11 other cities — economy, business, first class.' },
-  { to: '/hospital',   icon: '', name: 'Saint Mary\'s Trauma Centre', blurb: 'Top up health on demand, or cover the bill for another patient.' },
-  { to: '/jail',       icon: '', name: 'City Holding Cells',         blurb: 'Visit the cells — bail a friend out, or risk a bust.' },
+  { to: '/gym',        icon: '', name: 'Gym',                      blurb: '10 machines for strength, defence, speed — temporary buffs that decay.' },
+  { to: '/range',      icon: '', name: 'Shooting Range',           blurb: 'Burn ammo to train accuracy. Boosts ranged hit chance, decays over time.' },
+  { to: '/university', icon: '', name: 'University',               blurb: 'Programmes that permanently raise intelligence.', hideWhen: c => c.intelligence >= (c.stat_caps?.intelligence || Infinity) },
+  { to: '/general-store', icon: '', name: 'General Store',         blurb: 'Odds, ends, and props. Most are mission gear; a few lift your mood.' },
+  { to: '/businesses',    icon: '', name: 'Business Office',       blurb: 'Found new fronts and manage your empire.' },
+  { to: '/jobs',          icon: '', name: 'Job Board',             blurb: 'Permanent employment — apply for a job and bring in passive cash on a daily check-in.' },
+  { to: '/shops',         icon: '', name: 'Player Shops',          blurb: 'Browse player-run shops — or set up your own storefront.' },
+  { to: '/travel',     icon: '', name: 'Airport',                  blurb: 'Flights to 11 other cities — economy, business, first class.' },
+  { to: '/hospital',   icon: '', name: 'Hospital',                 blurb: 'Top up health on demand, or cover the bill for another patient.' },
+  { to: '/jail',       icon: '', name: 'Jail',                     blurb: 'Visit the cells — bail a friend out, or risk a bust.' },
 ];
 
 const UNDERWORLD = [
