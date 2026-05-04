@@ -1056,7 +1056,18 @@ export const STAT_CAPS = {
   defence:      30,
   speed:        30,
   intelligence: 110,
+  driving:      80,
 };
+
+// Driving School — permanent gains to the `driving` stat. Same shape
+// as UNIVERSITY_COURSES so the client can render them with one
+// component. No temporary buffs; everything you earn here is forever.
+export const DRIVING_COURSES = [
+  { id: 'theory',  name: 'Theory Test',     emoji: '', energy: 3,  baseCost: 60,    gain: 1, cooldownSec: 4 * 3600,   desc: 'Highway code from the comfort of your phone.' },
+  { id: 'lessons', name: 'Driving Lessons', emoji: '', energy: 5,  baseCost: 220,   gain: 2, cooldownSec: 12 * 3600,  desc: 'A patient instructor and a sensible saloon.' },
+  { id: 'track',   name: 'Track Day',       emoji: '', energy: 9,  baseCost: 800,   gain: 4, cooldownSec: 24 * 3600,  desc: 'Apex hunting at a private circuit.' },
+  { id: 'pro',     name: 'Pro Coaching',    emoji: '', energy: 12, baseCost: 2200,  gain: 7, cooldownSec: 72 * 3600,  desc: 'One-on-one with an ex-F1 driver.' },
+];
 
 //  Fight Club moves 
 // Each turn the player picks one move; the enemy AI rolls its own from a

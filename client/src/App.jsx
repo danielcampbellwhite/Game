@@ -19,6 +19,8 @@ import Property from './pages/Property.jsx';
 import Gym from './pages/Gym.jsx';
 import Range from './pages/Range.jsx';
 import University from './pages/University.jsx';
+import DrivingSchool from './pages/DrivingSchool.jsx';
+import Races from './pages/Races.jsx';
 import Inventory from './pages/Inventory.jsx';
 import Missions from './pages/Missions.jsx';
 import GeneralStore from './pages/GeneralStore.jsx';
@@ -27,6 +29,7 @@ import Player from './pages/Player.jsx';
 import Messages from './pages/Messages.jsx';
 import PvpFight from './pages/PvpFight.jsx';
 import PvpChallengeModal from './components/PvpChallengeModal.jsx';
+import RaceChallengeModal from './components/RaceChallengeModal.jsx';
 import Gangs from './pages/Gangs.jsx';
 import Gang from './pages/Gang.jsx';
 import Wars from './pages/Wars.jsx';
@@ -120,6 +123,7 @@ export default function App() {
             <Nav />
           </div>
           <PvpChallengeModal />
+          <RaceChallengeModal />
           <OcInviteModal />
         </>
       ) : null}
@@ -142,6 +146,8 @@ export default function App() {
           <Route path="/gym" element={<Protected><Gym /></Protected>} />
           <Route path="/range" element={<Protected><Range /></Protected>} />
           <Route path="/university" element={<Protected><University /></Protected>} />
+          <Route path="/driving-school" element={<Protected><DrivingSchool /></Protected>} />
+          <Route path="/races" element={<Protected><Races /></Protected>} />
           <Route path="/inventory" element={<Protected><Inventory /></Protected>} />
           <Route path="/missions" element={<Protected><Missions /></Protected>} />
           <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />

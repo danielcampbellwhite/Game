@@ -16,6 +16,7 @@ const AROUND_TOWN = [
   { to: '/gym',        icon: '', name: 'Gym',                      blurb: '10 machines for strength, defence, speed — temporary buffs that decay.' },
   { to: '/range',      icon: '', name: 'Shooting Range',           blurb: 'Burn ammo to train accuracy. Boosts ranged hit chance, decays over time.' },
   { to: '/university', icon: '', name: 'University',               blurb: 'Programmes that permanently raise intelligence.', hideWhen: c => c.intelligence >= (c.stat_caps?.intelligence || Infinity) },
+  { to: '/driving-school', icon: '', name: 'Driving School',       blurb: 'Train your driving skill — boosts race odds and lessens car wear.', hideWhen: c => (c.driving || 1) >= (c.stat_caps?.driving || Infinity) },
   { to: '/general-store', icon: '', name: 'General Store',         blurb: 'Odds, ends, and props. Most are mission gear; a few lift your mood.' },
   { to: '/businesses',    icon: '', name: 'Business Office',       blurb: 'Found new fronts and manage your empire.' },
   { to: '/jobs',          icon: '', name: 'Job Board',             blurb: 'Permanent employment — apply for a job and bring in passive cash on a daily check-in.' },

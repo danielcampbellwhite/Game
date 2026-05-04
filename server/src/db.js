@@ -524,6 +524,37 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_trades_initiator_status ON trades(initiator_id, status);
     CREATE INDEX IF NOT EXISTS idx_trades_recipient_status ON trades(recipient_id, status);
 
+    --  Street races
+    -- Live PvP race request. Challenger picks a tier and a stake; the
+    -- opponent has a short window to accept. On accept the server rolls
+    -- the winner deterministically (using car stats + driving skill +
+    -- some variance), settles cash both ways, and chips condition off
+    -- both cars.
+    --
+    -- status:
+    --   pending   — challenge sent, awaiting response
+    --   completed — opponent accepted; winner_id set
+    --   declined  — opponent declined
+    --   cancelled — challenger pulled before accept
+    --   expired   — auto-cancelled after expires_at
+    CREATE TABLE IF NOT EXISTS races (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      challenger_id INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      opponent_id   INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      tier          INTEGER NOT NULL,
+      stake         INTEGER NOT NULL,
+      status        TEXT    NOT NULL DEFAULT 'pending',
+      city          TEXT    NOT NULL,
+      winner_id     INTEGER,
+      result_json   TEXT,
+      created_at    INTEGER NOT NULL,
+      expires_at    INTEGER NOT NULL,
+      ended_at      INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_races_status ON races(status);
+    CREATE INDEX IF NOT EXISTS idx_races_opponent ON races(opponent_id, status);
+    CREATE INDEX IF NOT EXISTS idx_races_challenger ON races(challenger_id, status);
+
     CREATE TABLE IF NOT EXISTS trade_messages (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       trade_id    INTEGER NOT NULL REFERENCES trades(id) ON DELETE CASCADE,
@@ -643,6 +674,10 @@ export function initDb() {
   // requires storing your active car in a local garage first; selling
   // (any outlet) targets the active car.
   addColumnIfMissing('characters', 'active_vehicle_id', 'INTEGER REFERENCES vehicles_owned(id) ON DELETE SET NULL');
+  // Permanent driving skill — trained at the Driving School. Affects
+  // street-race win odds and reduces the condition penalty when
+  // driving between cities. Capped via STAT_CAPS.driving.
+  addColumnIfMissing('characters', 'driving', 'INTEGER NOT NULL DEFAULT 1');
   // Phase 2: next-of-kin death model. 'alive' is the default; 'pending_heir'
   // means the character has been killed and is waiting for the player to
   // create their heir (name/avatar/city) before the row revives.

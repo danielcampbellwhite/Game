@@ -51,6 +51,20 @@ export default function Player() {
     finally { setBusy(null); }
   }
 
+  const [showRace, setShowRace] = useState(false);
+  const [raceStake, setRaceStake] = useState(1000);
+  async function sendRace() {
+    setBusy('race'); setMsg(null);
+    try {
+      // Tier is derived server-side from the challenger's active car
+      // — opponent has to be driving a same-tier car too.
+      await api.post('/races', { opponent_id: parseInt(id, 10), stake: parseInt(raceStake, 10) });
+      setMsg('Race challenge sent (60s).');
+      setShowRace(false);
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   async function startTrade() {
     setBusy('trade'); setMsg(null);
     try {
@@ -166,6 +180,13 @@ export default function Player() {
               title={!p.same_city ? "Not in your city — find them first." : 'Open a trade window with this player.'}>
               {busy === 'trade' ? '…' : 'Trade'}
             </button>
+            <button
+              disabled={busy === 'race' || !p.same_city}
+              onClick={() => setShowRace(s => !s)}
+              className="btn text-xs"
+              title={!p.same_city ? "Not in your city — find them first." : 'Challenge them to a same-tier street race for cash.'}>
+              {busy === 'race' ? '…' : showRace ? 'Cancel' : 'Race'}
+            </button>
             {/* Invite to my gang — only if I'm officer+ and target has no gang */}
             {(myGang?.role === 'leader' || myGang?.role === 'officer') && !p.gang && (
               <button disabled={busy === 'invite'} onClick={invite} className="btn text-xs">
@@ -181,6 +202,27 @@ export default function Player() {
                 {busy === 'block' ? '…' : 'Block'}
               </button>
             )}
+          </div>
+        )}
+
+        {showRace && !isSelf && (
+          <div className="mt-3 p-3 rounded-md border border-yellow-500/30 bg-yellow-500/5">
+            <div className="text-[10px] uppercase tracking-wide text-yellow-300 mb-1">Street race challenge</div>
+            <p className="text-[11px] text-ink-100/65 mb-2">
+              Both your active cars must be the same tier. Tier matches whichever car you're driving right now —
+              {character?.active_vehicle_id ? ' make sure it slots their car.' : ' equip a car first.'}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-[11px] text-ink-100/55">Stake</label>
+              <input
+                type="number" min={100} step={100} value={raceStake}
+                onChange={e => setRaceStake(e.target.value)}
+                className="w-32"
+              />
+              <button onClick={sendRace} disabled={busy === 'race'} className="btn btn-money text-xs">
+                {busy === 'race' ? '…' : `Send · ${fmt(parseInt(raceStake, 10) || 0)}`}
+              </button>
+            </div>
           </div>
         )}
 

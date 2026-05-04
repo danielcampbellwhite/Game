@@ -121,7 +121,11 @@ router.post('/drive', requireAuth, requireCharacter, requireFreeCharacter, (req,
   const v = vehicleById(row.vehicle_id);
   if (!v) return res.status(404).json({ error: 'Vehicle catalogue missing.' });
 
-  const conditionCost = km * CONDITION_LOSS_PER_KM * 100;
+  // Higher driving skill = lighter foot. 1 → near-full damage,
+  // 80 (cap) → 60% of base damage. Floor 0.4 so the dampener never
+  // disappears entirely.
+  const skillDampener = Math.max(0.4, 1 - (ch.driving ?? 1) * 0.005);
+  const conditionCost = km * CONDITION_LOSS_PER_KM * 100 * skillDampener;
   if (row.condition <= conditionCost) {
     return res.status(400).json({
       error: `That ${v.maker} ${v.name} won't make it (${Math.round(row.condition)}%). Repair it before a long drive.`,
