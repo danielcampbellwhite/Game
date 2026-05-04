@@ -183,7 +183,7 @@ export const territoriesInCity = city => TERRITORIES.filter(t => t.city === city
 // budget. Server-side validation in routes/character.js is the source
 // of truth; the client mirrors the catalogues for the picker UI via
 // /api/character/options.
-export const STARTER_BUDGET = 150_000;
+export const STARTER_BUDGET = 100_000;
 
 // Tier-1 cars only — resolved against VEHICLES at runtime.
 export const STARTER_CAR_IDS = [
