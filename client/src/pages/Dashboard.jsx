@@ -57,10 +57,6 @@ function GangsterBust() {
       <path d="M 26 35 C 26 14, 38 10, 50 10 C 62 10, 74 14, 74 35 Z" fill={FILL_MAIN} />
       {/* hat band */}
       <ellipse cx="50" cy="33" rx="25" ry="2" fill={FILL_ACCENT} />
-      {/* head shadow under brim */}
-      <ellipse cx="50" cy="49" rx="14" ry="11" fill={FILL_SHADE} opacity="0.92" />
-      {/* neck */}
-      <rect x="42" y="58" width="16" height="9" fill={FILL_MAIN} />
       {/* shoulders / coat */}
       <path d="M 8 96 C 8 80, 22 67, 36 64 L 50 78 L 64 64 C 78 67, 92 80, 92 96 L 92 130 L 8 130 Z" fill={FILL_MAIN} />
       {/* lapel left */}
