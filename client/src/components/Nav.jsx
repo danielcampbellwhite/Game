@@ -244,11 +244,11 @@ export default function Nav() {
     <header className="border-b border-ink-100/10 bg-ink-950/85 backdrop-blur">
       {/*  Top bar — branding + character chip + actions  */}
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3">
-        <Link to="/" className="font-display text-xl sm:text-2xl text-blood-500 shrink-0" aria-label="Home">
+        <Link to="/" className="font-display text-3xl sm:text-4xl text-blood-500 shrink-0" aria-label="Home">
           MAFIA LIFE
         </Link>
 
-        <Link to="/" onClick={onClickGuard} className={charChipClass + ' min-w-0'} aria-label="Dashboard">
+        <Link to="/" onClick={onClickGuard} className={charChipClass + ' min-w-0 hidden md:flex'} aria-label="Dashboard">
           <div className="leading-tight min-w-0">
             <div className="text-sm font-medium truncate">{character?.name}</div>
             <div className="text-[10px] text-ink-100/50">
