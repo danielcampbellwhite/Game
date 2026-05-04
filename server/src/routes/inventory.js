@@ -66,6 +66,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       mods: stats.mods,
       acquired_via: r.acquired_via, city: r.city,
       cityName: cityById(r.city)?.name, acquired_at: r.acquired_at,
+      is_active: r.id === ch.active_vehicle_id,
     };
   }).filter(Boolean);
 
@@ -132,11 +133,69 @@ router.get('/ship-quote', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, from: row.city, to, cost, free });
 });
 
+// Equip a car: pull it out of the garage and make it the player's
+// active ride. Requires the car to be in the player's current city
+// (you can't drive a London car around Tokyo) and the player to not
+// already have an active vehicle.
+router.post('/equip-vehicle', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const id = parseInt(req.body?.id, 10);
+  if (ch.active_vehicle_id) {
+    return res.status(400).json({ error: 'You\'re already driving a car. Store or sell it first.' });
+  }
+  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
+  if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
+  if (row.city !== ch.city) {
+    return res.status(400).json({ error: `That car is in ${cityById(row.city)?.name || row.city}. Fly there to drive it.` });
+  }
+  ch.active_vehicle_id = row.id;
+  saveCharacter(ch);
+  const v = vehicleById(row.vehicle_id);
+  writeLog(ch.id, 'shop', `Took the ${v?.maker || ''} ${v?.name || 'car'} out of the garage.`, { vehicle: row.vehicle_id });
+  res.json({ ok: true, character: publicCharacter(ch) });
+});
+
+// Store the active car: park it in a local garage. Requires free
+// space in the current city's garages. After storing the player is
+// on foot and free to fly.
+router.post('/store-vehicle', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  if (!ch.active_vehicle_id) return res.status(400).json({ error: 'You don\'t have an active car to store.' });
+  if (freeGarageSpace(ch.id, ch.city) <= 0) {
+    const cap = db.prepare(`
+      SELECT COUNT(*) AS n FROM properties_owned WHERE char_id = ? AND city = ?
+    `).get(ch.id, ch.city);
+    return res.status(400).json({
+      error: cap?.n
+        ? 'Garage is full in this city. Sell or ship a car before storing another.'
+        : 'No garage in this city. Buy a property first, or sell the car instead.',
+    });
+  }
+  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(ch.active_vehicle_id, ch.id);
+  if (!row) {
+    // Stale active id — clean up and tell the client.
+    ch.active_vehicle_id = null;
+    saveCharacter(ch);
+    return res.status(404).json({ error: 'Active vehicle missing.' });
+  }
+  // Move the car into the player's current city's garage and clear
+  // the active slot.
+  db.prepare('UPDATE vehicles_owned SET city = ? WHERE id = ?').run(ch.city, row.id);
+  ch.active_vehicle_id = null;
+  saveCharacter(ch);
+  const v = vehicleById(row.vehicle_id);
+  writeLog(ch.id, 'shop', `Parked the ${v?.maker || ''} ${v?.name || 'car'} in the ${cityById(ch.city)?.name || ch.city} garage.`, { vehicle: row.vehicle_id });
+  res.json({ ok: true, character: publicCharacter(ch) });
+});
+
 router.post('/ship-vehicle', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const id = parseInt(req.body?.id, 10);
   const to = req.body?.to;
   if (!cityById(to)) return res.status(400).json({ error: 'Unknown destination city.' });
+  if (id === Number(ch.active_vehicle_id)) {
+    return res.status(400).json({ error: 'Your active car can\'t be shipped — store it in a garage first, then ship from there.' });
+  }
   const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
   if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
   if (row.city === to) return res.status(400).json({ error: 'That vehicle is already in that city.' });

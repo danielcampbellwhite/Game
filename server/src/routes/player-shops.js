@@ -438,6 +438,9 @@ router.post('/:id/listings/inventory', requireAuth, requireCharacter, (req, res)
     } else { // vehicle
       const row = loadVehicleRow(instanceId);
       if (!row || row.char_id !== ch.id) return res.status(404).json({ error: 'Vehicle not found.' });
+      if (ch.active_vehicle_id === instanceId) {
+        return res.status(400).json({ error: 'Store your car in a garage before listing it.' });
+      }
       const already = db.prepare("SELECT id FROM shop_listings WHERE kind = 'vehicle' AND instance_id = ?").get(instanceId);
       if (already) return res.status(409).json({ error: 'Already listed in a shop.' });
       db.prepare(`

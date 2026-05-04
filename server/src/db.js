@@ -636,6 +636,13 @@ export function initDb() {
   // When this column is non-null, it overrides the stock equipped_weapon
   // catalogue id for combat purposes.
   addColumnIfMissing('characters', 'equipped_weapon_instance', 'INTEGER REFERENCES weapon_instances(id) ON DELETE SET NULL');
+  // The car the player is currently driving. NULL when they're on foot.
+  // FK to vehicles_owned with ON DELETE SET NULL so chopping/selling the
+  // active car simply leaves the character on foot. Game rules: you can
+  // only attempt a GTA crime when this is null; flying out of a city
+  // requires storing your active car in a local garage first; selling
+  // (any outlet) targets the active car.
+  addColumnIfMissing('characters', 'active_vehicle_id', 'INTEGER REFERENCES vehicles_owned(id) ON DELETE SET NULL');
   // Phase 2: next-of-kin death model. 'alive' is the default; 'pending_heir'
   // means the character has been killed and is waiting for the player to
   // create their heir (name/avatar/city) before the row revives.

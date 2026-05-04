@@ -42,6 +42,16 @@ export default function CarDealer() {
     finally { setBusy(null); }
   }
 
+  async function tradeIn() {
+    setBusy('trade-in'); setMsg(null);
+    try {
+      const r = await api.post('/dealership/sell');
+      setMsg(`Sold your ${data.active.maker} ${data.active.name} for ${fmt(r.payout)}.`);
+      await refresh(); await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   const makers = useMemo(() => Array.from(new Set((data?.inventory || []).map(v => v.maker))).sort(), [data]);
 
   if (!data) return null;
@@ -92,6 +102,35 @@ export default function CarDealer() {
           </div>
         </div>
       </Card>
+
+      {data.active && (
+        <Card title="Trade-in">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{data.active.maker} {data.active.name}</div>
+              <div className="text-[11px] text-ink-100/55">
+                Tier {data.active.tier} · {data.active.acquired_via === 'stolen' ? 'stolen' : 'bought'}
+              </div>
+              {data.active.acquired_via !== 'bought' && (
+                <p className="text-[11px] text-ink-100/55 mt-1">
+                  We only deal in clean paperwork — try a chop shop or the black-market dealer for that one.
+                </p>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              {data.active.tradeIn ? (
+                <>
+                  <div className="text-money-400 tabular-nums font-semibold">{fmt(data.active.tradeIn)}</div>
+                  <button onClick={tradeIn} disabled={busy === 'trade-in'}
+                    className="btn btn-money text-xs mt-1">
+                    {busy === 'trade-in' ? '…' : 'Sell to dealer'}
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {Object.keys(grouped).sort().map(tier => (
         <Card key={tier} title={`${tierEmoji(parseInt(tier, 10))} Tier ${tier} — ${TIER_LABEL[tier]}`}>

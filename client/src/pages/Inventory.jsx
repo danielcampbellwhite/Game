@@ -6,11 +6,12 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 
-// Per-card vehicle row with an inline shipping panel. Owners can pick a
-// destination city the player has free garage space in, see the live
-// quote, and commit. The list of destinations comes from the inventory
-// payload's garages summary so we never offer a city without space.
-function VehicleCard({ v, garages, onChange }) {
+// Per-card vehicle row. Surfaces the active-car state ("driving"
+// vs "in garage"), and exposes the right action per state:
+//   - active                 → Store (back into local garage)
+//   - in player's city, idle → Equip (player must have no active car)
+//   - elsewhere              → Ship (to another city w/ free space)
+function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
   const [shipping, setShipping] = useState(false);
   const [to, setTo] = useState('');
   const [quote, setQuote] = useState(null);
@@ -18,6 +19,7 @@ function VehicleCard({ v, garages, onChange }) {
   const [err, setErr] = useState(null);
 
   const destinations = garages.filter(g => g.city !== v.city && g.free > 0);
+  const inCurrentCity = v.city === currentCity;
 
   useEffect(() => {
     if (!to) { setQuote(null); return; }
@@ -28,10 +30,10 @@ function VehicleCard({ v, garages, onChange }) {
     return () => { live = false; };
   }, [v.id, to]);
 
-  async function ship() {
+  async function call(action, extra) {
     setBusy(true); setErr(null);
     try {
-      await api.post('/inventory/ship-vehicle', { id: v.id, to });
+      await api.post(`/inventory/${action}`, { id: v.id, ...(extra || {}) });
       setShipping(false); setTo(''); setQuote(null);
       await onChange();
     } catch (e) { setErr(e.message); }
@@ -39,33 +41,49 @@ function VehicleCard({ v, garages, onChange }) {
   }
 
   return (
-    <div className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
+    <div className={`rounded-lg p-3 border bg-ink-950/40 ${
+      v.is_active ? 'border-money-500/60 bg-money-600/10'
+        : v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'
+    }`}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="font-medium">{v.maker} {v.name}</div>
-        {v.is_modified && <span className="text-[10px] uppercase text-yellow-300"> modded</span>}
+        {v.is_active && <span className="text-[10px] uppercase tracking-wide text-money-300">driving</span>}
+        {!v.is_active && v.is_modified && <span className="text-[10px] uppercase text-yellow-300">modded</span>}
       </div>
       <div className="text-[11px] text-ink-100/60">
         Tier {v.tier} · book {fmt(v.bookPrice)}
         {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
       </div>
       <div className="text-[10px] text-ink-100/40 mt-0.5">
-        {v.acquired_via === 'stolen' ? ' stolen' : ' bought'} · in {v.cityName}
+        {v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · {v.is_active ? 'with you' : `garaged in ${v.cityName}`}
       </div>
       {v.mods?.length > 0 && (
         <div className="text-[10px] text-ink-100/55 mt-1 truncate">
           {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
         </div>
       )}
-      <div className="mt-2 flex justify-end">
-        <button
-          onClick={() => setShipping(s => !s)}
-          className="btn btn-ghost text-[11px]"
-          disabled={destinations.length === 0}
-          title={destinations.length === 0 ? 'No other city has free garage space' : 'Ship to another city'}>
-          {shipping ? 'Cancel' : 'Ship'}
-        </button>
+      <div className="mt-2 flex justify-end gap-2">
+        {v.is_active ? (
+          <button onClick={() => call('store-vehicle')} disabled={busy}
+            className="btn btn-ghost text-[11px]">{busy ? '…' : 'Store in garage'}</button>
+        ) : (
+          <>
+            {inCurrentCity && !hasActive && (
+              <button onClick={() => call('equip-vehicle')} disabled={busy}
+                className="btn btn-ghost text-[11px]">{busy ? '…' : 'Drive'}</button>
+            )}
+            <button
+              onClick={() => setShipping(s => !s)}
+              className="btn btn-ghost text-[11px]"
+              disabled={destinations.length === 0 || busy}
+              title={destinations.length === 0 ? 'No other city has free garage space' : 'Ship to another city'}>
+              {shipping ? 'Cancel' : 'Ship'}
+            </button>
+          </>
+        )}
       </div>
-      {shipping && (
+      {err && <p className="text-[11px] text-blood-400 mt-1">{err}</p>}
+      {shipping && !v.is_active && (
         <div className="mt-2 pt-2 border-t border-ink-100/10 text-xs space-y-2">
           <select className="w-full" value={to} onChange={e => setTo(e.target.value)}>
             <option value="">— Destination —</option>
@@ -78,8 +96,7 @@ function VehicleCard({ v, garages, onChange }) {
               Shipping cost: <span className="text-money-400 tabular-nums">{fmt(quote.cost)}</span>
             </div>
           )}
-          {err && <p className="text-[11px] text-blood-400">{err}</p>}
-          <button onClick={ship} disabled={!to || !quote || busy}
+          <button onClick={() => call('ship-vehicle', { to })} disabled={!to || !quote || busy}
             className="btn btn-primary w-full text-xs">
             {busy ? '…' : quote ? `Ship for ${fmt(quote.cost)}` : 'Pick a city'}
           </button>
@@ -428,7 +445,9 @@ export default function Inventory() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {inv.vehicles.map(v => (
                 <VehicleCard key={v.id} v={v} garages={inv.garages || []}
-                  onChange={() => load()} />
+                  currentCity={character?.city}
+                  hasActive={!!character?.active_vehicle_id}
+                  onChange={async () => { await load(); await refresh(); }} />
               ))}
             </div>
           )}

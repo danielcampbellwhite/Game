@@ -26,16 +26,22 @@ export default function Travel() {
   }
 
   if (!data) return null;
+  const grounded = !!character?.active_vehicle_id;
   return (
     <Card title=" Travel" subtitle={`Currently in: ${data.currentCity}`}>
       {msg && <p className="text-xs text-blood-400 mb-3">{msg}</p>}
+      {grounded && (
+        <p className="text-xs text-yellow-300 mb-3">
+          You're driving a car. Stash it in a local garage (or sell it) before flying out.
+        </p>
+      )}
       <div className="grid md:grid-cols-2 gap-3">
         {data.flights.map(f => (
           <div key={f.city} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
             <div className="font-medium">{f.emoji} {f.name}</div>
             <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
               {Object.entries(f.classes).map(([k, v]) => (
-                <button key={k} disabled={!!busy || character.cash < v.cost} className="btn"
+                <button key={k} disabled={!!busy || grounded || character.cash < v.cost} className="btn"
                   onClick={() => fly(f.city, k)}>
                   <div>
                     <div className="capitalize">{k}</div>

@@ -8,7 +8,6 @@ import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
 import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
 import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
-import { freeGarageSpace } from '../services/garage.js';
 import { factionBonusMul, factionGlobalCrimeMul } from '../services/territories.js';
 
 const router = Router();
@@ -148,6 +147,11 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   if (!crime) return res.status(400).json({ error: 'Unknown crime' });
   if (ch.level < crime.level) return res.status(403).json({ error: `Requires level ${crime.level}` });
   if (ch.energy < crime.energy) return res.status(400).json({ error: 'Not enough energy' });
+  // GTA: can't lift a car when you've already got one warming the seat.
+  // Drop your active ride first (sell or store).
+  if (crime.tier === 'gta' && ch.active_vehicle_id) {
+    return res.status(400).json({ error: 'Can\'t boost a car while you\'re already driving one — sell or store your current ride first.' });
+  }
 
   // Cooldown check (turf perk same as in GET above)
   const baseCd = crimeCooldownSec(crime);
@@ -197,31 +201,16 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     bumpMission(ch, 'crime_success', 1, { tier: crime.tier, crime: crime.id });
 
     if (crime.tier === 'gta' && crime.vehicleTier) {
-      // Reward = a random car from the matched tier. If there's no
-      // garage space in the current city, the car gets immediately
-      // unloaded at the local chop shop (15% of book) instead of going
-      // into the player's garage — keeps the crime profitable when the
-      // player is already at cap.
+      // Stolen car becomes the player's active ride. Earlier guard
+      // already ensured they had no active vehicle before the heist.
       const v = rollVehicleFromTier(crime.vehicleTier);
-      let chopPayout = 0;
-      let chopped = false;
       if (v) {
-        if (freeGarageSpace(ch.id, ch.city) > 0) {
-          db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at) VALUES (?, ?, ?, ?, ?)')
-            .run(ch.id, v.id, 'stolen', ch.city, Date.now());
-        } else {
-          chopPayout = Math.floor(v.bookPrice * 0.15);
-          ch.cash += chopPayout;
-          chopped = true;
-        }
+        const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at) VALUES (?, ?, ?, ?, ?)')
+          .run(ch.id, v.id, 'stolen', ch.city, Date.now());
+        ch.active_vehicle_id = info.lastInsertRowid;
       }
-      const summary = !v
-        ? `Pulled off "${crime.name}" (+${xpGain}xp).`
-        : chopped
-          ? `Pulled off "${crime.name}" — garage full, chopped the ${v.maker} ${v.name} for £${chopPayout.toLocaleString()} (+${xpGain}xp).`
-          : `Pulled off "${crime.name}" — drove off in a ${v.maker} ${v.name} (+${xpGain}xp).`;
-      writeLog(ch.id, 'crime', summary, { crime: crime.id, vehicle: v?.id, xp: xpGain, chopped, chopPayout });
-      result = { ok: true, success: true, vehicle: v, xp: xpGain, levels: lvls, chopped, chopPayout };
+      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — drove off in a ${v ? v.maker + ' ' + v.name : 'vehicle'} (+${xpGain}xp).`, { crime: crime.id, vehicle: v?.id, xp: xpGain });
+      result = { ok: true, success: true, vehicle: v, xp: xpGain, levels: lvls };
     } else {
       const cityMul = cityById(ch.city)?.businessMul || 1.0;
       // Territory-control bonuses:

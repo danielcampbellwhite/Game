@@ -46,6 +46,11 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
   if (target.id === ch.city) return res.status(400).json({ error: 'Already there' });
   const cls = FLIGHT_CLASSES[klass];
   if (!cls) return res.status(400).json({ error: 'Unknown flight class' });
+  // The airline won't carry your active car. Stash it in a local
+  // garage (or sell it) before you can board.
+  if (ch.active_vehicle_id) {
+    return res.status(400).json({ error: 'Stash your car in a garage before flying out.' });
+  }
   const from = cityById(ch.city);
   const baseFare = Math.floor((from.flightBase + target.flightBase) / 2);
   const cost = Math.floor(baseFare * cls.mul);

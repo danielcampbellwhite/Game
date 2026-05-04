@@ -206,7 +206,8 @@ export default function Crimes() {
             {grouped[tier].map(c => {
               const onCd = !c.ready;
               const reqsMet = c.requirementsMet !== false;
-              const cant = c.locked || character.energy < c.energy || onCd || !reqsMet;
+              const gtaBlocked = c.tier === 'gta' && !!character?.active_vehicle_id;
+              const cant = c.locked || character.energy < c.energy || onCd || !reqsMet || gtaBlocked;
               return (
                 <div key={c.id} className={`rounded-lg p-3 border ${c.locked ? 'border-ink-100/5 opacity-60' : onCd ? 'border-ink-100/10 opacity-70' : 'border-ink-100/10'} bg-ink-950/40`}>
                   <div className="flex justify-between items-start">
@@ -234,11 +235,13 @@ export default function Crimes() {
                       ? '...'
                       : c.locked
                         ? 'Locked'
-                        : !reqsMet
-                          ? 'Need items'
-                          : onCd
-                            ? <>Ready in <Timer until={c.cooldownUntil} onExpire={load} /></>
-                            : 'Attempt'}
+                        : gtaBlocked
+                          ? 'Drop your car first'
+                          : !reqsMet
+                            ? 'Need items'
+                            : onCd
+                              ? <>Ready in <Timer until={c.cooldownUntil} onExpire={load} /></>
+                              : 'Attempt'}
                   </button>
                 </div>
               );

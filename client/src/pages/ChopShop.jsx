@@ -43,9 +43,9 @@ export default function ChopShop() {
       </Card>
 
       {!data.vehicles.length ? (
-        <Card><p className="text-sm text-ink-100/60">Garage is empty. Go pull a GTA crime first.</p></Card>
+        <Card><p className="text-sm text-ink-100/60">No active car. Drive a car here (or pull a GTA crime) before trying to sell.</p></Card>
       ) : (
-        <Card title="Your garage">
+        <Card title="Your active car">
           <div className="grid sm:grid-cols-2 gap-3">
             {data.vehicles.map(v => (
               <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>

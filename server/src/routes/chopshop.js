@@ -40,11 +40,18 @@ function decorateForSale(row) {
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
-  const owned = db.prepare('SELECT * FROM vehicles_owned WHERE char_id = ? ORDER BY id DESC').all(ch.id);
+  // Only the active car can be moved here — every other ride is parked
+  // in a garage, where they're untouchable until the player swaps to
+  // them. Returns an empty list when the player isn't driving.
+  let activeRow = null;
+  if (ch.active_vehicle_id) {
+    activeRow = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(ch.active_vehicle_id, ch.id);
+  }
+  const vehicles = activeRow ? [decorateForSale(activeRow)].filter(Boolean) : [];
   res.json({
     city: ch.city,
     cityName: cityById(ch.city)?.name,
-    vehicles: owned.map(decorateForSale).filter(Boolean),
+    vehicles,
     chopRate: CHOP_RATE,
     dealerRate: DEALER_RATE,
   });
@@ -55,9 +62,14 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   const id = req.body?.id;
   const where = req.body?.where; // 'chop' | 'dealer'
   if (!['chop', 'dealer'].includes(where)) return res.status(400).json({ error: 'where must be chop|dealer' });
+  if (!ch.active_vehicle_id) return res.status(400).json({ error: 'You have no active car to sell.' });
+  // The chop shop / black-market dealer only handle the active ride.
+  if (id && Number(id) !== Number(ch.active_vehicle_id)) {
+    return res.status(400).json({ error: 'Only your active car can be sold here. Equip the car first.' });
+  }
 
-  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
-  if (!row) return res.status(404).json({ error: 'Vehicle not owned' });
+  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(ch.active_vehicle_id, ch.id);
+  if (!row) return res.status(404).json({ error: 'Active vehicle missing.' });
   const v = vehicleById(row.vehicle_id);
   if (!v) return res.status(404).json({ error: 'Vehicle missing' });
   // Modded vehicles can only move through the player economy.
@@ -81,6 +93,7 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
     const jailMin = 20 + Math.floor(Math.random() * 40);
     ch.jail_until = Date.now() + jailMin * 60 * 1000;
     ch.jail_reason = `Walked into a sting trying to fence a ${v.maker} ${v.name} at the black-market dealer — sentenced to ${jailMin} minutes.`;
+    ch.active_vehicle_id = null;
     db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id); // car seized
     writeLog(ch.id, 'chop', ` STING at the black-market dealer — lost the ${v.maker} ${v.name} and jailed ${jailMin}m.`, { vehicle: v.id });
     saveCharacter(ch);
@@ -91,6 +104,7 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   // dealer launder the chassis themselves before payout. Dirty cash
   // only comes from illegal businesses (drug labs, pawn shop, etc.).
   ch.cash += payout;
+  ch.active_vehicle_id = null;
 
   db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id);
   writeLog(ch.id, 'chop', `Sold ${v.maker} ${v.name} at the ${where === 'chop' ? 'chop shop' : 'black-market dealer'} for £${payout.toLocaleString()}.`, { vehicle: v.id, payout, where });
