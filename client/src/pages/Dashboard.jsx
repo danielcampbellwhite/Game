@@ -42,28 +42,35 @@ const ROT = [-4, 3, -2, 5, -3, 4, -5, 2, -3, 4];
 // container; viewBox keeps the shape proportional. The tie pop of red
 // echoes the strings and faction badge palette.
 function GangsterBust() {
+  // White stencil so it pops against the dark corkboard. Mid-grey accents
+  // (hat band, lapels, head shadow) preserve depth without going dark.
+  // Tie stays red as the anchor pop of colour.
+  const FILL_MAIN   = '#fafaf9';   // ink-50 — main silhouette
+  const FILL_ACCENT = '#a8a29e';   // stone-400 — band / lapels
+  const FILL_SHADE  = '#e7e5e4';   // stone-200 — head-under-brim
+  const FILL_COLLAR = '#1f1d1b';   // dark — pops against white shirt
   return (
     <svg viewBox="0 0 100 130" preserveAspectRatio="xMidYMid meet" className="w-full h-full">
       {/* drop shadow */}
-      <ellipse cx="50" cy="128" rx="42" ry="3" fill="rgba(0,0,0,0.4)" />
+      <ellipse cx="50" cy="128" rx="42" ry="3" fill="rgba(0,0,0,0.5)" />
       {/* fedora brim */}
-      <ellipse cx="50" cy="36" rx="42" ry="6" fill="#0a0908" />
+      <ellipse cx="50" cy="36" rx="42" ry="6" fill={FILL_MAIN} />
       {/* fedora crown */}
-      <path d="M 26 35 C 26 14, 38 10, 50 10 C 62 10, 74 14, 74 35 Z" fill="#0a0908" />
+      <path d="M 26 35 C 26 14, 38 10, 50 10 C 62 10, 74 14, 74 35 Z" fill={FILL_MAIN} />
       {/* hat band */}
-      <ellipse cx="50" cy="33" rx="25" ry="2" fill="#1f1d1b" />
+      <ellipse cx="50" cy="33" rx="25" ry="2" fill={FILL_ACCENT} />
       {/* head shadow under brim */}
-      <ellipse cx="50" cy="49" rx="14" ry="11" fill="#0a0908" opacity="0.92" />
+      <ellipse cx="50" cy="49" rx="14" ry="11" fill={FILL_SHADE} opacity="0.92" />
       {/* neck */}
-      <rect x="42" y="58" width="16" height="9" fill="#0a0908" />
+      <rect x="42" y="58" width="16" height="9" fill={FILL_MAIN} />
       {/* shoulders / coat */}
-      <path d="M 8 96 C 8 80, 22 67, 36 64 L 50 78 L 64 64 C 78 67, 92 80, 92 96 L 92 130 L 8 130 Z" fill="#0a0908" />
+      <path d="M 8 96 C 8 80, 22 67, 36 64 L 50 78 L 64 64 C 78 67, 92 80, 92 96 L 92 130 L 8 130 Z" fill={FILL_MAIN} />
       {/* lapel left */}
-      <path d="M 36 64 L 50 78 L 46 100 L 38 76 Z" fill="#1f1d1b" />
+      <path d="M 36 64 L 50 78 L 46 100 L 38 76 Z" fill={FILL_ACCENT} />
       {/* lapel right */}
-      <path d="M 64 64 L 50 78 L 54 100 L 62 76 Z" fill="#1f1d1b" />
+      <path d="M 64 64 L 50 78 L 54 100 L 62 76 Z" fill={FILL_ACCENT} />
       {/* shirt collar */}
-      <path d="M 46 76 L 54 76 L 53 84 L 47 84 Z" fill="#e7e5e4" />
+      <path d="M 46 76 L 54 76 L 53 84 L 47 84 Z" fill={FILL_COLLAR} />
       {/* tie */}
       <path d="M 47 80 L 53 80 L 55 110 L 50 118 L 45 110 Z" fill="#991b1b" />
     </svg>
@@ -226,12 +233,18 @@ function EvidenceBoard({ character, lockedOut }) {
         />
       ))}
 
-      {/* Centre — gangster silhouette only. Identity info lives in the
-          top-bar character chip, no need to duplicate it here. */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
-        <div className="w-28 h-36 sm:w-36 sm:h-48 drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]">
+      {/* Centre — gangster silhouette acts as a jump-link to the
+          character sheet card below the board. */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+        <button
+          type="button"
+          onClick={() => document.getElementById('character-sheet')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          aria-label="Jump to character sheet"
+          className="w-28 h-36 sm:w-36 sm:h-48 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500 rounded
+            drop-shadow-[0_0_14px_rgba(220,38,38,0.55)] drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
           <GangsterBust />
-        </div>
+        </button>
       </div>
     </div>
   );
@@ -255,6 +268,7 @@ function CharacterSheet({ c }) {
     ['Net worth', c.net_worth],
   ];
   return (
+    <div id="character-sheet" className="scroll-mt-4">
     <Card>
       <div className="flex items-start gap-3">
         {c.avatar && <span className="text-4xl leading-none shrink-0">{c.avatar}</span>}
@@ -291,6 +305,7 @@ function CharacterSheet({ c }) {
         ))}
       </div>
     </Card>
+    </div>
   );
 }
 
@@ -348,9 +363,9 @@ export default function Dashboard() {
         </Card>
       )}
 
-      <CharacterSheet c={c} />
-
       <EvidenceBoard character={c} lockedOut={lockedOut} />
+
+      <CharacterSheet c={c} />
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Daily reward">
