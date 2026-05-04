@@ -25,13 +25,11 @@ import Timer from '../components/Timer.jsx';
 
 const NODES = [
   { to: '/city',      label: 'City',       teaser: 'Streets & shops',    style: 'note' },
-  { to: '/inventory', label: 'Inventory',  teaser: 'Your loadout',       style: 'note' },
   { to: '/missions',  label: 'Missions',   teaser: 'Daily ops',          style: 'note' },
   { to: '/crimes',    label: 'Crimes',     teaser: 'Solo & crew jobs',   style: 'note' },
   { to: '/combat',    label: 'Fight Club', teaser: 'Knuckles only',      style: 'note' },
   { to: '/gangs',     label: 'Gangs',      teaser: 'Crews & politics',   style: 'note' },
   { to: '/wars',      label: 'Turf Wars',  teaser: 'Active fronts',      style: 'note' },
-  { to: '/players',   label: 'Players',    teaser: 'Find someone',       style: 'note' },
   { to: '/trades',    label: 'Trades',     teaser: 'Deals on the side',  style: 'note' },
 ];
 
