@@ -32,7 +32,17 @@ function listingsFor(businessId) {
 function lookupItem(kind, itemId, instanceId = null) {
   if (kind === 'misc') {
     const m = miscItemById(itemId);
-    return m ? { name: m.name, emoji: m.emoji || '', sub: m.desc || '' } : null;
+    if (!m) return null;
+    return {
+      name: m.name,
+      emoji: m.emoji || '',
+      sub: m.desc || '',
+      // Surface vital effects so the storefront can show what each
+      // item does when used (e.g. "+10 energy"). Wholesale stockers
+      // already see effects via /wholesale-catalogue; this puts the
+      // same info on the buyer side.
+      effects: m.effects || null,
+    };
   }
   if (kind === 'weapon') {
     const w = weaponById(itemId);
@@ -98,6 +108,7 @@ function decorateListing(row) {
     name: meta.name,
     emoji: meta.emoji,
     desc: meta.sub,
+    effects: meta.effects || null,
     extra: meta.extra || null,
   };
 }

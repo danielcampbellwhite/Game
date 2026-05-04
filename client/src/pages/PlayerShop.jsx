@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import EffectsPills from '../components/EffectsPills.jsx';
 
 function ListingRow({ listing, isOwner, onBuy, onDelist, busy, sameCity }) {
   const [qty, setQty] = useState(1);
@@ -16,6 +17,7 @@ function ListingRow({ listing, isOwner, onBuy, onDelist, busy, sameCity }) {
         <div className="text-money-400 tabular-nums">{fmt(listing.price_each)}</div>
       </div>
       {listing.desc && <div className="text-[11px] text-ink-100/55">{listing.desc}</div>}
+      <EffectsPills effects={listing.effects} />
       <div className="flex items-baseline justify-between gap-2 text-[11px]">
         <span className="text-ink-100/55">in stock: <b className="text-ink-100/85 tabular-nums">{listing.qty}</b></span>
         <span className="text-ink-100/40">{listing.source === 'wholesale' ? 'Wholesale stock' : 'Owner-listed'}</span>
@@ -214,15 +216,22 @@ function StockFromWholesaleForm({ shop, onStocked }) {
           const next = catalogue.find(c => c.id === e.target.value);
           if (next) setRetail(next.base_cost);
         }} className="w-full" disabled={busy}>
-          {catalogue.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.emoji} {c.name} — wholesale {fmt(c.wholesale_cost)} (base {fmt(c.base_cost)})
-            </option>
-          ))}
+          {catalogue.map(c => {
+            const effSummary = c.effects
+              ? ' · ' + Object.entries(c.effects).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k}`).join(', ')
+              : '';
+            return (
+              <option key={c.id} value={c.id}>
+                {c.emoji} {c.name} — wholesale {fmt(c.wholesale_cost)}{effSummary}
+              </option>
+            );
+          })}
         </select>
+        {item.desc && <div className="text-[11px] text-ink-100/55 mt-2">{item.desc}</div>}
         {item.effects && (
-          <div className="text-[10px] text-ink-100/55 mt-1">
-            Effects: {Object.entries(item.effects).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k}`).join(', ')}
+          <div className="mt-2">
+            <div className="text-[9px] uppercase tracking-wide text-ink-100/45 mb-1">Effects when used</div>
+            <EffectsPills effects={item.effects} />
           </div>
         )}
       </div>
