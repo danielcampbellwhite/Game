@@ -31,14 +31,16 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       const av = vehicleById(row.vehicle_id);
       if (av) {
         const cityMul = cityById(ch.city)?.businessMul || 1.0;
+        const condMul = Math.max(0, row.condition ?? 100) / 100;
         active = {
           id: row.id,
           name: av.name,
           maker: av.maker,
           tier: av.tier,
           acquired_via: row.acquired_via,
+          condition: row.condition ?? 100,
           tradeIn: row.acquired_via === 'bought'
-            ? Math.floor(av.bookPrice * cityMul * DEALER_BUYBACK_RATE)
+            ? Math.floor(av.bookPrice * cityMul * DEALER_BUYBACK_RATE * condMul)
             : null,
         };
       }
@@ -104,11 +106,12 @@ router.post('/sell', requireAuth, requireCharacter, (req, res) => {
   if (listed) return res.status(400).json({ error: 'This car is listed in a player shop — delist it first.' });
 
   const cityMul = cityById(ch.city)?.businessMul || 1.0;
-  const payout = Math.floor(v.bookPrice * cityMul * DEALER_BUYBACK_RATE);
+  const condMul = Math.max(0, row.condition ?? 100) / 100;
+  const payout = Math.floor(v.bookPrice * cityMul * DEALER_BUYBACK_RATE * condMul);
   ch.cash += payout;
   ch.active_vehicle_id = null;
   db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id);
-  writeLog(ch.id, 'dealership', `Sold ${v.maker} ${v.name} back to the dealer for £${payout.toLocaleString()}.`, { vehicle: v.id, payout });
+  writeLog(ch.id, 'dealership', `Sold ${v.maker} ${v.name} back to the dealer for £${payout.toLocaleString()} (${Math.round(row.condition ?? 100)}% condition).`, { vehicle: v.id, payout, condition: row.condition });
   saveCharacter(ch);
   res.json({ ok: true, payout, character: publicCharacter(ch) });
 });

@@ -67,6 +67,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       acquired_via: r.acquired_via, city: r.city,
       cityName: cityById(r.city)?.name, acquired_at: r.acquired_at,
       is_active: r.id === ch.active_vehicle_id,
+      condition: r.condition ?? 100,
     };
   }).filter(Boolean);
 

@@ -650,6 +650,11 @@ export function initDb() {
   // Phase 2D: vehicles can be customized in place (already per-instance
   // rows). mods_json is the same shape as weapon_instances.mods_json.
   addColumnIfMissing('vehicles_owned', 'mods_json', "TEXT NOT NULL DEFAULT '{}'");
+  // Condition is a 0-100 percentage that decays as the player drives
+  // the car between cities. New cars from the dealer start at 100;
+  // stolen cars start at 75-100 (rolled at theft time). Selling/repair
+  // costs scale with this value.
+  addColumnIfMissing('vehicles_owned', 'condition', 'REAL NOT NULL DEFAULT 100');
   // Phase 2F: shop listings can now reference per-instance items
   // (weapon_instances row or vehicles_owned row). instance_id is null
   // for stacked items (misc/weapon/armour/ammo/drug); set when kind is

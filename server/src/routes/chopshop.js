@@ -21,6 +21,10 @@ function decorateForSale(row) {
   const book = Math.floor(v.bookPrice * cityMul);
   let modded = false;
   try { modded = Object.keys(JSON.parse(row.mods_json || '{}')).length > 0; } catch {}
+  // Condition is a 0-100% multiplier on every payout — a 50% car only
+  // fetches half its book value across the board.
+  const condition = row.condition ?? 100;
+  const condMul = Math.max(0, condition) / 100;
   return {
     id: row.id,
     vehicle_id: v.id,
@@ -29,8 +33,9 @@ function decorateForSale(row) {
     tier: v.tier,
     image: v.image,
     book,
-    chopPrice:   Math.floor(book * CHOP_RATE),
-    dealerPrice: Math.floor(book * DEALER_RATE),
+    condition,
+    chopPrice:   Math.floor(book * CHOP_RATE   * condMul),
+    dealerPrice: Math.floor(book * DEALER_RATE * condMul),
     acquired_via: row.acquired_via,
     city: row.city,
     cityName: cityById(row.city)?.name,
@@ -86,7 +91,8 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   const cityMul = cityById(row.city)?.businessMul || 1.0;
   const book = Math.floor(v.bookPrice * cityMul);
   const rate = where === 'chop' ? CHOP_RATE : DEALER_RATE;
-  const payout = Math.floor(book * rate);
+  const condMul = Math.max(0, row.condition ?? 100) / 100;
+  const payout = Math.floor(book * rate * condMul);
 
   // Black-market dealer: small bust chance — undercover sting!
   if (where === 'dealer' && Math.random() < DEALER_BUST_CHANCE) {

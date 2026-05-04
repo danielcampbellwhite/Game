@@ -9,6 +9,7 @@ import FactionBadge from '../components/FactionBadge.jsx';
 const AROUND_TOWN = [
   { to: '/bank',       icon: '', name: 'Bank',                     blurb: 'Deposits, withdrawals, loans, hourly interest.' },
   { to: '/dealership', icon: '', name: 'Car Dealership',           blurb: 'Showroom — buy any of 105 vehicles, titled and clean.' },
+  { to: '/repair',     icon: '', name: 'Repair Shop',               blurb: 'Patch up your active car — cost scales with damage and book value.' },
   { to: '/property',   icon: '', name: 'Estate Agent',             blurb: 'Flats, houses, mansions, compounds — passive bonuses.' },
   { to: '/gun-store',  icon: '', name: 'Weapon Dealer',            blurb: 'Pistols, rifles, shotguns, snipers + ammo.' },
   { to: '/stocks',     icon: '', name: 'Stock Broker',             blurb: 'Live tickers — MetroBank, Titan Arms, SkyJet, Nova.' },

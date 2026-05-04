@@ -57,6 +57,17 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
       <div className="text-[10px] text-ink-100/40 mt-0.5">
         {v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · {v.is_active ? 'with you' : `garaged in ${v.cityName}`}
       </div>
+      {typeof v.condition === 'number' && (
+        <div className="mt-1 flex items-center gap-2">
+          <div className="flex-1 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+            <div
+              className={v.condition >= 75 ? 'bg-money-500' : v.condition >= 40 ? 'bg-yellow-400' : 'bg-blood-500'}
+              style={{ width: `${Math.max(0, Math.min(100, v.condition))}%`, height: '100%' }}
+            />
+          </div>
+          <span className="text-[10px] text-ink-100/55 tabular-nums w-10 text-right">{Math.round(v.condition)}%</span>
+        </div>
+      )}
       {v.mods?.length > 0 && (
         <div className="text-[10px] text-ink-100/55 mt-1 truncate">
           {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}

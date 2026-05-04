@@ -203,14 +203,18 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     if (crime.tier === 'gta' && crime.vehicleTier) {
       // Stolen car becomes the player's active ride. Earlier guard
       // already ensured they had no active vehicle before the heist.
+      // Stolen cars roll 75-100% condition — they've been driven by
+      // somebody before you, after all.
       const v = rollVehicleFromTier(crime.vehicleTier);
+      let stolenCondition = 100;
       if (v) {
-        const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at) VALUES (?, ?, ?, ?, ?)')
-          .run(ch.id, v.id, 'stolen', ch.city, Date.now());
+        stolenCondition = Math.round(75 + Math.random() * 25);
+        const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
         ch.active_vehicle_id = info.lastInsertRowid;
       }
-      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — drove off in a ${v ? v.maker + ' ' + v.name : 'vehicle'} (+${xpGain}xp).`, { crime: crime.id, vehicle: v?.id, xp: xpGain });
-      result = { ok: true, success: true, vehicle: v, xp: xpGain, levels: lvls };
+      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — drove off in a ${v ? v.maker + ' ' + v.name : 'vehicle'} (${stolenCondition}% cond, +${xpGain}xp).`, { crime: crime.id, vehicle: v?.id, xp: xpGain, condition: stolenCondition });
+      result = { ok: true, success: true, vehicle: v, condition: stolenCondition, xp: xpGain, levels: lvls };
     } else {
       const cityMul = cityById(ch.city)?.businessMul || 1.0;
       // Territory-control bonuses:

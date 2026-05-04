@@ -36,6 +36,7 @@ import OcInviteModal from './components/OcInviteModal.jsx';
 import CarDealer from './pages/CarDealer.jsx';
 import GunStore from './pages/GunStore.jsx';
 import ChopShop from './pages/ChopShop.jsx';
+import Repair from './pages/Repair.jsx';
 import City from './pages/City.jsx';
 import Casino from './pages/Casino.jsx';
 import Bookmaker from './pages/Bookmaker.jsx';
@@ -158,6 +159,7 @@ export default function App() {
           <Route path="/dealership" element={<Protected><CarDealer /></Protected>} />
           <Route path="/gun-store" element={<Protected><GunStore /></Protected>} />
           <Route path="/chop-shop" element={<Protected><ChopShop /></Protected>} />
+          <Route path="/repair" element={<Protected><Repair /></Protected>} />
           <Route path="/city" element={<Protected><City /></Protected>} />
           <Route path="/casino" element={<Protected><Casino /></Protected>} />
           <Route path="/bookmaker" element={<Protected><Bookmaker /></Protected>} />

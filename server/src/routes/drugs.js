@@ -34,6 +34,18 @@ router.post('/buy', requireAuth, requireCharacter, (_req, res) => {
   res.status(410).json({ error: 'The black market no longer sells. Set up a Weed Farm or Meth Lab — drugs come from your own production now.' });
 });
 
+// Risk of getting busted scales with how much you're shifting in one
+// transaction — small flips fly under the radar, big ones attract the
+// undercover. On bust the stash is seized and the player gets jail
+// time proportional to the size of the deal. Capped so it never feels
+// hopeless.
+const DRUG_SELL_BUST_BASE = 0.03;          // 3% baseline
+const DRUG_SELL_BUST_PER_UNIT = 0.005;     // +0.5% per unit
+const DRUG_SELL_BUST_CAP = 0.25;           // never above 25%
+function drugBustChance(qty) {
+  return Math.min(DRUG_SELL_BUST_CAP, DRUG_SELL_BUST_BASE + qty * DRUG_SELL_BUST_PER_UNIT);
+}
+
 router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const drug = drugById(req.body?.drug_id);
@@ -41,6 +53,24 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   if (!drug) return res.status(400).json({ error: 'Unknown drug' });
   const inv = db.prepare('SELECT qty FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').get(ch.id, 'drug', drug.id);
   if (!inv || inv.qty < qty) return res.status(400).json({ error: 'Not enough stock' });
+
+  // Roll for a bust before paying out. The buyer is undercover — stash
+  // is seized, jail time depends on how much they grabbed.
+  const bustChance = drugBustChance(qty);
+  if (Math.random() < bustChance) {
+    const jailMin = 20 + qty * 2 + Math.floor(Math.random() * 20);
+    ch.jail_until = Date.now() + jailMin * 60 * 1000;
+    ch.jail_reason = `Buyer was undercover — caught fencing ${qty}× ${drug.name}. ${jailMin} minutes inside.`;
+    if (inv.qty === qty) {
+      db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').run(ch.id, 'drug', drug.id);
+    } else {
+      db.prepare('UPDATE inventory SET qty = qty - ? WHERE char_id = ? AND kind = ? AND item_id = ?').run(qty, ch.id, 'drug', drug.id);
+    }
+    writeLog(ch.id, 'drugs', `BUSTED selling ${qty}× ${drug.name} — stash seized, ${jailMin}m inside.`, { drug: drug.id, qty }, true);
+    saveCharacter(ch);
+    return res.json({ ok: true, busted: true, jailMin, character: publicCharacter(ch) });
+  }
+
   const price = getDrugPrice(ch.city, drug.id);
   const earn = price * qty;
   ch.dirty_cash += earn;

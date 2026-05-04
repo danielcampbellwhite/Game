@@ -33,6 +33,67 @@ export const CITIES = [
   { id: 'cape_town',   name: 'Cape Town',    emoji: '', drugMul: 0.75, businessMul: 0.80, flightBase: 2100 },
 ];
 
+// Drivable land routes between cities — undirected edges with a
+// rough real-world km distance. Pairs not listed here are water-locked
+// (or so far apart by road that nobody would drive). The graph is
+// disjoint by design: islands like Tokyo, Sydney, Kingston, Cape Town
+// and Rio have no edges and can only be reached by flight.
+export const LAND_EDGES = [
+  // US triangle
+  { a: 'new_york',    b: 'los_angeles', km: 4500 },
+  { a: 'new_york',    b: 'miami',       km: 2100 },
+  { a: 'los_angeles', b: 'miami',       km: 4400 },
+  // Eurasian chain
+  { a: 'london',      b: 'paris',       km: 470  }, // via Channel Tunnel
+  { a: 'paris',       b: 'berlin',      km: 1050 },
+  { a: 'berlin',      b: 'moscow',      km: 1800 },
+  { a: 'moscow',      b: 'dubai',       km: 3500 }, // via Iran
+  { a: 'moscow',      b: 'hong_kong',   km: 7300 }, // via China
+];
+
+// Adjacency map: city -> [{ to, km }]
+const _ADJ = {};
+for (const e of LAND_EDGES) {
+  (_ADJ[e.a] = _ADJ[e.a] || []).push({ to: e.b, km: e.km });
+  (_ADJ[e.b] = _ADJ[e.b] || []).push({ to: e.a, km: e.km });
+}
+
+// Dijkstra over LAND_EDGES. Returns the total km between two cities
+// via the shortest road path, or null if there's no path (e.g. the
+// destination is on a different continent / island).
+export function landDistanceBetween(from, to) {
+  if (!from || !to || from === to) return null;
+  const dist = { [from]: 0 };
+  const queue = [from];
+  while (queue.length) {
+    queue.sort((a, b) => dist[a] - dist[b]);
+    const cur = queue.shift();
+    if (cur === to) return dist[to];
+    for (const { to: nbr, km } of (_ADJ[cur] || [])) {
+      const alt = dist[cur] + km;
+      if (alt < (dist[nbr] ?? Infinity)) {
+        dist[nbr] = alt;
+        if (!queue.includes(nbr)) queue.push(nbr);
+      }
+    }
+  }
+  return null;
+}
+
+// Returns the list of cities reachable by road from `from`, with their
+// km distance. Excludes the origin itself. Used to populate the drive
+// picker in /api/travel.
+export function landReachableFrom(from) {
+  if (!_ADJ[from]) return [];
+  const reachable = [];
+  for (const c of CITIES) {
+    if (c.id === from) continue;
+    const km = landDistanceBetween(from, c.id);
+    if (km != null) reachable.push({ city: c.id, name: c.name, km });
+  }
+  return reachable.sort((a, b) => a.km - b.km);
+}
+
 // Serious / criminal / mysterious. Suits, silhouettes, sterner faces — no
 // smileys, astronauts, rockstars, etc.
 export const AVATARS = ['', '', '', '', '', '', '', '', '', '', '', ''];
