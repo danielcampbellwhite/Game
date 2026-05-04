@@ -430,14 +430,20 @@ export default function Inventory() {
 
       {/*  Vehicles  */}
       {tab === 'vehicles' && (
-        <Card title=" Vehicles" subtitle={`${inv.vehicles.length} cars across your garages — sell stolen ones at the Chop Shop, trade in legit ones the same place.`}
-          right={
-            <div className="flex gap-2 text-xs">
-              <Link className="btn btn-ghost" to="/customize/vehicles"> Customize</Link>
+        <Card>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-xl text-ink-50">Vehicles</h3>
+              <p className="text-xs text-ink-100/50 mt-0.5">
+                {inv.vehicles.length} cars across your garages — sell stolen ones at the Chop Shop, trade in legit ones the same place.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs shrink-0">
+              <Link className="btn btn-ghost" to="/customize/vehicles">Customize</Link>
               <Link className="btn btn-ghost" to="/dealership">→ Car Dealer</Link>
               <Link className="btn btn-ghost" to="/chop-shop">→ Chop Shop</Link>
             </div>
-          }>
+          </div>
           {inv.garages?.length > 0 && (
             <div className="mb-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[11px]">
               {inv.garages.map(g => (
