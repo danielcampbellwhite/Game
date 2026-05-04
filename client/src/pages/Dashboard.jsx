@@ -129,6 +129,7 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
 }
 
 function EvidenceBoard({ character, lockedOut }) {
+  const nav = useNavigate();
   // Polar layout — start at the top (-90°) and walk clockwise so the
   // first node sits straight above the silhouette. Radius 30 pulls the
   // ring in tight so each card stays fully on-screen on a 360px-wide
@@ -146,12 +147,18 @@ function EvidenceBoard({ character, lockedOut }) {
   // Track the pointer in container-percent coords; the closest node
   // within FOCUS_THRESHOLD lights up + scales. Works on both touch
   // (drag your finger across the board to scrub through nodes) and
-  // mouse (hover does the same thing). Tap-to-navigate is unaffected
-  // because the Link's onClick still fires on a regular click.
+  // mouse (hover does the same thing). Releasing the pointer commits
+  // the highlighted node — so dragging to a card and lifting your
+  // finger navigates without a separate tap.
   const wrapRef = useRef(null);
   const [focusedId, setFocusedId] = useState(null);
+  const focusedRef = useRef(null);
   const FOCUS_THRESHOLD = 22;   // %-distance — generous so neighbours don't fight
 
+  function setFocus(id) {
+    focusedRef.current = id;
+    setFocusedId(id);
+  }
   function updateFocusFromEvent(e) {
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -165,9 +172,16 @@ function EvidenceBoard({ character, lockedOut }) {
       const d = Math.hypot(dx, dy);
       if (d < bestDist) { bestDist = d; bestId = NODES[i].to; }
     }
-    setFocusedId(bestDist < FOCUS_THRESHOLD ? bestId : null);
+    setFocus(bestDist < FOCUS_THRESHOLD ? bestId : null);
   }
-  function clearFocus() { setFocusedId(null); }
+  function clearFocus() { setFocus(null); }
+  function commitFocus() {
+    // Read from the ref, not the closure — pointer events fire faster
+    // than React batches state, so focusedId may be stale here.
+    const id = focusedRef.current;
+    if (lockedOut || !id) return;
+    nav(id);
+  }
 
   return (
     <div
@@ -175,6 +189,7 @@ function EvidenceBoard({ character, lockedOut }) {
       ref={wrapRef}
       onPointerMove={updateFocusFromEvent}
       onPointerDown={updateFocusFromEvent}
+      onPointerUp={commitFocus}
       onPointerLeave={clearFocus}
       onPointerCancel={clearFocus}>
       {/* Backdrop — corkboard-feeling vignette */}
