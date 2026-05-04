@@ -4,9 +4,10 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import { storefront } from '../lib/storefronts.js';
 
 export default function ChopShop() {
-  const { refresh } = useGame();
+  const { character, refresh } = useGame();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -27,10 +28,11 @@ export default function ChopShop() {
   }
 
   if (!data) return null;
+  const shop = storefront('chop', character?.city);
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title=" The Chop Shop & Black-Market Dealer" subtitle={`Operating out of ${data.cityName}.`}>
+      <Card title={`${shop.name} & Black-Market Dealer`} subtitle={`Operating out of ${data.cityName}.`}>
         <p className="text-[11px] text-ink-100/60">
           Two ways to move metal. <span className="text-money-400">Chop shop</span> turns it into parts —
           fast, no fuss, but you get just <b>{(data.chopRate * 100).toFixed(0)}%</b> of book.

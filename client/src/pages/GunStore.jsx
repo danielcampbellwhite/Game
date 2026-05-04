@@ -4,7 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
-import clerkImg from '../assets/gunstore-clerk.webp';
+import { storefront } from '../lib/storefronts.js';
 
 const CATEGORY_ORDER = ['melee', 'pistol', 'revolver', 'smg', 'shotgun', 'rifle', 'sniper'];
 
@@ -102,6 +102,7 @@ export default function GunStore() {
 
   if (!data) return null;
 
+  const shop = storefront('gun', character.city);
   const grouped = data.weapons.reduce((m, w) => ((m[w.category] = m[w.category] || []).push(w), m), {});
 
   return (
@@ -109,16 +110,20 @@ export default function GunStore() {
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
       <Card>
         <div className="flex flex-col sm:flex-row gap-4">
-          <img
-            src={clerkImg}
-            alt="Tex, the gun store clerk, behind the counter"
-            loading="lazy"
-            className="w-full sm:w-48 h-40 sm:h-auto sm:max-h-56 object-cover rounded-md border border-ink-100/10 shrink-0"
-          />
+          {shop.image && (
+            <img
+              src={shop.image}
+              alt={`${shop.clerk || 'Clerk'}, behind the counter at ${shop.name}`}
+              loading="lazy"
+              className="w-full sm:w-48 h-40 sm:h-auto sm:max-h-56 object-cover rounded-md border border-ink-100/10 shrink-0"
+            />
+          )}
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-xl text-ink-50">Smokey's Gun Emporium — {data.cityName}</h3>
+            <h3 className="font-display text-xl text-ink-50">{shop.name} — {data.cityName}</h3>
             <p className="text-xs text-ink-100/60 mt-1 italic">
-              "Howdy, partner — walk in armed, walk out armoured. Equip what you own from your profile." — Tex
+              {shop.quote
+                ? <>"{shop.quote} Equip what you own from your profile." {shop.clerk && <>— {shop.clerk}</>}</>
+                : <>Walk in armed, walk out armoured. Equip what you own from your profile.</>}
             </p>
             <div className="flex flex-wrap gap-2 items-center text-xs mt-3">
               <select value={makerFilter} onChange={e => setMakerFilter(e.target.value)}>

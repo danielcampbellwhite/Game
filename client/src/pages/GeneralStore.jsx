@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import { storefront } from '../lib/storefronts.js';
 
 const VITAL_COLOURS = {
   energy: 'text-yellow-400',
@@ -62,10 +63,11 @@ export default function GeneralStore() {
 
   if (!data || !character) return null;
   const cityMul = data.items[0] ? data.items[0].cityCost / data.items[0].cost : 1;
+  const shop = storefront('general', character.city);
 
   return (
     <div className="space-y-4">
-      <Card title={` Murphy's General Store — ${data.cityName}`}
+      <Card title={`${shop.name} — ${data.cityName}`}
         subtitle="Odds, ends, and props. Most are mission props with no other use; a couple lift your spirits.">
         {cityMul !== 1 && (
           <p className="text-[11px] text-ink-100/50">Local prices are at ×{cityMul.toFixed(2)} of base.</p>

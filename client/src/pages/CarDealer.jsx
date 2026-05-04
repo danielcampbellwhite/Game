@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import { storefront } from '../lib/storefronts.js';
 
 const TIER_LABEL = {
   1: 'Beater',
@@ -49,11 +50,12 @@ export default function CarDealer() {
     (!maxPrice || v.price <= parseInt(maxPrice, 10))
   );
   const grouped = list.reduce((m, v) => ((m[v.tier] = m[v.tier] || []).push(v), m), {});
+  const shop = storefront('cars', character.city);
 
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title=" Premier Auto" subtitle={`Showroom in ${data.cityName}. Cars are titled to you, no questions asked.`}>
+      <Card title={shop.name} subtitle={`Showroom in ${data.cityName}. Cars are titled to you, no questions asked.`}>
         <div className="flex flex-wrap gap-2 items-center text-xs">
           <select value={filter} onChange={e => setFilter(e.target.value)}>
             <option value="all">All tiers</option>
