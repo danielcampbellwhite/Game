@@ -12,6 +12,7 @@ import gunstoreClerkRio from '../assets/gunstore-clerk-rio.webp';
 import gunstoreClerkParis from '../assets/gunstore-clerk-paris.webp';
 import gunstoreClerkTokyo from '../assets/gunstore-clerk-tokyo.webp';
 import gunstoreClerkDubai from '../assets/gunstore-clerk-dubai.webp';
+import gunstoreClerkCapetown from '../assets/gunstore-clerk-capetown.webp';
 
 const TEX_US = { name: "Tex's Gun Shop", image: gunstoreClerkUS, clerk: 'Tex',
   quote: "Howdy, partner — walk in armed, walk out armoured." };
@@ -43,7 +44,9 @@ export const STOREFRONTS = {
                    quote: "いらっしゃいませ. Guns are tradition; trust is sincerity. Established 1887." },
     hong_kong:   { name: "Lam Kee Hardware" },
     sydney:      { name: "Macca's Sporting Goods" },
-    cape_town:   { name: "Veld Outfitters" },
+    cape_town:   { name: "Boet's Boomsticks", image: gunstoreClerkCapetown,
+                   clerk: 'Boet',
+                   quote: "Howzit, my bru. Cash only, no police, no questions — we don't negotiate, we supply and protect." },
   },
 
   general: {
