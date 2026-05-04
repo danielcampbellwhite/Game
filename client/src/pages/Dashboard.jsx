@@ -97,17 +97,17 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
         filter: focused ? 'drop-shadow(0 0 12px rgba(220, 38, 38, 0.55))' : undefined,
       }}>
       {isPaper ? (
-        <div className={`w-28 sm:w-32 bg-amber-50 shadow-lg shadow-black/60 rounded-sm overflow-hidden ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
-          <div className="px-2 pt-1.5 pb-0.5 text-[7px] uppercase tracking-[0.2em] text-blood-800 border-b border-stone-800/40 font-medium">
+        <div className={`w-24 sm:w-28 bg-amber-50 shadow-lg shadow-black/60 rounded-sm overflow-hidden ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
+          <div className="px-2 pt-1 pb-0.5 text-[6px] uppercase tracking-[0.2em] text-blood-800 border-b border-stone-800/40 font-medium">
             The Daily
           </div>
-          <div className="px-2 py-1.5">
-            <div className="font-display text-[14px] sm:text-base text-stone-900 leading-tight">{node.label}</div>
-            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
+          <div className="px-2 py-1">
+            <div className="font-display text-base sm:text-lg text-stone-900 leading-tight">{node.label}</div>
+            <div className="text-[11px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
           </div>
         </div>
       ) : (
-        <div className={`w-28 sm:w-32 bg-amber-100 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
+        <div className={`w-24 sm:w-28 bg-amber-100 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
           {/* red left margin */}
           <div className="absolute left-2 top-0 bottom-0 w-px bg-blood-600/70" />
           {/* horizontal rule lines */}
@@ -116,9 +116,9 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
               backgroundImage:
                 'repeating-linear-gradient(transparent 0px, transparent 9px, rgba(31,29,27,0.18) 10px)',
             }} />
-          <div className="relative px-3 py-2 pl-4">
-            <div className="font-display text-[14px] sm:text-base text-stone-900 leading-tight">{node.label}</div>
-            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-1">{node.teaser}</div>
+          <div className="relative px-2 py-1.5 pl-3.5">
+            <div className="font-display text-base sm:text-lg text-stone-900 leading-tight">{node.label}</div>
+            <div className="text-[11px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
           </div>
         </div>
       )}
