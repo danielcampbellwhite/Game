@@ -11,6 +11,7 @@ import gunstoreClerkKingston from '../assets/gunstore-clerk-kingston.webp';
 import gunstoreClerkRio from '../assets/gunstore-clerk-rio.webp';
 import gunstoreClerkParis from '../assets/gunstore-clerk-paris.webp';
 import gunstoreClerkTokyo from '../assets/gunstore-clerk-tokyo.webp';
+import gunstoreClerkDubai from '../assets/gunstore-clerk-dubai.webp';
 
 const TEX_US = { name: "Tex's Gun Shop", image: gunstoreClerkUS, clerk: 'Tex',
   quote: "Howdy, partner — walk in armed, walk out armoured." };
@@ -34,7 +35,9 @@ export const STOREFRONTS = {
                    quote: "Bonjour. Armurier depuis 1887 — la qualité est notre tradition." },
     berlin:      { name: "Kreuzberg Waffenhaus" },
     moscow:      { name: "Volkov Oruzheinaya" },
-    dubai:       { name: "Al-Faris Trading Co." },
+    dubai:       { name: "Dubai Gun Store", image: gunstoreClerkDubai,
+                   clerk: 'The Owner',
+                   quote: "Marhaba. Precision. Power. Prestige — excellence is standard." },
     tokyo:       { name: "Takumi's Firearms", image: gunstoreClerkTokyo,
                    clerk: 'Takumi-san',
                    quote: "いらっしゃいませ. Guns are tradition; trust is sincerity. Established 1887." },
