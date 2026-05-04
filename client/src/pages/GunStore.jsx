@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+import clerkImg from '../assets/gunstore-clerk.webp';
 
 const CATEGORY_ORDER = ['melee', 'pistol', 'revolver', 'smg', 'shotgun', 'rifle', 'sniper'];
 
@@ -106,13 +107,27 @@ export default function GunStore() {
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title={` Smokey's Gun Emporium — ${data.cityName}`} subtitle="Walk in armed, walk out armoured. Equip what you own from your profile.">
-        <div className="flex flex-wrap gap-2 items-center text-xs">
-          <select value={makerFilter} onChange={e => setMakerFilter(e.target.value)}>
-            <option value="all">All manufacturers</option>
-            {makers.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <span className="text-ink-100/40 ml-auto">{data.weapons.length} weapons available</span>
+      <Card>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <img
+            src={clerkImg}
+            alt="Tex, the gun store clerk, behind the counter"
+            loading="lazy"
+            className="w-full sm:w-48 h-40 sm:h-auto sm:max-h-56 object-cover rounded-md border border-ink-100/10 shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-xl text-ink-50">Smokey's Gun Emporium — {data.cityName}</h3>
+            <p className="text-xs text-ink-100/60 mt-1 italic">
+              "Howdy, partner — walk in armed, walk out armoured. Equip what you own from your profile." — Tex
+            </p>
+            <div className="flex flex-wrap gap-2 items-center text-xs mt-3">
+              <select value={makerFilter} onChange={e => setMakerFilter(e.target.value)}>
+                <option value="all">All manufacturers</option>
+                {makers.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <span className="text-ink-100/40 ml-auto">{data.weapons.length} weapons available</span>
+            </div>
+          </div>
         </div>
       </Card>
 
