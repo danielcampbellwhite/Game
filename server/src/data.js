@@ -185,10 +185,18 @@ export const territoriesInCity = city => TERRITORIES.filter(t => t.city === city
 // /api/character/options.
 export const STARTER_BUDGET = 100_000;
 
-// Tier-1 cars only — resolved against VEHICLES at runtime.
+// Curated starter car catalogue. Spans cheap tier-1 beaters through
+// mid-tier sedans up to a few tier-3 hot hatches so the priciest pick
+// would bust the £100k starter budget once paired with a house and a
+// business — picking the top of every category isn't possible.
 export const STARTER_CAR_IDS = [
+  // Tier 1 — beaters
   'ford_fiesta', 'toyota_yaris', 'chevy_spark',
   'kia_rio',     'nissan_versa', 'honda_fit',
+  // Tier 2 — daily drivers
+  'ford_focus',  'vw_golf',      'honda_accord', 'mazda_6',
+  // Tier 3 — performance bargains
+  'mazda_mx5',   'vw_gti',       'civic_type_r',
 ];
 
 // Cheapest businesses by baseCost. Level gates skipped for the
@@ -480,8 +488,16 @@ const PROPERTY_TIER_BONUS = {
   3: { max_energy: 25, max_nerve: 5,  happiness: 20 }, // mansion / penthouse
   4: { max_energy: 50, max_nerve: 10, happiness: 35 }, // estate / compound
 };
+// Garage capacity per property tier. Sums across all properties you own
+// in a given city to determine how many vehicles can sit there at once.
+export const PROPERTY_TIER_GARAGE = {
+  1: 2,   // bedsit / walk-up has off-street parking
+  2: 4,   // townhouse / apartment block
+  3: 8,   // mansion / penthouse
+  4: 12,  // estate / compound
+};
 const TIER_LABEL = { 1: 'Flat', 2: 'Townhouse', 3: 'Mansion', 4: 'Estate' };
-const T = (tier) => ({ tier, tierLabel: TIER_LABEL[tier], bonuses: PROPERTY_TIER_BONUS[tier] });
+const T = (tier) => ({ tier, tierLabel: TIER_LABEL[tier], bonuses: PROPERTY_TIER_BONUS[tier], garage: PROPERTY_TIER_GARAGE[tier] });
 
 // City-locked property catalogue. To buy you must be physically in the city.
 // Existing characters may also own legacy generic properties (`flat`, `house`,
@@ -489,10 +505,10 @@ const T = (tier) => ({ tier, tierLabel: TIER_LABEL[tier], bonuses: PROPERTY_TIER
 // estate agent's listing (they have no `city` field, so they're filtered out).
 export const PROPERTIES = [
   // Legacy fallbacks — kept so already-owned rows resolve via propertyById.
-  { id: 'flat',     name: 'Flat',     cost: 30000,   bonuses: PROPERTY_TIER_BONUS[1] },
-  { id: 'house',    name: 'House',    cost: 150000,  bonuses: PROPERTY_TIER_BONUS[2] },
-  { id: 'mansion',  name: 'Mansion',  cost: 800000,  bonuses: PROPERTY_TIER_BONUS[3] },
-  { id: 'compound', name: 'Compound', cost: 5000000, bonuses: PROPERTY_TIER_BONUS[4] },
+  { id: 'flat',     name: 'Flat',     cost: 30000,   bonuses: PROPERTY_TIER_BONUS[1], garage: PROPERTY_TIER_GARAGE[1] },
+  { id: 'house',    name: 'House',    cost: 150000,  bonuses: PROPERTY_TIER_BONUS[2], garage: PROPERTY_TIER_GARAGE[2] },
+  { id: 'mansion',  name: 'Mansion',  cost: 800000,  bonuses: PROPERTY_TIER_BONUS[3], garage: PROPERTY_TIER_GARAGE[3] },
+  { id: 'compound', name: 'Compound', cost: 5000000, bonuses: PROPERTY_TIER_BONUS[4], garage: PROPERTY_TIER_GARAGE[4] },
 
   //  New York 
   { id: 'ny_walkup',     city: 'new_york', name: 'Lower East Side Walk-up',  address: '147 Rivington St',     cost: 48000,    ...T(1) },
@@ -742,11 +758,20 @@ export const PROPERTIES = [
   { id: 'chi_gold_coast', city: 'chicago', name: 'Gold Coast Penthouse',     address: '1300 N State Pkwy PH',     cost: 2100000,  ...T(3) },
   { id: 'chi_lincoln',    city: 'chicago', name: 'Lincoln Park Mansion',     address: '2230 N Lakeview Ave',      cost: 9500000,  ...T(4) },
 
-  //  Los Angeles 
+  //  Los Angeles
+  { id: 'la_boyleheights',city: 'los_angeles', name: 'Boyle Heights Walk-up',address: '2840 E 4th St',            cost: 45000,    ...T(1) },
+  { id: 'la_echo',        city: 'los_angeles', name: 'Echo Park Bungalow',   address: '1418 Lemoyne St',          cost: 72000,    ...T(1) },
   { id: 'la_silverlake',  city: 'los_angeles', name: 'Silver Lake Bungalow', address: '2317 Sunset Blvd',         cost: 220000,   ...T(1) },
   { id: 'la_weho',        city: 'los_angeles', name: 'West Hollywood Condo', address: '8717 Burton Way #4B',      cost: 850000,   ...T(2) },
   { id: 'la_bel_air',     city: 'los_angeles', name: 'Bel Air Hilltop',      address: '10100 Sunset Blvd',        cost: 5800000,  ...T(3) },
   { id: 'la_beverly',     city: 'los_angeles', name: 'Beverly Hills Estate', address: '1011 N Roxbury Dr',        cost: 18000000, ...T(4) },
+
+  //  Kingston
+  { id: 'kgn_trench',     city: 'kingston',    name: 'Trench Town Walk-up',  address: '15 Whitfield Town',        cost: 28000,    ...T(1) },
+  { id: 'kgn_mona',       city: 'kingston',    name: 'Mona Heights Bungalow',address: '17 Hopefield Ave',         cost: 56000,    ...T(1) },
+  { id: 'kgn_uptown',     city: 'kingston',    name: 'New Kingston Apt',     address: '6 Knutsford Blvd',         cost: 240000,   ...T(2) },
+  { id: 'kgn_stonyhill',  city: 'kingston',    name: 'Stony Hill House',     address: '38 Stony Hill Rd',         cost: 1500000,  ...T(3) },
+  { id: 'kgn_jackshill',  city: 'kingston',    name: 'Jacks Hill Estate',    address: '12 Skyline Dr',            cost: 5500000,  ...T(4) },
 
   //  Seoul 
   { id: 'seo_hongdae',    city: 'seoul', name: 'Hongdae Studio',             address: '352 Yanghwa-ro',           cost: 78000,    ...T(1) },

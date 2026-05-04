@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { propertyById, vehicleById } from './data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // DATA_DIR is overridable so deploys (Railway volume, Fly volume, a host
@@ -789,4 +790,52 @@ export function initDb() {
   const placeholders = droppedCities.map(() => '?').join(',');
   try { db.prepare(`DELETE FROM drug_market WHERE city IN (${placeholders})`).run(...droppedCities); } catch {}
   try { db.prepare(`DELETE FROM turf_holds  WHERE city IN (${placeholders})`).run(...droppedCities); } catch {}
+
+  // Garage capacity migration: each property has a `garage` stat now,
+  // and per-city vehicle counts are capped at the sum of those stats.
+  // For pre-migration characters who already have more cars in a city
+  // than its garage holds, auto-chop the excess at 15% of book price
+  // (lowest-tier first to keep the better cars). Runs every startup
+  // but is a no-op once everyone is in compliance, since dealership
+  // buys and GTA crimes now respect the cap going forward.
+  try {
+    const overages = db.prepare(`
+      SELECT char_id, city, COUNT(*) AS used
+      FROM vehicles_owned WHERE city IS NOT NULL
+      GROUP BY char_id, city
+    `).all();
+    for (const { char_id, city, used } of overages) {
+      const props = db.prepare(
+        'SELECT property_id FROM properties_owned WHERE char_id = ? AND city = ?'
+      ).all(char_id, city);
+      let capacity = 0;
+      for (const p of props) capacity += propertyById(p.property_id)?.garage || 0;
+      if (used <= capacity) continue;
+      const excess = used - capacity;
+      // Pick the cheapest cars (by tier ascending, then oldest) to chop.
+      const cars = db.prepare(
+        'SELECT id, vehicle_id FROM vehicles_owned WHERE char_id = ? AND city = ? ORDER BY acquired_at ASC'
+      ).all(char_id, city);
+      cars.sort((a, b) => {
+        const ta = vehicleById(a.vehicle_id)?.tier || 0;
+        const tb = vehicleById(b.vehicle_id)?.tier || 0;
+        return ta - tb;
+      });
+      const toChop = cars.slice(0, excess);
+      let payout = 0;
+      for (const c of toChop) {
+        const v = vehicleById(c.vehicle_id);
+        if (v) payout += Math.floor(v.bookPrice * 0.15);
+      }
+      const ids = toChop.map(c => c.id);
+      const ph = ids.map(() => '?').join(',');
+      db.prepare(`DELETE FROM vehicles_owned WHERE id IN (${ph})`).run(...ids);
+      if (payout > 0) {
+        db.prepare('UPDATE characters SET cash = cash + ? WHERE id = ?').run(payout, char_id);
+      }
+    }
+  } catch (e) {
+    // Migration is best-effort: a fresh DB without these tables yet
+    // will throw and we just skip.
+  }
 }

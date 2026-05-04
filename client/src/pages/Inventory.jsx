@@ -6,7 +6,90 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 
-//  Tabs 
+// Per-card vehicle row with an inline shipping panel. Owners can pick a
+// destination city the player has free garage space in, see the live
+// quote, and commit. The list of destinations comes from the inventory
+// payload's garages summary so we never offer a city without space.
+function VehicleCard({ v, garages, onChange }) {
+  const [shipping, setShipping] = useState(false);
+  const [to, setTo] = useState('');
+  const [quote, setQuote] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const destinations = garages.filter(g => g.city !== v.city && g.free > 0);
+
+  useEffect(() => {
+    if (!to) { setQuote(null); return; }
+    let live = true;
+    api.get(`/inventory/ship-quote?id=${v.id}&to=${to}`)
+      .then(r => { if (live) setQuote(r); })
+      .catch(e => { if (live) setErr(e.message); });
+    return () => { live = false; };
+  }, [v.id, to]);
+
+  async function ship() {
+    setBusy(true); setErr(null);
+    try {
+      await api.post('/inventory/ship-vehicle', { id: v.id, to });
+      setShipping(false); setTo(''); setQuote(null);
+      await onChange();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="font-medium">{v.maker} {v.name}</div>
+        {v.is_modified && <span className="text-[10px] uppercase text-yellow-300"> modded</span>}
+      </div>
+      <div className="text-[11px] text-ink-100/60">
+        Tier {v.tier} · book {fmt(v.bookPrice)}
+        {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
+      </div>
+      <div className="text-[10px] text-ink-100/40 mt-0.5">
+        {v.acquired_via === 'stolen' ? ' stolen' : ' bought'} · in {v.cityName}
+      </div>
+      {v.mods?.length > 0 && (
+        <div className="text-[10px] text-ink-100/55 mt-1 truncate">
+          {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
+        </div>
+      )}
+      <div className="mt-2 flex justify-end">
+        <button
+          onClick={() => setShipping(s => !s)}
+          className="btn btn-ghost text-[11px]"
+          disabled={destinations.length === 0}
+          title={destinations.length === 0 ? 'No other city has free garage space' : 'Ship to another city'}>
+          {shipping ? 'Cancel' : 'Ship'}
+        </button>
+      </div>
+      {shipping && (
+        <div className="mt-2 pt-2 border-t border-ink-100/10 text-xs space-y-2">
+          <select className="w-full" value={to} onChange={e => setTo(e.target.value)}>
+            <option value="">— Destination —</option>
+            {destinations.map(g => (
+              <option key={g.city} value={g.city}>{g.cityName} ({g.free} free)</option>
+            ))}
+          </select>
+          {quote && (
+            <div className="text-[11px] text-ink-100/60">
+              Shipping cost: <span className="text-money-400 tabular-nums">{fmt(quote.cost)}</span>
+            </div>
+          )}
+          {err && <p className="text-[11px] text-blood-400">{err}</p>}
+          <button onClick={ship} disabled={!to || !quote || busy}
+            className="btn btn-primary w-full text-xs">
+            {busy ? '…' : quote ? `Ship for ${fmt(quote.cost)}` : 'Pick a city'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+//  Tabs
 // Big inventory pages get noisy fast. Tabs keep the visible list short
 // and make it easier to find a specific category.
 const TABS = [
@@ -327,29 +410,25 @@ export default function Inventory() {
               <Link className="btn btn-ghost" to="/chop-shop">→ Chop Shop</Link>
             </div>
           }>
+          {inv.garages?.length > 0 && (
+            <div className="mb-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[11px]">
+              {inv.garages.map(g => (
+                <div key={g.city} className="rounded-md border border-ink-100/10 bg-ink-950/40 px-2 py-1.5">
+                  <div className="text-ink-100/60">{g.cityName}</div>
+                  <div className={`tabular-nums ${g.free === 0 ? 'text-blood-400' : 'text-ink-50'}`}>
+                    {g.used}/{g.capacity} <span className="text-ink-100/40">cars</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {!inv.vehicles.length ? (
             <p className="text-sm text-ink-100/60">No vehicles yet. Steal one or buy from the dealership.</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {inv.vehicles.map(v => (
-                <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.is_modified ? 'border-yellow-500/40' : 'border-ink-100/10'}`}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <div className="font-medium">{v.maker} {v.name}</div>
-                    {v.is_modified && <span className="text-[10px] uppercase text-yellow-300"> modded</span>}
-                  </div>
-                  <div className="text-[11px] text-ink-100/60">
-                    Tier {v.tier} · book {fmt(v.bookPrice)}
-                    {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
-                  </div>
-                  <div className="text-[10px] text-ink-100/40 mt-0.5">
-                    {v.acquired_via === 'stolen' ? ' stolen' : ' bought'} · in {v.cityName}
-                  </div>
-                  {v.mods?.length > 0 && (
-                    <div className="text-[10px] text-ink-100/55 mt-1 truncate">
-                      {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
-                    </div>
-                  )}
-                </div>
+                <VehicleCard key={v.id} v={v} garages={inv.garages || []}
+                  onChange={() => load()} />
               ))}
             </div>
           )}

@@ -56,6 +56,16 @@ export default function CarDealer() {
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
       <Card title={shop.name} subtitle={`Showroom in ${data.cityName}. Cars are titled to you, no questions asked.`}>
+        {data.garage && (
+          <p className={`text-[11px] mb-2 ${data.garage.free === 0 ? 'text-blood-400' : 'text-ink-100/55'}`}>
+            Local garage: <span className="tabular-nums">{data.garage.used}/{data.garage.capacity}</span>
+            {data.garage.free === 0
+              ? ' — full. Sell or ship a car before buying another here.'
+              : data.garage.capacity === 0
+                ? ' — no property in this city. Buy one to park cars here.'
+                : ` — ${data.garage.free} free.`}
+          </p>
+        )}
         <div className="flex flex-wrap gap-2 items-center text-xs">
           <select value={filter} onChange={e => setFilter(e.target.value)}>
             <option value="all">All tiers</option>
@@ -78,9 +88,13 @@ export default function CarDealer() {
                 <div className="font-medium">{v.maker} {v.name}</div>
                 <div className="text-[11px] text-ink-100/60">Book: {fmt(v.bookPrice)}</div>
                 <div className="text-money-400 font-semibold tabular-nums mt-1">{fmt(v.price)}</div>
-                <button disabled={character.cash < v.price || busy === v.id} className="btn btn-money w-full text-xs mt-2"
+                <button disabled={character.cash < v.price || busy === v.id || (data.garage && data.garage.free === 0)} className="btn btn-money w-full text-xs mt-2"
                   onClick={() => buy(v)}>
-                  {busy === v.id ? '...' : 'Buy'}
+                  {busy === v.id
+                    ? '...'
+                    : (data.garage && data.garage.free === 0)
+                      ? 'Garage full'
+                      : 'Buy'}
                 </button>
               </div>
             ))}

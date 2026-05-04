@@ -4,6 +4,7 @@ import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { VEHICLES, vehicleById, cityById } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import { freeGarageSpace, garageCapacity, vehicleCount } from '../services/garage.js';
 
 const router = Router();
 
@@ -19,13 +20,28 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     ...v,
     price: dealerPrice(v, ch.city),
   }));
-  res.json({ city: ch.city, cityName: cityById(ch.city)?.name, inventory });
+  const capacity = garageCapacity(ch.id, ch.city);
+  const used = vehicleCount(ch.id, ch.city);
+  res.json({
+    city: ch.city,
+    cityName: cityById(ch.city)?.name,
+    inventory,
+    garage: { capacity, used, free: Math.max(0, capacity - used) },
+  });
 });
 
 router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const v = vehicleById(req.body?.vehicle_id);
   if (!v) return res.status(400).json({ error: 'Unknown vehicle' });
+  if (freeGarageSpace(ch.id, ch.city) <= 0) {
+    const cap = garageCapacity(ch.id, ch.city);
+    return res.status(400).json({
+      error: cap === 0
+        ? 'No garage in this city. Buy a property here first.'
+        : `Garage full (${cap}/${cap}). Sell a car or buy a bigger property.`,
+    });
+  }
   const price = dealerPrice(v, ch.city);
   if (ch.cash < price) return res.status(400).json({ error: `Need £${price.toLocaleString()}` });
   ch.cash -= price;

@@ -1,9 +1,21 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, cityById, drugById, miscItemById, propertyById, applyVehicleMods } from '../data.js';
+import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, cityById, drugById, miscItemById, propertyById, applyVehicleMods, CITIES } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import { garageSummary, freeGarageSpace } from '../services/garage.js';
+
+// Inter-city shipping: £500 base × tier × (destination flight cost
+// scaled to a 1500 median). Tier-1 short-hop ≈ £500, tier-7 long-haul
+// to Dubai ≈ £6,500. Rounded to the nearest £100 so quotes look clean.
+function shipCost(vehicle, toCity) {
+  if (!vehicle || !toCity) return 0;
+  const baseFlight = cityById(toCity)?.flightBase || 1500;
+  const tier = vehicle.tier || 1;
+  const raw = 500 * tier * (baseFlight / 1500);
+  return Math.max(500, Math.round(raw / 100) * 100);
+}
 
 const router = Router();
 
@@ -82,8 +94,17 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     ? (items.find(i => i.kind === 'ammo' && i.item_id === equippedWeapon.ammoType)?.qty || 0)
     : null;
 
+  // Per-city garage usage (capacity + free spaces) so the client can
+  // render a "London 1/4" badge next to each vehicle and on the
+  // shipping picker.
+  const garages = garageSummary(ch.id).map(g => ({
+    ...g,
+    cityName: cityById(g.city)?.name || g.city,
+  }));
+
   res.json({
     weapons, armours, drugs, ammo, misc, vehicles, properties,
+    garages,
     equipped: {
       weapon: ch.equipped_weapon,
       armour: ch.equipped_armour,
@@ -92,6 +113,45 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       weapon_ammo: ammoForEquipped,
     },
   });
+});
+
+// Quote a shipping cost without committing — used by the client before
+// the player confirms. Returns the cost plus capacity info for both
+// ends so the UI can disable the action when the destination is full.
+router.get('/ship-quote', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const id = parseInt(req.query.id, 10);
+  const to = req.query.to;
+  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
+  if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
+  const v = vehicleById(row.vehicle_id);
+  if (!v) return res.status(400).json({ error: 'Unknown vehicle.' });
+  if (!cityById(to)) return res.status(400).json({ error: 'Unknown destination city.' });
+  const cost = shipCost(v, to);
+  const free = freeGarageSpace(ch.id, to);
+  res.json({ ok: true, from: row.city, to, cost, free });
+});
+
+router.post('/ship-vehicle', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const id = parseInt(req.body?.id, 10);
+  const to = req.body?.to;
+  if (!cityById(to)) return res.status(400).json({ error: 'Unknown destination city.' });
+  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
+  if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
+  if (row.city === to) return res.status(400).json({ error: 'That vehicle is already in that city.' });
+  const v = vehicleById(row.vehicle_id);
+  if (!v) return res.status(400).json({ error: 'Unknown vehicle.' });
+  if (freeGarageSpace(ch.id, to) <= 0) {
+    return res.status(400).json({ error: `No free garage space in ${cityById(to).name}. Buy a property there first.` });
+  }
+  const cost = shipCost(v, to);
+  if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost.toLocaleString()} to ship.` });
+  ch.cash -= cost;
+  db.prepare('UPDATE vehicles_owned SET city = ? WHERE id = ?').run(to, id);
+  saveCharacter(ch);
+  writeLog(ch.id, 'shop', `Shipped ${v.maker} ${v.name} to ${cityById(to).name} for £${cost.toLocaleString()}.`, { vehicle: v.id, from: row.city, to, cost });
+  res.json({ ok: true, cost, character: publicCharacter(ch) });
 });
 
 router.post('/buy', requireAuth, requireCharacter, (req, res) => {

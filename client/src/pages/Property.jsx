@@ -80,6 +80,9 @@ export default function Property() {
                 <div className="text-[11px] text-ink-100/60 mt-2">
                   +{p.bonuses.max_energy} energy · +{p.bonuses.max_nerve} nerve · +{p.bonuses.happiness} happiness
                 </div>
+                {p.garage > 0 && (
+                  <div className="text-[10px] text-ink-100/50 mt-0.5"> {p.garage} garage spaces</div>
+                )}
                 <button disabled={character.cash < p.cost || busy === p.id} className="btn btn-primary w-full text-xs mt-3" onClick={() => buy(p)}>
                   {busy === p.id ? '...' : character.cash < p.cost ? `Need ${fmt(p.cost - character.cash)} more` : 'Buy'}
                 </button>
