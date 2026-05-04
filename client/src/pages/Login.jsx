@@ -85,6 +85,7 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -120,7 +121,24 @@ export default function Login() {
           {mode === 'register' && (
             <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email (for account recovery)" type="email" autoComplete="email" className="w-full" />
           )}
-          <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" className="w-full" />
+          <div className="relative">
+            <input
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              className="w-full pr-16"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(s => !s)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-[11px] uppercase tracking-wide text-ink-100/60 hover:text-ink-50 transition">
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
           {err && <p className="text-blood-400 text-xs">{err}</p>}
           <button disabled={busy} type="submit" className="btn btn-primary w-full">
             {busy ? '...' : (mode === 'login' ? 'Enter the city' : 'Start a new life')}
