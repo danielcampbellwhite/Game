@@ -5,6 +5,7 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 import { storefront } from '../lib/storefronts.js';
+import showroomImg from '../assets/cardealer-showroom.webp';
 
 const TIER_LABEL = {
   1: 'Beater',
@@ -55,28 +56,40 @@ export default function CarDealer() {
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
-      <Card title={shop.name} subtitle={`Showroom in ${data.cityName}. Cars are titled to you, no questions asked.`}>
-        {data.garage && (
-          <p className={`text-[11px] mb-2 ${data.garage.free === 0 ? 'text-blood-400' : 'text-ink-100/55'}`}>
-            Local garage: <span className="tabular-nums">{data.garage.used}/{data.garage.capacity}</span>
-            {data.garage.free === 0
-              ? ' — full. Sell or ship a car before buying another here.'
-              : data.garage.capacity === 0
-                ? ' — no property in this city. Buy one to park cars here.'
-                : ` — ${data.garage.free} free.`}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2 items-center text-xs">
-          <select value={filter} onChange={e => setFilter(e.target.value)}>
-            <option value="all">All tiers</option>
-            {[1,2,3,4,5,6,7].map(t => <option key={t} value={t}>Tier {t} — {TIER_LABEL[t]}</option>)}
-          </select>
-          <select value={maker} onChange={e => setMaker(e.target.value)}>
-            <option value="all">All makers</option>
-            {makers.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-          <input type="number" placeholder="Max price" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="w-32" />
-          <span className="text-ink-100/50 ml-auto">{list.length} cars</span>
+      <Card>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <img
+            src={showroomImg}
+            alt="Showroom floor"
+            loading="lazy"
+            className="w-full sm:w-56 h-40 sm:h-auto sm:max-h-56 object-cover rounded-md border border-ink-100/10 shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-xl text-ink-50">{shop.name}</h3>
+            <p className="text-xs text-ink-100/60 mt-1">Showroom in {data.cityName}. Cars are titled to you, no questions asked.</p>
+            {data.garage && (
+              <p className={`text-[11px] mt-2 ${data.garage.free === 0 ? 'text-blood-400' : 'text-ink-100/55'}`}>
+                Local garage: <span className="tabular-nums">{data.garage.used}/{data.garage.capacity}</span>
+                {data.garage.free === 0
+                  ? ' — full. Sell or ship a car before buying another here.'
+                  : data.garage.capacity === 0
+                    ? ' — no property in this city. Buy one to park cars here.'
+                    : ` — ${data.garage.free} free.`}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2 items-center text-xs mt-3">
+              <select value={filter} onChange={e => setFilter(e.target.value)}>
+                <option value="all">All tiers</option>
+                {[1,2,3,4,5,6,7].map(t => <option key={t} value={t}>Tier {t} — {TIER_LABEL[t]}</option>)}
+              </select>
+              <select value={maker} onChange={e => setMaker(e.target.value)}>
+                <option value="all">All makers</option>
+                {makers.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <input type="number" placeholder="Max price" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="w-32" />
+              <span className="text-ink-100/50 ml-auto">{list.length} cars</span>
+            </div>
+          </div>
         </div>
       </Card>
 
