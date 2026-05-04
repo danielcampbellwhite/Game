@@ -100,9 +100,11 @@ export default function Drugs() {
                     <div className="text-[11px] text-ink-100/50">stash: {invMap[d.id]}</div>
                   </div>
                   <div className="flex flex-wrap gap-x-2 mt-1">
-                    {Object.entries(def.effects).map(([k, v]) => (
-                      <span key={k} className={`text-[10px] uppercase ${VITAL_COLORS[k] || ''}`}>{v>0?'+':''}{v} {k}</span>
-                    ))}
+                    {Object.entries(def.effects)
+                      .filter(([k]) => k !== 'nerve')
+                      .map(([k, v]) => (
+                        <span key={k} className={`text-[10px] uppercase ${VITAL_COLORS[k] || ''}`}>{v>0?'+':''}{v} {k}</span>
+                      ))}
                   </div>
                   <div className="text-[10px] text-ink-100/40 mt-1">cooldown {def.cooldownMin}m</div>
                   <button disabled={onCd || busy === `use-${d.id}`} className="btn btn-gold w-full text-xs mt-2"

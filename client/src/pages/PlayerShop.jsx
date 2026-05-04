@@ -217,8 +217,11 @@ function StockFromWholesaleForm({ shop, onStocked }) {
           if (next) setRetail(next.base_cost);
         }} className="w-full" disabled={busy}>
           {catalogue.map(c => {
-            const effSummary = c.effects
-              ? ' · ' + Object.entries(c.effects).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k}`).join(', ')
+            const visible = c.effects
+              ? Object.entries(c.effects).filter(([k, v]) => k !== 'nerve' && Number.isFinite(v) && v !== 0)
+              : [];
+            const effSummary = visible.length
+              ? ' · ' + visible.map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k}`).join(', ')
               : '';
             return (
               <option key={c.id} value={c.id}>
