@@ -6,6 +6,7 @@
 // chain so the cowboy-clerk photo fits all three storefronts.
 
 import gunstoreClerkUS from '../assets/gunstore-clerk.webp';
+import gunstoreClerkLondon from '../assets/gunstore-clerk-london.webp';
 
 const TEX_US = { name: "Tex's Gun Shop", image: gunstoreClerkUS, clerk: 'Tex',
   quote: "Howdy, partner — walk in armed, walk out armoured." };
@@ -17,7 +18,9 @@ export const STOREFRONTS = {
     miami:       TEX_US,
     kingston:    { name: "Yardman Arms" },
     rio:         { name: "Praça das Armas" },
-    london:      { name: "Smokey's Gun Emporium" },
+    london:      { name: "Holland & Holland's Weaponry", image: gunstoreClerkLondon,
+                   clerk: 'Mr. Holland',
+                   quote: "Good day, sir. The finest English gunmaking, established 1835." },
     paris:       { name: "L'Arsenal de Pigalle" },
     berlin:      { name: "Kreuzberg Waffenhaus" },
     moscow:      { name: "Volkov Oruzheinaya" },
