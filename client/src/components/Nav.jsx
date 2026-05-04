@@ -69,6 +69,12 @@ function NotificationBell() {
   const [data, setData] = useState({ items: [], unreadCount: 0 });
   const [open, setOpen] = useState(false);
   const ref = useRef();
+  const dropdownRef = useRef();
+  // px-shift applied to the dropdown when its left edge would
+  // otherwise overflow the viewport (e.g. mobile, where the bell
+  // sits to the left of the hamburger so right:0 isn't at the
+  // screen edge).
+  const [shiftX, setShiftX] = useState(0);
   // Prev unreadCount so we can detect *new* alerts and chime once.
   // null on first load so the initial fetch doesn't ring on page-open.
   const prevUnreadRef = useRef(null);
@@ -96,6 +102,20 @@ function NotificationBell() {
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
 
+  // When the dropdown opens, measure its left edge against the
+  // viewport. If it would extend past the left edge, translate it
+  // right by the overflow amount + a small gutter. Cleared on close.
+  useEffect(() => {
+    if (!open) { setShiftX(0); return; }
+    const id = requestAnimationFrame(() => {
+      const r = dropdownRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const GUTTER = 8;
+      if (r.left < GUTTER) setShiftX(GUTTER - r.left);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+
   async function toggle() {
     const next = !open;
     setOpen(next);
@@ -120,7 +140,10 @@ function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-ink-100/15 bg-ink-950/95 backdrop-blur shadow-2xl shadow-black/60 overflow-hidden">
+        <div
+          ref={dropdownRef}
+          style={{ transform: `translateX(${shiftX}px)` }}
+          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-ink-100/15 bg-ink-950/95 backdrop-blur shadow-2xl shadow-black/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-ink-100/10 flex items-baseline justify-between">
             <span className="text-xs uppercase tracking-wide text-ink-100/60">Notifications</span>
             <span className="text-[10px] text-ink-100/40">{data.items.length} recent</span>
