@@ -1,6 +1,6 @@
 // All static game content lives here so designers can tune balance in one file.
 
-export { VEHICLES, VEHICLE_BY_ID, VEHICLES_BY_TIER, TIER_NAMES, tierEmoji, rollVehicleFromTier } from './data-vehicles.js';
+export { VEHICLES, VEHICLE_BY_ID, VEHICLES_BY_TIER, TIER_NAMES, tierEmoji, rollVehicleFromTier, VEHICLE_TIER_LEVEL_GATE, VEHICLE_TIER_DRIVING_GATE } from './data-vehicles.js';
 import { VEHICLE_BY_ID } from './data-vehicles.js';
 export const vehicleById = id => VEHICLE_BY_ID[id];
 
