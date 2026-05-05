@@ -544,11 +544,10 @@ export function computeBusiness(template, scale, risk, quality, city) {
 
 // Standard tier bonuses — applied by tier so players can compare at a glance.
 const PROPERTY_TIER_BONUS = {
-  1: { max_energy: 5,   max_nerve: 1,  happiness: 5  }, // walk-up / flat
-  2: { max_energy: 12,  max_nerve: 2,  happiness: 10 }, // apartment / townhouse
-  3: { max_energy: 25,  max_nerve: 5,  happiness: 20 }, // mansion / penthouse
-  4: { max_energy: 50,  max_nerve: 10, happiness: 35 }, // estate / compound
-  5: { max_energy: 100, max_nerve: 20, happiness: 60 }, // criminal-empire flagship
+  1: { max_energy: 5,  max_nerve: 1,  happiness: 5  }, // walk-up / flat
+  2: { max_energy: 12, max_nerve: 2,  happiness: 10 }, // apartment / townhouse
+  3: { max_energy: 25, max_nerve: 5,  happiness: 20 }, // mansion / penthouse
+  4: { max_energy: 50, max_nerve: 10, happiness: 35 }, // estate / compound
 };
 // Garage capacity per property tier. Sums across all properties you own
 // in a given city to determine how many vehicles can sit there at once.
@@ -557,9 +556,8 @@ export const PROPERTY_TIER_GARAGE = {
   2: 4,   // townhouse / apartment block
   3: 8,   // mansion / penthouse
   4: 12,  // estate / compound
-  5: 24,  // empire flagship — superyacht, private island, sky-tower triplex
 };
-const TIER_LABEL = { 1: 'Flat', 2: 'Townhouse', 3: 'Mansion', 4: 'Estate', 5: 'Empire' };
+const TIER_LABEL = { 1: 'Flat', 2: 'Townhouse', 3: 'Mansion', 4: 'Estate' };
 const T = (tier) => ({ tier, tierLabel: TIER_LABEL[tier], bonuses: PROPERTY_TIER_BONUS[tier], garage: PROPERTY_TIER_GARAGE[tier] });
 
 // City-locked property catalogue. To buy you must be physically in the city.
@@ -914,27 +912,11 @@ export const PROPERTIES = [
   { id: 'dub_ballsbridge',city: 'dublin', name: 'Ballsbridge Townhouse',     address: 'Shrewsbury Rd 22',         cost: 1900000,  ...T(3) },
   { id: 'dub_killiney',   city: 'dublin', name: 'Killiney Hill Estate',      address: 'Killiney Hill Rd',         cost: 8500000,  ...T(4) },
 
-  //  São Paulo
+  //  São Paulo 
   { id: 'sao_bras',       city: 'sao_paulo', name: 'Brás Walk-up',           address: 'Rua Oriente 220',          cost: 24000,    ...T(1) },
   { id: 'sao_pinheiros',  city: 'sao_paulo', name: 'Pinheiros Loft',         address: 'Rua Teodoro Sampaio 88',   cost: 180000,   ...T(2) },
   { id: 'sao_jardins',    city: 'sao_paulo', name: 'Jardins Penthouse',      address: 'Alameda Lorena 1255 PH',   cost: 1200000,  ...T(3) },
   { id: 'sao_morumbi',    city: 'sao_paulo', name: 'Morumbi Mansion',        address: 'Rua Itacolomi 388',        cost: 5500000,  ...T(4) },
-
-  //  Tier 5 — Criminal Empire flagships. £18M-£60M. 24 garage spaces,
-  //  doubled vital bonuses. End-game money sinks for players who've
-  //  filled their tier-4 portfolio and need somewhere for the cash.
-  { id: 'ny_billionaires',  city: 'new_york',    name: "Billionaires' Row Tower", address: '220 Central Park S, PH-1', cost: 28000000, ...T(5) },
-  { id: 'la_malibu_compound',city:'los_angeles', name: 'Malibu Cliffside Compound', address: '24400 Pacific Coast Hwy', cost: 32000000, ...T(5) },
-  { id: 'mia_islander',     city: 'miami',       name: 'Indian Creek Mega-Estate', address: '12 Indian Creek Island', cost: 42000000, ...T(5) },
-  { id: 'lon_belgrave_house',city:'london',      name: 'Belgrave Square Townhouse', address: '5 Belgrave Sq, SW1X',   cost: 35000000, ...T(5) },
-  { id: 'par_palais',       city: 'paris',       name: 'Avenue Foch Hôtel Particulier', address: '92 Avenue Foch, 75116', cost: 38000000, ...T(5) },
-  { id: 'mow_skolkovo',     city: 'moscow',      name: 'Rublyovka Estate',         address: '14 Rublyovo-Uspenskoye',  cost: 26000000, ...T(5) },
-  { id: 'dxb_burj_triplex', city: 'dubai',       name: 'Burj Khalifa Sky Triplex',  address: 'Burj Khalifa, Floors 153-155', cost: 60000000, ...T(5) },
-  { id: 'tok_omotesando',   city: 'tokyo',       name: 'Omotesando Sky Penthouse',  address: '4-12 Jingumae, Shibuya, Tower 38F', cost: 40000000, ...T(5) },
-  { id: 'hk_peak_estate',   city: 'hong_kong',   name: 'The Peak Estate',           address: '12 Mount Kellett Rd',     cost: 45000000, ...T(5) },
-  { id: 'syd_pointpiper',   city: 'sydney',      name: 'Point Piper Waterfront',    address: 'Wolseley Rd, Point Piper', cost: 38000000, ...T(5) },
-  { id: 'cpt_clifton',      city: 'cape_town',   name: 'Clifton Bungalows Compound',address: '12th Bend, Clifton',       cost: 22000000, ...T(5) },
-  { id: 'rio_paradise',     city: 'rio',         name: 'Joá Cliffside Estate',      address: 'Estr. da Joatinga 1500',   cost: 24000000, ...T(5) },
 ];
 
 // Tickers across sectors. `vol` controls how spiky the random walk is — low
