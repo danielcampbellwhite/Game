@@ -678,6 +678,44 @@ export function initDb() {
   // street-race win odds and reduces the condition penalty when
   // driving between cities. Capped via STAT_CAPS.driving.
   addColumnIfMissing('characters', 'driving', 'INTEGER NOT NULL DEFAULT 1');
+  // The duration of the *current* jail sentence in ms, recorded when
+  // the sentence was first applied. Used by the failed-escape penalty
+  // to double the *original* sentence rather than just the remaining
+  // time. Cleared (alongside jail_until) when the player walks out.
+  addColumnIfMissing('characters', 'jail_sentence_ms', 'INTEGER');
+  // Running tally of successful crimes per faction. Used to derive a
+  // "faction reputation" — each faction's share of total criminal
+  // activity, normalised so all three sum to 100%.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS faction_stats (
+      faction_id        TEXT PRIMARY KEY,
+      crimes_committed  INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+
+  // Wanted-dead bounties. Anyone can post cash on another player's
+  // head; the amount is held in escrow and paid out automatically to
+  // whoever murders the target while the bounty is open. Multiple
+  // bounties can stack on one target.
+  //
+  // status:
+  //   open       — pending, wallet has the cash on lockup
+  //   claimed    — the target was murdered; collector_id holds the killer
+  //   cancelled  — placer pulled the bounty; cash refunded
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bounties (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      placer_id    INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      target_id    INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      amount       INTEGER NOT NULL,
+      status       TEXT    NOT NULL DEFAULT 'open',
+      collector_id INTEGER REFERENCES characters(id) ON DELETE SET NULL,
+      placed_at    INTEGER NOT NULL,
+      ended_at     INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_bounties_target_status ON bounties(target_id, status);
+    CREATE INDEX IF NOT EXISTS idx_bounties_placer_status ON bounties(placer_id, status);
+  `);
   // Phase 2: next-of-kin death model. 'alive' is the default; 'pending_heir'
   // means the character has been killed and is waiting for the player to
   // create their heir (name/avatar/city) before the row revives.

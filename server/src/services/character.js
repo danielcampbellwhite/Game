@@ -103,6 +103,7 @@ export function applyTick(ch) {
   if (ch.jail_until && ch.jail_until <= now) {
     ch.jail_until = null;
     ch.jail_reason = null;
+    ch.jail_sentence_ms = null;
     writeLog(ch.id, 'jail', ' Released from jail — sentence served.', null, true);
   }
   // Travel arrival
@@ -179,7 +180,7 @@ const SAVE_STMT = `
     strength = ?, defence = ?, speed = ?, intelligence = ?, driving = ?,
     reputation = ?,
     cash = ?, bank = ?, dirty_cash = ?,
-    jail_until = ?, jail_reason = ?, hospital_until = ?, hospital_reason = ?,
+    jail_until = ?, jail_reason = ?, jail_sentence_ms = ?, hospital_until = ?, hospital_reason = ?,
     travel_until = ?, travel_to = ?,
     last_tick = ?, last_health_tick = ?, last_daily = ?, login_streak = ?,
     bank_last_interest = ?,
@@ -195,6 +196,16 @@ const SAVE_STMT = `
   WHERE id = ?
 `;
 
+// Apply a fresh jail sentence — sets jail_until, jail_reason and
+// jail_sentence_ms together. Always go through this so the failed-
+// escape penalty has the original sentence to double.
+export function applyJailSentence(ch, durationMs, reason) {
+  const dur = Math.max(0, Math.floor(durationMs));
+  ch.jail_until = Date.now() + dur;
+  ch.jail_sentence_ms = dur;
+  if (reason !== undefined) ch.jail_reason = reason;
+}
+
 export function saveCharacter(ch) {
   db.prepare(SAVE_STMT).run(
     ch.name, ch.avatar, ch.city, ch.faction || null, ch.gender || null,
@@ -206,7 +217,7 @@ export function saveCharacter(ch) {
     ch.strength, ch.defence, ch.speed, ch.intelligence, ch.driving ?? 1,
     ch.reputation,
     ch.cash, ch.bank, ch.dirty_cash,
-    ch.jail_until, ch.jail_reason || null,
+    ch.jail_until, ch.jail_reason || null, ch.jail_sentence_ms || null,
     ch.hospital_until, ch.hospital_reason || null,
     ch.travel_until, ch.travel_to,
     ch.last_tick, ch.last_health_tick, ch.last_daily, ch.login_streak,

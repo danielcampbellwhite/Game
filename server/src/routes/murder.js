@@ -11,6 +11,7 @@ import { effectiveEquippedWeapon } from '../services/customize.js';
 import { sendEvent } from '../services/events.js';
 import { writeLog } from '../services/log.js';
 import { bumpMission } from '../services/missions.js';
+import { settleBountiesOnKill } from './bounties.js';
 import { softDeath } from '../services/death.js';
 
 const router = Router();
@@ -208,7 +209,14 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     ch.reputation += 20 + (target.level || 1) * 2;
     bumpMission(ch, 'combat_win', 1, { enemy: `murder_${target.id}` });
 
-    writeLog(ch.id, 'pvp', ` You murdered ${target.name} — took £${cashTaken.toLocaleString()}.`, { target: target.id, outcome, cashTaken }, true);
+    // Cash in any open bounties on the target.
+    const bounty = settleBountiesOnKill(ch.id, target.id);
+
+    writeLog(ch.id, 'pvp',
+      bounty.total > 0
+        ? ` You murdered ${target.name} — took £${cashTaken.toLocaleString()} + £${bounty.total.toLocaleString()} bounty (${bounty.count} on the wall).`
+        : ` You murdered ${target.name} — took £${cashTaken.toLocaleString()}.`,
+      { target: target.id, outcome, cashTaken, bounty }, true);
     writeLog(target.id, 'pvp', ` Murdered by ${ch.name} — lost everything, must roll a new character.`, { attacker: ch.id, outcome }, true);
 
     // Save attacker, then soft-death the target. The killer already

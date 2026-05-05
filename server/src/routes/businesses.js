@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { BUSINESSES, businessById, cityById, computeBusiness } from '../data.js';
-import { saveCharacter, publicCharacter } from '../services/character.js';
+import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { factionBonusMul } from '../services/territories.js';
 
@@ -164,8 +164,7 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
     let jailMin = 0;
     if (Math.random() < 0.4) {
       jailMin = 10 + Math.floor(Math.random() * 35);
-      ch.jail_until = Date.now() + jailMin * 60 * 1000;
-      ch.jail_reason = `Police raided "${businessName}" while you were on site — sentenced to ${jailMin} minutes.`;
+      applyJailSentence(ch, jailMin * 60 * 1000, `Police raided "${businessName}" while you were on site — sentenced to ${jailMin} minutes.`);
     }
     const lostNote = template.produces
       ? `${drugYield.qty} ${drugYield.drug}`

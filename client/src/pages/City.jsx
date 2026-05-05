@@ -24,6 +24,7 @@ const AROUND_TOWN = [
   { to: '/travel',     icon: '', name: 'Airport',                  blurb: 'Flights to 11 other cities — economy, business, first class.' },
   { to: '/hospital',   icon: '', name: 'Hospital',                 blurb: 'Top up health on demand, or cover the bill for another patient.' },
   { to: '/jail',       icon: '', name: 'Jail',                     blurb: 'Visit the cells — bail a friend out, or risk a bust.' },
+  { to: '/bounties',   icon: '', name: 'Bounty Board',              blurb: 'Wanted posters — post cash on a player or collect by murdering one.' },
 ];
 
 const UNDERWORLD = [

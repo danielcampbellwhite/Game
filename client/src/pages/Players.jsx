@@ -37,6 +37,38 @@ function PlayerRow({ p }) {
   );
 }
 
+function FactionRepCard() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let live = true;
+    api.get('/factions/reputation').then(r => { if (live) setData(r); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+  if (!data) return null;
+  const palette = { gold: 'bg-gold-400', blood: 'bg-blood-500', money: 'bg-money-500' };
+  return (
+    <Card title="Faction Reputation"
+      subtitle={data.total > 0
+        ? `Each faction's share of ${data.total.toLocaleString()} crimes committed across the world.`
+        : "No-one's pulled a job yet — share starts even and shifts with every crime."}>
+      <div className="flex h-3 w-full rounded-full overflow-hidden border border-ink-100/10">
+        {data.factions.map(f => (
+          <div key={f.id} className={palette[f.palette] || 'bg-ink-700'}
+            style={{ width: `${Math.max(2, f.percent)}%` }} title={`${f.name} — ${f.percent}%`} />
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-2 text-[11px]">
+        {data.factions.map(f => (
+          <div key={f.id}>
+            <div className="text-ink-100/60">{f.name}</div>
+            <div className="tabular-nums">{f.percent}% <span className="text-ink-100/40">· {f.crimes.toLocaleString()}</span></div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export default function Players() {
   const [q, setQ] = useState('');
   const [data, setData] = useState({ players: [] });
@@ -64,6 +96,7 @@ export default function Players() {
 
   return (
     <div className="space-y-4">
+      <FactionRepCard />
       <Card title="Players" subtitle="Search by name to find anyone — online or offline. Locations are private; fly somewhere to see who's there.">
         <input
           type="search"

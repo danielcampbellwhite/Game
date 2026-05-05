@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { CITIES, cityById, landReachableFrom, landDistanceBetween, vehicleById } from '../data.js';
-import { saveCharacter, publicCharacter } from '../services/character.js';
+import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 
@@ -77,8 +77,7 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
       db.prepare("DELETE FROM inventory WHERE char_id = ? AND kind = 'drug'").run(ch.id);
       // Jail time scales with how many drug types + a little randomness
       bustJailMin = 30 + drugRows.length * 5 + Math.floor(Math.random() * 16);
-      ch.jail_until = Date.now() + bustJailMin * 60 * 1000;
-      ch.jail_reason = `Customs caught you trying to fly out with ${seized} in your bag — sentenced to ${bustJailMin} minutes.`;
+      applyJailSentence(ch, bustJailMin * 60 * 1000, `Customs caught you trying to fly out with ${seized} in your bag — sentenced to ${bustJailMin} minutes.`);
       // Cancel any in-flight travel (you're going to jail, not the airport lounge)
       ch.travel_until = null;
       ch.travel_to = null;

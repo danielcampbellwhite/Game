@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier } from '../data.js';
-import { saveCharacter, awardXp, publicCharacter } from '../services/character.js';
+import { saveCharacter, awardXp, publicCharacter, applyJailSentence } from '../services/character.js';
 import { bumpMission } from '../services/missions.js';
 import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
@@ -199,6 +199,14 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     ch.reputation += Math.floor(crime.xp / 4);
     ch.happiness = Math.min(100, ch.happiness + 1);
     bumpMission(ch, 'crime_success', 1, { tier: crime.tier, crime: crime.id });
+    // Tally a faction crime — drives the "faction reputation" share
+    // surfaced on /api/factions/reputation. Skipped for unaligned chars.
+    if (ch.faction) {
+      db.prepare(`
+        INSERT INTO faction_stats (faction_id, crimes_committed) VALUES (?, 1)
+        ON CONFLICT(faction_id) DO UPDATE SET crimes_committed = crimes_committed + 1
+      `).run(ch.faction);
+    }
 
     if (crime.tier === 'gta' && crime.vehicleTier) {
       // Stolen car becomes the player's active ride. Earlier guard
@@ -242,9 +250,8 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     const consequence = Math.random();
     if (consequence < adjustedJail) {
       const mins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
-      ch.jail_until = Date.now() + mins * 60 * 1000;
       const msg = failMessage(crime.tier, 'jail', crime.name, mins);
-      ch.jail_reason = msg;
+      applyJailSentence(ch, mins * 60 * 1000, msg);
       writeLog(ch.id, 'crime', msg, { crime: crime.id, jail_min: mins }, true);
       result = { ok: true, success: false, jailed: true, jail_min: mins };
     } else if (consequence < adjustedJail + risk.hosp) {

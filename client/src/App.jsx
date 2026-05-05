@@ -21,6 +21,7 @@ import Range from './pages/Range.jsx';
 import University from './pages/University.jsx';
 import DrivingSchool from './pages/DrivingSchool.jsx';
 import Races from './pages/Races.jsx';
+import Bounties from './pages/Bounties.jsx';
 import Inventory from './pages/Inventory.jsx';
 import Missions from './pages/Missions.jsx';
 import GeneralStore from './pages/GeneralStore.jsx';
@@ -148,6 +149,7 @@ export default function App() {
           <Route path="/university" element={<Protected><University /></Protected>} />
           <Route path="/driving-school" element={<Protected><DrivingSchool /></Protected>} />
           <Route path="/races" element={<Protected><Races /></Protected>} />
+          <Route path="/bounties" element={<Protected><Bounties /></Protected>} />
           <Route path="/inventory" element={<Protected><Inventory /></Protected>} />
           <Route path="/missions" element={<Protected><Missions /></Protected>} />
           <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />

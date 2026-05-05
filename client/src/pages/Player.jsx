@@ -53,6 +53,24 @@ export default function Player() {
 
   const [showRace, setShowRace] = useState(false);
   const [raceStake, setRaceStake] = useState(1000);
+  const [showBounty, setShowBounty] = useState(false);
+  const [bountyAmount, setBountyAmount] = useState(0);
+  const [bountyMin, setBountyMin] = useState(null);
+  useEffect(() => {
+    if (!showBounty || !id) return;
+    api.get(`/bounties/min/${id}`)
+      .then(r => { setBountyMin(r); if (!bountyAmount) setBountyAmount(r.min); })
+      .catch(() => {});
+  }, [showBounty, id]);
+  async function placeBounty() {
+    setBusy('bounty'); setMsg(null);
+    try {
+      await api.post('/bounties', { target_id: parseInt(id, 10), amount: parseInt(bountyAmount, 10) });
+      setMsg('Bounty placed.');
+      setShowBounty(false);
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
   async function sendRace() {
     setBusy('race'); setMsg(null);
     try {
@@ -188,6 +206,13 @@ export default function Player() {
               title={!p.same_city ? "Not in your city — find them first." : 'Challenge them to a same-tier street race for cash.'}>
               {busy === 'race' ? '…' : showRace ? 'Cancel' : 'Race'}
             </button>
+            <button
+              disabled={busy === 'bounty'}
+              onClick={() => setShowBounty(s => !s)}
+              className="btn text-xs"
+              title="Post cash on their head — paid out to whoever murders them.">
+              {busy === 'bounty' ? '…' : showBounty ? 'Cancel' : 'Bounty'}
+            </button>
             {/* Invite to my gang — only if I'm officer+ and target has no gang */}
             {(myGang?.role === 'leader' || myGang?.role === 'officer') && !p.gang && (
               <button disabled={busy === 'invite'} onClick={invite} className="btn text-xs">
@@ -222,6 +247,24 @@ export default function Player() {
               />
               <button onClick={sendRace} disabled={busy === 'race'} className="btn btn-money text-xs">
                 {busy === 'race' ? '…' : `Send · ${fmt(parseInt(raceStake, 10) || 0)}`}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showBounty && !isSelf && (
+          <div className="mt-3 p-3 rounded-md border border-blood-500/30 bg-blood-700/5">
+            <div className="text-[10px] uppercase tracking-wide text-blood-300 mb-1"> Place a bounty</div>
+            <p className="text-[11px] text-ink-100/65 mb-2">
+              Cash is held in escrow and paid to whoever murders {p.name}. You can cancel anytime
+              for a full refund.{bountyMin ? <> Minimum on a {bountyMin.targetRank} is {fmt(bountyMin.min)}.</> : null}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-[11px] text-ink-100/55">Amount</label>
+              <input type="number" min={bountyMin?.min || 1000} step={1000} value={bountyAmount}
+                onChange={e => setBountyAmount(e.target.value)} className="w-32" />
+              <button onClick={placeBounty} disabled={busy === 'bounty'} className="btn btn-primary text-xs">
+                {busy === 'bounty' ? '…' : `Post · ${fmt(parseInt(bountyAmount, 10) || 0)}`}
               </button>
             </div>
           </div>

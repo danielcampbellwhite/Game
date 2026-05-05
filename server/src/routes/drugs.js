@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { DRUGS, DRUG_USE_EFFECTS, drugById } from '../data.js';
-import { saveCharacter, publicCharacter } from '../services/character.js';
+import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { applyVitalEffects, effectsToText } from '../services/vitals.js';
 import { bumpMission } from '../services/missions.js';
 import { writeLog } from '../services/log.js';
@@ -59,8 +59,7 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   const bustChance = drugBustChance(qty);
   if (Math.random() < bustChance) {
     const jailMin = 20 + qty * 2 + Math.floor(Math.random() * 20);
-    ch.jail_until = Date.now() + jailMin * 60 * 1000;
-    ch.jail_reason = `Buyer was undercover — caught fencing ${qty}× ${drug.name}. ${jailMin} minutes inside.`;
+    applyJailSentence(ch, jailMin * 60 * 1000, `Buyer was undercover — caught fencing ${qty}× ${drug.name}. ${jailMin} minutes inside.`);
     if (inv.qty === qty) {
       db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').run(ch.id, 'drug', drug.id);
     } else {

@@ -143,8 +143,10 @@ export default function Jail() {
   async function act(action) {
     setBusy(action); setMsg(null);
     try {
-      await api.post(`/jail/${action}`);
-      setMsg(action === 'lawyer' ? 'Lawyer hired — sentence cut in half.' : 'Bribe attempted.');
+      const r = await api.post(`/jail/${action}`);
+      if (action === 'lawyer') setMsg('Lawyer hired — sentence cut in half.');
+      else if (action === 'bribe') setMsg(r?.character?.jail_until ? 'Bribe rejected — sentence doubled.' : 'Bribe accepted — walked free.');
+      else if (action === 'escape') setMsg(r?.success ? 'Slipped out clean.' : 'Escape failed — sentence doubled.');
       await refresh();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
@@ -193,7 +195,7 @@ export default function Jail() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3 mt-4">
+        <div className="grid sm:grid-cols-3 gap-3 mt-4">
           <button disabled={busy || character.cash < lawyer} className="btn"
             onClick={() => act('lawyer')}>
             {busy === 'lawyer' ? '...' : `Hire lawyer — ${fmt(lawyer)}`}
@@ -202,7 +204,12 @@ export default function Jail() {
           <button disabled={busy || character.cash < bribe} className="btn btn-primary"
             onClick={() => act('bribe')}>
             {busy === 'bribe' ? '...' : `Bribe guard — ${fmt(bribe)}`}
-            <div className="text-[10px] opacity-70">90% chance to walk · 10% sentence doubles</div>
+            <div className="text-[10px] opacity-70">90% walk · 10% sentence doubles</div>
+          </button>
+          <button disabled={busy} className="btn btn-ghost"
+            onClick={() => act('escape')}>
+            {busy === 'escape' ? '...' : 'Run for it'}
+            <div className="text-[10px] opacity-70">50/50 · fail → 2× original sentence</div>
           </button>
         </div>
 

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { vehicleById, cityById } from '../data.js';
-import { saveCharacter, publicCharacter } from '../services/character.js';
+import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 
 const router = Router();
@@ -97,8 +97,7 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   // Black-market dealer: small bust chance — undercover sting!
   if (where === 'dealer' && Math.random() < DEALER_BUST_CHANCE) {
     const jailMin = 20 + Math.floor(Math.random() * 40);
-    ch.jail_until = Date.now() + jailMin * 60 * 1000;
-    ch.jail_reason = `Walked into a sting trying to fence a ${v.maker} ${v.name} at the black-market dealer — sentenced to ${jailMin} minutes.`;
+    applyJailSentence(ch, jailMin * 60 * 1000, `Walked into a sting trying to fence a ${v.maker} ${v.name} at the black-market dealer — sentenced to ${jailMin} minutes.`);
     ch.active_vehicle_id = null;
     db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id); // car seized
     writeLog(ch.id, 'chop', ` STING at the black-market dealer — lost the ${v.maker} ${v.name} and jailed ${jailMin}m.`, { vehicle: v.id });

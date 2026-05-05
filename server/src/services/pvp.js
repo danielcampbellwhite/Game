@@ -8,6 +8,7 @@ import { sendEvent } from './events.js';
 import { bumpMission } from './missions.js';
 import { loadMembership, activeWarBetween, bumpWarScoreFromAttack, handleLeaderDeath, gangBadgeFor } from './gangs.js';
 import { softDeath } from './death.js';
+import { settleBountiesOnKill } from '../routes/bounties.js';
 
 //  Tunables 
 export const CHALLENGE_TTL_MS    = 60_000;     // target has 60s to accept
@@ -280,8 +281,14 @@ export function endFight(fight, attacker, target, outcome) {
       bumpMission(winner, 'combat_win', 1, { enemy: `pvp_${loser.id}` });
       // War scoreboard bump (kind=murder = 5pts).
       bumpWarScoreFromAttack(winner, loser, fight.city, 'murder');
+      // Settle any open bounties on the loser.
+      const bounty = settleBountiesOnKill(winner.id, loser.id);
 
-      writeLog(winner.id, 'pvp', ` You murdered ${loser.name} — took £${cashTake.toLocaleString()}, +${xp}xp.`, { opponent: loser.id, payout: cashTake, xp, mode: 'murder' }, true);
+      writeLog(winner.id, 'pvp',
+        bounty.total > 0
+          ? ` You murdered ${loser.name} — took £${cashTake.toLocaleString()} + £${bounty.total.toLocaleString()} bounty, +${xp}xp.`
+          : ` You murdered ${loser.name} — took £${cashTake.toLocaleString()}, +${xp}xp.`,
+        { opponent: loser.id, payout: cashTake, xp, bounty, mode: 'murder' }, true);
       writeLog(loser.id,  'pvp', ` Murdered by ${winner.name} — lost everything, reset to level 10.`, { opponent: winner.id, mode: 'murder' }, true);
 
       // Sync winner HP from fight, then save.
