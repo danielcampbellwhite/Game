@@ -196,6 +196,23 @@ export const TIER_NAMES = {
   7: 'Hypercar',
 };
 
+// Minimum character level to buy / steal a car of each tier. Tiers
+// 1-4 are open from the start so the early game has variety; tiers
+// 5+ are gated to keep flashy cars meaningful late-game purchases.
+export const VEHICLE_TIER_LEVEL_GATE = {
+  1: 1, 2: 1, 3: 1, 4: 1,
+  5: 20, 6: 35, 7: 55,
+};
+
+// Driver's licence — the *driving skill* required to set a car of
+// each tier as your active vehicle. You can still buy, ship and store
+// cars above your skill level; you just can't drive them around until
+// you've trained up at the Driving School.
+export const VEHICLE_TIER_DRIVING_GATE = {
+  1: 0, 2: 0, 3: 0, 4: 10,
+  5: 30, 6: 50, 7: 70,
+};
+
 export const tierEmoji = (tier) => (tier >= 6 ? '' : tier >= 4 ? '' : tier === 3 ? '' : '');
 
 // Random vehicle from a given tier — used by GTA crime success.

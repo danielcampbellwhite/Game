@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier, specPerk } from '../data.js';
+import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier, specPerk, VEHICLE_TIER_DRIVING_GATE } from '../data.js';
 import { saveCharacter, awardXp, publicCharacter, applyJailSentence } from '../services/character.js';
 import { bumpMission } from '../services/missions.js';
 import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL, applyGangCrimeCut } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
 import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
 import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
+import { freeGarageSpace } from '../services/garage.js';
 import { factionBonusMul, factionGlobalCrimeMul } from '../services/territories.js';
 
 const router = Router();
@@ -215,14 +216,41 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       // somebody before you, after all.
       const v = rollVehicleFromTier(crime.vehicleTier);
       let stolenCondition = 100;
+      let stolenActive = false;
+      let chopped = false;
+      let chopPayout = 0;
       if (v) {
         stolenCondition = Math.round(75 + Math.random() * 25);
-        const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
-          .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
-        ch.active_vehicle_id = info.lastInsertRowid;
+        const drivingGate = VEHICLE_TIER_DRIVING_GATE[v.tier] || 0;
+        const canDrive = (ch.driving || 1) >= drivingGate;
+        if (canDrive) {
+          const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
+            .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
+          ch.active_vehicle_id = info.lastInsertRowid;
+          stolenActive = true;
+        } else if (freeGarageSpace(ch.id, ch.city) > 0) {
+          // Driver's licence too low — stash in the local garage
+          // instead. Player can equip it once their driving stat
+          // catches up.
+          db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
+            .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
+        } else {
+          // Can't drive AND no garage room → unload at the chop shop
+          // for 15% of book so the heist isn't a total loss.
+          chopPayout = Math.floor(v.bookPrice * 0.15);
+          ch.cash += chopPayout;
+          chopped = true;
+        }
       }
-      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — drove off in a ${v ? v.maker + ' ' + v.name : 'vehicle'} (${stolenCondition}% cond, +${xpGain}xp).`, { crime: crime.id, vehicle: v?.id, xp: xpGain, condition: stolenCondition });
-      result = { ok: true, success: true, vehicle: v, condition: stolenCondition, xp: xpGain, levels: lvls };
+      const summary = !v
+        ? `Pulled off "${crime.name}" (+${xpGain}xp).`
+        : chopped
+          ? `Pulled off "${crime.name}" — chopped the ${v.maker} ${v.name} for £${chopPayout.toLocaleString()} (no garage, no licence) (+${xpGain}xp).`
+          : stolenActive
+            ? `Pulled off "${crime.name}" — drove off in a ${v.maker} ${v.name} (${stolenCondition}% cond, +${xpGain}xp).`
+            : `Pulled off "${crime.name}" — stashed the ${v.maker} ${v.name} in the garage (need driving ${VEHICLE_TIER_DRIVING_GATE[v.tier]} to drive it). +${xpGain}xp.`;
+      writeLog(ch.id, 'crime', summary, { crime: crime.id, vehicle: v?.id, xp: xpGain, condition: stolenCondition, stashed: !stolenActive && !chopped, chopped, chopPayout });
+      result = { ok: true, success: true, vehicle: v, condition: stolenCondition, xp: xpGain, levels: lvls, active: stolenActive, chopped, chopPayout };
     } else {
       const cityMul = cityById(ch.city)?.businessMul || 1.0;
       // Territory-control bonuses:

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { VEHICLES, vehicleById, cityById } from '../data.js';
+import { VEHICLES, vehicleById, cityById, VEHICLE_TIER_LEVEL_GATE, VEHICLE_TIER_DRIVING_GATE } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { freeGarageSpace, garageCapacity, vehicleCount } from '../services/garage.js';
@@ -16,10 +16,17 @@ function dealerPrice(vehicle, city) {
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
-  const inventory = VEHICLES.map(v => ({
-    ...v,
-    price: dealerPrice(v, ch.city),
-  }));
+  const inventory = VEHICLES.map(v => {
+    const levelGate   = VEHICLE_TIER_LEVEL_GATE[v.tier]   || 1;
+    const drivingGate = VEHICLE_TIER_DRIVING_GATE[v.tier] || 0;
+    return {
+      ...v,
+      price: dealerPrice(v, ch.city),
+      levelGate,
+      drivingGate,
+      locked: ch.level < levelGate,
+    };
+  });
   const capacity = garageCapacity(ch.id, ch.city);
   const used = vehicleCount(ch.id, ch.city);
   // Quote the active-vehicle trade-in price so the UI can show what
@@ -59,10 +66,16 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const v = vehicleById(req.body?.vehicle_id);
   if (!v) return res.status(400).json({ error: 'Unknown vehicle' });
-  // If the player isn't already driving something, the new car becomes
-  // their active ride and skips the garage. Otherwise it has to fit in
-  // a local garage slot.
-  const willBeActive = !ch.active_vehicle_id;
+  const levelGate = VEHICLE_TIER_LEVEL_GATE[v.tier] || 1;
+  if (ch.level < levelGate) {
+    return res.status(403).json({ error: `Tier ${v.tier} cars unlock at level ${levelGate}.` });
+  }
+  // The car will only auto-equip as the active ride if (a) the player
+  // isn't currently driving something AND (b) their driving licence
+  // covers the tier. Otherwise it goes straight to the garage.
+  const drivingGate = VEHICLE_TIER_DRIVING_GATE[v.tier] || 0;
+  const hasLicence = (ch.driving || 1) >= drivingGate;
+  const willBeActive = !ch.active_vehicle_id && hasLicence;
   if (!willBeActive && freeGarageSpace(ch.id, ch.city) <= 0) {
     const cap = garageCapacity(ch.id, ch.city);
     return res.status(400).json({

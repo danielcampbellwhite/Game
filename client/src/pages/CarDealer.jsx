@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 import { storefront } from '../lib/storefronts.js';
 import showroomImg from '../assets/cardealer-showroom.webp';
@@ -135,21 +136,34 @@ export default function CarDealer() {
       {Object.keys(grouped).sort().map(tier => (
         <Card key={tier} title={`${tierEmoji(parseInt(tier, 10))} Tier ${tier} — ${TIER_LABEL[tier]}`}>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {grouped[tier].map(v => (
-              <div key={v.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
-                <div className="font-medium">{v.maker} {v.name}</div>
-                <div className="text-[11px] text-ink-100/60">Book: {fmt(v.bookPrice)}</div>
-                <div className="text-money-400 font-semibold tabular-nums mt-1">{fmt(v.price)}</div>
-                <button disabled={character.cash < v.price || busy === v.id || (data.garage && data.garage.free === 0)} className="btn btn-money w-full text-xs mt-2"
-                  onClick={() => buy(v)}>
-                  {busy === v.id
-                    ? '...'
-                    : (data.garage && data.garage.free === 0)
-                      ? 'Garage full'
-                      : 'Buy'}
-                </button>
-              </div>
-            ))}
+            {grouped[tier].map(v => {
+              const noLicence = (character?.driving || 1) < (v.drivingGate || 0);
+              return (
+                <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-medium">{v.maker} {v.name}</div>
+                    {v.locked && <LockBadge level={v.levelGate} />}
+                  </div>
+                  <div className="text-[11px] text-ink-100/60">Book: {fmt(v.bookPrice)}</div>
+                  <div className="text-money-400 font-semibold tabular-nums mt-1">{fmt(v.price)}</div>
+                  {!v.locked && noLicence && (
+                    <div className="text-[10px] text-yellow-300 mt-1">
+                      Need driving {v.drivingGate}+ to drive — buy + ship is fine, equip later.
+                    </div>
+                  )}
+                  <button disabled={v.locked || character.cash < v.price || busy === v.id || (data.garage && data.garage.free === 0 && !!character.active_vehicle_id)} className="btn btn-money w-full text-xs mt-2"
+                    onClick={() => buy(v)}>
+                    {busy === v.id
+                      ? '...'
+                      : v.locked
+                        ? 'Locked'
+                        : (data.garage && data.garage.free === 0 && !!character.active_vehicle_id)
+                          ? 'Garage full'
+                          : 'Buy'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </Card>
       ))}

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, cityById, drugById, miscItemById, propertyById, applyVehicleMods, CITIES } from '../data.js';
+import { WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, vehicleById, cityById, drugById, miscItemById, propertyById, applyVehicleMods, CITIES, VEHICLE_TIER_DRIVING_GATE } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { garageSummary, freeGarageSpace } from '../services/garage.js';
@@ -155,9 +155,16 @@ router.post('/equip-vehicle', requireAuth, requireCharacter, (req, res) => {
   if (row.city !== ch.city) {
     return res.status(400).json({ error: `That car is in ${cityById(row.city)?.name || row.city}. Fly there to drive it.` });
   }
+  // Driver's licence — driving skill must cover the car's tier
+  // before you can equip it. Buying / shipping / storing are still
+  // open; this only blocks setting the car as your active ride.
+  const v = vehicleById(row.vehicle_id);
+  const drivingGate = (v && VEHICLE_TIER_DRIVING_GATE[v.tier]) || 0;
+  if ((ch.driving || 1) < drivingGate) {
+    return res.status(403).json({ error: `Tier ${v.tier} requires driving skill ${drivingGate}+. Train at the Driving School.` });
+  }
   ch.active_vehicle_id = row.id;
   saveCharacter(ch);
-  const v = vehicleById(row.vehicle_id);
   writeLog(ch.id, 'shop', `Took the ${v?.maker || ''} ${v?.name || 'car'} out of the garage.`, { vehicle: row.vehicle_id });
   res.json({ ok: true, character: publicCharacter(ch) });
 });
