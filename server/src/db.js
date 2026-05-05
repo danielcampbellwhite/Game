@@ -721,6 +721,23 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_bounties_target_status ON bounties(target_id, status);
     CREATE INDEX IF NOT EXISTS idx_bounties_placer_status ON bounties(placer_id, status);
   `);
+
+  // Daily contracts. One per character per UTC day. Wraps a randomly-
+  // selected major/cyber crime, locks it to a single city, and awards
+  // 3× payout on success. Burns regardless of outcome.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_contracts (
+      char_id    INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      day_key    TEXT    NOT NULL,
+      crime_id   TEXT    NOT NULL,
+      city       TEXT    NOT NULL,
+      payout_mul REAL    NOT NULL DEFAULT 3.0,
+      status     TEXT    NOT NULL DEFAULT 'open',
+      created_at INTEGER NOT NULL,
+      ended_at   INTEGER,
+      PRIMARY KEY (char_id, day_key)
+    );
+  `);
   // Phase 2: next-of-kin death model. 'alive' is the default; 'pending_heir'
   // means the character has been killed and is waiting for the player to
   // create their heir (name/avatar/city) before the row revives.

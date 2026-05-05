@@ -106,6 +106,66 @@ function PlayerCrimes({ character }) {
   );
 }
 
+// Daily contract banner — fetches the day's tip on mount, attempts
+// it inline. The contract auto-generates server-side on first read,
+// so the banner is always populated for level-2+ players.
+function DailyContractBanner({ character, onChange }) {
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  async function load() {
+    try { setData(await api.get('/contracts')); }
+    catch { /* swallow — banner is optional */ }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function attempt() {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api.post('/contracts/attempt');
+      setMsg(r.success
+        ? `+${fmt(r.payout)} (3× tip) — contract done.`
+        : `Job blew up — ${r.jailMin}m inside.`);
+      await load();
+      await onChange?.();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(false); }
+  }
+
+  if (!data?.contract) return null;
+  const c = data.contract;
+  const inCity = character?.city === c.city;
+  const closed = c.status !== 'open';
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <div className="text-2xl shrink-0"></div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wide text-yellow-300">Daily Contract · Anonymous tip</span>
+            {closed && <span className="text-[10px] uppercase tracking-wide text-ink-100/45">{c.status}</span>}
+          </div>
+          <div className="font-medium mt-0.5">{c.crime.name} · <span className="text-ink-100/55">{c.cityName}</span></div>
+          <div className="text-[11px] text-ink-100/65 mt-0.5">
+            {fmt(c.minPayout)}–{fmt(c.maxPayout)} (3× normal) · {c.crime.energy} energy · risk {c.crime.risk}
+          </div>
+          {msg && <p className="text-[11px] text-money-300 mt-1">{msg}</p>}
+          {!closed && (
+            <button onClick={attempt}
+              disabled={busy || !inCity || (character?.energy || 0) < c.crime.energy}
+              className="btn btn-money text-xs mt-2"
+              title={!inCity ? `Travel to ${c.cityName} first` : 'Take the job'}>
+              {busy ? '…' : !inCity ? `Travel to ${c.cityName} first` : `Take the job — ${fmt(c.minPayout)}–${fmt(c.maxPayout)}`}
+            </button>
+          )}
+          {closed && <p className="text-[11px] text-ink-100/45 mt-1">A new tip arrives at midnight UTC.</p>}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function Crimes() {
   const { character, refresh, updateFromResponse } = useGame();
   const [list, setList] = useState([]);
@@ -146,6 +206,7 @@ export default function Crimes() {
 
   return (
     <div className="space-y-4">
+      <DailyContractBanner character={character} onChange={async () => { await refresh(); }} />
       <Card title="Heat" subtitle="Each crime attracts attention. High heat shaves your success chance and bumps jail risk on failure. Decays ~1/min while you lay low.">
         <div className="flex items-baseline gap-3">
           <div className={`font-display text-3xl tabular-nums ${heatColor}`}>{heat}</div>
