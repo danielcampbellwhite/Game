@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext.jsx';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 //  Showcase content 
 //
@@ -111,6 +111,9 @@ export default function Login() {
         <div className="text-center mb-4">
           <div className="font-display text-5xl text-blood-500">MAFIA LIFE</div>
           <p className="text-xs text-ink-100/50 mt-1">Build an empire — or rot in jail trying.</p>
+          <p className="text-[11px] text-ink-100/40 mt-1">
+            <Link to="/patches" className="hover:text-blood-300 transition">Patches & updates →</Link>
+          </p>
         </div>
         <div className="flex gap-1 mb-4 text-xs">
           <button className={`btn ${mode==='login' ? 'btn-primary' : 'btn-ghost'} flex-1`} onClick={() => setMode('login')}>Sign in</button>

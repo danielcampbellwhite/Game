@@ -22,6 +22,7 @@ import University from './pages/University.jsx';
 import DrivingSchool from './pages/DrivingSchool.jsx';
 import Races from './pages/Races.jsx';
 import Bounties from './pages/Bounties.jsx';
+import Patches from './pages/Patches.jsx';
 import Fence from './pages/Fence.jsx';
 import Inventory from './pages/Inventory.jsx';
 import Missions from './pages/Missions.jsx';
@@ -132,6 +133,7 @@ export default function App() {
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
         <Routes>
           <Route path="/login" element={token ? <Navigate to={character ? '/' : '/create'} replace /> : <Login />} />
+          <Route path="/patches" element={<Patches />} />
           <Route path="/create" element={token && !character ? <CharacterCreate /> : <Navigate to={token ? '/' : '/login'} replace />} />
           <Route path="/" element={<Protected><Dashboard /></Protected>} />
           <Route path="/crimes" element={<Protected><Crimes /></Protected>} />
