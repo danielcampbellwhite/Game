@@ -299,47 +299,140 @@ export function starterBusinesses() {
 
 // Crimes — energy/nerve cost, level gate, success base, payout range, xp
 export const CRIMES = [
-  //  Street crimes 
+  //  Street crimes
   { id: 'pickpocket',     name: 'Pickpocket',           tier: 'street', energy: 1, nerve: 0, level: 1,  base: 75, min: 20,    max: 80,    xp: 4,   risk: 'tiny' },
   { id: 'shoplift',       name: 'Shoplift',             tier: 'street', energy: 2, nerve: 0, level: 1,  base: 70, min: 50,    max: 200,   xp: 6,   risk: 'tiny' },
   { id: 'snatch_grab',    name: 'Phone Snatch',         tier: 'street', energy: 1, nerve: 0, level: 2,  base: 72, min: 40,    max: 180,   xp: 6,   risk: 'tiny' },
-  { id: 'bike_theft',     name: 'Steal a Pushbike',     tier: 'street', energy: 2, nerve: 0, level: 2,  base: 68, min: 60,    max: 250,   xp: 8,   risk: 'tiny' },
-  { id: 'mugging',        name: 'Mugging',              tier: 'street', energy: 4, nerve: 0, level: 4,  base: 60, min: 200,   max: 800,   xp: 12,  risk: 'low'  },
+  { id: 'bike_theft',     name: 'Steal a Pushbike',     tier: 'street', energy: 2, nerve: 0, level: 2,  base: 68, min: 60,    max: 250,   xp: 8,   risk: 'tiny',
+    requires: [{ kind: 'misc', item_id: 'bolt_cutters', qty: 1, consumed: false }] },
+  { id: 'mugging',        name: 'Mugging',              tier: 'street', energy: 4, nerve: 0, level: 4,  base: 60, min: 200,   max: 800,   xp: 12,  risk: 'low',
+    requires: [{ kind: 'misc', item_id: 'gloves', qty: 1, consumed: false }] },
   { id: 'atm_skim',       name: 'ATM Skim',             tier: 'street', energy: 4, nerve: 0, level: 4,  base: 55, min: 280,   max: 1100,  xp: 14,  risk: 'low',  intelBonus: 0.8,
     requires: [{ kind: 'misc', item_id: 'atm_skimmer', qty: 1, consumed: true }] },
-  { id: 'cat_converter',  name: 'Cat Converter Theft',  tier: 'street', energy: 4, nerve: 0, level: 5,  base: 60, min: 250,   max: 950,   xp: 14,  risk: 'low'  },
-  { id: 'scam',           name: 'Online Scam',          tier: 'street', energy: 3, nerve: 0, level: 5,  base: 50, min: 400,   max: 1800,  xp: 18,  risk: 'low',  intelBonus: 1.0 },
-  { id: 'breakin',        name: 'House Break-In',       tier: 'street', energy: 5, nerve: 0, level: 6,  base: 55, min: 600,   max: 2200,  xp: 20,  risk: 'low'  },
+  { id: 'cat_converter',  name: 'Cat Converter Theft',  tier: 'street', energy: 4, nerve: 0, level: 5,  base: 60, min: 250,   max: 950,   xp: 14,  risk: 'low',
+    requires: [{ kind: 'misc', item_id: 'wire_cutters', qty: 1, consumed: false }] },
+  { id: 'scam',           name: 'Online Scam',          tier: 'street', energy: 3, nerve: 0, level: 5,  base: 50, min: 400,   max: 1800,  xp: 18,  risk: 'low',  intelBonus: 1.0,
+    requires: [{ kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true }] },
+  { id: 'breakin',        name: 'House Break-In',       tier: 'street', energy: 5, nerve: 0, level: 6,  base: 55, min: 600,   max: 2200,  xp: 20,  risk: 'low',
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true },
+      { kind: 'misc', item_id: 'gloves',       qty: 1, consumed: false },
+    ] },
   { id: 'loan_collect',   name: 'Loan Shark Collection',tier: 'street', energy: 5, nerve: 0, level: 8,  base: 65, min: 450,   max: 1800,  xp: 22,  risk: 'low'  },
-  { id: 'store_holdup',   name: 'Convenience Holdup',   tier: 'street', energy: 6, nerve: 0, level: 9,  base: 55, min: 700,   max: 2800,  xp: 28,  risk: 'med'  },
+  { id: 'store_holdup',   name: 'Convenience Holdup',   tier: 'street', energy: 6, nerve: 0, level: 9,  base: 55, min: 700,   max: 2800,  xp: 28,  risk: 'med',
+    requires: [
+      { kind: 'misc', item_id: 'ski_mask', qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'gloves',   qty: 1, consumed: false },
+    ] },
 
-  //  Cybercrime — intelligence-driven, lower energy, scales hard 
-  { id: 'phishing',       name: 'Email Phishing',       tier: 'cyber',  energy: 2, nerve: 0, level: 5,  base: 50, min: 220,   max: 850,    xp: 16,  risk: 'low',  intelBonus: 1.0 },
-  { id: 'social_eng',     name: 'Social Engineering',   tier: 'cyber',  energy: 4, nerve: 0, level: 8,  base: 55, min: 600,   max: 2200,   xp: 32,  risk: 'low',  intelBonus: 1.2 },
-  { id: 'card_fraud',     name: 'Stolen Card Fraud',    tier: 'cyber',  energy: 4, nerve: 0, level: 12, base: 50, min: 1600,  max: 5800,   xp: 65,  risk: 'low',  intelBonus: 1.0, dirty: true },
-  { id: 'darkweb',        name: 'Dark Web Fraud Ring',  tier: 'cyber',  energy: 6, nerve: 0, level: 16, base: 50, min: 4500,  max: 16000,  xp: 140, risk: 'med',  intelBonus: 1.3, dirty: true },
-  { id: 'ransomware',     name: 'Ransomware Drop',      tier: 'cyber',  energy: 8, nerve: 0, level: 22, base: 45, min: 8000,  max: 30000,  xp: 290, risk: 'med',  intelBonus: 1.4, dirty: true, cooldownSec: 3600   /* 1h */ },
-  { id: 'crypto_drain',   name: 'Crypto Wallet Drain',  tier: 'cyber',  energy: 9, nerve: 0, level: 30, base: 45, min: 18000, max: 60000,  xp: 620, risk: 'high', intelBonus: 1.5, dirty: true, cooldownSec: 7200   /* 2h */ },
-  { id: 'ddos_ext',       name: 'DDoS Extortion',       tier: 'cyber',  energy: 11, nerve: 0, level: 38, base: 40, min: 40000, max: 130000, xp: 1100,risk: 'high', intelBonus: 1.4, dirty: true, cooldownSec: 14400  /* 4h */ },
+  //  Cybercrime — intelligence-driven, lower energy, scales hard
+  { id: 'phishing',       name: 'Email Phishing',       tier: 'cyber',  energy: 2, nerve: 0, level: 5,  base: 50, min: 220,   max: 850,    xp: 16,  risk: 'low',  intelBonus: 1.0,
+    requires: [{ kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true }] },
+  { id: 'social_eng',     name: 'Social Engineering',   tier: 'cyber',  energy: 4, nerve: 0, level: 8,  base: 55, min: 600,   max: 2200,   xp: 32,  risk: 'low',  intelBonus: 1.2,
+    requires: [
+      { kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true },
+      { kind: 'misc', item_id: 'fake_id',      qty: 1, consumed: false },
+    ] },
+  { id: 'card_fraud',     name: 'Stolen Card Fraud',    tier: 'cyber',  energy: 4, nerve: 0, level: 12, base: 50, min: 1600,  max: 5800,   xp: 65,  risk: 'low',  intelBonus: 1.0, dirty: true,
+    requires: [{ kind: 'misc', item_id: 'usb_drive', qty: 1, consumed: true }] },
+  { id: 'darkweb',        name: 'Dark Web Fraud Ring',  tier: 'cyber',  energy: 6, nerve: 0, level: 16, base: 50, min: 4500,  max: 16000,  xp: 140, risk: 'med',  intelBonus: 1.3, dirty: true,
+    requires: [
+      { kind: 'misc', item_id: 'burner_phone', qty: 2, consumed: true  },
+      { kind: 'misc', item_id: 'fake_id',      qty: 1, consumed: false },
+    ] },
+  { id: 'ransomware',     name: 'Ransomware Drop',      tier: 'cyber',  energy: 8, nerve: 0, level: 22, base: 45, min: 8000,  max: 30000,  xp: 290, risk: 'med',  intelBonus: 1.4, dirty: true, cooldownSec: 3600   /* 1h */,
+    requires: [{ kind: 'misc', item_id: 'usb_drive', qty: 1, consumed: true }] },
+  { id: 'crypto_drain',   name: 'Crypto Wallet Drain',  tier: 'cyber',  energy: 9, nerve: 0, level: 30, base: 45, min: 18000, max: 60000,  xp: 620, risk: 'high', intelBonus: 1.5, dirty: true, cooldownSec: 7200   /* 2h */,
+    requires: [
+      { kind: 'misc', item_id: 'usb_drive',    qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true  },
+    ] },
+  { id: 'ddos_ext',       name: 'DDoS Extortion',       tier: 'cyber',  energy: 11, nerve: 0, level: 38, base: 40, min: 40000, max: 130000, xp: 1100,risk: 'high', intelBonus: 1.4, dirty: true, cooldownSec: 14400  /* 4h */,
+    requires: [
+      { kind: 'misc', item_id: 'usb_drive',    qty: 2, consumed: true  },
+      { kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true  },
+    ] },
 
-  { id: 'jewellery',      name: 'Jewellery Heist',      tier: 'major',  energy: 12, nerve: 0, level: 20, base: 40, min: 12000, max: 35000,  xp: 220, risk: 'high', cooldownSec: 3600  /* 1h */ },
-  { id: 'bank_rob',     name: 'Bank Robbery',        tier: 'major', energy: 16, nerve: 0, level: 25, base: 35, min: 22000,  max: 70000,  xp: 380, risk: 'high',                    cooldownSec: 7200  /* 2h */ },
-  { id: 'smuggle',      name: 'Smuggling Run',       tier: 'major', energy: 14, nerve: 0, level: 28, base: 45, min: 18000,  max: 55000,  xp: 320, risk: 'high', dirty: true,        cooldownSec: 9000  /* 2.5h */ },
-  { id: 'art_heist',    name: 'Art Gallery Heist',   tier: 'major', energy: 19, nerve: 0, level: 35, base: 38, min: 35000,  max: 130000, xp: 600, risk: 'high', intelBonus: 1.2,    cooldownSec: 14400 /* 4h */ },
-  { id: 'casino_score', name: 'Casino Score',        tier: 'major', energy: 23, nerve: 0, level: 45, base: 32, min: 60000,  max: 220000, xp: 950, risk: 'extreme',                  cooldownSec: 28800 /* 8h */ },
-  { id: 'cargo_hijack', name: 'Cargo Ship Hijack',   tier: 'major', energy: 26, nerve: 0, level: 55, base: 30, min: 140000, max: 450000, xp: 1500, risk: 'extreme', dirty: true,    cooldownSec: 36000 /* 10h */ },
-  { id: 'cyber_bank',   name: 'Crypto Exchange Hack',tier: 'major', energy: 30, nerve: 0, level: 65, base: 28, min: 250000, max: 900000, xp: 2400, risk: 'extreme', intelBonus: 1.0, dirty: true, cooldownSec: 43200 /* 12h */ },
+  { id: 'jewellery',      name: 'Jewellery Heist',      tier: 'major',  energy: 12, nerve: 0, level: 20, base: 40, min: 12000, max: 35000,  xp: 220, risk: 'high', cooldownSec: 3600  /* 1h */,
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'gloves',       qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'ski_mask',     qty: 1, consumed: false },
+    ] },
+  { id: 'bank_rob',     name: 'Bank Robbery',        tier: 'major', energy: 16, nerve: 0, level: 25, base: 35, min: 22000,  max: 70000,  xp: 380, risk: 'high',                    cooldownSec: 7200  /* 2h */,
+    requires: [
+      { kind: 'misc', item_id: 'ski_mask',  qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'gloves',    qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'cash_bag',  qty: 1, consumed: true  },
+    ] },
+  { id: 'smuggle',      name: 'Smuggling Run',       tier: 'major', energy: 14, nerve: 0, level: 28, base: 45, min: 18000,  max: 55000,  xp: 320, risk: 'high', dirty: true,        cooldownSec: 9000  /* 2.5h */,
+    requires: [
+      { kind: 'misc', item_id: 'duct_tape', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'fake_id',   qty: 1, consumed: false },
+    ] },
+  { id: 'art_heist',    name: 'Art Gallery Heist',   tier: 'major', energy: 19, nerve: 0, level: 35, base: 38, min: 35000,  max: 130000, xp: 600, risk: 'high', intelBonus: 1.2,    cooldownSec: 14400 /* 4h */,
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'gloves',       qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'ski_mask',     qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'walkie',       qty: 1, consumed: false },
+    ] },
+  { id: 'casino_score', name: 'Casino Score',        tier: 'major', energy: 23, nerve: 0, level: 45, base: 32, min: 60000,  max: 220000, xp: 950, risk: 'extreme',                  cooldownSec: 28800 /* 8h */,
+    requires: [
+      { kind: 'misc', item_id: 'fake_id',     qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'silencer',    qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'walkie',      qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'cash_bag',    qty: 1, consumed: true  },
+    ] },
+  { id: 'cargo_hijack', name: 'Cargo Ship Hijack',   tier: 'major', energy: 26, nerve: 0, level: 55, base: 30, min: 140000, max: 450000, xp: 1500, risk: 'extreme', dirty: true,    cooldownSec: 36000 /* 10h */,
+    requires: [
+      { kind: 'misc', item_id: 'wire_cutters', qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'walkie',       qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'gas_can',      qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'duct_tape',    qty: 1, consumed: true  },
+    ] },
+  { id: 'cyber_bank',   name: 'Crypto Exchange Hack',tier: 'major', energy: 30, nerve: 0, level: 65, base: 28, min: 250000, max: 900000, xp: 2400, risk: 'extreme', intelBonus: 1.0, dirty: true, cooldownSec: 43200 /* 12h */,
+    requires: [
+      { kind: 'misc', item_id: 'usb_drive',    qty: 2, consumed: true  },
+      { kind: 'misc', item_id: 'burner_phone', qty: 2, consumed: true  },
+      { kind: 'misc', item_id: 'fake_id',      qty: 1, consumed: false },
+    ] },
 
   // GTA — Grand Theft Auto. On success: a vehicle from the matched tier
   // lands in your garage. No cash payout — the car IS the prize. Fail
   // outcomes use the standard risk table (jail / hospital / escape).
   { id: 'gta_beater',   name: 'Hotwire a Beater',     tier: 'gta', energy: 5, nerve: 0,  level: 3,  base: 70, vehicleTier: 1, xp: 18,   risk: 'low' },
-  { id: 'gta_compact',  name: 'Steal a Sedan',        tier: 'gta', energy: 7, nerve: 0,  level: 8,  base: 60, vehicleTier: 2, xp: 50,   risk: 'low' },
-  { id: 'gta_hothatch', name: 'Carjack a Hot Hatch',  tier: 'gta', energy: 10, nerve: 0,  level: 14, base: 55, vehicleTier: 3, xp: 110,  risk: 'med' },
-  { id: 'gta_premium',  name: 'Snatch a Premium',     tier: 'gta', energy: 13, nerve: 0,  level: 22, base: 50, vehicleTier: 4, xp: 240,  risk: 'med' },
-  { id: 'gta_luxury',   name: 'Valet Grab',           tier: 'gta', energy: 18, nerve: 0,  level: 32, base: 45, vehicleTier: 5, xp: 520,  risk: 'high',     cooldownSec: 5400  /* 1.5h */ },
-  { id: 'gta_exotic',   name: 'Showroom Heist',       tier: 'gta', energy: 25, nerve: 0,  level: 45, base: 38, vehicleTier: 6, xp: 1200, risk: 'high',     cooldownSec: 14400 /* 4h */ },
-  { id: 'gta_hyper',    name: 'Midnight Run',         tier: 'gta', energy: 32, nerve: 0, level: 60, base: 32, vehicleTier: 7, xp: 2400, risk: 'extreme',  cooldownSec: 36000 /* 10h */ },
+  { id: 'gta_compact',  name: 'Steal a Sedan',        tier: 'gta', energy: 7, nerve: 0,  level: 8,  base: 60, vehicleTier: 2, xp: 50,   risk: 'low',
+    requires: [{ kind: 'misc', item_id: 'pry_bar', qty: 1, consumed: false }] },
+  { id: 'gta_hothatch', name: 'Carjack a Hot Hatch',  tier: 'gta', energy: 10, nerve: 0,  level: 14, base: 55, vehicleTier: 3, xp: 110,  risk: 'med',
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'wire_cutters', qty: 1, consumed: false },
+    ] },
+  { id: 'gta_premium',  name: 'Snatch a Premium',     tier: 'gta', energy: 13, nerve: 0,  level: 22, base: 50, vehicleTier: 4, xp: 240,  risk: 'med',
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'gloves',       qty: 1, consumed: false },
+    ] },
+  { id: 'gta_luxury',   name: 'Valet Grab',           tier: 'gta', energy: 18, nerve: 0,  level: 32, base: 45, vehicleTier: 5, xp: 520,  risk: 'high',     cooldownSec: 5400  /* 1.5h */,
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'wire_cutters', qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'fake_id',      qty: 1, consumed: false },
+    ] },
+  { id: 'gta_exotic',   name: 'Showroom Heist',       tier: 'gta', energy: 25, nerve: 0,  level: 45, base: 38, vehicleTier: 6, xp: 1200, risk: 'high',     cooldownSec: 14400 /* 4h */,
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'walkie',       qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'silencer',     qty: 1, consumed: false },
+    ] },
+  { id: 'gta_hyper',    name: 'Midnight Run',         tier: 'gta', energy: 32, nerve: 0, level: 60, base: 32, vehicleTier: 7, xp: 2400, risk: 'extreme',  cooldownSec: 36000 /* 10h */,
+    requires: [
+      { kind: 'misc', item_id: 'lockpick_set', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'wire_cutters', qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'walkie',       qty: 1, consumed: false },
+      { kind: 'misc', item_id: 'silencer',     qty: 1, consumed: false },
+    ] },
 ];
 
 export const DRUGS = [
