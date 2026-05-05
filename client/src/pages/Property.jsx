@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 const TIER_EMOJI = { 1: '', 2: '', 3: '', 4: '' };
@@ -68,14 +69,17 @@ export default function Property() {
         {!data.forSale.length ? <p className="text-sm text-ink-100/60">All bought up — or you've got a place at every tier here. Travel to see other markets.</p> : (
           <div className="grid sm:grid-cols-2 gap-3">
             {data.forSale.sort((a, b) => a.cost - b.cost).map(p => (
-              <div key={p.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+              <div key={p.id} className={`rounded-lg p-3 border bg-ink-950/40 ${p.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0">
                     <div className="font-medium">{TIER_EMOJI[p.tier] || ''} {p.name}</div>
                     <div className="text-[10px] text-ink-100/45">{p.address}</div>
                     <div className="text-[10px] text-ink-100/50">{p.tierLabel} · Tier {p.tier}</div>
                   </div>
-                  <div className="text-money-400 tabular-nums whitespace-nowrap">{fmt(p.cost)}</div>
+                  <div className="text-right whitespace-nowrap">
+                    <div className="text-money-400 tabular-nums">{fmt(p.cost)}</div>
+                    {p.locked && <div className="mt-1"><LockBadge level={p.levelGate} /></div>}
+                  </div>
                 </div>
                 <div className="text-[11px] text-ink-100/60 mt-2">
                   +{p.bonuses.max_energy} energy · +{p.bonuses.max_nerve} nerve · +{p.bonuses.happiness} happiness
@@ -83,8 +87,12 @@ export default function Property() {
                 {p.garage > 0 && (
                   <div className="text-[10px] text-ink-100/50 mt-0.5"> {p.garage} garage spaces</div>
                 )}
-                <button disabled={character.cash < p.cost || busy === p.id} className="btn btn-primary w-full text-xs mt-3" onClick={() => buy(p)}>
-                  {busy === p.id ? '...' : character.cash < p.cost ? `Need ${fmt(p.cost - character.cash)} more` : 'Buy'}
+                <button disabled={p.locked || character.cash < p.cost || busy === p.id} className="btn btn-primary w-full text-xs mt-3" onClick={() => buy(p)}>
+                  {busy === p.id
+                    ? '...'
+                    : p.locked
+                      ? 'Locked'
+                      : character.cash < p.cost ? `Need ${fmt(p.cost - character.cash)} more` : 'Buy'}
                 </button>
               </div>
             ))}

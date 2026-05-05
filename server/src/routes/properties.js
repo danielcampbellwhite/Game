@@ -18,7 +18,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const forSale = PROPERTIES
     .filter(p => p.city === ch.city)
     .filter(p => !ownedIds.has(p.id))
-    .map(p => ({ ...p, cityName: cityById(p.city)?.name }));
+    .map(p => ({
+      ...p,
+      cityName: cityById(p.city)?.name,
+      locked: ch.level < (p.levelGate || 1),
+    }));
   res.json({ owned, forSale, currentCity: ch.city, currentCityName: cityById(ch.city)?.name });
 });
 
@@ -29,6 +33,10 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   if (!prop.city) return res.status(400).json({ error: 'Legacy property — no longer for sale.' });
   if (prop.city !== ch.city) {
     return res.status(403).json({ error: `Must be in ${cityById(prop.city)?.name} to view this property.` });
+  }
+  const gate = prop.levelGate || 1;
+  if (ch.level < gate) {
+    return res.status(403).json({ error: `${prop.tierLabel || 'Tier ' + prop.tier} properties unlock at level ${gate}.` });
   }
   const exists = db.prepare('SELECT id FROM properties_owned WHERE char_id = ? AND property_id = ?')
     .get(ch.id, prop.id);

@@ -9,12 +9,41 @@ import { factionBonusMul } from '../services/territories.js';
 
 const router = Router();
 
-//  Roulette 
+// Casino games unlock gradually so a brand-new player isn't dumped
+// at the high-stakes table on day one. Slots open from L1, blackjack
+// at L5, roulette at L10. High-stakes (≥£50k) bets at any table
+// require L15. All gates surface on GET /api/casino/state.
+export const CASINO_GATES = {
+  slots:        1,
+  blackjack:    5,
+  roulette:    10,
+  high_stakes: 15,
+};
+const HIGH_STAKES_THRESHOLD = 50_000;
+function gate(ch, game) {
+  return (ch.level || 1) >= CASINO_GATES[game];
+}
+function gateHighStakes(ch, stake) {
+  return stake < HIGH_STAKES_THRESHOLD || (ch.level || 1) >= CASINO_GATES.high_stakes;
+}
+
+router.get('/state', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  res.json({
+    gates: CASINO_GATES,
+    highStakesThreshold: HIGH_STAKES_THRESHOLD,
+    yourLevel: ch.level || 1,
+  });
+});
+
+//  Roulette
 
 router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const { betType, betValue, amount } = req.body || {};
   const stake = Math.max(1, parseInt(amount || 0, 10));
+  if (!gate(ch, 'roulette')) return res.status(403).json({ error: `Roulette unlocks at level ${CASINO_GATES.roulette}.` });
+  if (!gateHighStakes(ch, stake)) return res.status(403).json({ error: `High-stakes (£${HIGH_STAKES_THRESHOLD.toLocaleString()}+) bets unlock at level ${CASINO_GATES.high_stakes}.` });
   if (!ROULETTE_PAYOUTS[betType]) return res.status(400).json({ error: 'Bad bet type' });
   if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
 
@@ -49,6 +78,7 @@ router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacte
 router.post('/slots/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const stake = Math.max(1, parseInt(req.body?.amount || 0, 10));
+  if (!gateHighStakes(ch, stake)) return res.status(403).json({ error: `High-stakes (£${HIGH_STAKES_THRESHOLD.toLocaleString()}+) bets unlock at level ${CASINO_GATES.high_stakes}.` });
   if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
   ch.cash -= stake;
 
@@ -125,7 +155,9 @@ router.get('/blackjack', requireAuth, requireCharacter, (req, res) => {
 
 router.post('/blackjack/deal', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
+  if (!gate(ch, 'blackjack')) return res.status(403).json({ error: `Blackjack unlocks at level ${CASINO_GATES.blackjack}.` });
   const stake = Math.max(1, parseInt(req.body?.bet || 0, 10));
+  if (!gateHighStakes(ch, stake)) return res.status(403).json({ error: `High-stakes (£${HIGH_STAKES_THRESHOLD.toLocaleString()}+) bets unlock at level ${CASINO_GATES.high_stakes}.` });
   const existing = loadHand(ch.id);
   if (existing && existing.status === 'playing') {
     return res.status(409).json({ error: 'Finish your current hand first.' });

@@ -231,10 +231,15 @@ function validateShopName(name, excludeId = null) {
   return { trimmed };
 }
 
-//  POST /api/player-shops — found a shop 
+//  POST /api/player-shops — found a shop
+const SHOP_FOUNDING_LEVEL_GATE = 15;
 router.post('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const { name, description } = req.body || {};
+
+  if (ch.level < SHOP_FOUNDING_LEVEL_GATE) {
+    return res.status(403).json({ error: `Reach level ${SHOP_FOUNDING_LEVEL_GATE} to register a shop.` });
+  }
 
   const v = validateShopName(name);
   if (v.error) return res.status(400).json({ error: v.error });

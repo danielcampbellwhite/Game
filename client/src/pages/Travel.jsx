@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 export default function Travel() {
@@ -49,17 +50,19 @@ export default function Travel() {
         ) : (
           <div className="grid md:grid-cols-2 gap-3">
             {data.drives.map(d => (
-              <div key={d.city} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+              <div key={d.city} className={`rounded-lg p-3 border bg-ink-950/40 ${d.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-medium">{d.name}</div>
-                  <div className="text-[10px] text-ink-100/45 tabular-nums">{d.km.toLocaleString()} km</div>
+                  {d.locked
+                    ? <LockBadge level={d.unlockLevel} />
+                    : <div className="text-[10px] text-ink-100/45 tabular-nums">{d.km.toLocaleString()} km</div>}
                 </div>
                 <div className="text-[11px] text-ink-100/60 mt-0.5">
                   {fmt(d.cost)} petrol · {Math.round(d.durationMs / 60000)} min · -{d.conditionCost.toFixed(1)}% condition
                 </div>
-                <button disabled={!!busy || character.cash < d.cost} className="btn btn-money w-full text-xs mt-2"
+                <button disabled={d.locked || !!busy || character.cash < d.cost} className="btn btn-money w-full text-xs mt-2"
                   onClick={() => drive(d.city)}>
-                  {busy === `drive-${d.city}` ? '…' : `Drive · ${fmt(d.cost)}`}
+                  {d.locked ? 'Locked' : busy === `drive-${d.city}` ? '…' : `Drive · ${fmt(d.cost)}`}
                 </button>
               </div>
             ))}
@@ -76,11 +79,14 @@ export default function Travel() {
         )}
         <div className="grid md:grid-cols-2 gap-3">
           {data.flights.map(f => (
-            <div key={f.city} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
-              <div className="font-medium">{f.emoji} {f.name}</div>
+            <div key={f.city} className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="font-medium">{f.emoji} {f.name}</div>
+                {f.locked && <LockBadge level={f.unlockLevel} />}
+              </div>
               <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
                 {Object.entries(f.classes).map(([k, v]) => (
-                  <button key={k} disabled={!!busy || grounded || character.cash < v.cost} className="btn"
+                  <button key={k} disabled={f.locked || !!busy || grounded || character.cash < v.cost} className="btn"
                     onClick={() => fly(f.city, k)}>
                     <div>
                       <div className="capitalize">{k}</div>

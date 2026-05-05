@@ -20,8 +20,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const from = cityById(ch.city);
   const flights = CITIES.filter(c => c.id !== ch.city).map(c => {
     const baseFare = Math.floor((from.flightBase + c.flightBase) / 2);
+    const unlockLevel = c.unlockLevel || 1;
     return {
       city: c.id, name: c.name, emoji: c.emoji,
+      unlockLevel,
+      locked: ch.level < unlockLevel,
       classes: Object.fromEntries(Object.entries(FLIGHT_CLASSES).map(([k, v]) => ([k, {
         cost: Math.floor(baseFare * v.mul),
         durationMs: flightDurationMs(ch.city, c.id, v.durationMul),
@@ -30,14 +33,20 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   });
   // Drivable destinations — only cities reachable via the LAND_EDGES
   // graph from the player's current city.
-  const drives = landReachableFrom(ch.city).map(r => ({
-    city: r.city,
-    name: r.name,
-    km: r.km,
-    cost: Math.max(10, Math.round(r.km * DRIVE_COST_PER_KM)),
-    durationMs: Math.round(r.km * DRIVE_MS_PER_KM),
-    conditionCost: Math.round(r.km * CONDITION_LOSS_PER_KM * 100) / 100,
-  }));
+  const drives = landReachableFrom(ch.city).map(r => {
+    const c = cityById(r.city);
+    const unlockLevel = c?.unlockLevel || 1;
+    return {
+      city: r.city,
+      name: r.name,
+      km: r.km,
+      cost: Math.max(10, Math.round(r.km * DRIVE_COST_PER_KM)),
+      durationMs: Math.round(r.km * DRIVE_MS_PER_KM),
+      conditionCost: Math.round(r.km * CONDITION_LOSS_PER_KM * 100) / 100,
+      unlockLevel,
+      locked: ch.level < unlockLevel,
+    };
+  });
   res.json({ flights, drives, currentCity: ch.city });
 });
 
@@ -47,6 +56,9 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
   const target = cityById(city);
   if (!target) return res.status(400).json({ error: 'Unknown city' });
   if (target.id === ch.city) return res.status(400).json({ error: 'Already there' });
+  if (ch.level < (target.unlockLevel || 1)) {
+    return res.status(403).json({ error: `${target.name} unlocks at level ${target.unlockLevel}.` });
+  }
   const cls = FLIGHT_CLASSES[klass];
   if (!cls) return res.status(400).json({ error: 'Unknown flight class' });
   // The airline won't carry your active car. Stash it in a local
@@ -111,6 +123,9 @@ router.post('/drive', requireAuth, requireCharacter, requireFreeCharacter, (req,
   const target = cityById(req.body?.city);
   if (!target) return res.status(400).json({ error: 'Unknown city' });
   if (target.id === ch.city) return res.status(400).json({ error: 'Already there' });
+  if (ch.level < (target.unlockLevel || 1)) {
+    return res.status(403).json({ error: `${target.name} unlocks at level ${target.unlockLevel}.` });
+  }
   const km = landDistanceBetween(ch.city, target.id);
   if (km == null) return res.status(400).json({ error: 'No road from here — you\'ll have to fly.' });
   if (!ch.active_vehicle_id) return res.status(400).json({ error: 'You need an active car to drive between cities.' });

@@ -4,9 +4,11 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 const FOUNDING_COST = 10000;
+const FOUNDING_LEVEL = 15;
 
 function ShopRow({ shop, isMine }) {
   return (
@@ -32,6 +34,7 @@ function FoundShopForm({ character, onFounded }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const cantAfford = (character?.cash || 0) < FOUNDING_COST;
+  const tooLow = (character?.level || 1) < FOUNDING_LEVEL;
 
   async function submit(e) {
     e.preventDefault();
@@ -63,10 +66,18 @@ function FoundShopForm({ character, onFounded }) {
         Founding costs <b className="text-money-400">{fmt(FOUNDING_COST)}</b>. No rent — your only ongoing cost is the
         5% sales tax taken off every sale. Stock unlimited items via the wholesaler or your own inventory.
       </p>
+      {tooLow && (
+        <div className="rounded-md border border-ink-100/10 bg-ink-950/40 p-2">
+          <LockBadge level={FOUNDING_LEVEL} />
+        </div>
+      )}
       {err && <p className="text-blood-400 text-xs">{err}</p>}
       <button type="submit" className="btn btn-primary w-full text-sm"
-        disabled={busy || cantAfford || name.trim().length < 3}>
-        {busy ? 'Setting up…' : cantAfford ? `Need ${fmt(FOUNDING_COST)}` : `Found shop · ${fmt(FOUNDING_COST)}`}
+        disabled={busy || cantAfford || tooLow || name.trim().length < 3}>
+        {busy ? 'Setting up…'
+          : tooLow ? `Reach level ${FOUNDING_LEVEL}`
+          : cantAfford ? `Need ${fmt(FOUNDING_COST)}`
+          : `Found shop · ${fmt(FOUNDING_COST)}`}
       </button>
     </form>
   );

@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 function Sparkline({ points, up, width = 320, height = 64 }) {
@@ -55,9 +56,10 @@ function StockCard({ stock, holding, qty, setQty, onTrade, busy }) {
   const up = delta >= 0;
   const high = points.length ? Math.max(...points.map(p => p.price)) : stock.price;
   const low  = points.length ? Math.min(...points.map(p => p.price)) : stock.price;
+  const locked = !!stock.locked;
 
   return (
-    <div className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+    <div className={`rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 ${locked ? 'opacity-60' : ''}`}>
       <div className="flex justify-between items-baseline">
         <div className="min-w-0">
           <span className="font-medium tracking-wide">{stock.id}</span>
@@ -87,10 +89,13 @@ function StockCard({ stock, holding, qty, setQty, onTrade, busy }) {
         </div>
       ) : <div className="text-[11px] text-ink-100/40 mt-2">No position</div>}
 
+      {locked && (
+        <div className="mt-2"><LockBadge level={stock.levelGate} /></div>
+      )}
       <div className="flex gap-2 mt-2">
         <input type="number" min="1" placeholder="qty"
-          value={qty} onChange={e => setQty(e.target.value)} className="w-20" />
-        <button disabled={busy} className="btn btn-primary text-xs flex-1" onClick={() => onTrade('buy')}>Buy</button>
+          value={qty} onChange={e => setQty(e.target.value)} className="w-20" disabled={locked} />
+        <button disabled={busy || locked} className="btn btn-primary text-xs flex-1" onClick={() => onTrade('buy')}>Buy</button>
         <button disabled={!holding || busy} className="btn btn-money text-xs flex-1" onClick={() => onTrade('sell')}>Sell</button>
       </div>
     </div>

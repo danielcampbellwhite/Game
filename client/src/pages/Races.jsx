@@ -52,8 +52,25 @@ export default function Races() {
       <Card title=" Street Races" subtitle="Live PvP — challenge a player from their profile, both put up the stake, winner takes the pot. Both cars take 5–20% condition damage either way.">
         <p className="text-[11px] text-ink-100/55">
           Find a target on the <Link to="/players" className="text-blood-300 underline">Players</Link> page —
-          they have to be in your city and driving an active car of the same tier as yours.
+          they have to be in your city, driving an active car of the same tier, and in your race bracket.
         </p>
+        {data.bracket && (
+          <div className="mt-3 grid sm:grid-cols-4 gap-2 text-[11px]">
+            {data.brackets.map(b => {
+              const me = b.id === data.bracket.id;
+              return (
+                <div key={b.id} className={`rounded-md border p-2 ${me ? 'border-money-500/60 bg-money-600/10' : 'border-ink-100/10 bg-ink-950/40 opacity-70'}`}>
+                  <div className="flex items-baseline justify-between gap-1">
+                    <span className={me ? 'text-money-300 font-medium' : 'text-ink-100/65'}>{b.name}</span>
+                    {me && <span className="text-[9px] uppercase tracking-wide text-money-400">you</span>}
+                  </div>
+                  <div className="text-ink-100/55">DRV {b.min}{b.max < 999 ? `-${b.max}` : '+'}</div>
+                  <div className="text-ink-100/45">stake ≤ {fmt(b.maxStake)}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
 
       {data.incoming.length > 0 && (

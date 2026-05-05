@@ -10,7 +10,12 @@ const router = Router();
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
-  const market = getAllStocks();
+  const lvl = ch.level || 1;
+  const market = getAllStocks().map(s => {
+    const cat = stockById(s.id);
+    const levelGate = cat?.levelGate || 1;
+    return { ...s, levelGate, locked: lvl < levelGate };
+  });
   const holdings = db.prepare('SELECT * FROM stocks_owned WHERE char_id = ?').all(ch.id).map(h => {
     const stock = stockById(h.stock_id);
     const price = getStockPrice(h.stock_id);
@@ -24,6 +29,8 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   const stock = stockById(req.body?.stock_id);
   const shares = Math.max(1, parseInt(req.body?.shares || 0, 10));
   if (!stock) return res.status(400).json({ error: 'Unknown stock' });
+  const gate = stock.levelGate || 1;
+  if ((ch.level || 1) < gate) return res.status(403).json({ error: `${stock.name} unlocks at level ${gate}.` });
   const price = getStockPrice(stock.id);
   const cost = Math.floor(price * shares);
   if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost}` });

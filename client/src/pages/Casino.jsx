@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 import { sfx, scheduleRouletteTicks, isSfxOn, setSfxOn } from '../lib/sfx.js';
 
@@ -530,24 +531,50 @@ function SoundToggle() {
 }
 
 export default function Casino() {
-  const [tab, setTab] = useState('roulette');
+  const [tab, setTab] = useState('slots');
+  const [state, setState] = useState(null);
+  useEffect(() => { api.get('/casino/state').then(setState).catch(() => {}); }, []);
+  const gates = state?.gates;
+  const lvl = state?.yourLevel || 1;
+  const lockedFor = key => gates ? lvl < (gates[key] || 1) : false;
+  const activeLocked = lockedFor(tab);
   return (
     <div className="space-y-4">
       <Card title=" The Lucky Crown Casino"
         subtitle="Roulette spins, blackjack hands, and slot pulls. The house always wins, but tonight could be different."
         right={<SoundToggle />}>
         <div className="flex gap-2">
-          {TABS.map(t => (
-            <button key={t.key}
-              className={`btn ${tab === t.key ? 'btn-primary' : 'btn-ghost'} flex-1`}
-              onClick={() => setTab(t.key)}>{t.label}</button>
-          ))}
+          {TABS.map(t => {
+            const locked = lockedFor(t.key);
+            return (
+              <button key={t.key}
+                className={`btn ${tab === t.key ? 'btn-primary' : 'btn-ghost'} flex-1 ${locked ? 'opacity-60' : ''}`}
+                onClick={() => setTab(t.key)}>
+                {t.label}
+                {locked && <span className="block text-[9px] uppercase tracking-wide text-ink-100/55 mt-0.5">Lvl {gates[t.key]}</span>}
+              </button>
+            );
+          })}
         </div>
+        {state && (
+          <p className="text-[11px] text-ink-100/55 mt-2">
+            High-stakes bets ({fmt(state.highStakesThreshold)}+) unlock at level {gates.high_stakes}.
+          </p>
+        )}
       </Card>
       <Card>
-        {tab === 'roulette'  && <Roulette  />}
-        {tab === 'blackjack' && <Blackjack />}
-        {tab === 'slots'     && <Slots     />}
+        {activeLocked ? (
+          <div className="text-center py-8 space-y-2">
+            <div className="flex justify-center"><LockBadge level={gates[tab]} /></div>
+            <p className="text-xs text-ink-100/60">Keep levelling up — this table opens at Lvl {gates[tab]}.</p>
+          </div>
+        ) : (
+          <>
+            {tab === 'roulette'  && <Roulette  />}
+            {tab === 'blackjack' && <Blackjack />}
+            {tab === 'slots'     && <Slots     />}
+          </>
+        )}
       </Card>
     </div>
   );

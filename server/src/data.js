@@ -10,27 +10,32 @@ export const vehicleById = id => VEHICLE_BY_ID[id];
 // Property catalogue entries for dropped cities are intentionally left
 // in PROPERTIES below — they're unreachable now (their `city` field
 // won't match any current city) and harmless.
+// `unlockLevel` gates flying / driving to a city until the character
+// reaches that level. The three L1 cities are open from the start so
+// new players have a starter triangle; everything else slots in every
+// 5 levels until the full 14-city map opens at L55. The player's own
+// city is always available regardless (they're standing in it).
 export const CITIES = [
-  //  Americas 
-  { id: 'new_york',    name: 'New York',     emoji: '', drugMul: 1.10, businessMul: 1.20, flightBase: 1500 },
-  { id: 'los_angeles', name: 'Los Angeles',  emoji: '', drugMul: 1.20, businessMul: 1.25, flightBase: 1600 },
-  { id: 'miami',       name: 'Miami',        emoji: '', drugMul: 1.15, businessMul: 1.10, flightBase: 1200 },
-  { id: 'kingston',    name: 'Kingston',     emoji: '', drugMul: 0.85, businessMul: 0.80, flightBase: 1700 },
-  { id: 'rio',         name: 'Rio',          emoji: '', drugMul: 0.80, businessMul: 0.85, flightBase: 1800 },
-  //  Europe 
-  { id: 'london',      name: 'London',       emoji: '', drugMul: 1.05, businessMul: 1.15, flightBase: 1400 },
-  { id: 'paris',       name: 'Paris',        emoji: '', drugMul: 1.00, businessMul: 1.10, flightBase: 1400 },
-  { id: 'berlin',      name: 'Berlin',       emoji: '', drugMul: 0.95, businessMul: 1.00, flightBase: 1500 },
-  { id: 'moscow',      name: 'Moscow',       emoji: '', drugMul: 0.90, businessMul: 0.95, flightBase: 2000 },
-  //  Middle East 
-  { id: 'dubai',       name: 'Dubai',        emoji: '', drugMul: 1.40, businessMul: 1.50, flightBase: 2800 },
-  //  Asia 
-  { id: 'tokyo',       name: 'Tokyo',        emoji: '', drugMul: 1.25, businessMul: 1.30, flightBase: 2200 },
-  { id: 'hong_kong',   name: 'Hong Kong',    emoji: '', drugMul: 1.30, businessMul: 1.35, flightBase: 2400 },
-  //  Oceania 
-  { id: 'sydney',      name: 'Sydney',       emoji: '', drugMul: 1.20, businessMul: 1.05, flightBase: 2600 },
-  //  Africa 
-  { id: 'cape_town',   name: 'Cape Town',    emoji: '', drugMul: 0.75, businessMul: 0.80, flightBase: 2100 },
+  //  Americas
+  { id: 'new_york',    name: 'New York',     emoji: '', drugMul: 1.10, businessMul: 1.20, flightBase: 1500, unlockLevel: 1  },
+  { id: 'los_angeles', name: 'Los Angeles',  emoji: '', drugMul: 1.20, businessMul: 1.25, flightBase: 1600, unlockLevel: 1  },
+  { id: 'miami',       name: 'Miami',        emoji: '', drugMul: 1.15, businessMul: 1.10, flightBase: 1200, unlockLevel: 5  },
+  { id: 'kingston',    name: 'Kingston',     emoji: '', drugMul: 0.85, businessMul: 0.80, flightBase: 1700, unlockLevel: 20 },
+  { id: 'rio',         name: 'Rio',          emoji: '', drugMul: 0.80, businessMul: 0.85, flightBase: 1800, unlockLevel: 25 },
+  //  Europe
+  { id: 'london',      name: 'London',       emoji: '', drugMul: 1.05, businessMul: 1.15, flightBase: 1400, unlockLevel: 1  },
+  { id: 'paris',       name: 'Paris',        emoji: '', drugMul: 1.00, businessMul: 1.10, flightBase: 1400, unlockLevel: 10 },
+  { id: 'berlin',      name: 'Berlin',       emoji: '', drugMul: 0.95, businessMul: 1.00, flightBase: 1500, unlockLevel: 15 },
+  { id: 'moscow',      name: 'Moscow',       emoji: '', drugMul: 0.90, businessMul: 0.95, flightBase: 2000, unlockLevel: 30 },
+  //  Middle East
+  { id: 'dubai',       name: 'Dubai',        emoji: '', drugMul: 1.40, businessMul: 1.50, flightBase: 2800, unlockLevel: 45 },
+  //  Asia
+  { id: 'tokyo',       name: 'Tokyo',        emoji: '', drugMul: 1.25, businessMul: 1.30, flightBase: 2200, unlockLevel: 35 },
+  { id: 'hong_kong',   name: 'Hong Kong',    emoji: '', drugMul: 1.30, businessMul: 1.35, flightBase: 2400, unlockLevel: 40 },
+  //  Oceania
+  { id: 'sydney',      name: 'Sydney',       emoji: '', drugMul: 1.20, businessMul: 1.05, flightBase: 2600, unlockLevel: 50 },
+  //  Africa
+  { id: 'cape_town',   name: 'Cape Town',    emoji: '', drugMul: 0.75, businessMul: 0.80, flightBase: 2100, unlockLevel: 55 },
 ];
 
 // Drivable land routes between cities — undirected edges with a
@@ -650,8 +655,21 @@ export const PROPERTY_TIER_GARAGE = {
   3: 8,   // mansion / penthouse
   4: 12,  // estate / compound
 };
-const TIER_LABEL = { 1: 'Flat', 2: 'Townhouse', 3: 'Mansion', 4: 'Estate' };
-const T = (tier) => ({ tier, tierLabel: TIER_LABEL[tier], bonuses: PROPERTY_TIER_BONUS[tier], garage: PROPERTY_TIER_GARAGE[tier] });
+const TIER_LABEL = { 1: 'Flat', 2: 'Townhouse', 3: 'Mansion', 4: 'Estate', 5: 'Empire' };
+// Minimum character level to buy a property of each tier. Tiers 1-2
+// stay open from the start; upper tiers gate so a windfall L1 player
+// can't immediately splash on a mansion before earning the rep.
+export const PROPERTY_TIER_LEVEL_GATE = {
+  1: 1, 2: 1,
+  3: 25, 4: 40, 5: 60,
+};
+const T = (tier) => ({
+  tier,
+  tierLabel: TIER_LABEL[tier],
+  bonuses: PROPERTY_TIER_BONUS[tier],
+  garage: PROPERTY_TIER_GARAGE[tier],
+  levelGate: PROPERTY_TIER_LEVEL_GATE[tier] || 1,
+});
 
 // City-locked property catalogue. To buy you must be physically in the city.
 // Existing characters may also own legacy generic properties (`flat`, `house`,
@@ -1014,33 +1032,31 @@ export const PROPERTIES = [
 
 // Tickers across sectors. `vol` controls how spiky the random walk is — low
 // vol = stable utility/tobacco, high vol = crypto/EV/biotech swings.
+// Stocks have a `levelGate` so the early game's broker only offers
+// the junior tickers. Mid-cap unlock at L20, premium at L40 — gives
+// a reason to revisit the broker page over time.
 export const STOCKS = [
-  // Finance
-  { id: 'METRO', name: 'MetroBank',          sector: 'Finance',     base: 120,  vol: 0.04 },
-  { id: 'VAULT', name: 'Vaultline Holdings', sector: 'Finance',     base: 185,  vol: 0.05 },
-  { id: 'GLDT',  name: 'Goldteller Securities', sector: 'Finance',  base: 360,  vol: 0.06 },
-  // Defence / Arms
-  { id: 'TITAN', name: 'Titan Arms',         sector: 'Defence',     base: 450,  vol: 0.06 },
-  { id: 'IRNS',  name: 'Ironsight Munitions',sector: 'Defence',     base: 240,  vol: 0.07 },
-  // Aviation / Aerospace
-  { id: 'SKYJ',  name: 'SkyJet',             sector: 'Aerospace',   base: 80,   vol: 0.05 },
-  { id: 'ORBT',  name: 'Orbita Aerospace',   sector: 'Aerospace',   base: 320,  vol: 0.07 },
-  // Energy
-  { id: 'NOVA',  name: 'Nova Oil',           sector: 'Energy',      base: 220,  vol: 0.07 },
-  { id: 'HLIO',  name: 'Helio Solar',        sector: 'Energy',      base: 95,   vol: 0.08 },
-  // Tech
-  { id: 'BYTE',  name: 'Bytecast Cloud',     sector: 'Tech',        base: 280,  vol: 0.06 },
-  { id: 'NEUR',  name: 'Neura Systems',      sector: 'Tech',        base: 540,  vol: 0.08 },
-  // Pharma & Telecom
-  { id: 'ZNTH',  name: 'Zenith Pharma',      sector: 'Pharma',      base: 330,  vol: 0.05 },
-  { id: 'FBRX',  name: 'Fibrex Networks',    sector: 'Telecom',     base: 165,  vol: 0.03 },
-  // Vice
-  { id: 'ASHN',  name: 'Ashen Tobacco',      sector: 'Vice',        base: 145,  vol: 0.03 },
-  { id: 'VEGA',  name: 'Vega Casinos',       sector: 'Vice',        base: 290,  vol: 0.07 },
-  // Auto + Crypto + Mining (high volatility tail)
-  { id: 'THND',  name: 'Thunderwheel Motors',sector: 'Auto',        base: 410,  vol: 0.09 },
-  { id: 'CRYP',  name: 'Cryptik Exchange',   sector: 'Crypto',      base: 75,   vol: 0.12 },
-  { id: 'ORE',   name: 'Orestone Mining',    sector: 'Mining',      base: 130,  vol: 0.06 },
+  // Junior tickers — open from level 1
+  { id: 'METRO', name: 'MetroBank',          sector: 'Finance',   base: 120,  vol: 0.04, levelGate: 1  },
+  { id: 'SKYJ',  name: 'SkyJet',             sector: 'Aerospace', base: 80,   vol: 0.05, levelGate: 1  },
+  { id: 'HLIO',  name: 'Helio Solar',        sector: 'Energy',    base: 95,   vol: 0.08, levelGate: 1  },
+  { id: 'FBRX',  name: 'Fibrex Networks',    sector: 'Telecom',   base: 165,  vol: 0.03, levelGate: 1  },
+  { id: 'ASHN',  name: 'Ashen Tobacco',      sector: 'Vice',      base: 145,  vol: 0.03, levelGate: 1  },
+  { id: 'CRYP',  name: 'Cryptik Exchange',   sector: 'Crypto',    base: 75,   vol: 0.12, levelGate: 1  },
+  { id: 'ORE',   name: 'Orestone Mining',    sector: 'Mining',    base: 130,  vol: 0.06, levelGate: 1  },
+  // Mid-cap — unlock at L20
+  { id: 'VAULT', name: 'Vaultline Holdings', sector: 'Finance',   base: 185,  vol: 0.05, levelGate: 20 },
+  { id: 'IRNS',  name: 'Ironsight Munitions',sector: 'Defence',   base: 240,  vol: 0.07, levelGate: 20 },
+  { id: 'NOVA',  name: 'Nova Oil',           sector: 'Energy',    base: 220,  vol: 0.07, levelGate: 20 },
+  { id: 'BYTE',  name: 'Bytecast Cloud',     sector: 'Tech',      base: 280,  vol: 0.06, levelGate: 20 },
+  { id: 'VEGA',  name: 'Vega Casinos',       sector: 'Vice',      base: 290,  vol: 0.07, levelGate: 20 },
+  // Premium — unlock at L40
+  { id: 'GLDT',  name: 'Goldteller Securities', sector: 'Finance',base: 360,  vol: 0.06, levelGate: 40 },
+  { id: 'TITAN', name: 'Titan Arms',         sector: 'Defence',   base: 450,  vol: 0.06, levelGate: 40 },
+  { id: 'ORBT',  name: 'Orbita Aerospace',   sector: 'Aerospace', base: 320,  vol: 0.07, levelGate: 40 },
+  { id: 'NEUR',  name: 'Neura Systems',      sector: 'Tech',      base: 540,  vol: 0.08, levelGate: 40 },
+  { id: 'ZNTH',  name: 'Zenith Pharma',      sector: 'Pharma',    base: 330,  vol: 0.05, levelGate: 40 },
+  { id: 'THND',  name: 'Thunderwheel Motors',sector: 'Auto',      base: 410,  vol: 0.09, levelGate: 40 },
 ];
 
 // IDs are kept stable for save-game compatibility; only display names and the

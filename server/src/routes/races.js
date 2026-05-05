@@ -19,6 +19,21 @@ const RACE_MIN_STAKE = 100;
 const RACE_DAMAGE_MIN = 5;                // condition % — both cars
 const RACE_DAMAGE_MAX = 20;
 
+// Race brackets — both racers must sit in the same band so a Pro
+// can't pick on a Rookie. Bracket is a function of the player's
+// driving skill at the moment of challenge.
+export const RACE_BRACKETS = [
+  { id: 'rookie',   name: 'Rookie',   min: 0,  max: 19, maxStake: 5_000     },
+  { id: 'amateur',  name: 'Amateur',  min: 20, max: 39, maxStake: 50_000    },
+  { id: 'pro',      name: 'Pro',      min: 40, max: 59, maxStake: 500_000   },
+  { id: 'pro_am',   name: 'Pro-Am',   min: 60, max: 999, maxStake: 5_000_000 },
+];
+function bracketFor(driving) {
+  const drv = Math.max(0, driving || 1);
+  for (const b of RACE_BRACKETS) if (drv >= b.min && drv <= b.max) return b;
+  return RACE_BRACKETS[RACE_BRACKETS.length - 1];
+}
+
 function expireStale() {
   const now = Date.now();
   db.prepare(`UPDATE races SET status='expired', ended_at=? WHERE status='pending' AND expires_at < ?`).run(now, now);
@@ -151,6 +166,8 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     incoming: incoming.map(r => publicRace(r, ch.id)),
     outgoing: outgoing.map(r => publicRace(r, ch.id)),
     recent: recent.map(r => publicRace(r, ch.id)),
+    bracket: bracketFor(ch.driving),
+    brackets: RACE_BRACKETS,
   });
 });
 
@@ -187,6 +204,16 @@ router.post('/', requireAuth, requireCharacter, requireFreeCharacter, (req, res)
   }
   if (oInfo.base.tier !== raceTier) {
     return res.status(400).json({ error: `Their active car is tier ${oInfo.base.tier}; you'd need a tier-${raceTier} match.` });
+  }
+  // Race bracket — both drivers must be in the same skill band so
+  // a Pro can't farm Rookies. Stake is capped per bracket too.
+  const cBracket = bracketFor(ch.driving);
+  const oBracket = bracketFor(opponent.driving);
+  if (cBracket.id !== oBracket.id) {
+    return res.status(400).json({ error: `Different brackets — you're ${cBracket.name}, they're ${oBracket.name}.` });
+  }
+  if (stake > cBracket.maxStake) {
+    return res.status(400).json({ error: `${cBracket.name} bracket caps stakes at £${cBracket.maxStake.toLocaleString()}.` });
   }
 
   // Don't spam: only one outgoing pending race at a time per pairing.
