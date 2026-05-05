@@ -8,7 +8,7 @@ import { factionBonusMul } from '../services/territories.js';
 
 const router = Router();
 
-const COLLECT_CAP_HOURS = 24;
+const COLLECT_CAP_HOURS = 12;
 
 // Hourly value of a level-N upgraded version of a founded business.
 function decoratedHourly(template, sliders, level, city) {

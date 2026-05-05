@@ -152,7 +152,7 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
                 </div>
               )}
               <div>
-                <div className="text-[10px] uppercase text-ink-100/50">{picked.produces ? 'Sells (base)' : 'Payback (cap 24h)'}</div>
+                <div className="text-[10px] uppercase text-ink-100/50">{picked.produces ? 'Sells (base)' : 'Payback (cap 12h)'}</div>
                 <div className="tabular-nums">
                   {picked.produces
                     ? `~£${picked.produces.perHour}× base`
@@ -231,12 +231,12 @@ export default function Businesses() {
                 </div>
                 {b.last_collected && (() => {
                   const hoursSince = (Date.now() - b.last_collected) / 3600000;
-                  if (hoursSince < 18) return null;
+                  if (hoursSince < 9) return null;
                   return (
-                    <div className={`text-[10px] mt-0.5 ${hoursSince >= 24 ? 'text-blood-400' : 'text-yellow-400'}`}>
-                      {hoursSince >= 24
+                    <div className={`text-[10px] mt-0.5 ${hoursSince >= 12 ? 'text-blood-400' : 'text-yellow-400'}`}>
+                      {hoursSince >= 12
                         ? 'Capped — collect to start earning again.'
-                        : `Approaching 24h cap (${Math.round(hoursSince)}h since last collect).`}
+                        : `Approaching 12h cap (${Math.round(hoursSince)}h since last collect).`}
                     </div>
                   );
                 })()}
