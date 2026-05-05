@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import { api } from '../api.js';
+import Avatar from '../components/Avatar.jsx';
 import Card from '../components/Card.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
 import LogFeed from '../components/LogFeed.jsx';
@@ -264,7 +265,86 @@ function PrettyCity({ city }) {
   return city.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
 }
 
-function CharacterSheet({ c }) {
+// Resize the picked file to a square 256px webp on a canvas, then
+// base64-encode and POST to /api/character/avatar. The server
+// validates type + size; we keep the heavy lifting on the client so
+// the wire payload stays under 50KB even for a multi-MB phone photo.
+function AvatarUploader({ entity, onChange }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  async function fileToWebp(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = url;
+      });
+      // Square crop to the smaller dimension, then scale to 256px.
+      const SIZE = 256;
+      const side = Math.min(img.width, img.height);
+      const sx = Math.max(0, Math.floor((img.width - side) / 2));
+      const sy = Math.max(0, Math.floor((img.height - side) / 2));
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE);
+      return canvas.toDataURL('image/webp', 0.82);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setErr('Pick an image file.'); return; }
+    setBusy(true); setErr(null);
+    try {
+      const dataUrl = await fileToWebp(file);
+      await api.post('/character/avatar', { image: dataUrl });
+      await onChange?.();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+
+  async function clearImage() {
+    setBusy(true); setErr(null);
+    try {
+      await api.delete('/character/avatar');
+      await onChange?.();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="shrink-0 relative">
+      <Avatar entity={entity} size={56} />
+      <input ref={inputRef} type="file" accept="image/*" hidden onChange={pick} />
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
+        <button type="button" disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          className="text-blood-300 hover:text-blood-200 transition">
+          {busy ? '…' : entity?.avatar_image ? 'Change' : 'Upload'}
+        </button>
+        {entity?.avatar_image && (
+          <button type="button" disabled={busy} onClick={clearImage}
+            className="text-ink-100/45 hover:text-ink-100/75 transition">
+            Remove
+          </button>
+        )}
+      </div>
+      {err && <div className="text-[10px] text-blood-400 mt-0.5 max-w-[120px]">{err}</div>}
+    </div>
+  );
+}
+
+function CharacterSheet({ c, onAvatarChange }) {
   const stats = [
     ['STR', c.strength],
     ['DEF', c.defence],
@@ -280,7 +360,7 @@ function CharacterSheet({ c }) {
     <div id="character-sheet" className="scroll-mt-4">
     <Card>
       <div className="flex items-start gap-3">
-        {c.avatar && <span className="text-4xl leading-none shrink-0">{c.avatar}</span>}
+        <AvatarUploader entity={c} onChange={onAvatarChange} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="font-display text-xl text-ink-50 truncate">{c.name}</h2>
@@ -374,7 +454,7 @@ export default function Dashboard() {
 
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 
-      <CharacterSheet c={c} />
+      <CharacterSheet c={c} onAvatarChange={refresh} />
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Daily reward">

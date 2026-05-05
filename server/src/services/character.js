@@ -171,7 +171,7 @@ function settleOverdueLoans(ch, now) {
 
 const SAVE_STMT = `
   UPDATE characters SET
-    name = ?, avatar = ?, city = ?, faction = ?, gender = ?,
+    name = ?, avatar = ?, avatar_image = ?, city = ?, faction = ?, gender = ?,
     level = ?, xp = ?,
     energy = ?, max_energy = ?,
     nerve = ?, max_nerve = ?,
@@ -208,7 +208,7 @@ export function applyJailSentence(ch, durationMs, reason) {
 
 export function saveCharacter(ch) {
   db.prepare(SAVE_STMT).run(
-    ch.name, ch.avatar, ch.city, ch.faction || null, ch.gender || null,
+    ch.name, ch.avatar, ch.avatar_image || null, ch.city, ch.faction || null, ch.gender || null,
     ch.level, ch.xp,
     ch.energy, ch.max_energy,
     ch.nerve, ch.max_nerve,
@@ -330,6 +330,7 @@ export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null, 
     id: ch.id,
     name: ch.name,
     avatar: ch.avatar,
+    avatar_image: ch.avatar_image || null,
     same_city: viewerCity != null ? viewerCity === ch.city : null,
     level: atMax ? 999 : ch.level,
     at_max_level: atMax,
@@ -349,7 +350,7 @@ export function publicCharacter(ch) {
   const atMax = ch.level >= MAX_LEVEL;
   return {
     id: ch.id,
-    name: ch.name, avatar: ch.avatar, city: ch.city,
+    name: ch.name, avatar: ch.avatar, avatar_image: ch.avatar_image || null, city: ch.city,
     level: ch.level, xp: atMax ? 0 : ch.xp, xp_to_next: atMax ? 0 : xpForNext(ch.level),
     at_max_level: atMax,
     energy: ch.energy, max_energy: ch.max_energy,

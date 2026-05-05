@@ -315,4 +315,31 @@ router.post('/prestige', requireAuth, requireCharacter, (req, res) => {
   res.json({ character: publicCharacter(fresh), prestige: newPrestige });
 });
 
+// Upload a player profile picture. Body: { image: data URL }. We
+// validate the prefix + size on the server (client should already
+// resize to ~256px webp ≤ 50KB) and write the data URL straight to
+// the avatar_image column.
+const AVATAR_MAX_BYTES = 200_000;     // ~200KB, generous headroom
+const AVATAR_PREFIX_RE = /^data:image\/(png|jpe?g|webp|gif);base64,/;
+router.post('/avatar', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const image = req.body?.image;
+  if (typeof image !== 'string' || !AVATAR_PREFIX_RE.test(image)) {
+    return res.status(400).json({ error: 'Image must be a PNG, JPEG, WEBP or GIF data URL.' });
+  }
+  if (image.length > AVATAR_MAX_BYTES) {
+    return res.status(413).json({ error: `Image too large (>${Math.round(AVATAR_MAX_BYTES/1024)}KB). Resize and try again.` });
+  }
+  ch.avatar_image = image;
+  saveCharacter(ch);
+  res.json({ ok: true, character: publicCharacter(ch) });
+});
+
+router.delete('/avatar', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  ch.avatar_image = null;
+  saveCharacter(ch);
+  res.json({ ok: true, character: publicCharacter(ch) });
+});
+
 export default router;

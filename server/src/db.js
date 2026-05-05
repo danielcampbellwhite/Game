@@ -683,6 +683,11 @@ export function initDb() {
   // to double the *original* sentence rather than just the remaining
   // time. Cleared (alongside jail_until) when the player walks out.
   addColumnIfMissing('characters', 'jail_sentence_ms', 'INTEGER');
+  // Optional player-uploaded profile picture, stored as a data URL
+  // (data:image/<type>;base64,<...>). Falls back to ch.avatar (emoji)
+  // when null. Resizing/compression happens on the client so rows stay
+  // small (target ≤ 50KB per upload).
+  addColumnIfMissing('characters', 'avatar_image', 'TEXT');
   // Running tally of successful crimes per faction. Used to derive a
   // "faction reputation" — each faction's share of total criminal
   // activity, normalised so all three sum to 100%.

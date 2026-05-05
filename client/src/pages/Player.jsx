@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
+import Avatar from '../components/Avatar.jsx';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
@@ -137,7 +138,8 @@ export default function Player() {
       {msg && <Card><p className="text-xs text-money-400">{msg}</p></Card>}
 
       <Card>
-        <div className="flex items-baseline gap-3">
+        <div className="flex items-start gap-3">
+          <Avatar entity={p} size={56} />
           <div className="min-w-0 flex-1">
             <div className="font-display text-3xl">{p.name}</div>
             <div className="text-xs text-ink-100/60">

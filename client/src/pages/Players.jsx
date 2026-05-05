@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import Avatar from '../components/Avatar.jsx';
 import Card from '../components/Card.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
 
@@ -17,6 +18,7 @@ function PlayerRow({ p }) {
   return (
     <Link to={`/players/${p.id}`}
       className="flex items-center gap-3 p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
+      <Avatar entity={p} size={36} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="font-medium truncate">{p.name}</span>

@@ -61,7 +61,10 @@ initDb();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// 256KB cap so player-uploaded profile pictures (data-URL POSTs to
+// /api/character/avatar, ~50-100KB after client-side resizing) fit
+// without bumping headroom for everything else by much.
+app.use(express.json({ limit: '256kb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
