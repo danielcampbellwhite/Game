@@ -8,7 +8,7 @@ build/
 *.sqlite-journal
 *.sqlite-shm
 *.sqlite-wal
-data/
+/data/
 server/data/
 .DS_Store
 .vscode/
