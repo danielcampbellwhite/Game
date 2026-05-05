@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGame } from './context/GameContext.jsx';
 import Nav from './components/Nav.jsx';
@@ -116,10 +116,25 @@ function Footer() {
   );
 }
 
+// Reset the scroll position on every navigation so a long page on
+// /crimes doesn't leave the next page also scrolled halfway down.
+// Uses an effect on the location key so it fires whether the path or
+// the search string changed.
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    // Bypass smooth-scroll behaviour the browser may have set globally
+    // — we want an instant reset, not a leisurely glide.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname, search]);
+  return null;
+}
+
 export default function App() {
   const { token, character } = useGame();
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollToTop />
       {token && character ? (
         <>
           <div className="sticky top-0 z-30">
