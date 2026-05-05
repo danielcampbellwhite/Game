@@ -36,10 +36,10 @@ export default function ChopShop() {
         <p className="text-[11px] text-ink-100/60">
           Two ways to move metal. <span className="text-money-400">Chop shop</span> turns it into parts —
           fast, no fuss, but you get just <b>{(data.chopRate * 100).toFixed(0)}%</b> of book.
-          The <span className="text-blood-400">black-market dealer</span> launders the title and gets you
+          The <span className="text-blood-400">black-market dealer</span> reworks the title and gets you
           <b> {(data.dealerRate * 100).toFixed(0)}%</b> — but there's a small chance it's an undercover sting.
         </p>
-        <p className="text-[11px] text-ink-100/50 mt-2">Both options pay out in clean cash — the chop shop and dealer launder the chassis paperwork before settling up.</p>
+        <p className="text-[11px] text-ink-100/50 mt-2">Both options pay out in legal cash — the chop shop and dealer rework the chassis paperwork before settling up.</p>
       </Card>
 
       {!data.vehicles.length ? (

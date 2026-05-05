@@ -30,6 +30,7 @@ const AROUND_TOWN = [
 const UNDERWORLD = [
   { to: '/drugs',      icon: '', name: 'The Drug Market',          blurb: 'Buy low, fly elsewhere, sell high. Prices drift hourly.' },
   { to: '/chop-shop',  icon: '', name: 'Chop Shop & Black Market', blurb: 'Move stolen vehicles fast (cheap) or via the dealer (risky).' },
+  { to: '/fence',      icon: '', name: 'The Fence',                blurb: 'Wash illegal cash into legal at 70% — sting risk if you push it.' },
   { to: '/casino',     icon: '', name: 'The Lucky Crown Casino',   blurb: 'Roulette, blackjack, slots — try your luck against the house.' },
   { to: '/bookmaker',  icon: '', name: 'The Bookmaker',            blurb: 'Wager on football, boxing, horses and F1. ~8% house margin.' },
 ];

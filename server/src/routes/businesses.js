@@ -67,7 +67,6 @@ function decorateOwned(row) {
       perHour: template.produces.perHour * (1 + 0.15 * (row.level - 1)),
     } : null,
     last_collected: row.last_collected,
-    launderRate: template.launderRate || null,
   };
 }
 
@@ -200,28 +199,9 @@ router.post('/collect', requireAuth, requireCharacter, (req, res) => {
   if (template.illegal) ch.dirty_cash += finalEarnings;
   else ch.cash += finalEarnings;
   db.prepare('UPDATE businesses_owned SET last_collected = ? WHERE id = ?').run(Date.now(), row.id);
-  writeLog(ch.id, 'business', `Collected £${finalEarnings.toLocaleString()} from "${businessName}"${template.illegal ? ' (dirty)' : ''}${bizMul > 1 ? ` (turf +${Math.round((bizMul - 1) * 100)}%)` : ''}.`);
+  writeLog(ch.id, 'business', `Collected £${finalEarnings.toLocaleString()} from "${businessName}"${template.illegal ? ' (illegal)' : ''}${bizMul > 1 ? ` (turf +${Math.round((bizMul - 1) * 100)}%)` : ''}.`);
   saveCharacter(ch);
   res.json({ ok: true, earnings, character: publicCharacter(ch) });
-});
-
-router.post('/launder', requireAuth, requireCharacter, (req, res) => {
-  const ch = req.character;
-  const amount = Math.max(1, parseInt(req.body?.amount || 0, 10));
-  const owned = db.prepare('SELECT * FROM businesses_owned WHERE char_id = ?').all(ch.id);
-  const launderable = owned.map(o => ({ ...o, template: businessById(o.business_id) }))
-    .filter(o => o.template?.launderRate);
-  if (!launderable.length) return res.status(403).json({ error: 'Need a car wash, nightclub, or casino to launder.' });
-  if (ch.dirty_cash < amount) return res.status(400).json({ error: 'Not enough dirty cash' });
-  // Use the highest launder rate among owned fronts.
-  const best = launderable.reduce((a, b) => a.template.launderRate > b.template.launderRate ? a : b);
-  const clean = Math.floor(amount * best.template.launderRate);
-  ch.dirty_cash -= amount;
-  ch.cash += clean;
-  const fname = best.custom_name || best.template.name;
-  writeLog(ch.id, 'launder', `Laundered £${amount.toLocaleString()} dirty → £${clean.toLocaleString()} clean via "${fname}".`);
-  saveCharacter(ch);
-  res.json({ ok: true, clean, lost: amount - clean, character: publicCharacter(ch) });
 });
 
 export default router;

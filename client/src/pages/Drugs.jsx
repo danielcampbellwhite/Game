@@ -81,8 +81,8 @@ export default function Drugs() {
       </div>
       <p className="text-[11px] text-ink-100/50 mt-3">
         Prices drift hourly — fly to high-demand cities (Dubai, Tokyo) to dump
-        high-margin product. Sales pay <span className="text-blood-400">dirty cash</span>;
-        launder via Car Wash, Nightclub, or Underground Casino.
+        high-margin product. Sales pay <span className="text-blood-400">illegal cash</span>;
+        wash it at <span className="text-blood-300">The Fence</span> in the city's underworld.
       </p>
 
       {Object.values(invMap).some(q => q > 0) && (

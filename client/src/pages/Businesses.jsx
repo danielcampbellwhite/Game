@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
@@ -79,7 +80,7 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
           </div>
         </div>
         <div>
-          <h4 className="text-xs uppercase text-ink-100/60 mb-1">Illegal — dirty cash + raid risk</h4>
+          <h4 className="text-xs uppercase text-ink-100/60 mb-1">Illegal — illegal cash + raid risk</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {illegalTemplates.map(t => (
               <button key={t.id} type="button" onClick={() => setPicked(t)}
@@ -156,7 +157,6 @@ export default function Businesses() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
-  const [launder, setLaunder] = useState('');
   const [msg, setMsg] = useState(null);
   useScrollOnMessage(msg);
   const [showFounder, setShowFounder] = useState(false);
@@ -210,6 +210,17 @@ export default function Businesses() {
                   )}
                   {b.illegal && b.raidChance > 0 && <span className="ml-2 text-yellow-400">raid {(b.raidChance * 100).toFixed(1)}%</span>}
                 </div>
+                {b.last_collected && (() => {
+                  const hoursSince = (Date.now() - b.last_collected) / 3600000;
+                  if (hoursSince < 18) return null;
+                  return (
+                    <div className={`text-[10px] mt-0.5 ${hoursSince >= 24 ? 'text-blood-400' : 'text-yellow-400'}`}>
+                      {hoursSince >= 24
+                        ? 'Capped — collect to start earning again.'
+                        : `Approaching 24h cap (${Math.round(hoursSince)}h since last collect).`}
+                    </div>
+                  );
+                })()}
                 <div className="text-[10px] text-ink-100/40 mt-0.5">scale {b.scale} · risk {b.risk} · quality {b.quality}</div>
                 <div className="flex gap-2 mt-2">
                   <button
@@ -237,41 +248,11 @@ export default function Businesses() {
         />
       )}
 
-      <Card title=" Money Laundering" subtitle={`Dirty cash: ${fmt(character.dirty_cash)}`}>
-        {data.owned.some(b => b.launderRate) ? (
-          <>
-            <div className="flex gap-2">
-              <input type="number" min="1" placeholder="Amount to launder" value={launder} onChange={e => setLaunder(e.target.value)} className="flex-1" />
-              <button disabled={!launder || busy === 'l'} className="btn btn-gold" onClick={() => action('launder', { amount: parseInt(launder, 10) }, 'l')}>Launder</button>
-            </div>
-            <p className="text-[11px] text-ink-100/50 mt-2">
-              Your best-rate front is used automatically. Currently:{' '}
-              <b className="text-money-400">
-                {Math.round(Math.max(...data.owned.filter(b => b.launderRate).map(b => b.launderRate)) * 100)}%
-              </b>{' '}retained per pound cleaned.
-            </p>
-          </>
-        ) : (
-          <div className="text-sm space-y-2">
-            <p className="text-ink-100/75">
-              You don't own a business that can act as a laundering front yet — dirty cash stays dirty until you do.
-            </p>
-            <p className="text-[11px] text-ink-100/55">
-              Found one of these via <b>+ Found new</b> above. Each has a different "clean rate" — the % of every pound that survives the wash:
-            </p>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-ink-100/65 mt-1">
-              <li> Car Wash — <b className="text-money-400">70%</b></li>
-              <li> Underground Casino — <b className="text-money-400">74%</b></li>
-              <li> Strip Club — <b className="text-money-400">78%</b></li>
-              <li> Real Estate Office — <b className="text-money-400">78%</b></li>
-              <li> Nightclub — <b className="text-money-400">82%</b></li>
-              <li> Luxury Hotel — <b className="text-money-400">86%</b></li>
-            </ul>
-            <p className="text-[11px] text-ink-100/45">
-              Higher tiers clean more efficiently but cost a lot more upfront. The £25k Car Wash is the cheapest entry into laundering.
-            </p>
-          </div>
-        )}
+      <Card title=" Wash illegal cash" subtitle={`Illegal cash: ${fmt(character.dirty_cash || 0)}`}>
+        <p className="text-xs text-ink-100/65">
+          Businesses don't launder anymore — visit <Link to="/fence" className="text-blood-300 underline">The Fence</Link> in
+          the city's underworld. Flat 70% conversion rate, with a small bust risk that scales with the wash size.
+        </p>
       </Card>
     </div>
   );

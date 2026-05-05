@@ -481,38 +481,38 @@ export const ARMOUR = [
 // preview the player sees in the founder is exactly what they get.
 export const BUSINESSES = [
   //  Legal (clean cash) 
-  { id: 'cafe',         name: 'Café',                emoji: '',  illegal: false, baseCost: 25000,   baseHourly: 1100,  levelGate: 1,  launderRate: null  },
-  { id: 'diner',        name: 'Diner',               emoji: '',  illegal: false, baseCost: 60000,   baseHourly: 2000,  levelGate: 5,  launderRate: null  },
-  { id: 'car_wash',     name: 'Car Wash',            emoji: '',  illegal: false, baseCost: 35000,   baseHourly: 1300,  levelGate: 3,  launderRate: 0.70  },
-  { id: 'boutique',     name: 'Boutique',            emoji: '',  illegal: false, baseCost: 110000,  baseHourly: 3000,  levelGate: 10, launderRate: null  },
-  { id: 'auto_shop',    name: 'Auto Repair Shop',    emoji: '',  illegal: false, baseCost: 140000,  baseHourly: 3600,  levelGate: 12, launderRate: null  },
-  { id: 'taxi_firm',    name: 'Taxi Firm',           emoji: '',  illegal: false, baseCost: 200000,  baseHourly: 4800,  levelGate: 15, launderRate: null  },
-  { id: 'nightclub',    name: 'Nightclub',           emoji: '',  illegal: false, baseCost: 380000,  baseHourly: 8500,  levelGate: 22, launderRate: 0.82  },
-  { id: 'tech_startup', name: 'Tech Startup',        emoji: '',  illegal: false, baseCost: 400000,  baseHourly: 7500,  levelGate: 24, launderRate: null  },
-  { id: 'real_estate',  name: 'Real Estate Office',  emoji: '',  illegal: false, baseCost: 600000,  baseHourly: 11000, levelGate: 30, launderRate: 0.78  },
-  { id: 'luxury_hotel', name: 'Luxury Hotel',        emoji: '',  illegal: false, baseCost: 1500000, baseHourly: 25000, levelGate: 42, launderRate: 0.86  },
+  { id: 'cafe',         name: 'Café',                emoji: '',  illegal: false, baseCost: 25000,   baseHourly: 1100,  levelGate: 1  },
+  { id: 'diner',        name: 'Diner',               emoji: '',  illegal: false, baseCost: 60000,   baseHourly: 2000,  levelGate: 5  },
+  { id: 'car_wash',     name: 'Car Wash',            emoji: '',  illegal: false, baseCost: 35000,   baseHourly: 1300,  levelGate: 3  },
+  { id: 'boutique',     name: 'Boutique',            emoji: '',  illegal: false, baseCost: 110000,  baseHourly: 3000,  levelGate: 10 },
+  { id: 'auto_shop',    name: 'Auto Repair Shop',    emoji: '',  illegal: false, baseCost: 140000,  baseHourly: 3600,  levelGate: 12 },
+  { id: 'taxi_firm',    name: 'Taxi Firm',           emoji: '',  illegal: false, baseCost: 200000,  baseHourly: 4800,  levelGate: 15 },
+  { id: 'nightclub',    name: 'Nightclub',           emoji: '',  illegal: false, baseCost: 380000,  baseHourly: 8500,  levelGate: 22 },
+  { id: 'tech_startup', name: 'Tech Startup',        emoji: '',  illegal: false, baseCost: 400000,  baseHourly: 7500,  levelGate: 24 },
+  { id: 'real_estate',  name: 'Real Estate Office',  emoji: '',  illegal: false, baseCost: 600000,  baseHourly: 11000, levelGate: 30 },
+  { id: 'luxury_hotel', name: 'Luxury Hotel',        emoji: '',  illegal: false, baseCost: 1500000, baseHourly: 25000, levelGate: 42 },
   //  Illegal (dirty cash, raid risk scales with sliders) 
-  { id: 'pawn_shop',    name: 'Pawn Shop',           emoji: '',  illegal: true,  baseCost: 70000,   baseHourly: 2400,  levelGate: 6,  launderRate: null  },
-  { id: 'smoke_shop',   name: 'Smoke Shop',          emoji: '',  illegal: true,  baseCost: 100000,  baseHourly: 3000,  levelGate: 9,  launderRate: null  },
-  { id: 'chop_shop',    name: 'Chop Shop',           emoji: '',  illegal: true,  baseCost: 130000,  baseHourly: 4200,  levelGate: 12, launderRate: null  },
-  { id: 'strip_club',   name: 'Strip Club',          emoji: '',  illegal: true,  baseCost: 280000,  baseHourly: 5800,  levelGate: 18, launderRate: 0.78  },
-  { id: 'counterfeit',  name: 'Counterfeit Lab',     emoji: '',  illegal: true,  baseCost: 350000,  baseHourly: 7200,  levelGate: 24, launderRate: null  },
-  { id: 'underground',  name: 'Underground Casino',  emoji: '',  illegal: true,  baseCost: 800000,  baseHourly: 14000, levelGate: 32, launderRate: 0.74  },
+  { id: 'pawn_shop',    name: 'Pawn Shop',           emoji: '',  illegal: true,  baseCost: 70000,   baseHourly: 2400,  levelGate: 6  },
+  { id: 'smoke_shop',   name: 'Smoke Shop',          emoji: '',  illegal: true,  baseCost: 100000,  baseHourly: 3000,  levelGate: 9  },
+  { id: 'chop_shop',    name: 'Chop Shop',           emoji: '',  illegal: true,  baseCost: 130000,  baseHourly: 4200,  levelGate: 12 },
+  { id: 'strip_club',   name: 'Strip Club',          emoji: '',  illegal: true,  baseCost: 280000,  baseHourly: 5800,  levelGate: 18 },
+  { id: 'counterfeit',  name: 'Counterfeit Lab',     emoji: '',  illegal: true,  baseCost: 350000,  baseHourly: 7200,  levelGate: 24 },
+  { id: 'underground',  name: 'Underground Casino',  emoji: '',  illegal: true,  baseCost: 800000,  baseHourly: 14000, levelGate: 32 },
   // ── Drug producers ────────────────────────────────────────────────
   // baseHourly = 0 — these don't pay cash on collect. Instead the
   // `produces` field tells routes/businesses.js how many drug units
   // to deposit into the player's inventory each hour. Players sell
   // the drugs themselves via the Drugs page in any city of their
   // choice — the trade game is in WHERE they sell, not in production.
-  { id: 'weed_farm',    name: 'Weed Farm',           emoji: '',  illegal: true,  baseCost: 180000,  baseHourly: 0, levelGate: 12, launderRate: null, produces: { drug: 'weed',    perHour: 10 } },
-  { id: 'mdma_lab',     name: 'MDMA Lab',            emoji: '',  illegal: true,  baseCost: 320000,  baseHourly: 0, levelGate: 18, launderRate: null, produces: { drug: 'mdma',    perHour: 5  } },
+  { id: 'weed_farm',    name: 'Weed Farm',           emoji: '',  illegal: true,  baseCost: 180000,  baseHourly: 0, levelGate: 12, produces: { drug: 'weed',    perHour: 10 } },
+  { id: 'mdma_lab',     name: 'MDMA Lab',            emoji: '',  illegal: true,  baseCost: 320000,  baseHourly: 0, levelGate: 18, produces: { drug: 'mdma',    perHour: 5  } },
   // drug_lab id kept for backwards-compat with existing rows; renamed
   // to "Meth Lab" and switched to producing meth instead of generic
   // dirty cash.
-  { id: 'drug_lab',     name: 'Meth Lab',            emoji: '',  illegal: true,  baseCost: 420000,  baseHourly: 0, levelGate: 26, launderRate: null, produces: { drug: 'meth',    perHour: 4  } },
-  { id: 'coke_kitchen', name: 'Cocaine Kitchen',     emoji: '',  illegal: true,  baseCost: 900000,  baseHourly: 0, levelGate: 32, launderRate: null, produces: { drug: 'cocaine', perHour: 3  } },
+  { id: 'drug_lab',     name: 'Meth Lab',            emoji: '',  illegal: true,  baseCost: 420000,  baseHourly: 0, levelGate: 26, produces: { drug: 'meth',    perHour: 4  } },
+  { id: 'coke_kitchen', name: 'Cocaine Kitchen',     emoji: '',  illegal: true,  baseCost: 900000,  baseHourly: 0, levelGate: 32, produces: { drug: 'cocaine', perHour: 3  } },
   // cartel_lab id kept for backwards-compat. Top-tier producer.
-  { id: 'cartel_lab',   name: 'Cartel Operation',    emoji: '',  illegal: true,  baseCost: 1800000, baseHourly: 0, levelGate: 48, launderRate: null, produces: { drug: 'heroin',  perHour: 2  } },
+  { id: 'cartel_lab',   name: 'Cartel Operation',    emoji: '',  illegal: true,  baseCost: 1800000, baseHourly: 0, levelGate: 48, produces: { drug: 'heroin',  perHour: 2  } },
 ];
 
 // Slider scoring. All callers must use this — never compute ad-hoc.

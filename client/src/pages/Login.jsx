@@ -47,7 +47,7 @@ const SHOWCASE = [
 const BULLETS = [
   'Lift wallets, knock over banks, run drugs across borders, hunt rival players in the alley.',
   'Found a gang. Declare war on another. Hold turf for permanent crime-cooldown perks.',
-  'Hold down a job for steady wages, run shopfronts to launder dirty cash, bet your bankroll on the next horse race.',
+  'Hold down a job for steady wages, fence illegal cash through the underworld, bet your bankroll on the next horse race.',
   'No background workers — your city accrues income, drift and timers while you\'re offline. Drop in for five minutes or all night.',
 ];
 

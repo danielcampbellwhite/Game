@@ -79,7 +79,7 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
     db.prepare('UPDATE inventory SET qty = qty - ? WHERE char_id = ? AND kind = ? AND item_id = ?').run(qty, ch.id, 'drug', drug.id);
   }
   bumpMission(ch, 'drug_sale', qty, { drug: drug.id });
-  writeLog(ch.id, 'drugs', `Sold ${qty} ${drug.name} @ £${price} (+£${earn} dirty).`);
+  writeLog(ch.id, 'drugs', `Sold ${qty} ${drug.name} @ £${price} (+£${earn} illegal).`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });

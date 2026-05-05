@@ -14,7 +14,7 @@ const NUMERIC_FIELDS = [
   { id: 'level',        label: 'Level',        max: 999 },
   { id: 'cash',         label: 'Cash',         money: true },
   { id: 'bank',         label: 'Bank',         money: true },
-  { id: 'dirty_cash',   label: 'Dirty cash',   money: true },
+  { id: 'dirty_cash',   label: 'Illegal cash', money: true },
   { id: 'reputation',   label: 'Reputation' },
   { id: 'happiness',    label: 'Happiness',    max: 100 },
   { id: 'health',       label: 'Health' },
