@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
 import Card from '../components/Card.jsx';
 import WorldMap from '../components/WorldMap.jsx';
+import CityMap from '../components/CityMap.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
 
 const AROUND_TOWN = [
@@ -160,18 +161,21 @@ function bonusLabel(type) {
 }
 
 // Persist the active tab across visits. Default to "town" — the
-// directory most players hit first.
+// Persist the active tab across visits. City Map opens by default —
+// the visual map is the most compact way to spot every venue at a
+// glance; the text grids stay around for accessibility / quick scan.
 const TAB_PREF_KEY = 'mafia.cityTab';
 const TABS = [
+  { id: 'map',        label: 'City Map' },
   { id: 'town',       label: 'Around Town' },
   { id: 'underworld', label: 'Underworld' },
   { id: 'territory',  label: 'Territories' },
   { id: 'world',      label: 'World Map' },
 ];
 function readTabPref() {
-  if (typeof window === 'undefined') return 'town';
+  if (typeof window === 'undefined') return 'map';
   const v = window.localStorage.getItem(TAB_PREF_KEY);
-  return TABS.some(t => t.id === v) ? v : 'town';
+  return TABS.some(t => t.id === v) ? v : 'map';
 }
 
 export default function City() {
@@ -234,6 +238,12 @@ export default function City() {
           </button>
         ))}
       </div>
+
+      {tab === 'map' && (
+        <Card title="City Map" subtitle="Tap a marker to walk in. Gold pins are legitimate businesses; red are the underworld.">
+          <CityMap />
+        </Card>
+      )}
 
       {tab === 'town' && (
         <Card title="Around Town" subtitle="Legitimate businesses you can walk into.">
