@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { CITIES, cityById, landReachableFrom, landDistanceBetween, vehicleById } from '../data.js';
+import { CITIES, cityById, landReachableFrom, landDistanceBetween, vehicleById, specPerk } from '../data.js';
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
@@ -124,7 +124,10 @@ router.post('/drive', requireAuth, requireCharacter, requireFreeCharacter, (req,
   // 80 (cap) → 60% of base damage. Floor 0.4 so the dampener never
   // disappears entirely.
   const skillDampener = Math.max(0.4, 1 - (ch.driving ?? 1) * 0.005);
-  const conditionCost = km * CONDITION_LOSS_PER_KM * 100 * skillDampener;
+  // Wheelman 'Heavy foot' shaves another flat % off the cost
+  // (specPerk returns a negative value, e.g. -0.20).
+  const wheelmanMul = Math.max(0.05, 1 + specPerk(ch, 'drive_condition_pct'));
+  const conditionCost = km * CONDITION_LOSS_PER_KM * 100 * skillDampener * wheelmanMul;
   if (row.condition <= conditionCost) {
     return res.status(400).json({
       error: `That ${v.maker} ${v.name} won't make it (${Math.round(row.condition)}%). Repair it before a long drive.`,

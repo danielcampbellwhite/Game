@@ -25,6 +25,7 @@ const AROUND_TOWN = [
   { to: '/hospital',   icon: '', name: 'Hospital',                 blurb: 'Top up health on demand, or cover the bill for another patient.' },
   { to: '/jail',       icon: '', name: 'Jail',                     blurb: 'Visit the cells — bail a friend out, or risk a bust.' },
   { to: '/bounties',   icon: '', name: 'Bounty Board',              blurb: 'Wanted posters — post cash on a player or collect by murdering one.' },
+  { to: '/specialisations', icon: '', name: 'Specialisation',       blurb: 'Pick a criminal speciality at level 25 — passive perks the rest of the way.', hideWhen: c => (c.level || 1) < 20 },
 ];
 
 const UNDERWORLD = [

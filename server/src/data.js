@@ -1051,6 +1051,82 @@ export function xpForNext(level) {
 // strength 25, defence 20, speed 20). Once at cap, the gym still applies
 // its temporary buff but stops accruing permanent progress, and the
 // university refuses to sell more courses.
+// Specialisation paths — picked at level 25, locked in for life
+// (cleared on prestige / retire). Five nodes each, auto-unlocked by
+// level: 25 / 35 / 50 / 65 / 80. Effects are passive multipliers
+// the rest of the codebase consults via specPerk(ch, effect).
+//
+// Effect ids must be unique across the whole catalogue; multiple
+// nodes of the same effect would sum, but we don't currently have any.
+export const SPECIALISATIONS = [
+  {
+    id: 'wheelman',
+    name: 'Wheelman',
+    blurb: 'Behind the wheel — faster, smoother, harder to catch.',
+    palette: 'gold',
+    nodes: [
+      { level: 25, name: 'Heavy foot',     effect: 'drive_condition_pct', value: -0.20, blurb: '-20% condition cost on inter-city drives.' },
+      { level: 35, name: 'Smooth shifter', effect: 'race_winchance_pct',  value: 0.05,  blurb: '+5% street-race win odds.' },
+      { level: 50, name: 'Hot wire',       effect: 'gta_payout_pct',      value: 0.25,  blurb: '+25% GTA crime stolen-car book value.' },
+      { level: 65, name: 'Auto haulier',   effect: 'free_shipping',       value: 1,     blurb: 'Vehicle shipping is free.' },
+      { level: 80, name: 'Customs runner', effect: 'no_customs',          value: 1,     blurb: 'Customs never seizes drugs at the airport.' },
+    ],
+  },
+  {
+    id: 'cleaner',
+    name: 'Cleaner',
+    blurb: 'Discreet, careful, immaculate. Less risk, less heat.',
+    palette: 'money',
+    nodes: [
+      { level: 25, name: 'Trusted fence',  effect: 'fence_rate_bonus',    value: 0.05,  blurb: '+5% fence conversion rate (70% → 75%).' },
+      { level: 35, name: 'Buyer reads',    effect: 'drug_bust_pct',       value: -0.25, blurb: '-25% drug-sell bust chance.' },
+      { level: 50, name: 'Soaped lock',    effect: 'jail_escape_bonus',   value: 0.15,  blurb: '+15% jail escape success (50% → 65%).' },
+      { level: 65, name: 'Iron lung',      effect: 'energy_regen_pct',    value: 0.25,  blurb: '+25% faster energy regen.' },
+      { level: 80, name: 'Doctor in pocket', effect: 'hospital_cost_pct', value: -0.5,  blurb: '-50% hospital fees.' },
+    ],
+  },
+  {
+    id: 'boss',
+    name: 'Boss',
+    blurb: "You don't pull the trigger. You point.",
+    palette: 'blood',
+    nodes: [
+      { level: 25, name: 'Lieutenant', effect: 'gang_treasury_share',  value: 0.25,  blurb: '+25% gang treasury share earned from your crimes.' },
+      { level: 35, name: 'Earner',     effect: 'turf_bonus_mul',       value: 0.20,  blurb: '+20% bonus on turf-aligned income.' },
+      { level: 50, name: 'Captain',    effect: 'gang_crime_cooldown',  value: -0.30, blurb: '-30% cooldown on gang-flagged crimes.' },
+      { level: 65, name: 'Diplomat',   effect: 'faction_rep_mul',      value: 0.50,  blurb: '+50% faction-reputation gain.' },
+      { level: 80, name: 'Don',        effect: 'oc_crew_slot',         value: 1,     blurb: '+1 OC heist crew slot.' },
+    ],
+  },
+  {
+    id: 'hacker',
+    name: 'Hacker',
+    blurb: 'Brain over brawn. Wires, screens, money.',
+    palette: 'gold',
+    nodes: [
+      { level: 25, name: 'Quick fingers',  effect: 'cyber_payout_pct',    value: 0.15,  blurb: '+15% cyber crime payouts.' },
+      { level: 35, name: 'Nightowl',       effect: 'cyber_cooldown_pct',  value: -0.25, blurb: '-25% cyber crime cooldowns.' },
+      { level: 50, name: 'Inside source',  effect: 'contract_refresh_h',  value: 12,    blurb: 'Daily contract refreshes every 12h instead of 24h.' },
+      { level: 65, name: 'Mainline',       effect: 'cyber_xp_mul',        value: 0.5,   blurb: '+50% XP from cyber crimes.' },
+      { level: 80, name: 'Air gap',        effect: 'no_loan_compounding', value: 1,     blurb: 'Bank loans stop compounding when overdue.' },
+    ],
+  },
+];
+
+// Returns the cumulative value of every unlocked node with `effect` for
+// the character's chosen path. Returns 0 when no path or no node matches
+// (i.e. effect is harmless to consult anywhere — multiply or add freely).
+export function specPerk(ch, effect) {
+  if (!ch?.specialisation) return 0;
+  const path = SPECIALISATIONS.find(p => p.id === ch.specialisation);
+  if (!path) return 0;
+  let sum = 0;
+  for (const n of path.nodes) {
+    if ((ch.level || 1) >= n.level && n.effect === effect) sum += n.value;
+  }
+  return sum;
+}
+
 export const STAT_CAPS = {
   strength:     35,
   defence:      30,

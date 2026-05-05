@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { DRUGS, DRUG_USE_EFFECTS, drugById } from '../data.js';
+import { DRUGS, DRUG_USE_EFFECTS, drugById, specPerk } from '../data.js';
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { applyVitalEffects, effectsToText } from '../services/vitals.js';
 import { bumpMission } from '../services/missions.js';
@@ -55,8 +55,9 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   if (!inv || inv.qty < qty) return res.status(400).json({ error: 'Not enough stock' });
 
   // Roll for a bust before paying out. The buyer is undercover — stash
-  // is seized, jail time depends on how much they grabbed.
-  const bustChance = drugBustChance(qty);
+  // is seized, jail time depends on how much they grabbed. Cleaner's
+  // 'Buyer reads' shaves the chance by a flat % (specPerk negative).
+  const bustChance = Math.max(0, drugBustChance(qty) * (1 + specPerk(ch, 'drug_bust_pct')));
   if (Math.random() < bustChance) {
     const jailMin = 20 + qty * 2 + Math.floor(Math.random() * 20);
     applyJailSentence(ch, jailMin * 60 * 1000, `Buyer was undercover — caught fencing ${qty}× ${drug.name}. ${jailMin} minutes inside.`);

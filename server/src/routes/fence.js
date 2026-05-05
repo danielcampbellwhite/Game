@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import { specPerk } from '../data.js';
 
 const router = Router();
 
@@ -21,8 +22,9 @@ function bustChanceFor(amount) {
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
+  const rate = Math.min(0.99, FENCE_RATE + specPerk(ch, 'fence_rate_bonus'));
   res.json({
-    rate: FENCE_RATE,
+    rate,
     illegalCash: ch.dirty_cash || 0,
     bust: {
       base: FENCE_BUST_BASE,
@@ -48,7 +50,8 @@ router.post('/launder', requireAuth, requireCharacter, requireFreeCharacter, (re
     return res.json({ ok: true, busted: true, jailMin, character: publicCharacter(ch) });
   }
 
-  const legal = Math.floor(amount * FENCE_RATE);
+  const rate = Math.min(0.99, FENCE_RATE + specPerk(ch, 'fence_rate_bonus'));
+  const legal = Math.floor(amount * rate);
   ch.dirty_cash -= amount;
   ch.cash += legal;
   writeLog(ch.id, 'shop', `Laundered £${amount.toLocaleString()} illegal → £${legal.toLocaleString()} legal at the fence.`, { amount, legal });

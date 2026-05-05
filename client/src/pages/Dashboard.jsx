@@ -508,6 +508,13 @@ export default function Dashboard() {
         <RetirementCard c={c} onDone={refresh} />
       )}
 
+      {(c.level || 0) >= 25 && !c.specialisation && (
+        <Card title=" Pick a specialisation"
+          subtitle="You've hit level 25 — time to commit to a criminal path. Five passive perks per path, locked in until you retire.">
+          <Link to="/specialisations" className="btn btn-primary text-xs">Choose your path →</Link>
+        </Card>
+      )}
+
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Daily reward">
           {daily?.ready ? (

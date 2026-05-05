@@ -688,6 +688,11 @@ export function initDb() {
   // when null. Resizing/compression happens on the client so rows stay
   // small (target ≤ 50KB per upload).
   addColumnIfMissing('characters', 'avatar_image', 'TEXT');
+  // Specialisation path id (wheelman / cleaner / boss / hacker).
+  // Picked at level 25, locked in for the life of the character;
+  // cleared on retire/prestige. Nodes auto-unlock by level so we
+  // don't need per-node state — see SPECIALISATIONS in data.js.
+  addColumnIfMissing('characters', 'specialisation', 'TEXT');
   // Running tally of successful crimes per faction. Used to derive a
   // "faction reputation" — each faction's share of total criminal
   // activity, normalised so all three sum to 100%.

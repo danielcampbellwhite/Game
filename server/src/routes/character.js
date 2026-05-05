@@ -321,6 +321,7 @@ router.post('/retire', requireAuth, requireCharacter, (req, res) => {
       speed_buff = 0, speed_buff_at = NULL,
       accuracy_buff = 0, accuracy_buff_at = NULL,
       strength_progress = 0, defence_progress = 0, speed_progress = 0,
+      specialisation = NULL,
       prestige = ?
     WHERE id = ?
   `).run(newPrestige, ch.id);

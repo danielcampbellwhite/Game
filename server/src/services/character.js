@@ -171,7 +171,7 @@ function settleOverdueLoans(ch, now) {
 
 const SAVE_STMT = `
   UPDATE characters SET
-    name = ?, avatar = ?, avatar_image = ?, city = ?, faction = ?, gender = ?,
+    name = ?, avatar = ?, avatar_image = ?, specialisation = ?, city = ?, faction = ?, gender = ?,
     level = ?, xp = ?,
     energy = ?, max_energy = ?,
     nerve = ?, max_nerve = ?,
@@ -208,7 +208,7 @@ export function applyJailSentence(ch, durationMs, reason) {
 
 export function saveCharacter(ch) {
   db.prepare(SAVE_STMT).run(
-    ch.name, ch.avatar, ch.avatar_image || null, ch.city, ch.faction || null, ch.gender || null,
+    ch.name, ch.avatar, ch.avatar_image || null, ch.specialisation || null, ch.city, ch.faction || null, ch.gender || null,
     ch.level, ch.xp,
     ch.energy, ch.max_energy,
     ch.nerve, ch.max_nerve,
@@ -361,6 +361,7 @@ export function publicCharacter(ch) {
     happiness: ch.happiness,
     strength: ch.strength, defence: ch.defence, speed: ch.speed, intelligence: ch.intelligence,
     driving: ch.driving ?? 1,
+    specialisation: ch.specialisation || null,
     stat_caps: STAT_CAPS,
     buffs: buffSnapshot(ch),
     reputation: ch.reputation, rank: rankFor(ch.reputation).name,

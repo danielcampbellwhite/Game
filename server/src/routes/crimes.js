@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier } from '../data.js';
+import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier, specPerk } from '../data.js';
 import { saveCharacter, awardXp, publicCharacter, applyJailSentence } from '../services/character.js';
 import { bumpMission } from '../services/missions.js';
 import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
@@ -233,7 +233,10 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       const localTerrMul  = factionBonusMul(ch.faction, ch.city, 'crime_cash');
       const globalTerrMul = factionGlobalCrimeMul(ch.faction);
       const territoryBonus = localTerrMul * globalTerrMul;
-      const payout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus);
+      // Hacker 'Quick fingers' boosts cyber payouts; specPerk returns
+      // 0 unless the player is on the cyber path with that node.
+      const cyberMul = crime.tier === 'cyber' ? (1 + specPerk(ch, 'cyber_payout_pct')) : 1;
+      const payout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus * cyberMul);
       if (crime.dirty) ch.dirty_cash += payout;
       else ch.cash += payout;
       writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (dirty)' : ''} +${xpGain}xp${territoryBonus > 1 ? ` (turf +${Math.round((territoryBonus - 1) * 100)}%)` : ''}.`, { crime: crime.id, payout, xp: xpGain, territoryBonus });

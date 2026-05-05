@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { vehicleById, applyVehicleMods, cityById } from '../data.js';
+import { vehicleById, applyVehicleMods, cityById, specPerk } from '../data.js';
 import { saveCharacter, loadCharacterById, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { sendEvent } from '../services/events.js';
@@ -76,7 +76,9 @@ function resolveRace(challenger, opponent, race) {
   // worth about 20% — meaningful but not crushing.
   const carWeight = 0.004;
   const skillWeight = 0.012;
-  const advantage = carEdge * carWeight + skillEdge * skillWeight;
+  // Wheelman 'Smooth shifter' adds a flat advantage to the challenger.
+  const wheelmanEdge = specPerk(challenger, 'race_winchance_pct') - specPerk(opponent, 'race_winchance_pct');
+  const advantage = carEdge * carWeight + skillEdge * skillWeight + wheelmanEdge;
   let chance = 0.5 + advantage;
   chance = Math.max(0.05, Math.min(0.95, chance));
   const challengerWon = Math.random() < chance;
