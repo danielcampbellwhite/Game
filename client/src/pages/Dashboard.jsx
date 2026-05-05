@@ -324,22 +324,36 @@ function AvatarUploader({ entity, onChange }) {
 
   return (
     <div className="shrink-0 relative">
-      <Avatar entity={entity} size={56} />
+      <button type="button" disabled={busy} onClick={() => inputRef.current?.click()}
+        aria-label={entity?.avatar_image ? 'Edit profile picture' : 'Upload profile picture'}
+        className="relative block group focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500 rounded-full">
+        <Avatar entity={entity} size={64} />
+        <span
+          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-[10px] uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition pointer-events-none"
+          aria-hidden>
+          {busy ? '…' : entity?.avatar_image ? 'Edit' : 'Upload'}
+        </span>
+        {/* Always-visible camera nub in the corner so the edit
+            affordance is obvious on touch devices where there is no
+            hover state. */}
+        <span
+          className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blood-700 border border-ink-950 flex items-center justify-center shadow"
+          aria-hidden>
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5"
+            strokeLinecap="round" strokeLinejoin="round" className="text-white">
+            <path d="M3 7h3l2-3h8l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" />
+            <circle cx="12" cy="13" r="3.5" />
+          </svg>
+        </span>
+      </button>
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={pick} />
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
-        <button type="button" disabled={busy}
-          onClick={() => inputRef.current?.click()}
-          className="text-blood-300 hover:text-blood-200 transition">
-          {busy ? '…' : entity?.avatar_image ? 'Change' : 'Upload'}
+      {entity?.avatar_image && (
+        <button type="button" disabled={busy} onClick={clearImage}
+          className="block mt-1 text-[10px] text-ink-100/45 hover:text-ink-100/75 transition w-full text-center">
+          Remove
         </button>
-        {entity?.avatar_image && (
-          <button type="button" disabled={busy} onClick={clearImage}
-            className="text-ink-100/45 hover:text-ink-100/75 transition">
-            Remove
-          </button>
-        )}
-      </div>
-      {err && <div className="text-[10px] text-blood-400 mt-0.5 max-w-[120px]">{err}</div>}
+      )}
+      {err && <div className="text-[10px] text-blood-400 mt-0.5 max-w-[120px] text-center">{err}</div>}
     </div>
   );
 }
