@@ -252,7 +252,7 @@ export default function Nav() {
           <div className="leading-tight min-w-0">
             <div className="text-sm font-medium truncate">{character?.name}</div>
             <div className="text-[10px] text-ink-100/50">
-              Lvl {character?.at_max_level ? '999+' : character?.level} · {character?.rank}
+              Lvl {character?.level}{character?.prestige ? ` ★${character.prestige}` : ''} · {character?.rank}
             </div>
           </div>
         </Link>
@@ -310,7 +310,7 @@ export default function Nav() {
               <div className="flex items-baseline justify-between gap-2 text-[10px] uppercase text-ink-100/55">
                 <span>{character.at_max_level ? 'Max Lvl' : 'XP'}</span>
                 <span className="tabular-nums text-ink-100/85">
-                  {character.at_max_level ? '999+' : `${character.xp}/${character.xp_to_next}`}
+                  {character.at_max_level ? 'MAX' : `${character.xp}/${character.xp_to_next}`}
                 </span>
               </div>
               {!character.at_max_level && (

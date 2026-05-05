@@ -93,7 +93,7 @@ function PlayerCrimes({ character }) {
                   className="text-left rounded-md p-2 border border-ink-100/10 bg-ink-900/40 hover:border-blood-500/40 hover:bg-ink-900/70 transition">
                   <div className="flex items-baseline gap-2">
                     <span className="font-medium truncate">{p.name}</span>
-                    <span className="text-[10px] uppercase text-ink-100/40">L{p.at_max_level ? '999+' : p.level}</span>
+                    <span className="text-[10px] uppercase text-ink-100/40">L{p.level}</span>
                   </div>
                   <div className="text-[10px] text-ink-100/55 mt-0.5">{p.rank}</div>
                 </button>

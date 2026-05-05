@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { loadCharacter, applyTick, publicCharacter } from '../services/character.js';
+import { loadCharacter, applyTick, publicCharacter, MAX_LEVEL, MAX_PRESTIGE } from '../services/character.js';
 import { recentLog, writeLog } from '../services/log.js';
 import { CITIES, AVATARS, cityById, FACTION_IDS, GENDERS, STARTER_BUDGET, STARTER_CAR_IDS, STARTER_BUSINESS_IDS, starterCars, starterHousesForCity, starterBusinesses } from '../data.js';
 import { applyFactionPerks } from '../services/factions.js';
@@ -284,32 +284,53 @@ router.post('/new-character', requireAuth, (req, res) => {
   res.json({ character: publicCharacter(fresh) });
 });
 
-router.post('/prestige', requireAuth, requireCharacter, (req, res) => {
+// Retire — once a player hits MAX_LEVEL they can opt to retire,
+// taking their wealth and empire forward into a new prestige cycle.
+//
+// Kept: cash, bank, dirty_cash, properties, businesses, vehicles,
+//       stocks, prestige count.
+// Reset: level → 1, xp → 0, stats → 1, reputation → 0, inventory,
+//        equipped gear, jail/hospital/travel state.
+//
+// Each prestige grants +5% to max energy / nerve forever (already
+// applied in applyTick). Capped at MAX_PRESTIGE.
+router.post('/retire', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
-  if (ch.level < 80) return res.status(400).json({ error: 'Reach level 80 to prestige.' });
+  if (ch.level < MAX_LEVEL) return res.status(400).json({ error: `Reach level ${MAX_LEVEL} to retire.` });
+  if ((ch.prestige || 0) >= MAX_PRESTIGE) {
+    return res.status(409).json({ error: `You're already at the max prestige tier (${MAX_PRESTIGE}). The streets have no more to prove.` });
+  }
   const newPrestige = (ch.prestige || 0) + 1;
-  // Wipe progress, keep prestige count.
   db.prepare(`
     UPDATE characters SET
       level = 1, xp = 0,
-      energy = 100, max_energy = 100,
-      nerve = 10, max_nerve = 10,
-      health = 100, max_health = 100,
+      energy = 100,
+      nerve = 10,
+      health = 100,
       happiness = 50,
-      strength = 1, defence = 1, speed = 1, intelligence = 1,
+      strength = 1, defence = 1, speed = 1, intelligence = 1, driving = 1,
       reputation = 0,
-      cash = 5000, bank = 0, dirty_cash = 0,
-      jail_until = NULL, jail_reason = NULL, hospital_until = NULL, hospital_reason = NULL, travel_until = NULL, travel_to = NULL,
-      equipped_weapon = 'fists', equipped_armour = 'none',
+      jail_until = NULL, jail_reason = NULL, jail_sentence_ms = NULL,
+      hospital_until = NULL, hospital_reason = NULL,
+      travel_until = NULL, travel_to = NULL,
+      equipped_weapon = 'fists', equipped_armour = 'none', equipped_weapon_instance = NULL,
+      active_vehicle_id = NULL,
+      heat = 0, heat_updated_at = NULL,
+      strength_buff = 0, strength_buff_at = NULL,
+      defence_buff = 0, defence_buff_at = NULL,
+      speed_buff = 0, speed_buff_at = NULL,
+      accuracy_buff = 0, accuracy_buff_at = NULL,
+      strength_progress = 0, defence_progress = 0, speed_progress = 0,
       prestige = ?
     WHERE id = ?
   `).run(newPrestige, ch.id);
+  // Keep cash / bank / dirty_cash / properties / businesses / vehicles
+  // / stocks. Wipe consumables, weapon instances, and gang membership.
   db.prepare('DELETE FROM inventory WHERE char_id = ?').run(ch.id);
-  db.prepare('DELETE FROM businesses_owned WHERE char_id = ?').run(ch.id);
-  db.prepare('DELETE FROM properties_owned WHERE char_id = ?').run(ch.id);
-  db.prepare('DELETE FROM stocks_owned WHERE char_id = ?').run(ch.id);
-  db.prepare('DELETE FROM loans WHERE char_id = ?').run(ch.id);
-  writeLog(ch.id, 'system', `Prestige ${newPrestige} achieved. +5% to all caps permanently.`);
+  db.prepare('DELETE FROM weapon_instances WHERE owner_id = ?').run(ch.id);
+  db.prepare('DELETE FROM consumable_cooldowns WHERE char_id = ?').run(ch.id);
+  db.prepare('DELETE FROM gang_members WHERE char_id = ?').run(ch.id);
+  writeLog(ch.id, 'system', `Retired and stepped back to the streets — Prestige ${newPrestige}. +5% to vital caps, kept your empire.`);
   const fresh = loadCharacter(req.user.id);
   applyTick(fresh);
   res.json({ character: publicCharacter(fresh), prestige: newPrestige });

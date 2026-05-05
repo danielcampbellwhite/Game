@@ -11,7 +11,7 @@ import { fmt } from '../components/Money.jsx';
 // After that the flag persists and ADMIN_TOKEN can be removed.
 
 const NUMERIC_FIELDS = [
-  { id: 'level',        label: 'Level',        max: 999 },
+  { id: 'level',        label: 'Level',        max: 100 },
   { id: 'cash',         label: 'Cash',         money: true },
   { id: 'bank',         label: 'Bank',         money: true },
   { id: 'dirty_cash',   label: 'Illegal cash', money: true },

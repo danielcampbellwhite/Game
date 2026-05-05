@@ -367,7 +367,7 @@ function CharacterSheet({ c, onAvatarChange }) {
             <FactionBadge faction={c.faction} />
           </div>
           <p className="text-xs text-ink-100/60 mt-0.5">
-            Lvl {c.at_max_level ? '999+' : c.level} · {c.rank}
+            Lvl {c.level}{c.prestige ? ` ★${c.prestige}` : ''} · {c.rank}
             {c.city && <> · <PrettyCity city={c.city} /></>}
           </p>
           <p className="text-[10px] uppercase tracking-wide text-ink-100/45 mt-0.5">
@@ -395,6 +395,54 @@ function CharacterSheet({ c, onAvatarChange }) {
       </div>
     </Card>
     </div>
+  );
+}
+
+// Retirement / prestige prompt — shown only when the player has hit
+// the level cap and still has prestige tiers available. Confirms
+// before resetting because the action is consequential.
+function RetirementCard({ c, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [err, setErr] = useState(null);
+  const newPrestige = (c.prestige || 0) + 1;
+  async function retire() {
+    setBusy(true); setErr(null);
+    try {
+      await api.post('/character/retire');
+      setConfirming(false);
+      await onDone?.();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+  return (
+    <Card title=" Retire & Prestige" subtitle={`You've capped at level ${c.level}. Step back to start a new prestige cycle.`}>
+      <p className="text-xs text-ink-100/65">
+        You'll keep your <span className="text-money-300">cash, bank, properties, businesses, vehicles and stocks</span>,
+        and gain <span className="text-money-400">+5% max energy & nerve forever</span>{' '}
+        (★ {newPrestige}/5).
+      </p>
+      <p className="text-[11px] text-ink-100/55 mt-1">
+        Reset: level → 1, all stats → 1, reputation → 0, inventory wiped, equipped gear cleared,
+        gang membership lost. The streets won't remember your old grind.
+      </p>
+      {err && <p className="text-[11px] text-blood-400 mt-2">{err}</p>}
+      {!confirming ? (
+        <button onClick={() => setConfirming(true)} disabled={busy}
+          className="btn btn-primary text-xs mt-3">
+          Retire to ★ {newPrestige}
+        </button>
+      ) : (
+        <div className="mt-3 flex gap-2">
+          <button onClick={retire} disabled={busy} className="btn btn-money text-xs flex-1">
+            {busy ? '…' : `Confirm — Retire to ★ ${newPrestige}`}
+          </button>
+          <button onClick={() => setConfirming(false)} disabled={busy} className="btn btn-ghost text-xs">
+            Cancel
+          </button>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -455,6 +503,10 @@ export default function Dashboard() {
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 
       <CharacterSheet c={c} onAvatarChange={refresh} />
+
+      {c.at_max_level && (c.prestige || 0) < 5 && (
+        <RetirementCard c={c} onDone={refresh} />
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Daily reward">

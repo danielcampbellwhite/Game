@@ -143,7 +143,7 @@ export default function Player() {
           <div className="min-w-0 flex-1">
             <div className="font-display text-3xl">{p.name}</div>
             <div className="text-xs text-ink-100/60">
-              {p.rank} · Level {p.at_max_level ? '999+' : p.level}{p.prestige ? ` · ⭐ ${p.prestige}` : ''}
+              {p.rank} · Level {p.level}{p.prestige ? ` · ⭐ ${p.prestige}` : ''}
               {p.driving != null && <> · Driving <span className="tabular-nums text-yellow-300">{p.driving}</span></>}
             </div>
             <div className="text-[11px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">

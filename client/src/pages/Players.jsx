@@ -22,7 +22,7 @@ function PlayerRow({ p }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="font-medium truncate">{p.name}</span>
-          <span className="text-[10px] uppercase text-ink-100/40">L{p.at_max_level ? '999+' : p.level}</span>
+          <span className="text-[10px] uppercase text-ink-100/40">L{p.level}</span>
           {p.online
             ? <span className="text-[10px] uppercase tracking-wide text-money-400"> online</span>
             : <span className="text-[10px] text-ink-100/40">{timeAgo(p.last_active_at)}</span>}

@@ -114,7 +114,7 @@ function PvpChallengeSection({ character }) {
               <div className="flex items-baseline justify-between gap-2">
                 <div className="flex items-baseline gap-2 min-w-0">
                   <Link to={`/players/${p.id}`} className="font-medium truncate hover:underline">{p.name}</Link>
-                  <span className="text-[10px] uppercase text-ink-100/45">L{p.at_max_level ? '999+' : p.level}</span>
+                  <span className="text-[10px] uppercase text-ink-100/45">L{p.level}</span>
                 </div>
                 {p.online
                   ? <span className="text-[10px] uppercase text-money-400"> online</span>

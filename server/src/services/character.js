@@ -235,9 +235,11 @@ export function saveCharacter(ch) {
   );
 }
 
-// Hard level cap. Players keep doing everything (gaining cash/rep/items),
-// but the level number freezes here and shows as "999+" client-side.
-export const MAX_LEVEL = 999;
+// Hard level cap — once reached, the player can Retire to start a
+// new prestige cycle (see /api/character/retire). Five prestiges max
+// stacks at +5% energy/nerve cap each.
+export const MAX_LEVEL = 100;
+export const MAX_PRESTIGE = 5;
 
 // Newly-created characters are immune to PvP attacks (rob, async murder,
 // live PvP) for this long. Resets when a player rolls a new character
@@ -332,7 +334,7 @@ export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null, 
     avatar: ch.avatar,
     avatar_image: ch.avatar_image || null,
     same_city: viewerCity != null ? viewerCity === ch.city : null,
-    level: atMax ? 999 : ch.level,
+    level: ch.level,
     at_max_level: atMax,
     rank: rankFor(ch.reputation).name,
     reputation: ch.reputation,

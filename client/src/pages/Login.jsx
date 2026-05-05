@@ -20,7 +20,7 @@ const STATS = [
   { value: '105',   label: 'Vehicles' },
   { value: '15',    label: 'Careers' },
   { value: '20+',   label: 'Business templates' },
-  { value: '999',   label: 'Level cap' },
+  { value: '100',   label: 'Level cap' },
 ];
 
 const SHOWCASE = [
