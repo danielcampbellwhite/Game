@@ -94,28 +94,28 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
         filter: focused ? 'drop-shadow(0 0 12px rgba(220, 38, 38, 0.55))' : undefined,
       }}>
       {isPaper ? (
-        <div className={`w-24 sm:w-28 bg-amber-50 shadow-lg shadow-black/60 rounded-sm overflow-hidden ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
-          <div className="px-2 pt-1 pb-0.5 text-[6px] uppercase tracking-[0.2em] text-blood-800 border-b border-stone-800/40 font-medium">
+        <div className={`w-20 sm:w-24 bg-amber-50 shadow-lg shadow-black/60 rounded-sm overflow-hidden ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
+          <div className="px-1.5 pt-1 pb-0.5 text-[6px] uppercase tracking-[0.2em] text-blood-800 border-b border-stone-800/40 font-medium">
             The Daily
           </div>
-          <div className="px-2 py-1">
-            <div className="font-display text-base sm:text-lg text-stone-900 leading-tight">{node.label}</div>
-            <div className="text-[11px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
+          <div className="px-1.5 py-1">
+            <div className="font-display text-sm sm:text-base text-stone-900 leading-tight">{node.label}</div>
+            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
           </div>
         </div>
       ) : (
-        <div className={`w-24 sm:w-28 bg-amber-100 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
+        <div className={`w-20 sm:w-24 bg-amber-100 shadow-lg shadow-black/60 rounded-sm overflow-hidden relative ${focused ? 'border-2 border-blood-500' : 'border border-stone-700/30'}`}>
           {/* red left margin */}
-          <div className="absolute left-2 top-0 bottom-0 w-px bg-blood-600/70" />
+          <div className="absolute left-1.5 top-0 bottom-0 w-px bg-blood-600/70" />
           {/* horizontal rule lines */}
           <div className="absolute inset-0 pointer-events-none"
             style={{
               backgroundImage:
                 'repeating-linear-gradient(transparent 0px, transparent 9px, rgba(31,29,27,0.18) 10px)',
             }} />
-          <div className="relative px-2 py-1.5 pl-3.5">
-            <div className="font-display text-base sm:text-lg text-stone-900 leading-tight">{node.label}</div>
-            <div className="text-[11px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
+          <div className="relative px-1.5 py-1.5 pl-3">
+            <div className="font-display text-sm sm:text-base text-stone-900 leading-tight">{node.label}</div>
+            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
           </div>
         </div>
       )}
@@ -171,10 +171,10 @@ function PolaroidFrame({ character }) {
 function EvidenceBoard({ character, lockedOut }) {
   const nav = useNavigate();
   // Polar layout — start at the top (-90°) and walk clockwise so the
-  // first node sits straight above the silhouette. Radius 30 pulls the
-  // ring in tight so each card stays fully on-screen on a 360px-wide
-  // phone (cards are ~112px there, otherwise the outermost edge clips).
-  const RADIUS = 30;
+  // first node sits straight above the silhouette. Radius 36 spreads
+  // the ring a touch wider; with the smaller card type the outermost
+  // edges still stay inside the container on a 360px-wide phone.
+  const RADIUS = 36;
   const positions = NODES.map((_, i) => {
     const angle = ((-90 + (i * 360 / NODES.length)) * Math.PI) / 180;
     return {
@@ -296,7 +296,7 @@ function EvidenceBoard({ character, lockedOut }) {
           onClick={() => document.getElementById('character-sheet')
             ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           aria-label="Jump to character sheet"
-          className="w-24 h-32 sm:w-32 sm:h-44 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500
+          className="w-20 h-28 sm:w-28 sm:h-40 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500
             drop-shadow-[0_0_14px_rgba(220,38,38,0.45)] drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
           <PolaroidFrame character={character} />
         </button>
