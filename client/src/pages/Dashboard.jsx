@@ -381,11 +381,7 @@ export default function Dashboard() {
           {daily?.ready ? (
             <>
               <p className="text-sm">Streak: <span className="text-gold-400">{daily.streak} days</span></p>
-              <p className="text-xs text-ink-100/60 my-2">
-                +{fmt(daily.nextReward)}
-                {daily.rankMultiplier > 1 && <span className="text-ink-100/40"> ({daily.rankMultiplier}× rank bonus)</span>}
-                {((daily.streak + 1) % 7 === 0) && ' + full vital refill'}
-              </p>
+              <p className="text-xs text-ink-100/60 my-2">+£{(400 + c.level * 100).toLocaleString()}{((daily.streak + 1) % 7 === 0) && ' + full vital refill'}</p>
               <button disabled={busy} className="btn btn-money w-full" onClick={claim}>{busy ? '...' : 'Claim today'}</button>
             </>
           ) : (

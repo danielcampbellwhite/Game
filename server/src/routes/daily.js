@@ -2,18 +2,8 @@ import { Router } from 'express';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
-import { RANKS } from '../data.js';
 
 const router = Router();
-
-// Index into the RANKS ladder for the player's current reputation.
-// Drives the rank multiplier on the daily reward — a Kingpin pulls
-// 9× the base of a Nobody, on top of the per-level scaling.
-function rankIndexFor(rep) {
-  let idx = 0;
-  for (let i = 0; i < RANKS.length; i++) if (rep >= RANKS[i].rep) idx = i;
-  return idx;
-}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -27,15 +17,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const last = lastClaimable(ch);
   const ready = (now - last) >= DAY_MS;
   const streakAlive = ch.last_daily && (now - ch.last_daily) < 2 * DAY_MS;
-  const base = 400 + ch.level * 100;
-  const rankMul = 1 + rankIndexFor(ch.reputation || 0);
   res.json({
     ready,
     streak: streakAlive ? ch.login_streak : 0,
     last_daily: ch.last_daily,
     nextClaimAt: last + DAY_MS,
-    nextReward: Math.floor(base * rankMul),
-    rankMultiplier: rankMul,
   });
 });
 
@@ -47,12 +33,11 @@ router.post('/claim', requireAuth, requireCharacter, (req, res) => {
   const streakAlive = (now - last) < 2 * DAY_MS && last > 0;
   ch.login_streak = streakAlive ? ch.login_streak + 1 : 1;
   ch.last_daily = now;
-  // Per-level base + a rank multiplier so veterans see the daily scale
-  // with their criminal standing (1× at Nobody → 9× at Kingpin). Streak
-  // still tracked for the day-7 vital refill bonus.
-  const base = 400 + ch.level * 100;
-  const rankMul = 1 + rankIndexFor(ch.reputation || 0);
-  const reward = Math.floor(base * rankMul);
+  // Flat per-level daily — same amount every day at a given level.
+  // £500 floor at level 1, +£100 per level. Streak still tracked for the
+  // day-7 vital refill bonus but does NOT scale the cash reward.
+  const reward = 400 + ch.level * 100;
+  const streakBonus = 0;
   ch.cash += reward;
   // Day 7 bonus: full energy + nerve refill
   if (ch.login_streak % 7 === 0) {
