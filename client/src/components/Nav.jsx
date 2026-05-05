@@ -6,15 +6,16 @@ import { useEventStream } from '../hooks/useEventStream.js';
 import { fmt } from './Money.jsx';
 
 const links = [
-  { to: '/inventory', label: 'Inventory' },
-  { to: '/missions',  label: 'Missions'  },
-  { to: '/city',      label: 'City'      },
-  { to: '/crimes',    label: 'Crimes'    },
-  { to: '/combat',    label: 'Fight Club'},
-  { to: '/gangs',     label: 'Gangs'     },
-  { to: '/wars',      label: 'Turf Wars' },
-  { to: '/players',   label: 'Players'   },
-  { to: '/trades',    label: 'Trades'    },
+  { to: '/inventory',  label: 'Inventory' },
+  { to: '/missions',   label: 'Missions'  },
+  { to: '/city',       label: 'City'      },
+  { to: '/crimes',     label: 'Crimes'    },
+  { to: '/businesses', label: 'Businesses'},
+  { to: '/combat',     label: 'Fight Club'},
+  { to: '/gangs',      label: 'Gangs'     },
+  { to: '/wars',       label: 'Turf Wars' },
+  { to: '/players',    label: 'Players'   },
+  { to: '/trades',     label: 'Trades'    },
 ];
 
 const TYPE_COLOR = {

@@ -23,7 +23,6 @@ const AROUND_TOWN = [
   { to: '/shop/off_licence',icon: '', name: 'Off-Licence',           blurb: 'Booze and cigars — nerve, happiness, sometimes a health hit.' },
   { to: '/shop/deli',       icon: '', name: 'Late-Night Deli',       blurb: 'Sandwiches, pizza, sushi — energy and a side of happiness.' },
   { to: '/shop/gift_shop',  icon: '', name: 'Gift Shop',             blurb: 'Flowers, chocolates, tickets. For when somebody needs cheering up.' },
-  { to: '/businesses',    icon: '', name: 'Business Office',       blurb: 'Found new fronts and manage your empire.' },
   { to: '/jobs',          icon: '', name: 'Job Board',             blurb: 'Permanent employment — apply for a job and bring in passive cash on a daily check-in.' },
   { to: '/shops',         icon: '', name: 'Player Shops',          blurb: 'Browse player-run shops — or set up your own storefront.' },
   { to: '/travel',     icon: '', name: 'Airport',                  blurb: 'Flights to 11 other cities — economy, business, first class.' },

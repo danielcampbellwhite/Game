@@ -25,13 +25,14 @@ import Timer from '../components/Timer.jsx';
 // coordinates around the centre.
 
 const NODES = [
-  { to: '/city',      label: 'City',       teaser: 'Streets & shops',    style: 'note' },
-  { to: '/missions',  label: 'Missions',   teaser: 'Daily ops',          style: 'note' },
-  { to: '/crimes',    label: 'Crimes',     teaser: 'Solo & crew jobs',   style: 'note' },
-  { to: '/combat',    label: 'Fight Club', teaser: 'Knuckles only',      style: 'note' },
-  { to: '/gangs',     label: 'Gangs',      teaser: 'Crews & politics',   style: 'note' },
-  { to: '/wars',      label: 'Turf Wars',  teaser: 'Active fronts',      style: 'note' },
-  { to: '/trades',    label: 'Trades',     teaser: 'Deals on the side',  style: 'note' },
+  { to: '/city',       label: 'City',        teaser: 'Streets & shops',    style: 'note' },
+  { to: '/missions',   label: 'Missions',    teaser: 'Daily ops',          style: 'note' },
+  { to: '/crimes',     label: 'Crimes',      teaser: 'Solo & crew jobs',   style: 'note' },
+  { to: '/businesses', label: 'Businesses',  teaser: 'Fronts & empire',    style: 'note' },
+  { to: '/combat',     label: 'Fight Club',  teaser: 'Knuckles only',      style: 'note' },
+  { to: '/gangs',      label: 'Gangs',       teaser: 'Crews & politics',   style: 'note' },
+  { to: '/wars',       label: 'Turf Wars',   teaser: 'Active fronts',      style: 'note' },
+  { to: '/trades',     label: 'Trades',      teaser: 'Deals on the side',  style: 'note' },
 ];
 
 // Deterministic per-node tilts so refreshes don't shuffle the board.
