@@ -9,6 +9,24 @@ import { writeLog } from '../services/log.js';
 import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
 import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
 import { freeGarageSpace } from '../services/garage.js';
+import { sendEvent } from '../services/events.js';
+
+// Pick a viable street-mug target — same city, not the attacker,
+// not in jail/hospital/travel, with at least a token wallet so the
+// roll is worthwhile. Returns null when nobody fits.
+function pickRandomPlayerInCity(attackerId, city) {
+  const now = Date.now();
+  const rows = db.prepare(`
+    SELECT id, name, cash FROM characters
+    WHERE city = ? AND id != ?
+      AND (jail_until IS NULL OR jail_until <= ?)
+      AND (hospital_until IS NULL OR hospital_until <= ?)
+      AND (travel_until IS NULL OR travel_until <= ?)
+      AND COALESCE(status, 'alive') = 'alive'
+    ORDER BY RANDOM() LIMIT 1
+  `).all(city, attackerId, now, now, now);
+  return rows[0] || null;
+}
 import { factionBonusMul, factionGlobalCrimeMul } from '../services/territories.js';
 
 const router = Router();
@@ -265,18 +283,57 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       // 0 unless the player is on the cyber path with that node.
       const cyberMul = crime.tier === 'cyber' ? (1 + specPerk(ch, 'cyber_payout_pct')) : 1;
       const grossPayout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus * cyberMul);
-      // Gang treasury skim — leader-set fraction of every successful
-      // crime payout flows into the gang vault. Boss 'Lieutenant' adds
-      // to the share that ends up in the treasury vs the member's
-      // pocket (player's perspective: more goes to the gang for less
-      // personal but they get the perks to share later).
-      const skim = applyGangCrimeCut(ch, grossPayout);
-      const payout = grossPayout - skim;
-      if (crime.dirty) ch.dirty_cash += payout;
-      else ch.cash += payout;
-      const skimNote = skim > 0 ? ` (-£${skim.toLocaleString()} gang)` : '';
-      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (illegal)' : ''}${skimNote} +${xpGain}xp${territoryBonus > 1 ? ` (turf +${Math.round((territoryBonus - 1) * 100)}%)` : ''}.`, { crime: crime.id, payout, gross: grossPayout, gangSkim: skim, xp: xpGain, territoryBonus });
-      result = { ok: true, success: true, payout, gangSkim: skim, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
+
+      // Mugging — 12% chance the mark is a real player rolling
+      // through the same city, in which case the payout is a slice
+      // of *their* cash on hand instead of the NPC range. Same risk
+      // profile (failure path is unchanged); the upside is the
+      // wallet of whoever you grabbed.
+      if (crime.id === 'mugging' && Math.random() < 0.12) {
+        const target = pickRandomPlayerInCity(ch.id, ch.city);
+        if (target && (target.cash || 0) >= 200) {
+          const taken = Math.max(100, Math.floor((target.cash || 0) * (0.20 + Math.random() * 0.10)));
+          db.prepare('UPDATE characters SET cash = MAX(0, cash - ?) WHERE id = ?').run(taken, target.id);
+          ch.cash += taken;
+          // 30% chance the victim catches the description / sees a
+          // note pinned to their dashboard. Otherwise the cash just
+          // vanishes from their pocket and they're none the wiser.
+          const informed = Math.random() < 0.30;
+          const skim = applyGangCrimeCut(ch, taken);
+          ch.cash -= skim;
+          const skimNote = skim > 0 ? ` (-£${skim.toLocaleString()} gang)` : '';
+          writeLog(ch.id, 'crime', `Mugged ${target.name} on the street — took £${taken.toLocaleString()}${skimNote} (+${xpGain}xp).`, { crime: crime.id, payout: taken, victim: target.id, informed, gangSkim: skim });
+          if (informed) {
+            writeLog(target.id, 'crime', `Mugged on the street — ${ch.name} grabbed £${taken.toLocaleString()} and bolted.`, { attacker: ch.id, taken }, true);
+            sendEvent(target.id, 'mugged', { by: ch.name, amount: taken });
+          } else {
+            writeLog(target.id, 'crime', `You're £${taken.toLocaleString()} lighter — somebody clipped your wallet in the city.`, { taken }, true);
+          }
+          result = { ok: true, success: true, payout: taken, gangSkim: skim, victim: { id: target.id, name: target.name }, informed, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
+        } else {
+          // No suitable mark in town — fall through to the regular NPC payout.
+          const skim = applyGangCrimeCut(ch, grossPayout);
+          const payout = grossPayout - skim;
+          if (crime.dirty) ch.dirty_cash += payout;
+          else ch.cash += payout;
+          const skimNote = skim > 0 ? ` (-£${skim.toLocaleString()} gang)` : '';
+          writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${skimNote} +${xpGain}xp.`, { crime: crime.id, payout, gross: grossPayout, gangSkim: skim, xp: xpGain });
+          result = { ok: true, success: true, payout, gangSkim: skim, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
+        }
+      } else {
+        // Gang treasury skim — leader-set fraction of every successful
+        // crime payout flows into the gang vault. Boss 'Lieutenant' adds
+        // to the share that ends up in the treasury vs the member's
+        // pocket (player's perspective: more goes to the gang for less
+        // personal but they get the perks to share later).
+        const skim = applyGangCrimeCut(ch, grossPayout);
+        const payout = grossPayout - skim;
+        if (crime.dirty) ch.dirty_cash += payout;
+        else ch.cash += payout;
+        const skimNote = skim > 0 ? ` (-£${skim.toLocaleString()} gang)` : '';
+        writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (illegal)' : ''}${skimNote} +${xpGain}xp${territoryBonus > 1 ? ` (turf +${Math.round((territoryBonus - 1) * 100)}%)` : ''}.`, { crime: crime.id, payout, gross: grossPayout, gangSkim: skim, xp: xpGain, territoryBonus });
+        result = { ok: true, success: true, payout, gangSkim: skim, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
+      }
     }
   } else {
     // failure: jail/hospital based on risk. Heat amplifies jail
