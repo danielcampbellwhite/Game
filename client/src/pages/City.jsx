@@ -154,34 +154,36 @@ function bonusLabel(type) {
   }
 }
 
-// Persist the world-map open/closed preference across visits. Default
-// closed — the map is a "nice to have" surface; players who just want
-// to dive into actions shouldn't have to scroll past it every time.
-const MAP_PREF_KEY = 'mafia.cityMapOpen';
-function readMapPref() {
-  if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(MAP_PREF_KEY) === '1';
+// Persist the active tab across visits. Default to "town" — the
+// directory most players hit first.
+const TAB_PREF_KEY = 'mafia.cityTab';
+const TABS = [
+  { id: 'town',       label: 'Around Town' },
+  { id: 'underworld', label: 'Underworld' },
+  { id: 'territory',  label: 'Territories' },
+  { id: 'world',      label: 'World Map' },
+];
+function readTabPref() {
+  if (typeof window === 'undefined') return 'town';
+  const v = window.localStorage.getItem(TAB_PREF_KEY);
+  return TABS.some(t => t.id === v) ? v : 'town';
 }
 
 export default function City() {
   const { character } = useGame();
   const [worldCities, setWorldCities] = useState(null);
-  const [mapOpen, setMapOpen] = useState(readMapPref);
+  const [tab, setTab] = useState(readTabPref);
+  useEffect(() => {
+    try { window.localStorage.setItem(TAB_PREF_KEY, tab); } catch {}
+  }, [tab]);
   useEffect(() => {
     api.get('/world/cities').then(d => setWorldCities(d)).catch(() => {});
   }, []);
-  function toggleMap() {
-    setMapOpen(v => {
-      const next = !v;
-      try { window.localStorage.setItem(MAP_PREF_KEY, next ? '1' : '0'); } catch {}
-      return next;
-    });
-  }
   if (!character) return null;
   const meta = CITY_DATA[character.city] || { emoji: '', vibe: '' };
   const cityName = character.city.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  // One-line summary shown when the map is collapsed.
+  // World-map header summary (used in the World tab).
   const totalOnline = worldCities?.cities.reduce((n, c) => n + (c.online || 0), 0) || 0;
   const totalPlayers = worldCities?.cities.reduce((n, c) => n + (c.players || 0), 0) || 0;
 
@@ -211,44 +213,56 @@ export default function City() {
         })()}
       </Card>
 
-      <Card
-        title=" The world"
-        subtitle={mapOpen
-          ? "Hover a city to see who's around. Yellow is where you stand; red dots are cities with players online."
-          : worldCities
-            ? `${totalPlayers} players across ${worldCities.cities.length} cities · ${totalOnline} online now`
-            : 'Worldwide player activity at a glance.'}
-        right={
+      <div className="flex flex-wrap gap-1 -mt-1">
+        {TABS.map(t => (
           <button
+            key={t.id}
             type="button"
-            onClick={toggleMap}
-            aria-expanded={mapOpen}
-            className="btn btn-ghost text-xs">
-            {mapOpen ? 'Hide ' : 'Show map '}
+            onClick={() => setTab(t.id)}
+            aria-pressed={tab === t.id}
+            className={`px-3 py-1.5 text-xs rounded-md transition ${
+              tab === t.id
+                ? 'bg-blood-700 text-white'
+                : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/70'
+            }`}>
+            {t.label}
           </button>
-        }>
-        {mapOpen && (
-          !worldCities ? (
-            <p className="text-xs text-ink-100/55">Loading…</p>
-          ) : (
-            <WorldMap cities={worldCities.cities} you={worldCities.you} />
-          )
-        )}
-      </Card>
+        ))}
+      </div>
 
-      <TerritoryCard characterCity={character.city} characterFaction={character.faction} />
+      {tab === 'town' && (
+        <Card title="Around Town" subtitle="Legitimate businesses you can walk into.">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {AROUND_TOWN.filter(l => !l.hideWhen?.(character)).map(l => <Tile key={l.to} {...l} />)}
+          </div>
+        </Card>
+      )}
 
-      <Card title="Around Town" subtitle="Legitimate businesses you can walk into.">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {AROUND_TOWN.filter(l => !l.hideWhen?.(character)).map(l => <Tile key={l.to} {...l} />)}
-        </div>
-      </Card>
+      {tab === 'underworld' && (
+        <Card title="The Underworld" subtitle="Quieter places. Don't bring your accountant.">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {UNDERWORLD.filter(l => !l.hideWhen?.(character)).map(l => <Tile key={l.to} {...l} />)}
+          </div>
+        </Card>
+      )}
 
-      <Card title="The Underworld" subtitle="Quieter places. Don't bring your accountant.">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {UNDERWORLD.filter(l => !l.hideWhen?.(character)).map(l => <Tile key={l.to} {...l} />)}
-        </div>
-      </Card>
+      {tab === 'territory' && (
+        <TerritoryCard characterCity={character.city} characterFaction={character.faction} />
+      )}
+
+      {tab === 'world' && (
+        <Card
+          title=" The world"
+          subtitle={
+            worldCities
+              ? `${totalPlayers} players across ${worldCities.cities.length} cities · ${totalOnline} online now`
+              : 'Worldwide player activity at a glance.'
+          }>
+          {!worldCities
+            ? <p className="text-xs text-ink-100/55">Loading…</p>
+            : <WorldMap cities={worldCities.cities} you={worldCities.you} />}
+        </Card>
+      )}
     </div>
   );
 }
