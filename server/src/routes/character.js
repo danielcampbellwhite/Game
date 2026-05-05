@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { loadCharacter, applyTick, publicCharacter, MAX_LEVEL, MAX_PRESTIGE } from '../services/character.js';
+import { loadCharacter, applyTick, publicCharacter, saveCharacter, MAX_LEVEL, MAX_PRESTIGE } from '../services/character.js';
 import { recentLog, writeLog } from '../services/log.js';
 import { CITIES, AVATARS, cityById, FACTION_IDS, GENDERS, STARTER_BUDGET, STARTER_CAR_IDS, STARTER_BUSINESS_IDS, starterCars, starterHousesForCity, starterBusinesses } from '../data.js';
 import { applyFactionPerks } from '../services/factions.js';
