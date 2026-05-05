@@ -123,6 +123,51 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
   );
 }
 
+// Vintage Polaroid-style frame for the centre of the evidence board.
+// Renders the player's uploaded avatar (sepia + grain) when present,
+// then their emoji avatar, then falls back to the gangster bust.
+// The cream stock + caption strip + slight tilt do the heavy lifting.
+function PolaroidFrame({ character }) {
+  const hasImage = !!character?.avatar_image;
+  const hasEmoji = !!character?.avatar;
+  return (
+    <div
+      className="w-full h-full bg-amber-50 p-1.5 pb-5 sm:p-2 sm:pb-6 shadow-lg shadow-black/60 border border-stone-700/40 relative"
+      style={{ transform: 'rotate(-2.5deg)' }}>
+      <div className="w-full h-full bg-stone-900 overflow-hidden relative">
+        {hasImage ? (
+          <img
+            src={character.avatar_image}
+            alt=""
+            className="w-full h-full object-cover"
+            style={{ filter: 'sepia(0.55) contrast(1.1) brightness(0.95) saturate(0.85)' }}
+          />
+        ) : hasEmoji ? (
+          <div className="w-full h-full flex items-center justify-center text-4xl sm:text-6xl bg-stone-800/80">
+            <span style={{ filter: 'sepia(0.4) contrast(1.05)' }}>{character.avatar}</span>
+          </div>
+        ) : (
+          <div className="w-full h-full" style={{ filter: 'sepia(0.4) contrast(1.05)' }}>
+            <GangsterBust />
+          </div>
+        )}
+        {/* Faint photographic grain — very subtle radial gradient. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.35) 100%)',
+            mixBlendMode: 'multiply',
+          }}
+        />
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 text-center text-[7px] sm:text-[9px] uppercase tracking-[0.3em] text-stone-700 pb-1 truncate px-1">
+        {character?.name || 'wanted'}
+      </div>
+    </div>
+  );
+}
+
 function EvidenceBoard({ character, lockedOut }) {
   const nav = useNavigate();
   // Polar layout — start at the top (-90°) and walk clockwise so the
@@ -243,17 +288,17 @@ function EvidenceBoard({ character, lockedOut }) {
         />
       ))}
 
-      {/* Centre — gangster silhouette acts as a jump-link to the
-          character sheet card below the board. */}
+      {/* Centre — old camera-photo of the player, hung on the
+          corkboard. Acts as a jump-link to the character sheet. */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
         <button
           type="button"
           onClick={() => document.getElementById('character-sheet')
             ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           aria-label="Jump to character sheet"
-          className="w-20 h-28 sm:w-28 sm:h-40 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500 rounded
-            drop-shadow-[0_0_14px_rgba(220,38,38,0.55)] drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
-          <GangsterBust />
+          className="w-24 h-32 sm:w-32 sm:h-44 cursor-pointer transition-transform duration-150 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500
+            drop-shadow-[0_0_14px_rgba(220,38,38,0.45)] drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]">
+          <PolaroidFrame character={character} />
         </button>
       </div>
     </div>
