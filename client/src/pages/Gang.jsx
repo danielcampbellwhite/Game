@@ -175,6 +175,103 @@ function GangChat({ gangId, you }) {
   );
 }
 
+// Leader-only management card: set the treasury cut, climb the
+// gang-level ladder. Members see treasury / tier in the header card
+// above; this is the "make decisions" surface.
+function GangManagement({ gang, onChange }) {
+  const [levels, setLevels] = useState(null);
+  const [cutInput, setCutInput] = useState(Math.round((gang.crime_cut_pct || 0) * 100));
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    api.get(`/gangs/${gang.id}/levels`).then(r => setLevels(r.levels)).catch(() => {});
+  }, [gang.id]);
+
+  async function setCut() {
+    setBusy('cut'); setMsg(null);
+    try {
+      const pct = Math.max(0, Math.min(15, parseFloat(cutInput) || 0)) / 100;
+      await api.post(`/gangs/${gang.id}/cut`, { pct });
+      setMsg(`Cut set to ${Math.round(pct * 100)}%.`);
+      await onChange();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function upgrade() {
+    setBusy('upgrade'); setMsg(null);
+    try {
+      const r = await api.post(`/gangs/${gang.id}/upgrade`);
+      setMsg(`Upgraded to tier ★ ${r.level}.`);
+      await onChange();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  const next = levels?.find(l => l.level === (gang.level || 1) + 1);
+  const canAfford = next && (gang.treasury || 0) >= next.cost;
+
+  return (
+    <Card title=" Leader controls" subtitle="Skim crime payouts into the treasury. Spend it to climb the ladder.">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Treasury cut</div>
+          <p className="text-[11px] text-ink-100/65 mb-2">
+            % of every member's successful crime payout that flows into the gang vault. 0–15%.
+          </p>
+          <div className="flex items-center gap-2">
+            <input type="number" min={0} max={15} step={1} value={cutInput}
+              onChange={e => setCutInput(e.target.value)}
+              className="w-20" />
+            <span className="text-xs text-ink-100/55">%</span>
+            <button onClick={setCut} disabled={busy === 'cut'} className="btn btn-ghost text-xs ml-auto">
+              {busy === 'cut' ? '…' : 'Set cut'}
+            </button>
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Next tier</div>
+          {next ? (
+            <>
+              <p className="text-[11px] text-ink-100/65">
+                <span className="text-ink-50">★ {next.level}</span> — {next.perk}
+              </p>
+              <div className="flex items-baseline justify-between gap-2 mt-2">
+                <span className="text-xs text-money-400 tabular-nums">{fmt(next.cost)}</span>
+                <button onClick={upgrade} disabled={busy === 'upgrade' || !canAfford}
+                  className="btn btn-primary text-xs">
+                  {busy === 'upgrade' ? '…' : canAfford ? 'Upgrade' : `Need ${fmt(next.cost - (gang.treasury || 0))}`}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="text-[11px] text-money-400">Top tier reached. ★ {gang.level}</p>
+          )}
+        </div>
+      </div>
+      {levels && (
+        <div className="mt-4 pt-3 border-t border-ink-100/10">
+          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Tier ladder</div>
+          <ul className="space-y-1 text-[11px]">
+            {levels.map(l => {
+              const have = (gang.level || 1) >= l.level;
+              return (
+                <li key={l.level} className={have ? 'text-ink-100/85' : 'text-ink-100/45'}>
+                  <span className={`inline-block w-8 tabular-nums ${have ? 'text-money-400' : ''}`}>★ {l.level}</span>
+                  <span className="text-ink-100/55 mr-2">{l.cost > 0 ? fmt(l.cost) : '—'}</span>
+                  {l.perk}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+      {msg && <p className="text-[11px] text-money-300 mt-2">{msg}</p>}
+    </Card>
+  );
+}
+
 export default function Gang() {
   const { id: viewId } = useParams();
   const { character, refresh } = useGame();
@@ -297,15 +394,18 @@ export default function Gang() {
       {msg && <Card><p className="text-xs text-money-400">{msg}</p></Card>}
 
       <Card>
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
           <div>
             <div className="font-display text-3xl">{g.name} <span className="text-base text-ink-100/55 font-mono">[{g.tag}]</span></div>
             <p className="text-xs text-ink-100/55 mt-1">{g.description || <span className="italic text-ink-100/40">No description.</span>}</p>
             <div className="text-[10px] text-ink-100/40 mt-2">{g.member_count} member{g.member_count === 1 ? '' : 's'} · founded {new Date(g.founded_at).toLocaleDateString()}</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase text-ink-100/50">Treasury</div>
+            <div className="text-[10px] uppercase text-ink-100/50">Tier</div>
+            <div className="font-display text-2xl text-blood-300 tabular-nums">★ {g.level || 1}</div>
+            <div className="text-[10px] uppercase text-ink-100/50 mt-2">Treasury</div>
             <div className="font-display text-2xl text-gold-400 tabular-nums">{fmt(g.treasury)}</div>
+            <div className="text-[10px] text-ink-100/45 mt-1">Cut: {Math.round((g.crime_cut_pct || 0) * 100)}%</div>
           </div>
         </div>
         {you && (
@@ -318,6 +418,7 @@ export default function Gang() {
         )}
       </Card>
 
+      {isLeader && <GangManagement gang={g} onChange={load} />}
 
       {war && (
         <Card>

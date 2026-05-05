@@ -9,6 +9,40 @@
 
 export const PATCHES = [
   {
+    version: '0.8.0',
+    date: '2026-05-06',
+    title: 'Progression rework · player photos · daily contracts · gang treasury',
+    sections: [
+      {
+        heading: 'Player progression',
+        notes: [
+          'Level cap dropped from 999 to 100. At the cap, a Retire button on the dashboard starts a fresh prestige cycle: keep your cash, bank, properties, businesses, vehicles and stocks, lose stats, level, reputation, gear and gang membership. +5% max energy/nerve forever per prestige tier (max 5).',
+          'Specialisations: pick a path at level 25 — Wheelman, Cleaner, Boss, Hacker. Five passive nodes per path auto-unlock at levels 25 / 35 / 50 / 65 / 80. Locked in until retirement. Full catalogue and active perks visible on /specialisations.',
+          'Locked-action cards across the game (Crimes, Gun Shop, Businesses, OC heists) now show a padlock + "Unlocks at Lvl N" instead of a plain greyed-out tile.',
+        ],
+      },
+      {
+        heading: 'Daily contracts',
+        notes: [
+          'A banner on the Crimes page surfaces a tip for one major / cyber crime per UTC day, locked to a random city, paying out 3× the underlying crime\'s normal range. Single attempt — succeed or fail, the tip burns until midnight.',
+        ],
+      },
+      {
+        heading: 'Gang depth',
+        notes: [
+          'Gangs now have a tier (★ 1-10) that the leader buys with the treasury. Each tier unlocks a perk: extra member slot, +5% turf bonus, free hospital in turf cities, gang fence rate, shared garage spaces, faction-leader OC heist, ★ Cartel cosmetic & permanent crime payout boost.',
+          'Treasury is funded by a leader-set "cut" of every member\'s successful crime payout (0-15%). Members keep the rest.',
+        ],
+      },
+      {
+        heading: 'Player photos',
+        notes: [
+          'Upload a profile picture from the dashboard character sheet (256px webp, ≤200KB after client-side resize). Shown on your dashboard, the player profile, the Players list, and anywhere the avatar emoji used to appear.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-05-05',
     title: 'Patches & Updates page · tabbed City',

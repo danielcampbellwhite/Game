@@ -4,7 +4,7 @@ import { requireAuth, requireCharacter, requireFreeCharacter } from '../middlewa
 import { CRIMES, crimeById, cityById, crimeCooldownSec, crimeRequirements, rollVehicleFromTier, specPerk } from '../data.js';
 import { saveCharacter, awardXp, publicCharacter, applyJailSentence } from '../services/character.js';
 import { bumpMission } from '../services/missions.js';
-import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL } from '../services/gangs.js';
+import { holdsTurfPerk, TURF_CRIME_COOLDOWN_MUL, applyGangCrimeCut } from '../services/gangs.js';
 import { writeLog } from '../services/log.js';
 import { checkRequirements, consumeRequirements, annotateRequirements } from '../services/items.js';
 import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
@@ -236,11 +236,19 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       // Hacker 'Quick fingers' boosts cyber payouts; specPerk returns
       // 0 unless the player is on the cyber path with that node.
       const cyberMul = crime.tier === 'cyber' ? (1 + specPerk(ch, 'cyber_payout_pct')) : 1;
-      const payout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus * cyberMul);
+      const grossPayout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus * cyberMul);
+      // Gang treasury skim — leader-set fraction of every successful
+      // crime payout flows into the gang vault. Boss 'Lieutenant' adds
+      // to the share that ends up in the treasury vs the member's
+      // pocket (player's perspective: more goes to the gang for less
+      // personal but they get the perks to share later).
+      const skim = applyGangCrimeCut(ch, grossPayout);
+      const payout = grossPayout - skim;
       if (crime.dirty) ch.dirty_cash += payout;
       else ch.cash += payout;
-      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (dirty)' : ''} +${xpGain}xp${territoryBonus > 1 ? ` (turf +${Math.round((territoryBonus - 1) * 100)}%)` : ''}.`, { crime: crime.id, payout, xp: xpGain, territoryBonus });
-      result = { ok: true, success: true, payout, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
+      const skimNote = skim > 0 ? ` (-£${skim.toLocaleString()} gang)` : '';
+      writeLog(ch.id, 'crime', `Pulled off "${crime.name}" — +£${payout}${crime.dirty ? ' (illegal)' : ''}${skimNote} +${xpGain}xp${territoryBonus > 1 ? ` (turf +${Math.round((territoryBonus - 1) * 100)}%)` : ''}.`, { crime: crime.id, payout, gross: grossPayout, gangSkim: skim, xp: xpGain, territoryBonus });
+      result = { ok: true, success: true, payout, gangSkim: skim, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
     }
   } else {
     // failure: jail/hospital based on risk. Heat amplifies jail

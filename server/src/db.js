@@ -693,6 +693,13 @@ export function initDb() {
   // cleared on retire/prestige. Nodes auto-unlock by level so we
   // don't need per-node state — see SPECIALISATIONS in data.js.
   addColumnIfMissing('characters', 'specialisation', 'TEXT');
+  // Gang tier + treasury cut. crime_cut_pct is the leader-set fraction
+  // of every member's successful crime payout that gets diverted into
+  // the gang treasury (0-0.15). level controls the perk catalogue —
+  // see GANG_LEVELS in data.js. Both default to safe values so legacy
+  // gangs keep working before a leader configures them.
+  addColumnIfMissing('gangs', 'crime_cut_pct', 'REAL NOT NULL DEFAULT 0');
+  addColumnIfMissing('gangs', 'level',         'INTEGER NOT NULL DEFAULT 1');
   // Running tally of successful crimes per faction. Used to derive a
   // "faction reputation" — each faction's share of total criminal
   // activity, normalised so all three sum to 100%.

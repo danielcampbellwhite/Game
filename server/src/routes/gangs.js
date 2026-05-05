@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { saveCharacter, publicCharacter, loadCharacterById } from '../services/character.js';
-import { CITIES, cityById } from '../data.js';
+import { CITIES, cityById, GANG_LEVELS, gangLevelMeta, nextGangLevelMeta } from '../data.js';
 import {
   foundGang, loadGang, loadMembership, loadMembers,
   pendingInvitesFor, existingPendingInvite, disbandGang,
@@ -417,6 +417,47 @@ router.post('/:id/chat', requireAuth, requireCharacter, (req, res) => {
   };
   broadcastGang(id, 'gang.chat', { message: msg });
   res.json({ ok: true, message: { ...msg, mine: true } });
+});
+
+// Leader sets the % of every member's successful crime payout that
+// gets diverted into the gang treasury. 0-15%. Members keep the rest.
+router.post('/:id/cut', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const id = parseInt(req.params.id, 10);
+  const g = loadGang(id);
+  if (!g) return res.status(404).json({ error: 'Gang not found.' });
+  if (g.leader_id !== ch.id) return res.status(403).json({ error: 'Only the leader can set the cut.' });
+  let pct = parseFloat(req.body?.pct);
+  if (!Number.isFinite(pct)) return res.status(400).json({ error: 'pct required (0-0.15).' });
+  pct = Math.max(0, Math.min(0.15, pct));
+  db.prepare('UPDATE gangs SET crime_cut_pct = ? WHERE id = ?').run(pct, id);
+  writeLog(ch.id, 'gang', `Set the gang treasury cut to ${Math.round(pct * 100)}%.`);
+  broadcastGang(id, 'gang.cut', { pct });
+  res.json({ ok: true });
+});
+
+// Spend treasury to climb the gang-level ladder. Costs and perks live
+// in data.js (GANG_LEVELS). Leader-only.
+router.post('/:id/upgrade', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const id = parseInt(req.params.id, 10);
+  const g = loadGang(id);
+  if (!g) return res.status(404).json({ error: 'Gang not found.' });
+  if (g.leader_id !== ch.id) return res.status(403).json({ error: 'Only the leader can upgrade.' });
+  const next = nextGangLevelMeta(g.level || 1);
+  if (!next) return res.status(409).json({ error: 'Gang is already at the top tier.' });
+  if ((g.treasury || 0) < next.cost) {
+    return res.status(400).json({ error: `Treasury too small — need £${next.cost.toLocaleString()}.` });
+  }
+  db.prepare('UPDATE gangs SET treasury = treasury - ?, level = ? WHERE id = ?')
+    .run(next.cost, next.level, id);
+  writeLog(ch.id, 'gang', `Upgraded the gang to level ${next.level} — ${next.perk}`);
+  broadcastGang(id, 'gang.level', { level: next.level, perk: next.perk });
+  res.json({ ok: true, level: next.level });
+});
+
+router.get('/:id/levels', requireAuth, requireCharacter, (req, res) => {
+  res.json({ levels: GANG_LEVELS });
 });
 
 export default router;

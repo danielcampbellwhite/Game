@@ -1051,6 +1051,33 @@ export function xpForNext(level) {
 // strength 25, defence 20, speed 20). Once at cap, the gym still applies
 // its temporary buff but stops accruing permanent progress, and the
 // university refuses to sell more courses.
+// Gang levels — leaders spend the treasury to climb the ladder.
+// Each level applies a perk and unlocks the next. Costs escalate
+// fast so even an active gang takes weeks to top out.
+//
+// Perks listed here are referenced by the rest of the codebase;
+// some are cosmetic, others integrate with the existing systems
+// via specPerk-style queries (see gangPerk).
+export const GANG_LEVELS = [
+  { level: 1,  cost: 0,         perk: 'Founding tier — every gang starts here.' },
+  { level: 2,  cost: 100_000,   perk: '+1 maximum member slot.' },
+  { level: 3,  cost: 300_000,   perk: '+5% turf-bonus modifier when your gang holds territory.' },
+  { level: 4,  cost: 1_000_000, perk: 'Gang chat is persistent across sessions; broadcast to all members.' },
+  { level: 5,  cost: 3_000_000, perk: 'Free hospital treatment in turf cities for every member.' },
+  { level: 6,  cost: 10_000_000, perk: '+1 officer slot (third lieutenant).' },
+  { level: 7,  cost: 30_000_000, perk: 'Gang fence rate +5% (75% → 80%) when laundering in turf cities.' },
+  { level: 8,  cost: 100_000_000, perk: '+5 garage slots in every turf city, shared across members.' },
+  { level: 9,  cost: 300_000_000, perk: 'Unlock a faction-leader-only OC heist with a 10× payout band.' },
+  { level: 10, cost: 1_000_000_000, perk: '★ Cartel — gang-wide cosmetic prestige and a permanent +5% to all members\' crime payouts.' },
+];
+
+export function gangLevelMeta(level) {
+  return GANG_LEVELS.find(l => l.level === level) || GANG_LEVELS[0];
+}
+export function nextGangLevelMeta(level) {
+  return GANG_LEVELS.find(l => l.level === level + 1) || null;
+}
+
 // Specialisation paths — picked at level 25, locked in for life
 // (cleared on prestige / retire). Five nodes each, auto-unlocked by
 // level: 25 / 35 / 50 / 65 / 80. Effects are passive multipliers

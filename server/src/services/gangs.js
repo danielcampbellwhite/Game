@@ -153,6 +153,8 @@ export function publicGang(gang, viewerId = null) {
     leader_id: gang.leader_id,
     treasury: gang.treasury,
     reputation: gang.reputation,
+    level: gang.level || 1,
+    crime_cut_pct: gang.crime_cut_pct || 0,
     founded_at: gang.founded_at,
     member_count: members.length,
     members: members.map(m => ({
@@ -343,7 +345,24 @@ export function holdsTurfPerk(charId, city) {
   return !!(m && m.gang_id === hold.gang_id);
 }
 
-//  Leader-death handling 
+// Diverts the leader-set fraction of a member's crime payout into
+// their gang's treasury. Returns the £ amount skimmed (0 when the
+// player isn't in a gang or the cut is 0). Called from routes/crimes.js
+// on every successful payout BEFORE the cash hits the player's wallet.
+export function applyGangCrimeCut(ch, grossPayout) {
+  if (!grossPayout || grossPayout <= 0) return 0;
+  const m = loadMembership(ch.id);
+  if (!m) return 0;
+  const g = loadGang(m.gang_id);
+  if (!g || !g.crime_cut_pct) return 0;
+  const skim = Math.floor(grossPayout * Math.max(0, Math.min(0.15, g.crime_cut_pct)));
+  if (skim <= 0) return 0;
+  db.prepare('UPDATE gangs SET treasury = treasury + ? WHERE id = ?').run(skim, g.id);
+  db.prepare('UPDATE gang_members SET contributed = contributed + ? WHERE char_id = ?').run(skim, ch.id);
+  return skim;
+}
+
+//  Leader-death handling
 //
 // Called BEFORE deleting the dead character row when a murder kills a
 // leader. Promotes the most senior surviving member, or disbands if no
