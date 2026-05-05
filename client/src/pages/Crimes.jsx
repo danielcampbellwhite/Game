@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import Card from '../components/Card.jsx';
 import Timer from '../components/Timer.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 function cooldownLabel(sec) {
@@ -209,10 +210,12 @@ export default function Crimes() {
               const gtaBlocked = c.tier === 'gta' && !!character?.active_vehicle_id;
               const cant = c.locked || character.energy < c.energy || onCd || !reqsMet || gtaBlocked;
               return (
-                <div key={c.id} className={`rounded-lg p-3 border ${c.locked ? 'border-ink-100/5 opacity-60' : onCd ? 'border-ink-100/10 opacity-70' : 'border-ink-100/10'} bg-ink-950/40`}>
-                  <div className="flex justify-between items-start">
+                <div key={c.id} className={`rounded-lg p-3 border bg-ink-950/40 ${c.locked ? 'border-ink-100/5 opacity-50 grayscale' : onCd ? 'border-ink-100/10 opacity-70' : 'border-ink-100/10'}`}>
+                  <div className="flex justify-between items-start gap-2">
                     <div className="font-medium">{c.name}</div>
-                    <div className="text-[10px] text-ink-100/50">Lvl {c.level}+</div>
+                    {c.locked
+                      ? <LockBadge level={c.level} />
+                      : <div className="text-[10px] text-ink-100/50">Lvl {c.level}+</div>}
                   </div>
                   <div className="text-[11px] text-ink-100/60 mt-1">
                     Energy {c.energy} · {c.tier === 'gta' ? `Tier ${c.vehicleTier} car` : `${fmt(c.min)}–${fmt(c.max)}`} · {c.xp}xp · risk: {c.risk}

@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import { useEventStream } from '../hooks/useEventStream.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 const RISK_STYLE = {
@@ -76,14 +77,16 @@ export default function OC() {
             const tooDumb = (character?.intelligence ?? 0) < c.roles[0].min;
             const cant = tooLow || tooDumb;
             return (
-              <div key={c.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+              <div key={c.id} className={`rounded-lg p-3 border bg-ink-950/40 ${tooLow ? 'opacity-50 grayscale border-ink-100/5' : 'border-ink-100/10'}`}>
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-medium">{c.emoji} {c.name}</div>
-                  <div className={`text-[10px] uppercase ${RISK_STYLE[c.risk]}`}>{c.risk}</div>
+                  {tooLow
+                    ? <LockBadge level={c.levelGate} />
+                    : <div className={`text-[10px] uppercase ${RISK_STYLE[c.risk]}`}>{c.risk}</div>}
                 </div>
                 <p className="text-[11px] text-ink-100/55 mt-1">{c.desc}</p>
                 <div className="text-[11px] text-ink-100/65 mt-2">
-                  Payout {fmt(c.payoutMin)}–{fmt(c.payoutMax)} · Energy {c.energy} · Lvl {c.levelGate}+
+                  Payout {fmt(c.payoutMin)}–{fmt(c.payoutMax)} · Energy {c.energy}{!tooLow && <> · Lvl {c.levelGate}+</>}
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-1 text-[11px]">
                   {c.roles.map(r => (

@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 
 function Slider({ label, value, onChange, hint, max = 5 }) {
@@ -69,27 +70,45 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
         <div>
           <h4 className="text-xs uppercase text-ink-100/60 mb-1">Legal — clean cash</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {legalTemplates.map(t => (
-              <button key={t.id} type="button" onClick={() => setPicked(t)}
-                className={`p-2 rounded-lg border text-left text-xs ${picked?.id === t.id ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
-                <div className="text-xl">{t.emoji}</div>
-                <div className="font-medium leading-tight">{t.name}</div>
-                <div className="text-[10px] text-ink-100/50">Lvl {t.levelGate}+</div>
-              </button>
-            ))}
+            {legalTemplates.map(t => {
+              const locked = (character?.level || 0) < t.levelGate;
+              return (
+                <button key={t.id} type="button" onClick={() => !locked && setPicked(t)}
+                  disabled={locked}
+                  className={`p-2 rounded-lg border text-left text-xs ${
+                    locked ? 'opacity-50 grayscale border-ink-100/5 cursor-not-allowed'
+                      : picked?.id === t.id ? 'border-blood-500 bg-blood-700/20'
+                        : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
+                  <div className="text-xl">{t.emoji}</div>
+                  <div className="font-medium leading-tight">{t.name}</div>
+                  {locked
+                    ? <LockBadge level={t.levelGate} className="mt-0.5" />
+                    : <div className="text-[10px] text-ink-100/50">Lvl {t.levelGate}+</div>}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div>
           <h4 className="text-xs uppercase text-ink-100/60 mb-1">Illegal — illegal cash + raid risk</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {illegalTemplates.map(t => (
-              <button key={t.id} type="button" onClick={() => setPicked(t)}
-                className={`p-2 rounded-lg border text-left text-xs ${picked?.id === t.id ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
-                <div className="text-xl">{t.emoji}</div>
-                <div className="font-medium leading-tight">{t.name}</div>
-                <div className="text-[10px] text-ink-100/50">Lvl {t.levelGate}+</div>
-              </button>
-            ))}
+            {illegalTemplates.map(t => {
+              const locked = (character?.level || 0) < t.levelGate;
+              return (
+                <button key={t.id} type="button" onClick={() => !locked && setPicked(t)}
+                  disabled={locked}
+                  className={`p-2 rounded-lg border text-left text-xs ${
+                    locked ? 'opacity-50 grayscale border-ink-100/5 cursor-not-allowed'
+                      : picked?.id === t.id ? 'border-blood-500 bg-blood-700/20'
+                        : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
+                  <div className="text-xl">{t.emoji}</div>
+                  <div className="font-medium leading-tight">{t.name}</div>
+                  {locked
+                    ? <LockBadge level={t.levelGate} className="mt-0.5" />
+                    : <div className="text-[10px] text-ink-100/50">Lvl {t.levelGate}+</div>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

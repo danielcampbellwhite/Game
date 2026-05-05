@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 import { storefront } from '../lib/storefronts.js';
 
@@ -144,13 +145,15 @@ export default function GunStore() {
           <Card key={cat} title={`${cinfo.emoji} ${cinfo.name}`}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {items.map(w => (
-                <div key={w.id} className={`rounded-lg p-3 border bg-ink-950/40 ${w.locked ? 'opacity-60 border-ink-100/5' : 'border-ink-100/10'}`}>
+                <div key={w.id} className={`rounded-lg p-3 border bg-ink-950/40 ${w.locked ? 'opacity-50 grayscale border-ink-100/5' : 'border-ink-100/10'}`}>
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{w.name}</div>
                       {w.maker && <div className="text-[10px] text-ink-100/50 truncate">{w.maker}</div>}
                     </div>
-                    <div className="text-[10px] text-ink-100/50 whitespace-nowrap">Lvl {w.level}+</div>
+                    {w.locked
+                      ? <LockBadge level={w.level} className="whitespace-nowrap" />
+                      : <div className="text-[10px] text-ink-100/50 whitespace-nowrap">Lvl {w.level}+</div>}
                   </div>
                   <div className="text-[11px] text-ink-100/60 mt-1.5">
                     DMG <span className="text-ink-50 font-medium">{w.dmg}</span>
@@ -171,13 +174,16 @@ export default function GunStore() {
       <Card title=" Armour">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.armours.map(a => (
-            <div key={a.id} className={`rounded-lg p-3 border bg-ink-950/40 ${a.locked ? 'opacity-60 border-ink-100/5' : 'border-ink-100/10'}`}>
-              <div className="font-medium">{a.name}</div>
-              <div className="text-[11px] text-ink-100/60">DEF {a.def} · Lvl {a.level}+</div>
+            <div key={a.id} className={`rounded-lg p-3 border bg-ink-950/40 ${a.locked ? 'opacity-50 grayscale border-ink-100/5' : 'border-ink-100/10'}`}>
+              <div className="flex justify-between items-start gap-2">
+                <div className="font-medium">{a.name}</div>
+                {a.locked && <LockBadge level={a.level} className="whitespace-nowrap" />}
+              </div>
+              <div className="text-[11px] text-ink-100/60">DEF {a.def}{!a.locked && <> · Lvl {a.level}+</>}</div>
               <div className="text-money-400 tabular-nums mt-1">{fmt(a.cost)}</div>
               <button disabled={a.locked || character.cash < a.cost || busy === `armour-${a.id}`} className="btn btn-primary w-full text-xs mt-2"
                 onClick={() => buy('armour', a)}>
-                {a.locked ? `Lvl ${a.level}+ required` : 'Buy'}
+                {a.locked ? `Locked` : 'Buy'}
               </button>
             </div>
           ))}
