@@ -59,6 +59,25 @@ export function getDrugMarketForCity(city) {
   }));
 }
 
+// Supply-side pressure: every unit a player dumps into a city's market
+// drops the local price by 0.2%, compounded. So a 50-unit run shaves
+// ~10% off, 100 units ~18%, 500 units ~63%. The hourly random walk
+// gradually pulls the price back toward the city mean over the
+// following hours, so dumping at the same time as other players (or
+// repeatedly in one session) gives diminishing returns.
+const SALE_PRESSURE_PER_UNIT = 0.002;
+export function applyDrugSalePressure(city, drugId, qty) {
+  const drug = drugById(drugId);
+  if (!drug || qty <= 0) return;
+  ensureDrugRow(city, drug);
+  const factor = Math.pow(1 - SALE_PRESSURE_PER_UNIT, qty);
+  const cityMul = cityById(city)?.drugMul || 1.0;
+  const min = drug.base * cityMul * 0.4;
+  db.prepare(`
+    UPDATE drug_market SET price = MAX(?, price * ?) WHERE city = ? AND drug_id = ?
+  `).run(min, factor, city, drugId);
+}
+
 //  Stocks 
 
 const HISTORY_RETENTION_MS = 24 * 60 * 60 * 1000; // keep 24h, show 12h

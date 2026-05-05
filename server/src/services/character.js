@@ -199,11 +199,28 @@ const SAVE_STMT = `
 // Apply a fresh jail sentence — sets jail_until, jail_reason and
 // jail_sentence_ms together. Always go through this so the failed-
 // escape penalty has the original sentence to double.
+//
+// Heat extends the sentence: every point of live heat adds 1% more
+// time, capped at +100% at heat 100. So a 5-minute base sentence
+// becomes 7.5 min at heat 50, 10 min at heat 100. Stacks multiplica-
+// tively with every other multiplier the caller has already applied.
 export function applyJailSentence(ch, durationMs, reason) {
-  const dur = Math.max(0, Math.floor(durationMs));
+  const heat = Math.max(0, Math.min(100, effectiveHeatLazy(ch)));
+  const heatMul = 1 + heat / 100;
+  const dur = Math.max(0, Math.floor(durationMs * heatMul));
   ch.jail_until = Date.now() + dur;
   ch.jail_sentence_ms = dur;
   if (reason !== undefined) ch.jail_reason = reason;
+}
+
+// Inline heat read so this file doesn't depend on services/heat.js
+// (avoids circular imports). Same lazy-decay shape as effectiveHeat.
+function effectiveHeatLazy(ch, now = Date.now()) {
+  const stored = ch?.heat || 0;
+  if (!stored) return 0;
+  const at = ch.heat_updated_at || now;
+  const elapsedMin = Math.max(0, (now - at) / 60000);
+  return Math.max(0, stored - elapsedMin);
 }
 
 export function saveCharacter(ch) {

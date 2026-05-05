@@ -6,7 +6,7 @@ import { saveCharacter, publicCharacter, applyJailSentence } from '../services/c
 import { applyVitalEffects, effectsToText } from '../services/vitals.js';
 import { bumpMission } from '../services/missions.js';
 import { writeLog } from '../services/log.js';
-import { getDrugMarketForCity, getDrugPrice } from '../services/market.js';
+import { getDrugMarketForCity, getDrugPrice, applyDrugSalePressure } from '../services/market.js';
 
 const router = Router();
 
@@ -73,6 +73,9 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, 
   const price = getDrugPrice(ch.city, drug.id);
   const earn = price * qty;
   ch.dirty_cash += earn;
+  // Dumping product into the city pushes the price down — recovers
+  // gradually as the hourly walk drifts back to the mean.
+  applyDrugSalePressure(ch.city, drug.id, qty);
   if (inv.qty === qty) {
     db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').run(ch.id, 'drug', drug.id);
   } else {
