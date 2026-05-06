@@ -74,12 +74,10 @@ export default function CharacterCreate() {
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="text-xs uppercase text-ink-100/60">Name</label>
-          <div className="flex gap-2">
-            <input value={name} onChange={e => setName(e.target.value)} maxLength={32} placeholder="Vito Corleone" className="flex-1" />
-            <button type="button" onClick={rollName} disabled={rolling} className="btn btn-ghost text-xs whitespace-nowrap">
-              {rolling ? '…' : 'Random'}
-            </button>
-          </div>
+          <input value={name} onChange={e => setName(e.target.value)} maxLength={32} placeholder="Vito Corleone" className="w-full" />
+          <button type="button" onClick={rollName} disabled={rolling} className="btn btn-ghost text-xs mt-2">
+            {rolling ? '…' : ' Random name'}
+          </button>
           {!gender && <p className="text-[10px] text-ink-100/40 mt-1">Pick a gender below to weight the random names.</p>}
         </div>
 
