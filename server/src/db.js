@@ -672,6 +672,25 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_city_areas_gang    ON city_areas(gang_id);
     CREATE INDEX IF NOT EXISTS idx_city_areas_faction ON city_areas(city, faction);
+
+    -- Flight tickets — every 10 UTC minutes a flight to each
+    -- destination departs. Buying a ticket reserves a seat on the
+    -- next departure for that (from, to) route at the player's
+    -- chosen class. status flips to 'boarded' on a successful board
+    -- (player goes into transit), or 'missed' on a lazy cleanup pass
+    -- when departs_at has elapsed without boarding.
+    CREATE TABLE IF NOT EXISTS flight_tickets (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      char_id      INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      from_city    TEXT    NOT NULL,
+      to_city      TEXT    NOT NULL,
+      class        TEXT    NOT NULL,
+      cost         INTEGER NOT NULL,
+      departs_at   INTEGER NOT NULL,
+      status       TEXT    NOT NULL DEFAULT 'booked',
+      created_at   INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_flight_tickets_char ON flight_tickets(char_id, status);
   `);
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps
