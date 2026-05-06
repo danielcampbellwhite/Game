@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Tooltip, Rectangle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
@@ -75,6 +75,32 @@ export default function CityMap({ city = 'new_york' }) {
   const inSameCity = character?.city === city;
   const inGang = !!character?.gang;
 
+  // City bounds — derived from the polygon vertices so the player
+  // can pan freely inside their city but can't drift off into the
+  // wider region. A small padding factor keeps a comfortable margin
+  // between the outermost polygons and the hard edge.
+  const cityBounds = useMemo(() => {
+    const areas = data?.areas;
+    if (!areas?.length) return null;
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+    for (const a of areas) {
+      for (const [lat, lng] of a.polygon) {
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      }
+    }
+    // Pad the bbox by 8% so the city border draws a few blocks outside
+    // the polygon cluster — looks intentional rather than flush.
+    const padLat = (maxLat - minLat) * 0.08;
+    const padLng = (maxLng - minLng) * 0.08;
+    return [
+      [minLat - padLat, minLng - padLng],
+      [maxLat + padLat, maxLng + padLng],
+    ];
+  }, [data]);
+
   return (
     <div className="space-y-2">
       <style>{`
@@ -106,6 +132,8 @@ export default function CityMap({ city = 'new_york' }) {
           minZoom={11}
           maxZoom={16}
           scrollWheelZoom
+          maxBounds={cityBounds}
+          maxBoundsViscosity={1.0}
           style={{ height: '100%', width: '100%' }}
           attributionControl>
           <TileLayer
@@ -113,6 +141,20 @@ export default function CityMap({ city = 'new_york' }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             subdomains={['a', 'b', 'c', 'd']}
           />
+          {/* City-limit border: visible outline + drag stop. */}
+          {cityBounds && (
+            <Rectangle
+              bounds={cityBounds}
+              pathOptions={{
+                color: '#ef4444',
+                weight: 2,
+                opacity: 0.9,
+                fill: false,
+                dashArray: '6 4',
+              }}
+              interactive={false}
+            />
+          )}
           {(data?.areas || []).map(a => (
             <Polygon
               key={a.id}
