@@ -132,8 +132,23 @@ function ScrollToTop() {
   return null;
 }
 
+function BootSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-ink-1000">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 rounded-full border-2 border-ink-100/15 border-t-blood-400 animate-spin" />
+        <div className="text-[11px] uppercase tracking-widest text-ink-100/45">Loading…</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const { token, character } = useGame();
+  const { token, character, bootstrapped } = useGame();
+  // Hold the UI on a spinner until the initial /character fetch settles —
+  // otherwise a logged-in refresh briefly flashes /create while character
+  // is still null before the API responds.
+  if (token && !bootstrapped) return <BootSpinner />;
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />

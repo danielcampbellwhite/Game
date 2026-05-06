@@ -10,6 +10,11 @@ export function GameProvider({ children }) {
   const [log, setLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // True once the initial /character fetch has resolved (or there's no token
+  // to fetch with). Routes that depend on auth state should wait for this so
+  // a refresh-while-logged-in doesn't briefly flash the create-character
+  // route before the API responds.
+  const [bootstrapped, setBootstrapped] = useState(!getToken());
   const pollRef = useRef(null);
 
   const refresh = useCallback(async () => {
@@ -43,8 +48,8 @@ export function GameProvider({ children }) {
 
   // Initial load + 30s poll
   useEffect(() => {
-    if (!token) return;
-    refresh();
+    if (!token) { setBootstrapped(true); return; }
+    refresh().finally(() => setBootstrapped(true));
     pollRef.current = setInterval(refresh, 30000);
     return () => clearInterval(pollRef.current);
   }, [token, refresh]);
@@ -89,7 +94,7 @@ export function GameProvider({ children }) {
   };
 
   const value = {
-    token, character, log, loading, error,
+    token, character, log, loading, error, bootstrapped,
     login, register, logout, refresh, createCharacter,
     updateFromResponse, setLog,
   };
