@@ -241,7 +241,7 @@ export default function City() {
 
       {tab === 'map' && (
         <Card title="City Map" subtitle="Tap a marker to walk in. Gold pins are legitimate businesses; red are the underworld.">
-          <CityMap />
+          <CityMap city={character.city} />
         </Card>
       )}
 
