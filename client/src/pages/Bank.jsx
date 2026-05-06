@@ -43,15 +43,15 @@ export default function Bank() {
           <div>
             <div className="text-xs text-ink-100/60 mb-1">Deposit cash</div>
             <div className="flex gap-2">
-              <input type="number" value={dep} onChange={e => setDep(e.target.value)} placeholder={fmt(info.cash)} className="flex-1" />
-              <button disabled={!dep || busy === 'd'} className="btn btn-money" onClick={() => act('deposit', { amount: +dep }, 'd', 'Deposited')}>Deposit</button>
+              <input type="number" value={dep} onChange={e => setDep(e.target.value)} placeholder={fmt(info.cash)} className="flex-1 min-w-0" />
+              <button disabled={!dep || busy === 'd'} className="btn btn-money shrink-0" onClick={() => act('deposit', { amount: +dep }, 'd', 'Deposited')}>Deposit</button>
             </div>
           </div>
           <div>
             <div className="text-xs text-ink-100/60 mb-1">Withdraw bank</div>
             <div className="flex gap-2">
-              <input type="number" value={wd} onChange={e => setWd(e.target.value)} placeholder={fmt(info.bank)} className="flex-1" />
-              <button disabled={!wd || busy === 'w'} className="btn" onClick={() => act('withdraw', { amount: +wd }, 'w', 'Withdrew')}>Withdraw</button>
+              <input type="number" value={wd} onChange={e => setWd(e.target.value)} placeholder={fmt(info.bank)} className="flex-1 min-w-0" />
+              <button disabled={!wd || busy === 'w'} className="btn shrink-0" onClick={() => act('withdraw', { amount: +wd }, 'w', 'Withdrew')}>Withdraw</button>
             </div>
           </div>
         </div>
