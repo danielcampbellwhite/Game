@@ -121,7 +121,7 @@ export default function Travel() {
 
       <Card title=" Departures" subtitle={
           `Next flight in ${mmss(boardingOpensAt - now)}` +
-          (inBoardingWindow ? ` · BOARDING NOW (${mmss(departsAt - now)} left)` : ` · boarding 1 min before takeoff`)
+          (inBoardingWindow ? ` · BOARDING NOW (${mmss(departsAt - now)} left)` : ` · boarding 30 s before takeoff`)
         }>
         {grounded && (
           <p className="text-xs text-yellow-300 mb-3">

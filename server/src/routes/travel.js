@@ -20,7 +20,7 @@ const CONDITION_LOSS_PER_KM   = 1 / 500; // 1% per 500km
 // Tickets locked in before that window are valid; once departure
 // passes without boarding, the ticket lapses and the cash is gone.
 const FLIGHT_INTERVAL_MS = 10 * 60 * 1000;
-const BOARDING_WINDOW_MS = 60 * 1000;
+const BOARDING_WINDOW_MS = 30 * 1000;
 
 function nextDepartureAt(now = Date.now()) {
   return Math.ceil(now / FLIGHT_INTERVAL_MS) * FLIGHT_INTERVAL_MS;
