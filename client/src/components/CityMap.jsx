@@ -17,7 +17,6 @@ const VENUES = [
   { to: '/stocks',         name: 'Stock Broker',   x: 30, y: 27, tone: 'gold' },
   { to: '/property',       name: 'Estate Agent',   x: 18, y: 32, tone: 'gold' },
   { to: '/jail',           name: 'Jail',           x: 13, y: 14, tone: 'gold' },
-  { to: '/bounties',       name: 'Bounty Board',   x: 13, y: 22, tone: 'gold' },
 
   // Medical / academic — top-right quarter
   { to: '/hospital',       name: 'Hospital',       x: 78, y: 16, tone: 'gold' },
@@ -41,12 +40,8 @@ const VENUES = [
   { to: '/dealership',     name: 'Car Dealership', x: 72, y: 70, tone: 'gold' },
   { to: '/repair',         name: 'Repair Shop',    x: 80, y: 76, tone: 'gold' },
   { to: '/travel',         name: 'Airport',        x: 88, y: 88, tone: 'gold' },
-  { to: '/jobs',           name: 'Job Board',      x: 64, y: 78, tone: 'gold' },
-  { to: '/shops',          name: 'Player Shops',   x: 50, y: 70, tone: 'gold' },
-  { to: '/specialisations',name: 'Specialisation', x: 50, y: 82, tone: 'gold' },
 
-  // Underworld — back-alley, bottom-left + far-right
-  { to: '/drugs',          name: 'Drug Market',    x: 14, y: 76, tone: 'blood' },
+  // Underworld — back-alley, bottom-left
   { to: '/chop-shop',      name: 'Chop Shop',      x: 22, y: 84, tone: 'blood' },
   { to: '/fence',          name: 'The Fence',      x: 32, y: 78, tone: 'blood' },
   { to: '/casino',         name: 'Casino',         x: 30, y: 92, tone: 'blood' },
@@ -303,10 +298,8 @@ export default function CityMap({ city = 'new_york' }) {
     dragRef.current = null;
   }
 
-  // Pin radius & label visibility scale with zoom. At base zoom (1×) we
-  // hide labels to keep the map readable; at 1.6× and above we show
-  // them for every venue.
-  const showLabels = zoom >= 1.6;
+  // Pin radius scales with zoom so dots stay roughly constant in screen
+  // pixels. Labels are always visible — every venue is a clickable link.
   const pinR = Math.max(0.7, 1.4 / zoom);
   const pinRing = Math.max(0.35, 0.6 / zoom);
 
@@ -330,7 +323,7 @@ export default function CityMap({ city = 'new_york' }) {
           {/* Venue pins live in the SAME coord space so they pan/zoom
               with the rest of the map. */}
           {VENUES.map(v => (
-            <VenuePin key={v.to} v={v} pinR={pinR} pinRing={pinRing} showLabel={showLabels} zoom={zoom}
+            <VenuePin key={v.to} v={v} pinR={pinR} pinRing={pinRing} zoom={zoom}
               onClick={() => { if (!lastDragMovedRef.current) navigate(v.to); }} />
           ))}
         </svg>
@@ -357,34 +350,34 @@ export default function CityMap({ city = 'new_york' }) {
       </div>
 
       <p className="text-[10px] text-ink-100/45 text-center">
-        Scroll or use ＋ / − to zoom · drag to pan · zoom in past 1.6× to see all venue names.
+        Scroll or use ＋ / − to zoom · drag to pan · tap any name to walk in.
       </p>
     </div>
   );
 }
 
-function VenuePin({ v, pinR, pinRing, showLabel, zoom, onClick }) {
+function VenuePin({ v, pinR, pinRing, zoom, onClick }) {
   const fill = TONE_FILL[v.tone];
   const ring = TONE_RING[v.tone];
-  // SVG group acts as a "link" — onClick drives navigation, hover gets
-  // an SVG <title> tooltip. Avoids nesting an HTML <a> inside <svg>.
+  // The whole <g> is the link target — the dot, its halo, AND the
+  // label below it. Black stroke around the text keeps it readable
+  // against any underlying water/park/road colour.
+  const labelSize = Math.max(1.6, 2.2 / zoom);
   return (
     <g style={{ cursor: 'pointer' }} onClick={onClick} role="link" aria-label={v.name}>
       <title>{v.name}</title>
       <circle cx={v.x} cy={v.y} r={pinR + pinRing} fill={ring} opacity="0.35" />
       <circle cx={v.x} cy={v.y} r={pinR} fill={fill} stroke="rgba(0,0,0,0.5)" strokeWidth={pinR * 0.15} />
-      {showLabel && (
-        <text x={v.x} y={v.y + pinR + Math.max(1.5, 2.4 / zoom)}
-          textAnchor="middle"
-          fontSize={Math.max(1.6, 2.2 / zoom)}
-          fontWeight="600"
-          fill="#f5f5f4"
-          paintOrder="stroke"
-          stroke="rgba(0,0,0,0.85)"
-          strokeWidth={Math.max(0.3, 0.5 / zoom)}>
-          {v.name}
-        </text>
-      )}
+      <text x={v.x} y={v.y + pinR + labelSize}
+        textAnchor="middle"
+        fontSize={labelSize}
+        fontWeight="600"
+        fill="#f5f5f4"
+        paintOrder="stroke"
+        stroke="rgba(0,0,0,0.85)"
+        strokeWidth={Math.max(0.3, 0.5 / zoom)}>
+        {v.name}
+      </text>
     </g>
   );
 }

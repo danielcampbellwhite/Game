@@ -24,17 +24,12 @@ const AROUND_TOWN = [
   { to: '/shop/off_licence',icon: '', name: 'Off-Licence',           blurb: 'Booze and cigars — nerve, happiness, sometimes a health hit.' },
   { to: '/shop/deli',       icon: '', name: 'Late-Night Deli',       blurb: 'Sandwiches, pizza, sushi — energy and a side of happiness.' },
   { to: '/shop/gift_shop',  icon: '', name: 'Gift Shop',             blurb: 'Flowers, chocolates, tickets. For when somebody needs cheering up.' },
-  { to: '/jobs',          icon: '', name: 'Job Board',             blurb: 'Permanent employment — apply for a job and bring in passive cash on a daily check-in.' },
-  { to: '/shops',         icon: '', name: 'Player Shops',          blurb: 'Browse player-run shops — or set up your own storefront.' },
   { to: '/travel',     icon: '', name: 'Airport',                  blurb: 'Flights to 11 other cities — economy, business, first class.' },
   { to: '/hospital',   icon: '', name: 'Hospital',                 blurb: 'Top up health on demand, or cover the bill for another patient.' },
   { to: '/jail',       icon: '', name: 'Jail',                     blurb: 'Visit the cells — bail a friend out, or risk a bust.' },
-  { to: '/bounties',   icon: '', name: 'Bounty Board',              blurb: 'Wanted posters — post cash on a player or collect by murdering one.' },
-  { to: '/specialisations', icon: '', name: 'Specialisation',       blurb: 'Pick a criminal speciality at level 25 — passive perks the rest of the way.', hideWhen: c => (c.level || 1) < 20 },
 ];
 
 const UNDERWORLD = [
-  { to: '/drugs',      icon: '', name: 'The Drug Market',          blurb: 'Buy low, fly elsewhere, sell high. Prices drift hourly.' },
   { to: '/chop-shop',  icon: '', name: 'Chop Shop & Black Market', blurb: 'Move stolen vehicles fast (cheap) or via the dealer (risky).' },
   { to: '/fence',      icon: '', name: 'The Fence',                blurb: 'Wash illegal cash into legal at 70% — sting risk if you push it.' },
   { to: '/casino',     icon: '', name: 'The Lucky Crown Casino',   blurb: 'Roulette, blackjack, slots — try your luck against the house.' },
