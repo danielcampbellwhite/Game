@@ -25,23 +25,19 @@ const CITY_VIEWS = {
 };
 const DEFAULT_VIEW = { center: [40.7580, -73.9855], zoom: 13 };
 
-// Faction → polygon paint. Uncontrolled = grey. The dark Carto tiles
-// underneath are very desaturated so coloured fills read clearly even
-// at low alpha.
+// Faction → polygon paint. Matches the three real factions
+// (server/src/data.js) and the FactionBadge palette mapping. Dark
+// Carto basemap underneath stays readable against translucent fills.
 const FACTION_COLOURS = {
-  italian:  '#ef4444',  // blood
-  russian:  '#f59e0b',  // amber
-  irish:    '#10b981',  // green
-  yakuza:   '#a855f7',  // purple
-  cartel:   '#facc15',  // gold
-  triad:    '#06b6d4',  // cyan
-  default:  '#94a3b8',  // slate
+  fraudster: '#facc15',  // gold
+  mafia:     '#ef4444',  // blood
+  cartel:    '#22c55e',  // money
 };
 const UNCONTROLLED = 'rgba(160,160,160,0.5)';
 
 function fillFor(area) {
   if (!area.faction) return UNCONTROLLED;
-  return FACTION_COLOURS[area.faction] || FACTION_COLOURS.default;
+  return FACTION_COLOURS[area.faction] || UNCONTROLLED;
 }
 
 export default function CityMap({ city = 'new_york' }) {
@@ -138,10 +134,10 @@ export default function CityMap({ city = 'new_york' }) {
         </MapContainer>
 
         {/* Legend bottom-left */}
-        <div className="absolute bottom-2 left-2 z-[1000] text-[9px] text-ink-100/55 bg-ink-950/80 border border-ink-100/10 rounded px-1.5 py-1 leading-tight pointer-events-none max-w-[140px]">
+        <div className="absolute bottom-2 left-2 z-[1000] text-[9px] text-ink-100/55 bg-ink-950/80 border border-ink-100/10 rounded px-1.5 py-1 leading-tight pointer-events-none">
           <div className="font-medium uppercase tracking-wider text-ink-100/70 mb-0.5">Faction control</div>
-          {Object.entries(FACTION_COLOURS).filter(([k]) => k !== 'default').map(([f, col]) => (
-            <div key={f} className="flex items-center gap-1.5">
+          {Object.entries(FACTION_COLOURS).map(([f, col]) => (
+            <div key={f} className="flex items-center gap-1.5 capitalize">
               <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: col }} /> {f}
             </div>
           ))}
