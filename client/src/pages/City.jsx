@@ -30,6 +30,7 @@ const AROUND_TOWN = [
 ];
 
 const UNDERWORLD = [
+  { to: '/drugs',      icon: '', name: 'The Drug Market',          blurb: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the size of the flip.' },
   { to: '/chop-shop',  icon: '', name: 'Chop Shop & Black Market', blurb: 'Move stolen vehicles fast (cheap) or via the dealer (risky).' },
   { to: '/fence',      icon: '', name: 'The Fence',                blurb: 'Wash illegal cash into legal at 70% — sting risk if you push it.' },
   { to: '/casino',     icon: '', name: 'The Lucky Crown Casino',   blurb: 'Roulette, blackjack, slots — try your luck against the house.' },
