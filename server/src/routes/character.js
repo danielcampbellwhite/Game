@@ -20,8 +20,20 @@ const STAT_KEYS = ['strength', 'defence', 'speed', 'intelligence'];
 // Validates a starter pack { car_id, house_id, business_id } against
 // the curated lists. Returns { ok, picks, error }. Picks are the
 // resolved objects (with prices) ready to insert.
+// Starter cities are limited to those with unlockLevel <= 5 so a brand-
+// new character can't sit in a high-tier hub from second one and farm
+// its multipliers. Higher cities show in the picker but locked.
+const MAX_STARTER_CITY_UNLOCK = 5;
+function isStartableCity(c) {
+  return c && (c.unlockLevel || 1) <= MAX_STARTER_CITY_UNLOCK;
+}
+
 function validateStarter(input, city) {
   if (!input || typeof input !== 'object') return { ok: false, error: 'Pick a car, a house, and a business.' };
+  const cityRow = cityById(city);
+  if (!isStartableCity(cityRow)) {
+    return { ok: false, error: `${cityRow?.name || 'That city'} unlocks at level ${cityRow?.unlockLevel || '?'} — pick a starter city instead.` };
+  }
   const cars = starterCars();
   const houses = starterHousesForCity(city);
   const bizs = starterBusinesses();
@@ -80,10 +92,15 @@ router.get('/options', async (_req, res) => {
   const { FACTIONS } = await import('../data.js');
   // Per-city starter house lists — keyed by city id so the client can
   // swap them as the player picks a starting city without another
-  // round-trip.
-  const housesByCity = Object.fromEntries(CITIES.map(c => [c.id, starterHousesForCity(c.id)]));
+  // round-trip. Starter houses are only filled for startable cities.
+  const housesByCity = Object.fromEntries(
+    CITIES.filter(isStartableCity).map(c => [c.id, starterHousesForCity(c.id)])
+  );
+  // Tag each city with whether it's a valid starter pick — UI shows
+  // the rest as locked with their unlockLevel.
+  const cities = CITIES.map(c => ({ ...c, startable: isStartableCity(c) }));
   res.json({
-    cities: CITIES,
+    cities,
     avatars: AVATARS,
     factions: FACTIONS,
     genders: GENDERS,

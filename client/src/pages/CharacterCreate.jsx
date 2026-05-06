@@ -23,7 +23,11 @@ export default function CharacterCreate() {
   useEffect(() => {
     api.get('/character/options').then(d => {
       setOpts(d);
-      setCity(d.cities[0].id);
+      // Default to the first STARTABLE city — server marks high-level
+      // hubs as locked so a brand-new character can't farm their
+      // multipliers.
+      const firstStartable = (d.cities || []).find(c => c.startable !== false) || d.cities[0];
+      setCity(firstStartable?.id);
     });
   }, []);
 
@@ -94,14 +98,31 @@ export default function CharacterCreate() {
         <div>
           <label className="text-xs uppercase text-ink-100/60 block mb-1">Starting city</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {opts.cities.map(c => (
-              <button type="button" key={c.id} onClick={() => setCity(c.id)}
-                className={`p-3 rounded-lg border text-left ${city === c.id ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/60'}`}>
-                <div className="font-medium">{c.name}</div>
-                <div className="text-[10px] text-ink-100/50 mt-1">drugs ×{c.drugMul} · biz ×{c.businessMul}</div>
-              </button>
-            ))}
+            {opts.cities.map(c => {
+              const locked = c.startable === false;
+              const selected = city === c.id;
+              return (
+                <button type="button" key={c.id} onClick={() => !locked && setCity(c.id)}
+                  disabled={locked}
+                  className={`p-3 rounded-lg border text-left transition ${
+                    selected ? 'border-blood-500 bg-blood-700/20'
+                    : locked ? 'border-ink-100/10 bg-ink-950/40 opacity-50 cursor-not-allowed'
+                    : 'border-ink-100/10 hover:bg-ink-800/60'
+                  }`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="font-medium">{c.name}</div>
+                    {locked && <div className="text-[9px] uppercase tracking-wide text-ink-100/55"> Lvl {c.unlockLevel}</div>}
+                  </div>
+                  <div className="text-[10px] text-ink-100/50 mt-1">
+                    {locked ? 'Unlocks for travel later' : `drugs ×${c.drugMul} · biz ×${c.businessMul}`}
+                  </div>
+                </button>
+              );
+            })}
           </div>
+          <p className="text-[10px] text-ink-100/40 mt-1">
+            Higher-tier hubs are visible but locked at character creation — they unlock once you reach their travel level.
+          </p>
         </div>
         <FactionPicker factions={opts.factions || []} value={faction} onChange={setFaction} />
         <StatAllocator value={stats} onChange={setStats} />

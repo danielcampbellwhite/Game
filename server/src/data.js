@@ -265,10 +265,13 @@ export const STARTER_CAR_IDS = [
   'mazda_mx5',   'vw_gti',       'civic_type_r',
 ];
 
-// Cheapest businesses by baseCost. Level gates skipped for the
-// starter pick — it's a one-shot allowance, not a discovery shop.
+// Starter businesses are restricted to L1-gated entries so a brand-new
+// character can't open a venue they wouldn't otherwise qualify for. The
+// five options below trade cost against hourly so the budget actually
+// bites — you can't afford the highest-grossing one alongside a nice
+// car and house.
 export const STARTER_BUSINESS_IDS = [
-  'cafe', 'car_wash', 'diner', 'pawn_shop',
+  'newsstand', 'corner_shop', 'cafe', 'laundrette', 'taxi_rank',
 ];
 
 export function starterCars() {
@@ -347,6 +350,13 @@ export const CRIMES = [
     ] },
   { id: 'ransomware',     name: 'Ransomware Drop',      tier: 'cyber',  energy: 8, nerve: 0, level: 22, base: 45, min: 8000,  max: 30000,  xp: 290, risk: 'med',  intelBonus: 1.4, dirty: true, cooldownSec: 3600   /* 1h */,
     requires: [{ kind: 'misc', item_id: 'usb_drive', qty: 1, consumed: true }] },
+  // SIM-swap fraud — the new mid-tier grind, slots in above darkweb's
+  // 23.3 xp/E plateau without burning the 1-2h-cooldown bursts above.
+  { id: 'sim_swap',       name: 'SIM Swap Fraud',       tier: 'cyber',  energy: 6, nerve: 0, level: 25, base: 48, min: 6000,  max: 22000,  xp: 175, risk: 'med',  intelBonus: 1.2, dirty: true,
+    requires: [
+      { kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true  },
+      { kind: 'misc', item_id: 'fake_id',      qty: 1, consumed: false },
+    ] },
   { id: 'crypto_drain',   name: 'Crypto Wallet Drain',  tier: 'cyber',  energy: 9, nerve: 0, level: 30, base: 45, min: 18000, max: 60000,  xp: 620, risk: 'high', intelBonus: 1.5, dirty: true, cooldownSec: 7200   /* 2h */,
     requires: [
       { kind: 'misc', item_id: 'usb_drive',    qty: 1, consumed: true  },
@@ -355,6 +365,14 @@ export const CRIMES = [
   { id: 'ddos_ext',       name: 'DDoS Extortion',       tier: 'cyber',  energy: 11, nerve: 0, level: 38, base: 40, min: 40000, max: 130000, xp: 1100,risk: 'high', intelBonus: 1.4, dirty: true, cooldownSec: 14400  /* 4h */,
     requires: [
       { kind: 'misc', item_id: 'usb_drive',    qty: 2, consumed: true  },
+      { kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true  },
+    ] },
+  // Botnet rental — late-game grindable. Sits between sim_swap and the
+  // big-cooldown crimes (crypto_drain, ddos_ext) so the L40-L65 stretch
+  // has a meaningful xp/E upgrade rather than just doing more darkweb.
+  { id: 'botnet_rental',  name: 'Botnet Rental Op',     tier: 'cyber',  energy: 10, nerve: 0, level: 40, base: 45, min: 22000, max: 70000,  xp: 320, risk: 'high', intelBonus: 1.4, dirty: true,
+    requires: [
+      { kind: 'misc', item_id: 'usb_drive',    qty: 1, consumed: true  },
       { kind: 'misc', item_id: 'burner_phone', qty: 1, consumed: true  },
     ] },
 
@@ -578,10 +596,15 @@ export const ARMOUR = [
 // sliders, city) tuple into deterministic cost/hourly/raidChance, so the
 // preview the player sees in the founder is exactly what they get.
 export const BUSINESSES = [
-  //  Legal (clean cash) 
-  { id: 'cafe',         name: 'Café',                emoji: '',  illegal: false, baseCost: 25000,   baseHourly: 1100,  levelGate: 1  },
-  { id: 'diner',        name: 'Diner',               emoji: '',  illegal: false, baseCost: 60000,   baseHourly: 2000,  levelGate: 5  },
-  { id: 'car_wash',     name: 'Car Wash',            emoji: '',  illegal: false, baseCost: 35000,   baseHourly: 1300,  levelGate: 3  },
+  //  Legal (clean cash) — L1 starter-eligible cluster first
+  { id: 'newsstand',    name: 'Newsstand',           emoji: '',  illegal: false, baseCost: 18000,   baseHourly: 700,   levelGate: 1  },
+  { id: 'cafe',         name: 'Café',                emoji: '',  illegal: false, baseCost: 32000,   baseHourly: 1100,  levelGate: 1  },
+  { id: 'corner_shop',  name: 'Corner Shop',         emoji: '',  illegal: false, baseCost: 26000,   baseHourly: 900,   levelGate: 1  },
+  { id: 'laundrette',   name: 'Laundrette',          emoji: '',  illegal: false, baseCost: 42000,   baseHourly: 1350,  levelGate: 1  },
+  { id: 'taxi_rank',    name: 'Taxi Rank',           emoji: '',  illegal: false, baseCost: 60000,   baseHourly: 1800,  levelGate: 1  },
+  //  Legal — gated
+  { id: 'car_wash',     name: 'Car Wash',            emoji: '',  illegal: false, baseCost: 50000,   baseHourly: 1500,  levelGate: 3  },
+  { id: 'diner',        name: 'Diner',               emoji: '',  illegal: false, baseCost: 80000,   baseHourly: 2200,  levelGate: 5  },
   { id: 'boutique',     name: 'Boutique',            emoji: '',  illegal: false, baseCost: 110000,  baseHourly: 3000,  levelGate: 10 },
   { id: 'auto_shop',    name: 'Auto Repair Shop',    emoji: '',  illegal: false, baseCost: 140000,  baseHourly: 3600,  levelGate: 12 },
   { id: 'taxi_firm',    name: 'Taxi Firm',           emoji: '',  illegal: false, baseCost: 200000,  baseHourly: 4800,  levelGate: 15 },
@@ -646,6 +669,7 @@ const PROPERTY_TIER_BONUS = {
   2: { max_energy: 4,  max_nerve: 0, happiness: 10 }, // apartment / townhouse
   3: { max_energy: 8,  max_nerve: 0, happiness: 20 }, // mansion / penthouse
   4: { max_energy: 15, max_nerve: 1, happiness: 35 }, // estate / compound
+  5: { max_energy: 25, max_nerve: 2, happiness: 55 }, // empire-tier penthouse / mega-estate
 };
 // Garage capacity per property tier. Sums across all properties you own
 // in a given city to determine how many vehicles can sit there at once.
@@ -654,6 +678,7 @@ export const PROPERTY_TIER_GARAGE = {
   2: 4,   // townhouse / apartment block
   3: 8,   // mansion / penthouse
   4: 12,  // estate / compound
+  5: 18,  // empire — multi-bay private collection
 };
 const TIER_LABEL = { 1: 'Flat', 2: 'Townhouse', 3: 'Mansion', 4: 'Estate', 5: 'Empire' };
 // Minimum character level to buy a property of each tier. Tiers 1-2
@@ -683,351 +708,363 @@ export const PROPERTIES = [
   { id: 'compound', name: 'Compound', cost: 5000000, bonuses: PROPERTY_TIER_BONUS[4], garage: PROPERTY_TIER_GARAGE[4] },
 
   //  New York 
-  { id: 'ny_walkup',     city: 'new_york', name: 'Lower East Side Walk-up',  address: '147 Rivington St',     cost: 48000,    ...T(1) },
-  { id: 'ny_brownstone', city: 'new_york', name: 'Brooklyn Brownstone',      address: '284 Greene Ave',       cost: 380000,   ...T(2) },
+  { id: 'ny_walkup',     city: 'new_york', name: 'Lower East Side Walk-up',  address: '147 Rivington St',     cost: 62000,    ...T(1) },
+  { id: 'ny_brownstone', city: 'new_york', name: 'Brooklyn Brownstone',      address: '284 Greene Ave',       cost: 456000,   ...T(2) },
   { id: 'ny_penthouse',  city: 'new_york', name: 'Park Avenue Penthouse',    address: '1041 Park Ave PH-A',   cost: 2400000,  ...T(3) },
   { id: 'ny_hamptons',   city: 'new_york', name: 'Hamptons Beach Estate',    address: '12 Further Lane, East Hampton', cost: 11000000, ...T(4) },
 
   //  London 
-  { id: 'lon_flat',      city: 'london',   name: 'Whitechapel Flat',         address: '36b Vallance Rd',      cost: 52000,    ...T(1) },
-  { id: 'lon_mews',      city: 'london',   name: 'Kensington Mews House',    address: '8 Cornwall Mews South', cost: 420000,  ...T(2) },
+  { id: 'lon_flat',      city: 'london',   name: 'Whitechapel Flat',         address: '36b Vallance Rd',      cost: 68000,    ...T(1) },
+  { id: 'lon_mews',      city: 'london',   name: 'Kensington Mews House',    address: '8 Cornwall Mews South', cost: 504000,  ...T(2) },
   { id: 'lon_mayfair',   city: 'london',   name: 'Mayfair Townhouse',        address: '17 Charles St, W1J',   cost: 2800000,  ...T(3) },
   { id: 'lon_kent',      city: 'london',   name: 'Kent Country Estate',      address: 'Greythorne Manor, Sevenoaks', cost: 9000000, ...T(4) },
 
   //  Tokyo 
-  { id: 'tok_capsule',   city: 'tokyo',    name: 'Shinjuku Capsule Studio',  address: '2-14-9 Kabukichō',      cost: 42000,    ...T(1) },
-  { id: 'tok_roppongi',  city: 'tokyo',    name: 'Roppongi High-Rise',       address: '6-10-1 Roppongi, Tower 32F', cost: 480000, ...T(2) },
+  { id: 'tok_capsule',   city: 'tokyo',    name: 'Shinjuku Capsule Studio',  address: '2-14-9 Kabukichō',      cost: 55000,    ...T(1) },
+  { id: 'tok_roppongi',  city: 'tokyo',    name: 'Roppongi High-Rise',       address: '6-10-1 Roppongi, Tower 32F', cost: 576000, ...T(2) },
   { id: 'tok_aoyama',    city: 'tokyo',    name: 'Aoyama Modernist Loft',    address: '5-4-44 Minami-Aoyama',  cost: 3200000,  ...T(3) },
   { id: 'tok_hakone',    city: 'tokyo',    name: 'Hakone Mountain Retreat',  address: '1300 Sengokuhara, Hakone', cost: 12000000, ...T(4) },
 
   //  Dubai 
-  { id: 'dxb_studio',    city: 'dubai',    name: 'Deira Studio',             address: 'Al Rigga Rd, Tower 4 #708', cost: 55000,    ...T(1) },
-  { id: 'dxb_downtown',  city: 'dubai',    name: 'Downtown High-Rise',       address: 'Sheikh Mohammed Blvd, 1804', cost: 620000,  ...T(2) },
+  { id: 'dxb_studio',    city: 'dubai',    name: 'Deira Studio',             address: 'Al Rigga Rd, Tower 4 #708', cost: 72000,    ...T(1) },
+  { id: 'dxb_downtown',  city: 'dubai',    name: 'Downtown High-Rise',       address: 'Sheikh Mohammed Blvd, 1804', cost: 744000,  ...T(2) },
   { id: 'dxb_burj',      city: 'dubai',    name: 'Burj Khalifa Sky Suite',   address: 'Burj Khalifa, Floor 121', cost: 4800000,    ...T(3) },
   { id: 'dxb_palm',      city: 'dubai',    name: 'Palm Jumeirah Villa',      address: 'Frond M, Villa 17',     cost: 15000000, ...T(4) },
 
   //  Liverpool 
-  { id: 'lpl_terrace',   city: 'liverpool',name: 'Toxteth Terrace',          address: '23 Granby St, L8',      cost: 32000,    ...T(1) },
-  { id: 'lpl_sefton',    city: 'liverpool',name: 'Sefton Park Manor',        address: '14 Aigburth Drive, L17',cost: 260000,   ...T(2) },
+  { id: 'lpl_terrace',   city: 'liverpool',name: 'Toxteth Terrace',          address: '23 Granby St, L8',      cost: 42000,    ...T(1) },
+  { id: 'lpl_sefton',    city: 'liverpool',name: 'Sefton Park Manor',        address: '14 Aigburth Drive, L17',cost: 312000,   ...T(2) },
   { id: 'lpl_wirral',    city: 'liverpool',name: 'Wirral Estate',            address: 'Caldy Hall, West Kirby',cost: 1400000,  ...T(3) },
   { id: 'lpl_aigburth',  city: 'liverpool',name: 'Aigburth Compound',        address: 'Mossley Hill Manor',    cost: 5200000,  ...T(4) },
 
   //  Miami 
-  { id: 'mia_bungalow',  city: 'miami',    name: 'Little Havana Bungalow',   address: '1814 SW 8th St',        cost: 42000,    ...T(1) },
-  { id: 'mia_southbeach',city: 'miami',    name: 'South Beach Condo',        address: '450 Ocean Dr, #1102',   cost: 360000,   ...T(2) },
+  { id: 'mia_bungalow',  city: 'miami',    name: 'Little Havana Bungalow',   address: '1814 SW 8th St',        cost: 55000,    ...T(1) },
+  { id: 'mia_southbeach',city: 'miami',    name: 'South Beach Condo',        address: '450 Ocean Dr, #1102',   cost: 432000,   ...T(2) },
   { id: 'mia_coral',     city: 'miami',    name: 'Coral Gables Spanish',     address: '4801 Granada Blvd',     cost: 2200000,  ...T(3) },
   { id: 'mia_starisland',city: 'miami',    name: 'Star Island Mansion',      address: '46 Star Island Dr',     cost: 13000000, ...T(4) },
 
   //  Paris 
-  { id: 'par_studio',    city: 'paris',    name: 'Bastille Studio',          address: '7 Rue de Lappe, 75011', cost: 50000,    ...T(1) },
-  { id: 'par_marais',    city: 'paris',    name: 'Le Marais Apartment',      address: '24 Rue des Rosiers, 75004', cost: 440000, ...T(2) },
+  { id: 'par_studio',    city: 'paris',    name: 'Bastille Studio',          address: '7 Rue de Lappe, 75011', cost: 65000,    ...T(1) },
+  { id: 'par_marais',    city: 'paris',    name: 'Le Marais Apartment',      address: '24 Rue des Rosiers, 75004', cost: 528000, ...T(2) },
   { id: 'par_16e',       city: 'paris',    name: '16e Hôtel Particulier',    address: '88 Avenue Foch, 75116', cost: 2800000,  ...T(3) },
   { id: 'par_versailles',city: 'paris',    name: 'Versailles Château',       address: 'Domaine de Marly, 78160', cost: 14000000, ...T(4) },
 
   //  Bangkok 
-  { id: 'bkk_shophouse', city: 'bangkok',  name: 'Klong Toey Shophouse',     address: '288/4 Phra Ram 4 Rd',   cost: 28000,    ...T(1) },
-  { id: 'bkk_sukhumvit', city: 'bangkok',  name: 'Sukhumvit Apartment',      address: 'Soi 11, Tower 2 #2604', cost: 220000,   ...T(2) },
+  { id: 'bkk_shophouse', city: 'bangkok',  name: 'Klong Toey Shophouse',     address: '288/4 Phra Ram 4 Rd',   cost: 36000,    ...T(1) },
+  { id: 'bkk_sukhumvit', city: 'bangkok',  name: 'Sukhumvit Apartment',      address: 'Soi 11, Tower 2 #2604', cost: 264000,   ...T(2) },
   { id: 'bkk_thonglor',  city: 'bangkok',  name: 'Thonglor Modern Villa',    address: '55 Soi Thonglor 13',    cost: 1200000,  ...T(3) },
   { id: 'bkk_phuket',    city: 'bangkok',  name: 'Phuket Beach Compound',    address: '8 Pansea Beach Rd, Surin', cost: 4800000, ...T(4) },
 
   //  Sydney 
-  { id: 'syd_terrace',   city: 'sydney',   name: 'Surry Hills Terrace',      address: '142 Crown St, NSW 2010',cost: 46000,    ...T(1) },
-  { id: 'syd_bondi',     city: 'sydney',   name: 'Bondi Beach Apartment',    address: '21 Notts Ave, Bondi',   cost: 340000,   ...T(2) },
+  { id: 'syd_terrace',   city: 'sydney',   name: 'Surry Hills Terrace',      address: '142 Crown St, NSW 2010',cost: 60000,    ...T(1) },
+  { id: 'syd_bondi',     city: 'sydney',   name: 'Bondi Beach Apartment',    address: '21 Notts Ave, Bondi',   cost: 408000,   ...T(2) },
   { id: 'syd_vaucluse',  city: 'sydney',   name: 'Vaucluse Harbour House',   address: '14 Wentworth Rd',       cost: 2600000,  ...T(3) },
   { id: 'syd_bluemtns',  city: 'sydney',   name: 'Blue Mountains Estate',    address: 'Govetts Leap Rd, Blackheath', cost: 9500000, ...T(4) },
 
   //  Rio 
-  { id: 'rio_walkup',    city: 'rio',      name: 'Lapa Walk-up',             address: 'Rua dos Inválidos, 88', cost: 35000,    ...T(1) },
-  { id: 'rio_copacabana',city: 'rio',      name: 'Copacabana Apartment',     address: 'Av. Atlântica, 2400 #1101', cost: 280000, ...T(2) },
+  { id: 'rio_walkup',    city: 'rio',      name: 'Lapa Walk-up',             address: 'Rua dos Inválidos, 88', cost: 46000,    ...T(1) },
+  { id: 'rio_copacabana',city: 'rio',      name: 'Copacabana Apartment',     address: 'Av. Atlântica, 2400 #1101', cost: 336000, ...T(2) },
   { id: 'rio_leblon',    city: 'rio',      name: 'Leblon Mansion',           address: 'Rua Aristides Espínola, 56', cost: 1800000, ...T(3) },
   { id: 'rio_buzios',    city: 'rio',      name: 'Búzios Beach Compound',    address: 'Praia do Forno, Búzios',cost: 6000000,  ...T(4) },
 
   //  Moscow 
-  { id: 'mow_flat',      city: 'moscow',   name: 'Khrushchyovka Flat',       address: 'Ulitsa Bolshaya Sadovaya, 14', cost: 38000, ...T(1) },
-  { id: 'mow_arbat',     city: 'moscow',   name: 'Arbat Apartment',          address: 'Stary Arbat 23, kv 7',  cost: 300000,   ...T(2) },
+  { id: 'mow_flat',      city: 'moscow',   name: 'Khrushchyovka Flat',       address: 'Ulitsa Bolshaya Sadovaya, 14', cost: 49000, ...T(1) },
+  { id: 'mow_arbat',     city: 'moscow',   name: 'Arbat Apartment',          address: 'Stary Arbat 23, kv 7',  cost: 360000,   ...T(2) },
   { id: 'mow_patriarsh', city: 'moscow',   name: 'Patriarshiye Penthouse',   address: 'Bolshoy Patriarshiy 8, PH', cost: 1900000, ...T(3) },
   { id: 'mow_rublyovka', city: 'moscow',   name: 'Rublyovka Mansion',        address: 'Rublyovo-Uspenskoye Shosse', cost: 7500000, ...T(4) },
 
   //  Cape Town 
-  { id: 'cpt_cottage',   city: 'cape_town',name: 'Salt River Cottage',       address: '23 Voortrekker Rd',     cost: 30000,    ...T(1) },
-  { id: 'cpt_seapoint',  city: 'cape_town',name: 'Sea Point Apartment',      address: '142 Beach Rd, Mouille Point', cost: 250000, ...T(2) },
+  { id: 'cpt_cottage',   city: 'cape_town',name: 'Salt River Cottage',       address: '23 Voortrekker Rd',     cost: 39000,    ...T(1) },
+  { id: 'cpt_seapoint',  city: 'cape_town',name: 'Sea Point Apartment',      address: '142 Beach Rd, Mouille Point', cost: 300000, ...T(2) },
   { id: 'cpt_bantry',    city: 'cape_town',name: 'Bantry Bay Villa',         address: '8 Theresa Ave',         cost: 1600000,  ...T(3) },
   { id: 'cpt_campsbay',  city: 'cape_town',name: 'Camps Bay Compound',       address: 'Geneva Drive Estate',   cost: 5800000,  ...T(4) },
 
   //  Additional properties — 6 more per city 
 
   //  New York 
-  { id: 'ny_bushwick',     city: 'new_york', name: 'Bushwick Studio',          address: '412 Knickerbocker Ave',         cost: 35000,    ...T(1) },
-  { id: 'ny_harlem',       city: 'new_york', name: 'Harlem Brownstone Studio', address: '132 W 119th St',                cost: 62000,    ...T(1) },
-  { id: 'ny_village',      city: 'new_york', name: 'Greenwich Village Apt',    address: '28 Bleecker St #4B',            cost: 520000,   ...T(2) },
-  { id: 'ny_astoria',      city: 'new_york', name: 'Astoria Co-op',            address: '33-12 31st Ave, Queens',        cost: 310000,   ...T(2) },
+  { id: 'ny_bushwick',     city: 'new_york', name: 'Bushwick Studio',          address: '412 Knickerbocker Ave',         cost: 46000,    ...T(1) },
+  { id: 'ny_harlem',       city: 'new_york', name: 'Harlem Brownstone Studio', address: '132 W 119th St',                cost: 81000,    ...T(1) },
+  { id: 'ny_village',      city: 'new_york', name: 'Greenwich Village Apt',    address: '28 Bleecker St #4B',            cost: 624000,   ...T(2) },
+  { id: 'ny_astoria',      city: 'new_york', name: 'Astoria Co-op',            address: '33-12 31st Ave, Queens',        cost: 372000,   ...T(2) },
   { id: 'ny_tribeca',      city: 'new_york', name: 'Tribeca Loft',             address: '92 Greenwich St PH',            cost: 1800000,  ...T(3) },
   { id: 'ny_westchester',  city: 'new_york', name: 'Westchester Mansion',      address: '88 Hudson Pointe Dr, Tarrytown',cost: 7500000,  ...T(4) },
 
   //  London 
-  { id: 'lon_camberwell',  city: 'london',   name: 'Camberwell Bedsit',        address: '18 Coldharbour Ln, SE5',        cost: 42000,    ...T(1) },
-  { id: 'lon_hackney',     city: 'london',   name: 'Hackney Conversion',       address: '64 Lower Clapton Rd, E5',       cost: 68000,    ...T(1) },
-  { id: 'lon_chelsea',     city: 'london',   name: 'Chelsea Garden Flat',      address: '81 Sydney St, SW3',             cost: 580000,   ...T(2) },
-  { id: 'lon_hampstead',   city: 'london',   name: 'Hampstead Apartment',      address: '14 Flask Walk, NW3',            cost: 490000,   ...T(2) },
+  { id: 'lon_camberwell',  city: 'london',   name: 'Camberwell Bedsit',        address: '18 Coldharbour Ln, SE5',        cost: 55000,    ...T(1) },
+  { id: 'lon_hackney',     city: 'london',   name: 'Hackney Conversion',       address: '64 Lower Clapton Rd, E5',       cost: 88000,    ...T(1) },
+  { id: 'lon_chelsea',     city: 'london',   name: 'Chelsea Garden Flat',      address: '81 Sydney St, SW3',             cost: 696000,   ...T(2) },
+  { id: 'lon_hampstead',   city: 'london',   name: 'Hampstead Apartment',      address: '14 Flask Walk, NW3',            cost: 588000,   ...T(2) },
   { id: 'lon_belgravia',   city: 'london',   name: 'Belgravia Garden House',   address: '47 Eaton Sq, SW1W',             cost: 3400000,  ...T(3) },
   { id: 'lon_cotswolds',   city: 'london',   name: 'Cotswolds Manor',          address: 'Westcote Hall, Stow-on-the-Wold', cost: 7000000, ...T(4) },
 
   //  Tokyo 
-  { id: 'tok_shimokita',   city: 'tokyo',    name: 'Shimokitazawa Studio',     address: '2-25-3 Kitazawa, Setagaya',     cost: 48000,    ...T(1) },
-  { id: 'tok_kichijoji',   city: 'tokyo',    name: 'Kichijōji Apartment',      address: '1-22-12 Kichijōji-honchō',      cost: 54000,    ...T(1) },
-  { id: 'tok_omotesando',  city: 'tokyo',    name: 'Omotesandō Apt',           address: '5-3-10 Jingūmae, Shibuya',      cost: 620000,   ...T(2) },
-  { id: 'tok_daikanyama',  city: 'tokyo',    name: 'Daikanyama Loft',          address: '14-9 Sarugakuchō, Shibuya',     cost: 540000,   ...T(2) },
+  { id: 'tok_shimokita',   city: 'tokyo',    name: 'Shimokitazawa Studio',     address: '2-25-3 Kitazawa, Setagaya',     cost: 62000,    ...T(1) },
+  { id: 'tok_kichijoji',   city: 'tokyo',    name: 'Kichijōji Apartment',      address: '1-22-12 Kichijōji-honchō',      cost: 70000,    ...T(1) },
+  { id: 'tok_omotesando',  city: 'tokyo',    name: 'Omotesandō Apt',           address: '5-3-10 Jingūmae, Shibuya',      cost: 744000,   ...T(2) },
+  { id: 'tok_daikanyama',  city: 'tokyo',    name: 'Daikanyama Loft',          address: '14-9 Sarugakuchō, Shibuya',     cost: 648000,   ...T(2) },
   { id: 'tok_minato',      city: 'tokyo',    name: 'Akasaka Penthouse',        address: '1-7-1 Akasaka, Tower 35F',      cost: 4100000,  ...T(3) },
   { id: 'tok_karuizawa',   city: 'tokyo',    name: 'Karuizawa Mountain Villa', address: '1234 Naka-Karuizawa',           cost: 9500000,  ...T(4) },
 
   //  Dubai 
-  { id: 'dxb_satwa',       city: 'dubai',    name: 'Satwa Studio',             address: '4 Pearl Building, Block C',     cost: 40000,    ...T(1) },
-  { id: 'dxb_bur',         city: 'dubai',    name: 'Bur Dubai Apartment',      address: 'Khalid Bin Al Waleed Rd #1208', cost: 58000,    ...T(1) },
-  { id: 'dxb_jbr',         city: 'dubai',    name: 'JBR Walk Apartment',       address: 'Sadaf 7 Tower #1402',           cost: 720000,   ...T(2) },
-  { id: 'dxb_marina',      city: 'dubai',    name: 'Marina Apartment',         address: 'Marina Promenade Tower #2204',  cost: 580000,   ...T(2) },
+  { id: 'dxb_satwa',       city: 'dubai',    name: 'Satwa Studio',             address: '4 Pearl Building, Block C',     cost: 52000,    ...T(1) },
+  { id: 'dxb_bur',         city: 'dubai',    name: 'Bur Dubai Apartment',      address: 'Khalid Bin Al Waleed Rd #1208', cost: 75000,    ...T(1) },
+  { id: 'dxb_jbr',         city: 'dubai',    name: 'JBR Walk Apartment',       address: 'Sadaf 7 Tower #1402',           cost: 864000,   ...T(2) },
+  { id: 'dxb_marina',      city: 'dubai',    name: 'Marina Apartment',         address: 'Marina Promenade Tower #2204',  cost: 696000,   ...T(2) },
   { id: 'dxb_emirates',    city: 'dubai',    name: 'Emirates Hills Villa',     address: 'Sector E, Villa 28',            cost: 5600000,  ...T(3) },
   { id: 'dxb_jumeirah_islands', city: 'dubai', name: 'Jumeirah Islands Estate',address: 'Cluster 14, Villa 5',           cost: 13000000, ...T(4) },
 
   //  Liverpool 
-  { id: 'lpl_kensington',  city: 'liverpool',name: 'Kensington Bedsit',        address: '217 Kensington Rd, L7',         cost: 24000,    ...T(1) },
-  { id: 'lpl_anfield',     city: 'liverpool',name: 'Anfield Terrace',          address: '18 Skerries Rd, L4',            cost: 38000,    ...T(1) },
-  { id: 'lpl_woolton',     city: 'liverpool',name: 'Woolton Semi',             address: '8 Allerton Rd, L25',            cost: 290000,   ...T(2) },
-  { id: 'lpl_crosby',      city: 'liverpool',name: 'Crosby House',             address: '14 Coronation Rd, L23',         cost: 245000,   ...T(2) },
+  { id: 'lpl_kensington',  city: 'liverpool',name: 'Kensington Bedsit',        address: '217 Kensington Rd, L7',         cost: 31000,    ...T(1) },
+  { id: 'lpl_anfield',     city: 'liverpool',name: 'Anfield Terrace',          address: '18 Skerries Rd, L4',            cost: 49000,    ...T(1) },
+  { id: 'lpl_woolton',     city: 'liverpool',name: 'Woolton Semi',             address: '8 Allerton Rd, L25',            cost: 348000,   ...T(2) },
+  { id: 'lpl_crosby',      city: 'liverpool',name: 'Crosby House',             address: '14 Coronation Rd, L23',         cost: 294000,   ...T(2) },
   { id: 'lpl_calderstones',city: 'liverpool',name: 'Calderstones Mansion',     address: '92 Menlove Ave, L18',           cost: 1600000,  ...T(3) },
   { id: 'lpl_southport',   city: 'liverpool',name: 'Southport Manor',          address: 'Birkdale Hall, PR8',            cost: 4200000,  ...T(4) },
 
   //  Miami 
-  { id: 'mia_overtown',    city: 'miami',    name: 'Overtown Walk-up',         address: '1623 NW 3rd Ave',               cost: 36000,    ...T(1) },
-  { id: 'mia_wynwood',     city: 'miami',    name: 'Wynwood Loft',             address: '250 NW 24th St',                cost: 58000,    ...T(1) },
-  { id: 'mia_brickell',    city: 'miami',    name: 'Brickell Condo',           address: '485 Brickell Ave #1604',        cost: 480000,   ...T(2) },
-  { id: 'mia_aventura',    city: 'miami',    name: 'Aventura Apartment',       address: '18101 Collins Ave #2806',       cost: 390000,   ...T(2) },
+  { id: 'mia_overtown',    city: 'miami',    name: 'Overtown Walk-up',         address: '1623 NW 3rd Ave',               cost: 47000,    ...T(1) },
+  { id: 'mia_wynwood',     city: 'miami',    name: 'Wynwood Loft',             address: '250 NW 24th St',                cost: 75000,    ...T(1) },
+  { id: 'mia_brickell',    city: 'miami',    name: 'Brickell Condo',           address: '485 Brickell Ave #1604',        cost: 576000,   ...T(2) },
+  { id: 'mia_aventura',    city: 'miami',    name: 'Aventura Apartment',       address: '18101 Collins Ave #2806',       cost: 468000,   ...T(2) },
   { id: 'mia_pinecrest',   city: 'miami',    name: 'Pinecrest Estate',         address: '7250 SW 122nd St',              cost: 2800000,  ...T(3) },
   { id: 'mia_fisher_island',city: 'miami',   name: 'Fisher Island Mansion',    address: '6822 Valencia Dr',              cost: 14000000, ...T(4) },
 
   //  Paris 
-  { id: 'par_belleville',  city: 'paris',    name: 'Belleville Studio',        address: '9 Rue de la Mare, 75020',       cost: 44000,    ...T(1) },
-  { id: 'par_pigalle',     city: 'paris',    name: 'Pigalle Walk-up',          address: '21 Rue Frochot, 75009',         cost: 58000,    ...T(1) },
-  { id: 'par_st_germain',  city: 'paris',    name: 'Saint-Germain Apt',        address: '14 Rue Jacob, 75006',           cost: 620000,   ...T(2) },
-  { id: 'par_montmartre',  city: 'paris',    name: 'Montmartre Apartment',     address: '27 Rue des Abbesses, 75018',    cost: 480000,   ...T(2) },
+  { id: 'par_belleville',  city: 'paris',    name: 'Belleville Studio',        address: '9 Rue de la Mare, 75020',       cost: 57000,    ...T(1) },
+  { id: 'par_pigalle',     city: 'paris',    name: 'Pigalle Walk-up',          address: '21 Rue Frochot, 75009',         cost: 75000,    ...T(1) },
+  { id: 'par_st_germain',  city: 'paris',    name: 'Saint-Germain Apt',        address: '14 Rue Jacob, 75006',           cost: 744000,   ...T(2) },
+  { id: 'par_montmartre',  city: 'paris',    name: 'Montmartre Apartment',     address: '27 Rue des Abbesses, 75018',    cost: 576000,   ...T(2) },
   { id: 'par_etoile',      city: 'paris',    name: 'Étoile Mansion',           address: '8 Avenue Marceau, 75008',       cost: 3400000,  ...T(3) },
   { id: 'par_loire',       city: 'paris',    name: 'Loire Valley Château',     address: 'Domaine de Chambord, 41250',    cost: 11000000, ...T(4) },
 
   //  Bangkok 
-  { id: 'bkk_silom',       city: 'bangkok',  name: 'Silom Studio',             address: '91 Pan Rd, Bangrak',            cost: 24000,    ...T(1) },
-  { id: 'bkk_chinatown',   city: 'bangkok',  name: 'Yaowarat Shophouse',       address: '458 Charoen Krung Rd',          cost: 32000,    ...T(1) },
-  { id: 'bkk_asok',        city: 'bangkok',  name: 'Asok Condo',               address: 'Sukhumvit Soi 21 #1804',        cost: 260000,   ...T(2) },
-  { id: 'bkk_ari',         city: 'bangkok',  name: 'Ari Loft',                 address: 'Phaholyothin Soi 4',            cost: 185000,   ...T(2) },
+  { id: 'bkk_silom',       city: 'bangkok',  name: 'Silom Studio',             address: '91 Pan Rd, Bangrak',            cost: 31000,    ...T(1) },
+  { id: 'bkk_chinatown',   city: 'bangkok',  name: 'Yaowarat Shophouse',       address: '458 Charoen Krung Rd',          cost: 42000,    ...T(1) },
+  { id: 'bkk_asok',        city: 'bangkok',  name: 'Asok Condo',               address: 'Sukhumvit Soi 21 #1804',        cost: 312000,   ...T(2) },
+  { id: 'bkk_ari',         city: 'bangkok',  name: 'Ari Loft',                 address: 'Phaholyothin Soi 4',            cost: 222000,   ...T(2) },
   { id: 'bkk_riverside',   city: 'bangkok',  name: 'Chao Phraya Penthouse',    address: 'Mandarin Oriental Residences PH', cost: 1400000, ...T(3) },
   { id: 'bkk_koh_samui',   city: 'bangkok',  name: 'Koh Samui Beach Estate',   address: 'Bo Phut Beach Rd',              cost: 5400000,  ...T(4) },
 
   //  Sydney 
-  { id: 'syd_kings_cross', city: 'sydney',   name: 'Kings Cross Studio',       address: '18 Macleay St, NSW 2011',       cost: 42000,    ...T(1) },
-  { id: 'syd_newtown',     city: 'sydney',   name: 'Newtown Terrace Cottage',  address: '145 King St, NSW 2042',         cost: 58000,    ...T(1) },
-  { id: 'syd_paddington',  city: 'sydney',   name: 'Paddington Terrace',       address: '92 Oxford St, NSW 2021',        cost: 410000,   ...T(2) },
-  { id: 'syd_manly',       city: 'sydney',   name: 'Manly Beach Apt',          address: '12 The Esplanade, NSW 2095',    cost: 380000,   ...T(2) },
+  { id: 'syd_kings_cross', city: 'sydney',   name: 'Kings Cross Studio',       address: '18 Macleay St, NSW 2011',       cost: 55000,    ...T(1) },
+  { id: 'syd_newtown',     city: 'sydney',   name: 'Newtown Terrace Cottage',  address: '145 King St, NSW 2042',         cost: 75000,    ...T(1) },
+  { id: 'syd_paddington',  city: 'sydney',   name: 'Paddington Terrace',       address: '92 Oxford St, NSW 2021',        cost: 492000,   ...T(2) },
+  { id: 'syd_manly',       city: 'sydney',   name: 'Manly Beach Apt',          address: '12 The Esplanade, NSW 2095',    cost: 456000,   ...T(2) },
   { id: 'syd_pointpiper',  city: 'sydney',   name: 'Point Piper Mansion',      address: '14 Wolseley Cres',              cost: 3200000,  ...T(3) },
   { id: 'syd_hunter',      city: 'sydney',   name: 'Hunter Valley Estate',     address: 'Pokolbin Vineyard Hall',        cost: 7800000,  ...T(4) },
 
   //  Rio 
-  { id: 'rio_santa_teresa',city: 'rio',      name: 'Santa Teresa Bedsit',      address: 'Rua Almte. Alexandrino, 412',   cost: 32000,    ...T(1) },
-  { id: 'rio_botafogo',    city: 'rio',      name: 'Botafogo Apartment',       address: 'Rua São Clemente, 88',          cost: 48000,    ...T(1) },
-  { id: 'rio_ipanema',     city: 'rio',      name: 'Ipanema Apt',              address: 'Rua Vinícius de Moraes, 132',   cost: 420000,   ...T(2) },
-  { id: 'rio_barra',       city: 'rio',      name: 'Barra da Tijuca Apt',      address: 'Av. Lúcio Costa, 4500 #1101',   cost: 310000,   ...T(2) },
+  { id: 'rio_santa_teresa',city: 'rio',      name: 'Santa Teresa Bedsit',      address: 'Rua Almte. Alexandrino, 412',   cost: 42000,    ...T(1) },
+  { id: 'rio_botafogo',    city: 'rio',      name: 'Botafogo Apartment',       address: 'Rua São Clemente, 88',          cost: 62000,    ...T(1) },
+  { id: 'rio_ipanema',     city: 'rio',      name: 'Ipanema Apt',              address: 'Rua Vinícius de Moraes, 132',   cost: 504000,   ...T(2) },
+  { id: 'rio_barra',       city: 'rio',      name: 'Barra da Tijuca Apt',      address: 'Av. Lúcio Costa, 4500 #1101',   cost: 372000,   ...T(2) },
   { id: 'rio_gavea',       city: 'rio',      name: 'Gávea Mansion',            address: 'Estrada da Gávea, 924',         cost: 1500000,  ...T(3) },
   { id: 'rio_angra',       city: 'rio',      name: 'Angra dos Reis Compound',  address: 'Ilha do Tibau, Angra',          cost: 5500000,  ...T(4) },
 
   //  Moscow 
-  { id: 'mow_chertanovo',  city: 'moscow',   name: 'Chertanovo Bedsit',        address: 'Sumskoy Proyezd, 6',            cost: 28000,    ...T(1) },
-  { id: 'mow_basmanny',    city: 'moscow',   name: 'Basmanny Walk-up',         address: 'Pokrovka Ulitsa, 18',           cost: 44000,    ...T(1) },
-  { id: 'mow_zamoskvorech',city: 'moscow',   name: 'Zamoskvorechye Apt',       address: 'Bolshaya Ordynka, 41',          cost: 360000,   ...T(2) },
-  { id: 'mow_tverskoy',    city: 'moscow',   name: 'Tverskoy Apartment',       address: 'Tverskaya Ulitsa, 27',          cost: 440000,   ...T(2) },
+  { id: 'mow_chertanovo',  city: 'moscow',   name: 'Chertanovo Bedsit',        address: 'Sumskoy Proyezd, 6',            cost: 36000,    ...T(1) },
+  { id: 'mow_basmanny',    city: 'moscow',   name: 'Basmanny Walk-up',         address: 'Pokrovka Ulitsa, 18',           cost: 57000,    ...T(1) },
+  { id: 'mow_zamoskvorech',city: 'moscow',   name: 'Zamoskvorechye Apt',       address: 'Bolshaya Ordynka, 41',          cost: 432000,   ...T(2) },
+  { id: 'mow_tverskoy',    city: 'moscow',   name: 'Tverskoy Apartment',       address: 'Tverskaya Ulitsa, 27',          cost: 528000,   ...T(2) },
   { id: 'mow_skolkovo',    city: 'moscow',   name: 'Skolkovo Mansion',         address: 'Ulitsa Lugovaya, 12',           cost: 2400000,  ...T(3) },
   { id: 'mow_zhukovka',    city: 'moscow',   name: 'Zhukovka Country Estate',  address: 'Pyatnitskoye Shosse, km 8',     cost: 6500000,  ...T(4) },
 
   //  Cape Town 
-  { id: 'cpt_woodstock',   city: 'cape_town',name: 'Woodstock Loft',           address: '312 Albert Rd',                 cost: 34000,    ...T(1) },
-  { id: 'cpt_obs',         city: 'cape_town',name: 'Observatory Cottage',      address: '18 Trill Rd',                   cost: 42000,    ...T(1) },
-  { id: 'cpt_greenpoint',  city: 'cape_town',name: 'Green Point Apt',          address: '142 Beach Rd',                  cost: 310000,   ...T(2) },
-  { id: 'cpt_kloof',       city: 'cape_town',name: 'Kloof Street Apt',         address: '92 Kloof St',                   cost: 260000,   ...T(2) },
+  { id: 'cpt_woodstock',   city: 'cape_town',name: 'Woodstock Loft',           address: '312 Albert Rd',                 cost: 44000,    ...T(1) },
+  { id: 'cpt_obs',         city: 'cape_town',name: 'Observatory Cottage',      address: '18 Trill Rd',                   cost: 55000,    ...T(1) },
+  { id: 'cpt_greenpoint',  city: 'cape_town',name: 'Green Point Apt',          address: '142 Beach Rd',                  cost: 372000,   ...T(2) },
+  { id: 'cpt_kloof',       city: 'cape_town',name: 'Kloof Street Apt',         address: '92 Kloof St',                   cost: 312000,   ...T(2) },
   { id: 'cpt_clifton',     city: 'cape_town',name: 'Clifton Beachfront',       address: '21 Victoria Rd, Bungalow 4',    cost: 2200000,  ...T(3) },
   { id: 'cpt_franschhoek', city: 'cape_town',name: 'Franschhoek Wine Estate',  address: '234 Franschhoek Pass Rd',       cost: 5300000,  ...T(4) },
 
   //  Las Vegas 
-  { id: 'lv_henderson_studio', city: 'las_vegas', name: 'Henderson Bedsit',      address: '312 Sunset Rd',                 cost: 42000,    ...T(1) },
-  { id: 'lv_strip_studio',     city: 'las_vegas', name: 'Strip-Side Studio',     address: '4847 Las Vegas Blvd #618',      cost: 52000,    ...T(1) },
-  { id: 'lv_spring_valley',    city: 'las_vegas', name: 'Spring Valley Walk-up', address: '8801 W Sahara Ave',             cost: 48000,    ...T(1) },
-  { id: 'lv_summerlin',        city: 'las_vegas', name: 'Summerlin Townhouse',   address: '11240 Hidden Peak Ave',         cost: 480000,   ...T(2) },
-  { id: 'lv_paradise',         city: 'las_vegas', name: 'Paradise Apt',          address: '4625 Dean Martin Dr #2202',     cost: 360000,   ...T(2) },
-  { id: 'lv_henderson_house',  city: 'las_vegas', name: 'Henderson House',       address: '2515 Sunridge Heights Pkwy',    cost: 320000,   ...T(2) },
+  { id: 'lv_henderson_studio', city: 'las_vegas', name: 'Henderson Bedsit',      address: '312 Sunset Rd',                 cost: 55000,    ...T(1) },
+  { id: 'lv_strip_studio',     city: 'las_vegas', name: 'Strip-Side Studio',     address: '4847 Las Vegas Blvd #618',      cost: 68000,    ...T(1) },
+  { id: 'lv_spring_valley',    city: 'las_vegas', name: 'Spring Valley Walk-up', address: '8801 W Sahara Ave',             cost: 62000,    ...T(1) },
+  { id: 'lv_summerlin',        city: 'las_vegas', name: 'Summerlin Townhouse',   address: '11240 Hidden Peak Ave',         cost: 576000,   ...T(2) },
+  { id: 'lv_paradise',         city: 'las_vegas', name: 'Paradise Apt',          address: '4625 Dean Martin Dr #2202',     cost: 432000,   ...T(2) },
+  { id: 'lv_henderson_house',  city: 'las_vegas', name: 'Henderson House',       address: '2515 Sunridge Heights Pkwy',    cost: 384000,   ...T(2) },
   { id: 'lv_strip_penthouse',  city: 'las_vegas', name: 'Strip Penthouse',       address: 'The Cosmopolitan #5005',        cost: 3400000,  ...T(3) },
   { id: 'lv_lake',             city: 'las_vegas', name: 'Lake Las Vegas Estate', address: '14 Foothill Dr',                cost: 2800000,  ...T(3) },
   { id: 'lv_redrock',          city: 'las_vegas', name: 'Red Rock Compound',     address: '1423 Calico Hills',             cost: 11000000, ...T(4) },
   { id: 'lv_mountains_edge',   city: 'las_vegas', name: 'Mountain\'s Edge Manor',address: '8910 Coronet Hills',            cost: 9500000,  ...T(4) },
 
   //  Hong Kong 
-  { id: 'hk_ssp',          city: 'hong_kong', name: 'Sham Shui Po Studio',    address: '188 Tai Po Rd',                 cost: 45000,    ...T(1) },
-  { id: 'hk_kowloon',      city: 'hong_kong', name: 'Kowloon Walk-up',        address: '12 Reclamation St',             cost: 62000,    ...T(1) },
-  { id: 'hk_mong_kok',     city: 'hong_kong', name: 'Mong Kok Cubicle',       address: '24 Argyle St #15B',             cost: 58000,    ...T(1) },
-  { id: 'hk_wan_chai',     city: 'hong_kong', name: 'Wan Chai Apartment',     address: "88 Queen's Rd East #2104",      cost: 720000,   ...T(2) },
-  { id: 'hk_causeway',     city: 'hong_kong', name: 'Causeway Bay Apt',       address: '22 Times Square Tower',         cost: 580000,   ...T(2) },
-  { id: 'hk_tst',          city: 'hong_kong', name: 'Tsim Sha Tsui High-Rise',address: '12 Salisbury Rd #3306',         cost: 640000,   ...T(2) },
+  { id: 'hk_ssp',          city: 'hong_kong', name: 'Sham Shui Po Studio',    address: '188 Tai Po Rd',                 cost: 58000,    ...T(1) },
+  { id: 'hk_kowloon',      city: 'hong_kong', name: 'Kowloon Walk-up',        address: '12 Reclamation St',             cost: 81000,    ...T(1) },
+  { id: 'hk_mong_kok',     city: 'hong_kong', name: 'Mong Kok Cubicle',       address: '24 Argyle St #15B',             cost: 75000,    ...T(1) },
+  { id: 'hk_wan_chai',     city: 'hong_kong', name: 'Wan Chai Apartment',     address: "88 Queen's Rd East #2104",      cost: 864000,   ...T(2) },
+  { id: 'hk_causeway',     city: 'hong_kong', name: 'Causeway Bay Apt',       address: '22 Times Square Tower',         cost: 696000,   ...T(2) },
+  { id: 'hk_tst',          city: 'hong_kong', name: 'Tsim Sha Tsui High-Rise',address: '12 Salisbury Rd #3306',         cost: 768000,   ...T(2) },
   { id: 'hk_midlevels',    city: 'hong_kong', name: 'Mid-Levels Penthouse',   address: 'The Peak Tower #PH3',           cost: 4200000,  ...T(3) },
   { id: 'hk_repulse_bay',  city: 'hong_kong', name: 'Repulse Bay Villa',      address: '109 Repulse Bay Rd',            cost: 5800000,  ...T(3) },
   { id: 'hk_peak',         city: 'hong_kong', name: 'The Peak Mansion',       address: "8 Black's Link Rd",             cost: 16000000, ...T(4) },
   { id: 'hk_stanley',      city: 'hong_kong', name: 'Stanley Compound',       address: '1 Stanley Beach Rd',            cost: 13000000, ...T(4) },
 
   //  Berlin 
-  { id: 'ber_kreuzberg',   city: 'berlin', name: 'Kreuzberg Bedsit',          address: 'Görlitzer Str. 18',             cost: 36000,    ...T(1) },
-  { id: 'ber_neukolln',    city: 'berlin', name: 'Neukölln Walk-up',          address: 'Karl-Marx-Str. 142',            cost: 42000,    ...T(1) },
-  { id: 'ber_friedrich',   city: 'berlin', name: 'Friedrichshain Studio',     address: 'Rigaer Str. 88',                cost: 48000,    ...T(1) },
-  { id: 'ber_mitte',       city: 'berlin', name: 'Mitte Apartment',           address: 'Torstraße 145',                 cost: 360000,   ...T(2) },
-  { id: 'ber_prenzlauer',  city: 'berlin', name: 'Prenzlauer Berg Loft',      address: 'Kollwitzstr. 64',               cost: 410000,   ...T(2) },
-  { id: 'ber_charlotten',  city: 'berlin', name: 'Charlottenburg Apt',        address: 'Kurfürstendamm 215',            cost: 480000,   ...T(2) },
+  { id: 'ber_kreuzberg',   city: 'berlin', name: 'Kreuzberg Bedsit',          address: 'Görlitzer Str. 18',             cost: 47000,    ...T(1) },
+  { id: 'ber_neukolln',    city: 'berlin', name: 'Neukölln Walk-up',          address: 'Karl-Marx-Str. 142',            cost: 55000,    ...T(1) },
+  { id: 'ber_friedrich',   city: 'berlin', name: 'Friedrichshain Studio',     address: 'Rigaer Str. 88',                cost: 62000,    ...T(1) },
+  { id: 'ber_mitte',       city: 'berlin', name: 'Mitte Apartment',           address: 'Torstraße 145',                 cost: 432000,   ...T(2) },
+  { id: 'ber_prenzlauer',  city: 'berlin', name: 'Prenzlauer Berg Loft',      address: 'Kollwitzstr. 64',               cost: 492000,   ...T(2) },
+  { id: 'ber_charlotten',  city: 'berlin', name: 'Charlottenburg Apt',        address: 'Kurfürstendamm 215',            cost: 576000,   ...T(2) },
   { id: 'ber_grunewald',   city: 'berlin', name: 'Grunewald Mansion',         address: 'Bismarckallee 23',              cost: 2400000,  ...T(3) },
   { id: 'ber_wannsee',     city: 'berlin', name: 'Wannsee Lakehouse',         address: 'Am Großen Wannsee 18',          cost: 2800000,  ...T(3) },
   { id: 'ber_potsdam',     city: 'berlin', name: 'Potsdam Estate',            address: 'Am Neuen Garten 31',            cost: 7200000,  ...T(4) },
   { id: 'ber_brandenburg', city: 'berlin', name: 'Brandenburg Country Manor', address: 'Schloss Sanssouci Park',        cost: 8500000,  ...T(4) },
 
   //  Mexico City 
-  { id: 'mex_tepito',      city: 'mexico_city', name: 'Tepito Walk-up',         address: 'Calle Tenochtitlán 142',     cost: 24000,    ...T(1) },
-  { id: 'mex_iztapalapa',  city: 'mexico_city', name: 'Iztapalapa Studio',      address: 'Eje 5 Sur 88',               cost: 28000,    ...T(1) },
-  { id: 'mex_doctores',    city: 'mexico_city', name: 'Doctores Bedsit',        address: 'Dr. Andrade 203',            cost: 32000,    ...T(1) },
-  { id: 'mex_roma',        city: 'mexico_city', name: 'Roma Norte Apt',         address: 'Av. Álvaro Obregón 88',      cost: 260000,   ...T(2) },
-  { id: 'mex_condesa',     city: 'mexico_city', name: 'Condesa Loft',           address: 'Calle Amsterdam 142',        cost: 310000,   ...T(2) },
-  { id: 'mex_polanco',     city: 'mexico_city', name: 'Polanco Apt',            address: 'Av. Presidente Masaryk 405', cost: 420000,   ...T(2) },
+  { id: 'mex_tepito',      city: 'mexico_city', name: 'Tepito Walk-up',         address: 'Calle Tenochtitlán 142',     cost: 31000,    ...T(1) },
+  { id: 'mex_iztapalapa',  city: 'mexico_city', name: 'Iztapalapa Studio',      address: 'Eje 5 Sur 88',               cost: 36000,    ...T(1) },
+  { id: 'mex_doctores',    city: 'mexico_city', name: 'Doctores Bedsit',        address: 'Dr. Andrade 203',            cost: 42000,    ...T(1) },
+  { id: 'mex_roma',        city: 'mexico_city', name: 'Roma Norte Apt',         address: 'Av. Álvaro Obregón 88',      cost: 312000,   ...T(2) },
+  { id: 'mex_condesa',     city: 'mexico_city', name: 'Condesa Loft',           address: 'Calle Amsterdam 142',        cost: 372000,   ...T(2) },
+  { id: 'mex_polanco',     city: 'mexico_city', name: 'Polanco Apt',            address: 'Av. Presidente Masaryk 405', cost: 504000,   ...T(2) },
   { id: 'mex_lomas',       city: 'mexico_city', name: 'Lomas de Chapultepec Mansion', address: 'Sierra Madre 210',     cost: 1400000,  ...T(3) },
   { id: 'mex_san_angel',   city: 'mexico_city', name: 'San Ángel Estate',       address: 'Av. de la Paz 24',           cost: 1600000,  ...T(3) },
   { id: 'mex_las_lomas',   city: 'mexico_city', name: 'Las Lomas Compound',     address: 'Bosques de la Reforma 850',  cost: 5200000,  ...T(4) },
   { id: 'mex_cuernavaca',  city: 'mexico_city', name: 'Cuernavaca Country Estate', address: 'Avenida Diana 14',        cost: 4800000,  ...T(4) },
 
   //  Amsterdam 
-  { id: 'ams_jordaan',     city: 'amsterdam', name: 'Jordaan Walk-up',          address: 'Lindengracht 65',           cost: 48000,    ...T(1) },
-  { id: 'ams_de_pijp',     city: 'amsterdam', name: 'De Pijp Studio',           address: 'Albert Cuypstraat 188',     cost: 52000,    ...T(1) },
-  { id: 'ams_oost',        city: 'amsterdam', name: 'Oost Bedsit',              address: 'Javastraat 24',             cost: 44000,    ...T(1) },
-  { id: 'ams_canal',       city: 'amsterdam', name: 'Canal-Side Apartment',     address: 'Herengracht 401',           cost: 540000,   ...T(2) },
-  { id: 'ams_vondelpark',  city: 'amsterdam', name: 'Vondelpark Apt',           address: 'Vondelstraat 92',           cost: 480000,   ...T(2) },
-  { id: 'ams_zuidas',      city: 'amsterdam', name: 'Zuidas Modern Loft',       address: 'Gustav Mahlerlaan 14',      cost: 620000,   ...T(2) },
+  { id: 'ams_jordaan',     city: 'amsterdam', name: 'Jordaan Walk-up',          address: 'Lindengracht 65',           cost: 62000,    ...T(1) },
+  { id: 'ams_de_pijp',     city: 'amsterdam', name: 'De Pijp Studio',           address: 'Albert Cuypstraat 188',     cost: 68000,    ...T(1) },
+  { id: 'ams_oost',        city: 'amsterdam', name: 'Oost Bedsit',              address: 'Javastraat 24',             cost: 57000,    ...T(1) },
+  { id: 'ams_canal',       city: 'amsterdam', name: 'Canal-Side Apartment',     address: 'Herengracht 401',           cost: 648000,   ...T(2) },
+  { id: 'ams_vondelpark',  city: 'amsterdam', name: 'Vondelpark Apt',           address: 'Vondelstraat 92',           cost: 576000,   ...T(2) },
+  { id: 'ams_zuidas',      city: 'amsterdam', name: 'Zuidas Modern Loft',       address: 'Gustav Mahlerlaan 14',      cost: 744000,   ...T(2) },
   { id: 'ams_koningslaan', city: 'amsterdam', name: 'Vondelpark Mansion',       address: 'Koningslaan 28',            cost: 2600000,  ...T(3) },
   { id: 'ams_apollolaan',  city: 'amsterdam', name: 'Apollolaan Townhouse',     address: 'Apollolaan 142',            cost: 3200000,  ...T(3) },
   { id: 'ams_wassenaar',   city: 'amsterdam', name: 'Wassenaar Estate',         address: 'Van Dishoeckpark 8',        cost: 7500000,  ...T(4) },
   { id: 'ams_loosdrecht',  city: 'amsterdam', name: 'Loosdrecht Lakeside Compound', address: 'Oud-Loosdrechtsedijk 12', cost: 6800000, ...T(4) },
 
   //  Detroit 
-  { id: 'det_highland',    city: 'detroit', name: 'Highland Park Bedsit',       address: '12450 Hamilton Ave',        cost: 18000,    ...T(1) },
-  { id: 'det_brightmoor',  city: 'detroit', name: 'Brightmoor Walk-up',         address: '18024 Lamphere St',         cost: 22000,    ...T(1) },
-  { id: 'det_8mile',       city: 'detroit', name: '8 Mile Studio',              address: '19015 W 8 Mile Rd',         cost: 28000,    ...T(1) },
-  { id: 'det_corktown',    city: 'detroit', name: 'Corktown Townhouse',         address: '1845 Trumbull Ave',         cost: 180000,   ...T(2) },
-  { id: 'det_midtown',     city: 'detroit', name: 'Midtown Loft',               address: '4220 Cass Ave #408',        cost: 220000,   ...T(2) },
-  { id: 'det_indian_vill', city: 'detroit', name: 'Indian Village Apt',         address: '8127 Burns St',             cost: 260000,   ...T(2) },
+  { id: 'det_highland',    city: 'detroit', name: 'Highland Park Bedsit',       address: '12450 Hamilton Ave',        cost: 23000,    ...T(1) },
+  { id: 'det_brightmoor',  city: 'detroit', name: 'Brightmoor Walk-up',         address: '18024 Lamphere St',         cost: 29000,    ...T(1) },
+  { id: 'det_8mile',       city: 'detroit', name: '8 Mile Studio',              address: '19015 W 8 Mile Rd',         cost: 36000,    ...T(1) },
+  { id: 'det_corktown',    city: 'detroit', name: 'Corktown Townhouse',         address: '1845 Trumbull Ave',         cost: 216000,   ...T(2) },
+  { id: 'det_midtown',     city: 'detroit', name: 'Midtown Loft',               address: '4220 Cass Ave #408',        cost: 264000,   ...T(2) },
+  { id: 'det_indian_vill', city: 'detroit', name: 'Indian Village Apt',         address: '8127 Burns St',             cost: 312000,   ...T(2) },
   { id: 'det_grosse',      city: 'detroit', name: 'Grosse Pointe Mansion',      address: '880 Lakeshore Rd',          cost: 1100000,  ...T(3) },
   { id: 'det_bloomfield',  city: 'detroit', name: 'Bloomfield Hills Estate',    address: '2200 Long Lake Rd',         cost: 1400000,  ...T(3) },
   { id: 'det_birmingham',  city: 'detroit', name: 'Birmingham Compound',        address: '1834 Stanley Blvd',         cost: 4200000,  ...T(4) },
   { id: 'det_st_clair',    city: 'detroit', name: 'Lake St. Clair Country Estate', address: '22 Tashmoo Dr',         cost: 4800000,  ...T(4) },
 
   //  Chicago 
-  { id: 'chi_pilsen',     city: 'chicago', name: 'Pilsen Walk-up',           address: '1721 W 18th St',           cost: 56000,    ...T(1) },
-  { id: 'chi_uptown',     city: 'chicago', name: 'Uptown Greystone',         address: '4520 N Magnolia Ave',      cost: 320000,   ...T(2) },
+  { id: 'chi_pilsen',     city: 'chicago', name: 'Pilsen Walk-up',           address: '1721 W 18th St',           cost: 73000,    ...T(1) },
+  { id: 'chi_uptown',     city: 'chicago', name: 'Uptown Greystone',         address: '4520 N Magnolia Ave',      cost: 384000,   ...T(2) },
   { id: 'chi_gold_coast', city: 'chicago', name: 'Gold Coast Penthouse',     address: '1300 N State Pkwy PH',     cost: 2100000,  ...T(3) },
   { id: 'chi_lincoln',    city: 'chicago', name: 'Lincoln Park Mansion',     address: '2230 N Lakeview Ave',      cost: 9500000,  ...T(4) },
 
   //  Los Angeles
-  { id: 'la_boyleheights',city: 'los_angeles', name: 'Boyle Heights Walk-up',address: '2840 E 4th St',            cost: 45000,    ...T(1) },
-  { id: 'la_echo',        city: 'los_angeles', name: 'Echo Park Bungalow',   address: '1418 Lemoyne St',          cost: 72000,    ...T(1) },
-  { id: 'la_silverlake',  city: 'los_angeles', name: 'Silver Lake Bungalow', address: '2317 Sunset Blvd',         cost: 220000,   ...T(1) },
-  { id: 'la_weho',        city: 'los_angeles', name: 'West Hollywood Condo', address: '8717 Burton Way #4B',      cost: 850000,   ...T(2) },
+  { id: 'la_boyleheights',city: 'los_angeles', name: 'Boyle Heights Walk-up',address: '2840 E 4th St',            cost: 58000,    ...T(1) },
+  { id: 'la_echo',        city: 'los_angeles', name: 'Echo Park Bungalow',   address: '1418 Lemoyne St',          cost: 94000,    ...T(1) },
+  { id: 'la_silverlake',  city: 'los_angeles', name: 'Silver Lake Bungalow', address: '2317 Sunset Blvd',         cost: 286000,   ...T(1) },
+  { id: 'la_weho',        city: 'los_angeles', name: 'West Hollywood Condo', address: '8717 Burton Way #4B',      cost: 1020000,   ...T(2) },
   { id: 'la_bel_air',     city: 'los_angeles', name: 'Bel Air Hilltop',      address: '10100 Sunset Blvd',        cost: 5800000,  ...T(3) },
   { id: 'la_beverly',     city: 'los_angeles', name: 'Beverly Hills Estate', address: '1011 N Roxbury Dr',        cost: 18000000, ...T(4) },
 
   //  Kingston
-  { id: 'kgn_trench',     city: 'kingston',    name: 'Trench Town Walk-up',  address: '15 Whitfield Town',        cost: 28000,    ...T(1) },
-  { id: 'kgn_mona',       city: 'kingston',    name: 'Mona Heights Bungalow',address: '17 Hopefield Ave',         cost: 56000,    ...T(1) },
-  { id: 'kgn_uptown',     city: 'kingston',    name: 'New Kingston Apt',     address: '6 Knutsford Blvd',         cost: 240000,   ...T(2) },
+  { id: 'kgn_trench',     city: 'kingston',    name: 'Trench Town Walk-up',  address: '15 Whitfield Town',        cost: 36000,    ...T(1) },
+  { id: 'kgn_mona',       city: 'kingston',    name: 'Mona Heights Bungalow',address: '17 Hopefield Ave',         cost: 73000,    ...T(1) },
+  { id: 'kgn_uptown',     city: 'kingston',    name: 'New Kingston Apt',     address: '6 Knutsford Blvd',         cost: 288000,   ...T(2) },
   { id: 'kgn_stonyhill',  city: 'kingston',    name: 'Stony Hill House',     address: '38 Stony Hill Rd',         cost: 1500000,  ...T(3) },
   { id: 'kgn_jackshill',  city: 'kingston',    name: 'Jacks Hill Estate',    address: '12 Skyline Dr',            cost: 5500000,  ...T(4) },
 
   //  Seoul 
-  { id: 'seo_hongdae',    city: 'seoul', name: 'Hongdae Studio',             address: '352 Yanghwa-ro',           cost: 78000,    ...T(1) },
-  { id: 'seo_itaewon',    city: 'seoul', name: 'Itaewon Apt',                address: '180 Itaewon-ro',           cost: 480000,   ...T(2) },
+  { id: 'seo_hongdae',    city: 'seoul', name: 'Hongdae Studio',             address: '352 Yanghwa-ro',           cost: 101000,    ...T(1) },
+  { id: 'seo_itaewon',    city: 'seoul', name: 'Itaewon Apt',                address: '180 Itaewon-ro',           cost: 576000,   ...T(2) },
   { id: 'seo_gangnam',    city: 'seoul', name: 'Gangnam High-rise',          address: '521 Teheran-ro',           cost: 3400000,  ...T(3) },
   { id: 'seo_seongbuk',   city: 'seoul', name: 'Seongbuk-dong Estate',       address: '88 Seongbukro 30-gil',     cost: 12500000, ...T(4) },
 
   //  Shanghai 
-  { id: 'sha_jingan',     city: 'shanghai', name: 'Jing\'an Lane House',     address: '328 Anyi Rd',              cost: 92000,    ...T(1) },
-  { id: 'sha_xuhui',      city: 'shanghai', name: 'Xuhui Apartment',         address: '1788 Hengshan Rd',         cost: 560000,   ...T(2) },
+  { id: 'sha_jingan',     city: 'shanghai', name: 'Jing\'an Lane House',     address: '328 Anyi Rd',              cost: 120000,    ...T(1) },
+  { id: 'sha_xuhui',      city: 'shanghai', name: 'Xuhui Apartment',         address: '1788 Hengshan Rd',         cost: 672000,   ...T(2) },
   { id: 'sha_bund',       city: 'shanghai', name: 'The Bund Penthouse',      address: '120 Zhongshan E1 Rd PH',   cost: 4200000,  ...T(3) },
   { id: 'sha_sheshan',    city: 'shanghai', name: 'Sheshan Villa Compound',  address: '288 Yuxiu Rd',             cost: 14500000, ...T(4) },
 
   //  Mumbai 
-  { id: 'mum_dharavi',    city: 'mumbai', name: 'Dharavi Bedsit',            address: 'Lane 4, 90 Feet Rd',       cost: 14000,    ...T(1) },
-  { id: 'mum_andheri',    city: 'mumbai', name: 'Andheri 1BHK',              address: 'Lokhandwala Complex',      cost: 110000,   ...T(2) },
+  { id: 'mum_dharavi',    city: 'mumbai', name: 'Dharavi Bedsit',            address: 'Lane 4, 90 Feet Rd',       cost: 18000,    ...T(1) },
+  { id: 'mum_andheri',    city: 'mumbai', name: 'Andheri 1BHK',              address: 'Lokhandwala Complex',      cost: 132000,   ...T(2) },
   { id: 'mum_bandra',     city: 'mumbai', name: 'Bandra Sea-facing Flat',    address: '32 Pali Hill',             cost: 720000,   ...T(3) },
   { id: 'mum_malabar',    city: 'mumbai', name: 'Malabar Hill Bungalow',     address: '11 Walkeshwar Rd',         cost: 3800000,  ...T(4) },
 
   //  Istanbul 
-  { id: 'ist_kadikoy',    city: 'istanbul', name: 'Kadıköy Studio',          address: 'Moda Caddesi 84',          cost: 36000,    ...T(1) },
-  { id: 'ist_beyoglu',    city: 'istanbul', name: 'Beyoğlu Walk-up',         address: 'İstiklal Caddesi 220',     cost: 240000,   ...T(2) },
+  { id: 'ist_kadikoy',    city: 'istanbul', name: 'Kadıköy Studio',          address: 'Moda Caddesi 84',          cost: 47000,    ...T(1) },
+  { id: 'ist_beyoglu',    city: 'istanbul', name: 'Beyoğlu Walk-up',         address: 'İstiklal Caddesi 220',     cost: 288000,   ...T(2) },
   { id: 'ist_bebek',      city: 'istanbul', name: 'Bebek Bosphorus Apt',     address: 'Cevdetpaşa Caddesi 14',    cost: 1700000,  ...T(3) },
   { id: 'ist_yali',       city: 'istanbul', name: 'Bosphorus Yalı',          address: 'Yeniköy Caddesi 88',       cost: 7800000,  ...T(4) },
 
   //  Johannesburg 
-  { id: 'jhb_yeoville',   city: 'johannesburg', name: 'Yeoville Bedsit',     address: '12 Rockey St',             cost: 16000,    ...T(1) },
-  { id: 'jhb_melville',   city: 'johannesburg', name: 'Melville Townhouse',  address: '7th Street, House 32',     cost: 140000,   ...T(2) },
+  { id: 'jhb_yeoville',   city: 'johannesburg', name: 'Yeoville Bedsit',     address: '12 Rockey St',             cost: 21000,    ...T(1) },
+  { id: 'jhb_melville',   city: 'johannesburg', name: 'Melville Townhouse',  address: '7th Street, House 32',     cost: 168000,   ...T(2) },
   { id: 'jhb_sandton',    city: 'johannesburg', name: 'Sandton Penthouse',   address: 'Rivonia Rd PH-12',         cost: 980000,   ...T(3) },
   { id: 'jhb_bryanston',  city: 'johannesburg', name: 'Bryanston Compound',  address: '184 Main Rd',              cost: 4200000,  ...T(4) },
 
   //  Monaco 
-  { id: 'mco_studio',     city: 'monaco', name: 'Fontvieille Studio',        address: '4 Avenue des Papalins',    cost: 380000,   ...T(1) },
-  { id: 'mco_condamine',  city: 'monaco', name: 'La Condamine Apt',          address: '17 Rue Princesse Caroline',cost: 1800000,  ...T(2) },
+  { id: 'mco_studio',     city: 'monaco', name: 'Fontvieille Studio',        address: '4 Avenue des Papalins',    cost: 494000,   ...T(1) },
+  { id: 'mco_condamine',  city: 'monaco', name: 'La Condamine Apt',          address: '17 Rue Princesse Caroline',cost: 2160000,  ...T(2) },
   { id: 'mco_carre_or',   city: 'monaco', name: 'Carré d\'Or Penthouse',     address: '1 Avenue Princesse Grace PH', cost: 12500000, ...T(3) },
   { id: 'mco_roc',        city: 'monaco', name: 'Cap d\'Ail Cliff Villa',    address: '88 Boulevard du Général de Gaulle', cost: 35000000, ...T(4) },
 
   //  Singapore 
-  { id: 'sgp_geylang',    city: 'singapore', name: 'Geylang HDB',            address: '88 Geylang Lor 24',        cost: 110000,   ...T(1) },
-  { id: 'sgp_tiong',      city: 'singapore', name: 'Tiong Bahru Loft',       address: '78 Eng Hoon St #06-12',    cost: 720000,   ...T(2) },
+  { id: 'sgp_geylang',    city: 'singapore', name: 'Geylang HDB',            address: '88 Geylang Lor 24',        cost: 143000,   ...T(1) },
+  { id: 'sgp_tiong',      city: 'singapore', name: 'Tiong Bahru Loft',       address: '78 Eng Hoon St #06-12',    cost: 864000,   ...T(2) },
   { id: 'sgp_orchard',    city: 'singapore', name: 'Orchard Penthouse',      address: '1 Cuscaden Rd PH',         cost: 4800000,  ...T(3) },
   { id: 'sgp_sentosa',    city: 'singapore', name: 'Sentosa Cove Villa',     address: '12 Cove Way',              cost: 16500000, ...T(4) },
 
   //  Manila 
-  { id: 'mnl_tondo',      city: 'manila', name: 'Tondo Walk-up',             address: '215 Juan Luna St',         cost: 12000,    ...T(1) },
-  { id: 'mnl_makati',     city: 'manila', name: 'Makati Studio',             address: '6750 Ayala Ave #1408',     cost: 95000,    ...T(2) },
+  { id: 'mnl_tondo',      city: 'manila', name: 'Tondo Walk-up',             address: '215 Juan Luna St',         cost: 16000,    ...T(1) },
+  { id: 'mnl_makati',     city: 'manila', name: 'Makati Studio',             address: '6750 Ayala Ave #1408',     cost: 114000,    ...T(2) },
   { id: 'mnl_bgc',        city: 'manila', name: 'BGC High-rise Apt',         address: '32nd St, Fort Bonifacio',  cost: 720000,   ...T(3) },
   { id: 'mnl_forbes',     city: 'manila', name: 'Forbes Park Mansion',       address: '128 Acacia Ave',           cost: 3400000,  ...T(4) },
 
   //  Havana 
-  { id: 'hav_centro',     city: 'havana', name: 'Centro Habana Bedsit',      address: 'Calle Galiano 312',        cost: 22000,    ...T(1) },
-  { id: 'hav_vedado',     city: 'havana', name: 'Vedado Apartment',          address: 'Calle 23 #1455',           cost: 180000,   ...T(2) },
+  { id: 'hav_centro',     city: 'havana', name: 'Centro Habana Bedsit',      address: 'Calle Galiano 312',        cost: 29000,    ...T(1) },
+  { id: 'hav_vedado',     city: 'havana', name: 'Vedado Apartment',          address: 'Calle 23 #1455',           cost: 216000,   ...T(2) },
   { id: 'hav_miramar',    city: 'havana', name: 'Miramar Villa',             address: '5ta Avenida y Calle 28',   cost: 1100000,  ...T(3) },
   { id: 'hav_country',    city: 'havana', name: 'Cubanacán Country Estate',  address: 'Calle 188 esquina 13',     cost: 4200000,  ...T(4) },
 
   //  Marseille 
-  { id: 'mrs_panier',     city: 'marseille', name: 'Le Panier Walk-up',      address: 'Rue du Refuge 12',         cost: 38000,    ...T(1) },
-  { id: 'mrs_endoume',    city: 'marseille', name: 'Endoume Apt',            address: 'Boulevard Tellene 88',     cost: 280000,   ...T(2) },
+  { id: 'mrs_panier',     city: 'marseille', name: 'Le Panier Walk-up',      address: 'Rue du Refuge 12',         cost: 49000,    ...T(1) },
+  { id: 'mrs_endoume',    city: 'marseille', name: 'Endoume Apt',            address: 'Boulevard Tellene 88',     cost: 336000,   ...T(2) },
   { id: 'mrs_corniche',   city: 'marseille', name: 'Corniche Sea-View',      address: 'Promenade J.F. Kennedy 220', cost: 1900000, ...T(3) },
   { id: 'mrs_cassis',     city: 'marseille', name: 'Cassis Cliff Villa',     address: 'Route des Crêtes',         cost: 6800000,  ...T(4) },
 
   //  Naples 
-  { id: 'nap_quartieri',  city: 'naples', name: 'Quartieri Spagnoli Bedsit', address: 'Vico Lungo Gelso 14',      cost: 30000,    ...T(1) },
-  { id: 'nap_vomero',     city: 'naples', name: 'Vomero Apartment',          address: 'Via Luca Giordano 88',     cost: 220000,   ...T(2) },
+  { id: 'nap_quartieri',  city: 'naples', name: 'Quartieri Spagnoli Bedsit', address: 'Vico Lungo Gelso 14',      cost: 39000,    ...T(1) },
+  { id: 'nap_vomero',     city: 'naples', name: 'Vomero Apartment',          address: 'Via Luca Giordano 88',     cost: 264000,   ...T(2) },
   { id: 'nap_posillipo',  city: 'naples', name: 'Posillipo Sea View',        address: 'Via Petrarca 145',         cost: 1500000,  ...T(3) },
   { id: 'nap_capri',      city: 'naples', name: 'Capri Cliff Compound',      address: 'Via Tragara 12',           cost: 8200000,  ...T(4) },
 
   //  Prague 
-  { id: 'prg_zizkov',     city: 'prague', name: 'Žižkov Walk-up',            address: 'Bořivojova 88',            cost: 42000,    ...T(1) },
-  { id: 'prg_vinohrady',  city: 'prague', name: 'Vinohrady Apt',             address: 'Korunní 22',               cost: 320000,   ...T(2) },
+  { id: 'prg_zizkov',     city: 'prague', name: 'Žižkov Walk-up',            address: 'Bořivojova 88',            cost: 55000,    ...T(1) },
+  { id: 'prg_vinohrady',  city: 'prague', name: 'Vinohrady Apt',             address: 'Korunní 22',               cost: 384000,   ...T(2) },
   { id: 'prg_mala',       city: 'prague', name: 'Malá Strana Loft',          address: 'Nerudova 14',              cost: 1700000,  ...T(3) },
   { id: 'prg_strahov',    city: 'prague', name: 'Strahov Hilltop Villa',     address: 'Strahovská 220',           cost: 5800000,  ...T(4) },
 
   //  Dublin 
-  { id: 'dub_libertys',   city: 'dublin', name: 'The Liberties Bedsit',      address: 'Cork St 88',               cost: 56000,    ...T(1) },
-  { id: 'dub_temple',     city: 'dublin', name: 'Temple Bar Apt',            address: 'Eustace St 14',            cost: 380000,   ...T(2) },
+  { id: 'dub_libertys',   city: 'dublin', name: 'The Liberties Bedsit',      address: 'Cork St 88',               cost: 73000,    ...T(1) },
+  { id: 'dub_temple',     city: 'dublin', name: 'Temple Bar Apt',            address: 'Eustace St 14',            cost: 456000,   ...T(2) },
   { id: 'dub_ballsbridge',city: 'dublin', name: 'Ballsbridge Townhouse',     address: 'Shrewsbury Rd 22',         cost: 1900000,  ...T(3) },
   { id: 'dub_killiney',   city: 'dublin', name: 'Killiney Hill Estate',      address: 'Killiney Hill Rd',         cost: 8500000,  ...T(4) },
 
-  //  São Paulo 
-  { id: 'sao_bras',       city: 'sao_paulo', name: 'Brás Walk-up',           address: 'Rua Oriente 220',          cost: 24000,    ...T(1) },
-  { id: 'sao_pinheiros',  city: 'sao_paulo', name: 'Pinheiros Loft',         address: 'Rua Teodoro Sampaio 88',   cost: 180000,   ...T(2) },
+  //  São Paulo
+  { id: 'sao_bras',       city: 'sao_paulo', name: 'Brás Walk-up',           address: 'Rua Oriente 220',          cost: 31000,    ...T(1) },
+  { id: 'sao_pinheiros',  city: 'sao_paulo', name: 'Pinheiros Loft',         address: 'Rua Teodoro Sampaio 88',   cost: 216000,   ...T(2) },
   { id: 'sao_jardins',    city: 'sao_paulo', name: 'Jardins Penthouse',      address: 'Alameda Lorena 1255 PH',   cost: 1200000,  ...T(3) },
   { id: 'sao_morumbi',    city: 'sao_paulo', name: 'Morumbi Mansion',        address: 'Rua Itacolomi 388',        cost: 5500000,  ...T(4) },
+
+  //  Empire-tier (T5) — one signature address per major hub. The L60
+  //  gate finally has something to gate, and the eight-figure cost
+  //  means even maxed-out cartel kings have something left to chase.
+  { id: 'ny_central_pk',     city: 'new_york',    name: 'Central Park Penthouse',   address: '15 Central Park West, PH-A',           cost: 52000000, ...T(5) },
+  { id: 'lon_mayfair',       city: 'london',      name: 'Mayfair Estate Compound',  address: 'Park Lane Residence, W1K',             cost: 46000000, ...T(5) },
+  { id: 'tok_roppongi_ph',   city: 'tokyo',       name: 'Roppongi Hills Sky Penthouse', address: '6-10-1 Roppongi Hills Tower, PH52', cost: 44000000, ...T(5) },
+  { id: 'dxb_burj_ph',       city: 'dubai',       name: 'Burj Khalifa Sky Palace',  address: 'Burj Khalifa, Floor 142',              cost: 60000000, ...T(5) },
+  { id: 'hk_peak_compound',  city: 'hong_kong',   name: 'The Peak Compound',        address: 'Plantation Road, The Peak',            cost: 47000000, ...T(5) },
+  { id: 'la_belair',         city: 'los_angeles', name: 'Bel-Air Estate',           address: '750 N Bel Air Rd',                     cost: 49000000, ...T(5) },
+  { id: 'mia_starisland_v',  city: 'miami',       name: 'Star Island Empire',       address: '22 Star Island Dr',                    cost: 41000000, ...T(5) },
+  { id: 'syd_pointpiper',    city: 'sydney',      name: 'Point Piper Waterfront',   address: 'Wolseley Rd, Point Piper',             cost: 37000000, ...T(5) },
 ];
 
 // Tickers across sectors. `vol` controls how spiky the random walk is — low
