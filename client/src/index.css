@@ -20,9 +20,16 @@ html, body { overflow-x: clip; }
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Stacked from top to bottom: subtle red+amber tint, then a dark
+     overlay so cards stay readable, then the noir poster anchored
+     to the left so the silhouette stays visible, then a solid fallback.
+     `fixed` keeps the photo viewport-locked instead of stretching with
+     long pages. */
   background:
     radial-gradient(circle at 20% -10%, rgba(220, 38, 38, 0.10), transparent 50%),
     radial-gradient(circle at 90% 110%, rgba(245, 158, 11, 0.08), transparent 50%),
+    linear-gradient(rgba(10, 9, 8, 0.66), rgba(10, 9, 8, 0.78)),
+    url('/assets/app-bg.webp') left center / cover no-repeat fixed,
     #0a0908;
   min-height: 100vh;
 }
