@@ -236,8 +236,8 @@ router.post('/new-character', requireAuth, (req, res) => {
   // from level via applyTick, so we just set level + reset vitals to
   // their level-10 caps in one shot.
   const now = Date.now();
-  const maxEnergy = 100 + 5 * (10 - 1);
-  const maxNerve  = 10 + Math.floor(10 / 5);
+  const maxEnergy = 100 + (10 - 1);
+  const maxNerve  = 10 + Math.floor(10 / 9);
   const maxHealth = 100 + 5 * (10 - 1);
 
   db.prepare(`

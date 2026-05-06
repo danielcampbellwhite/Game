@@ -299,8 +299,8 @@ router.post('/seed-players', requireAuth, requireAdmin, (req, res) => {
           const userId = userInfo.lastInsertRowid;
 
           const level = rand(5, 50);
-          const maxEnergy = 100 + 5 * (level - 1);
-          const maxNerve  = 10 + Math.floor(level / 5);
+          const maxEnergy = 100 + (level - 1);
+          const maxNerve  = 10 + Math.floor(level / 9);
           const maxHealth = 100 + 5 * (level - 1);
           const statBudget = level * 0.6;
           const stats = {

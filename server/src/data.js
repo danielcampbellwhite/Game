@@ -642,10 +642,10 @@ export function computeBusiness(template, scale, risk, quality, city) {
 
 // Standard tier bonuses — applied by tier so players can compare at a glance.
 const PROPERTY_TIER_BONUS = {
-  1: { max_energy: 5,  max_nerve: 1,  happiness: 5  }, // walk-up / flat
-  2: { max_energy: 12, max_nerve: 2,  happiness: 10 }, // apartment / townhouse
-  3: { max_energy: 25, max_nerve: 5,  happiness: 20 }, // mansion / penthouse
-  4: { max_energy: 50, max_nerve: 10, happiness: 35 }, // estate / compound
+  1: { max_energy: 2,  max_nerve: 0, happiness: 5  }, // walk-up / flat
+  2: { max_energy: 4,  max_nerve: 0, happiness: 10 }, // apartment / townhouse
+  3: { max_energy: 8,  max_nerve: 0, happiness: 20 }, // mansion / penthouse
+  4: { max_energy: 15, max_nerve: 1, happiness: 35 }, // estate / compound
 };
 // Garage capacity per property tier. Sums across all properties you own
 // in a given city to determine how many vehicles can sit there at once.

@@ -479,7 +479,7 @@ function RetirementCard({ c, onDone }) {
     <Card title=" Retire & Prestige" subtitle={`You've capped at level ${c.level}. Step back to start a new prestige cycle.`}>
       <p className="text-xs text-ink-100/65">
         You'll keep your <span className="text-money-300">cash, bank, properties, businesses, vehicles and stocks</span>,
-        and gain <span className="text-money-400">+5% max energy & nerve forever</span>{' '}
+        and gain <span className="text-money-400">+2% max energy & nerve forever</span>{' '}
         (★ {newPrestige}/5).
       </p>
       <p className="text-[11px] text-ink-100/55 mt-1">

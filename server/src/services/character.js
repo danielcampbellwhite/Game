@@ -61,9 +61,9 @@ export function applyTick(ch) {
 
   // Property bonuses inflate caps — only properties in the current city
   const bonuses = getPropertyBonuses(ch.id, ch.city);
-  const baseMaxEnergy = 100 + 5 * (ch.level - 1);
-  const baseMaxNerve  = 10 + Math.floor(ch.level / 5);
-  const prestigeMul   = 1 + (ch.prestige || 0) * 0.05;
+  const baseMaxEnergy = 100 + (ch.level - 1);
+  const baseMaxNerve  = 10 + Math.floor(ch.level / 9);
+  const prestigeMul   = 1 + (ch.prestige || 0) * 0.02;
   ch.max_energy = Math.floor((baseMaxEnergy + bonuses.max_energy) * prestigeMul);
   ch.max_nerve  = Math.floor((baseMaxNerve  + bonuses.max_nerve)  * prestigeMul);
   ch.max_health = 100 + 5 * (ch.level - 1);
