@@ -161,11 +161,11 @@ function bonusLabel(type) {
 // glance; the text grids stay around for accessibility / quick scan.
 const TAB_PREF_KEY = 'mafia.cityTab';
 const TABS = [
+  { id: 'world',      label: 'World Map' },
   { id: 'map',        label: 'City Map' },
+  { id: 'territory',  label: 'Territories' },
   { id: 'town',       label: 'Around Town' },
   { id: 'underworld', label: 'Underworld' },
-  { id: 'territory',  label: 'Territories' },
-  { id: 'world',      label: 'World Map' },
 ];
 function readTabPref() {
   if (typeof window === 'undefined') return 'map';
