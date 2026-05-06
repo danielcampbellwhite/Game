@@ -145,6 +145,14 @@ export default function CityMap({ city = 'new_york' }) {
         </div>
       </div>
 
+      {/* Hint shown until the player clicks a sector. */}
+      {!selectedArea && data?.areas?.length > 0 && (
+        <div className="rounded-lg border border-blood-500/30 bg-blood-700/15 p-3 text-center text-xs">
+          <span className="text-blood-200 font-medium">Tap a coloured sector on the map</span>
+          <span className="text-ink-100/60"> to see who controls it and attempt to take it.</span>
+        </div>
+      )}
+
       {/* Selected-area panel */}
       {selectedArea && (
         <div className="rounded-lg border border-ink-100/15 bg-ink-950/85 p-3 space-y-2">

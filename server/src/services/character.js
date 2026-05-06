@@ -348,6 +348,19 @@ export function publicProfileFor(ch, viewerId = null, gangBadgeResolver = null, 
   };
 }
 
+// Read-side gang lookup, JOINs gangs to gang_members. Returns null
+// when the character isn't in a gang. Used by publicCharacter so the
+// client can light up gang-only UI without a separate /gangs/me call.
+function gangBadgeFor(charId) {
+  const row = db.prepare(`
+    SELECT g.id, g.name, g.tag, g.faction, gm.role
+    FROM gang_members gm JOIN gangs g ON g.id = gm.gang_id
+    WHERE gm.char_id = ?
+  `).get(charId);
+  if (!row) return null;
+  return { id: row.id, name: row.name, tag: row.tag, faction: row.faction, role: row.role };
+}
+
 export function publicCharacter(ch) {
   const atMax = ch.level >= MAX_LEVEL;
   return {
@@ -378,6 +391,10 @@ export function publicCharacter(ch) {
     prestige: ch.prestige,
     faction: ch.faction || null,
     gender: ch.gender || null,
+    // Lightweight gang badge — id/name/tag/role — so the client can
+    // gate gang-only actions (territory capture, gang chat, etc.)
+    // without an extra round-trip on every page.
+    gang: gangBadgeFor(ch.id),
     // Live, decayed heat — computed fresh from the stored snapshot so
     // the dashboard ticks down as the player idles.
     heat: Math.round(effectiveHeat(ch)),
