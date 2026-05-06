@@ -166,32 +166,66 @@ function DailyContractBanner({ character, onChange }) {
   );
 }
 
-// Inline outcome line shown directly under the crime card's button so
-// the player never gets scrolled away after a commit. Returns null
-// when there's nothing to render for this crime yet.
+// Inline outcome banner shown directly under the crime card's button
+// so the player never gets scrolled away after a commit. Loud enough
+// that the result is the first thing your eye lands on without being
+// so big it shoves the next card off-screen.
 function CrimeResult({ last, crimeId }) {
   if (!last || last.crime.id !== crimeId) return null;
-  if (last.error) return <p className="text-blood-400 text-[11px] mt-2">{last.error}</p>;
+  if (last.error) {
+    return (
+      <div className="mt-3 rounded-md border-2 border-blood-500/70 bg-blood-700/25 p-2.5 text-center">
+        <div className="text-[10px] uppercase tracking-wider text-blood-300">Error</div>
+        <div className="text-sm font-semibold text-blood-200 mt-0.5">{last.error}</div>
+      </div>
+    );
+  }
   const r = last.result;
+
+  // Pick the loudest single outcome to drive the banner's tone +
+  // headline; supplemental lines (xp, items used) follow underneath.
+  let tone, label, headline;
+  if (r.success && r.vehicle) {
+    tone = 'money';
+    label = 'Stolen';
+    headline = `${r.vehicle.maker} ${r.vehicle.name} (T${r.vehicle.tier}, book ${fmt(r.vehicle.bookPrice)})`;
+  } else if (r.success) {
+    tone = 'money';
+    label = 'Score';
+    headline = `+${fmt(r.payout)}${r.dirty ? ' (dirty)' : ''}`;
+  } else if (r.jailed) {
+    tone = 'gold';
+    label = 'Caught';
+    headline = `Jailed ${r.jail_min}m`;
+  } else if (r.hospital) {
+    tone = 'blue';
+    label = 'Hurt';
+    headline = `Hospital ${r.hosp_min}m`;
+  } else {
+    tone = 'ghost';
+    label = 'Failed';
+    headline = 'Walked away clean';
+  }
+  const TONE = {
+    money: { border: 'border-money-500/70', bg: 'bg-money-600/20', label: 'text-money-300', text: 'text-money-100' },
+    gold:  { border: 'border-yellow-500/70', bg: 'bg-yellow-700/20', label: 'text-yellow-300', text: 'text-yellow-100' },
+    blue:  { border: 'border-blue-400/70',  bg: 'bg-blue-700/20',  label: 'text-blue-300',  text: 'text-blue-100' },
+    ghost: { border: 'border-ink-100/40',   bg: 'bg-ink-900/60',   label: 'text-ink-100/65', text: 'text-ink-100/90' },
+  }[tone];
+
   return (
-    <div className="text-[11px] mt-2 leading-snug">
-      {r.success && r.vehicle && (
-        <p className="text-money-400">
-           Drove off in a <b>{r.vehicle.maker} {r.vehicle.name}</b> (T{r.vehicle.tier}, book {fmt(r.vehicle.bookPrice)}). +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels>1?'s':''}!` : ''}
-        </p>
+    <div className={`mt-3 rounded-md border-2 ${TONE.border} ${TONE.bg} p-2.5 text-center`}>
+      <div className={`text-[10px] uppercase tracking-wider ${TONE.label}`}>{label}</div>
+      <div className={`text-sm font-bold ${TONE.text} mt-0.5`}>{headline}</div>
+      {(r.xp || r.levels) && (
+        <div className="text-[11px] text-ink-100/70 mt-0.5">
+          +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels > 1 ? 's' : ''}!` : ''}
+        </div>
       )}
-      {r.success && !r.vehicle && (
-        <p className="text-money-400">
-           +{fmt(r.payout)} {r.dirty ? '(dirty)' : ''} · +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels>1?'s':''}!` : ''}
-        </p>
-      )}
-      {r.success === false && r.jailed   && <p className="text-yellow-400">Caught — jailed {r.jail_min}m.</p>}
-      {r.success === false && r.hospital && <p className="text-blue-300">Hurt — hospital {r.hosp_min}m.</p>}
-      {r.success === false && r.escaped  && <p className="text-ink-100/70">Failed but escaped clean.</p>}
       {r.consumed?.length > 0 && (
-        <p className="text-[10px] text-ink-100/50 mt-0.5">
+        <div className="text-[10px] text-ink-100/55 mt-0.5">
           Used: {r.consumed.map(c => `${c.qty}× ${c.name}`).join(', ')}.
-        </p>
+        </div>
       )}
     </div>
   );
