@@ -308,7 +308,6 @@ export default function Nav() {
             <MiniStat label="Energy"  value={character.energy}    max={character.max_energy} color="bg-yellow-400" />
             <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
             <MiniStat label="Happy"   value={character.happiness} max={100}                  color="bg-pink-400"   />
-            <MiniStat label="Cash"    value={character.cash}      money />
             <div className="min-w-0 leading-tight">
               <div className="flex items-baseline justify-between gap-2 text-[10px] uppercase text-ink-100/55">
                 <span>{character.at_max_level ? 'Max Lvl' : 'XP'}</span>
@@ -322,6 +321,7 @@ export default function Nav() {
                 </div>
               )}
             </div>
+            <MiniStat label="Cash"    value={character.cash}      money />
           </div>
         </div>
       )}
