@@ -436,7 +436,7 @@ function CharacterSheet({ c, onAvatarChange }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
         {money.map(([label, value]) => (
           <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</div>
@@ -445,7 +445,7 @@ function CharacterSheet({ c, onAvatarChange }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-4 gap-2 mt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
         {stats.map(([label, value]) => (
           <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 text-center leading-tight">
             <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</div>

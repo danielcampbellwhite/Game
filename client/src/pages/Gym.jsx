@@ -60,7 +60,7 @@ export default function Gym() {
         <BuffStrip buffs={data.buffs} />
         <div className="mt-3 pt-3 border-t border-ink-100/10">
           <div className="text-[10px] uppercase text-ink-100/55 mb-2">Permanent stat progress (next +1)</div>
-          <div className="grid grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             {['strength','defence','speed'].map(s => {
               const cap = character.stat_caps?.[s];
               const atCap = cap != null && data.base[s] >= cap;
