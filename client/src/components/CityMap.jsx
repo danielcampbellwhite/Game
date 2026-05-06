@@ -229,13 +229,15 @@ export default function CityMap({ city = 'new_york' }) {
   const lastDragMovedRef = useRef(false);
   const navigate = useNavigate();
   // viewBox state: we drive zoom by shrinking viewBox width/height,
-  // pan by translating its origin. Stays at 0..100 in unzoomed coords.
-  const [view, setView] = useState({ x: 0, y: 0, w: 100, h: 100 });
+  // pan by translating its origin. Default is a slight zoom-in framed
+  // so the venue cluster reads cleanly without clipping anything at
+  // the edges.
+  const [view, setView] = useState({ x: 5, y: 5, w: 90, h: 90 });
 
   // Reset view when the city changes — otherwise zoom from the old
   // city's map carries over which is jarring.
   useEffect(() => {
-    setView({ x: 0, y: 0, w: 100, h: 100 });
+    setView({ x: 5, y: 5, w: 90, h: 90 });
   }, [city]);
 
   const zoom = 100 / view.w; // current effective zoom
@@ -307,7 +309,7 @@ export default function CityMap({ city = 'new_york' }) {
     <div className="space-y-2">
       <div
         ref={wrapRef}
-        className="relative w-full aspect-[16/10] max-w-4xl mx-auto rounded-xl border border-ink-100/10 overflow-hidden bg-ink-1000 cursor-grab active:cursor-grabbing select-none"
+        className="relative w-full aspect-square max-w-5xl mx-auto rounded-xl border border-ink-100/10 overflow-hidden bg-ink-1000 cursor-grab active:cursor-grabbing select-none"
         style={{ touchAction: 'none' }}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
@@ -336,8 +338,8 @@ export default function CityMap({ city = 'new_york' }) {
           <button type="button" onClick={() => zoomBy(1 / ZOOM_STEP)} disabled={zoom <= MIN_ZOOM}
             className="w-8 h-8 rounded-md bg-ink-950/85 border border-ink-100/15 text-ink-50 hover:border-blood-500/60 hover:bg-ink-900/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-lg leading-none"
             aria-label="Zoom out">−</button>
-          <button type="button" onClick={() => setView({ x: 0, y: 0, w: 100, h: 100 })}
-            disabled={view.x === 0 && view.y === 0 && view.w === 100}
+          <button type="button" onClick={() => setView({ x: 5, y: 5, w: 90, h: 90 })}
+            disabled={view.x === 5 && view.y === 5 && view.w === 90}
             className="w-8 h-8 rounded-md bg-ink-950/85 border border-ink-100/15 text-ink-50 hover:border-blood-500/60 hover:bg-ink-900/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-xs"
             aria-label="Reset view" title="Reset view">⟲</button>
         </div>
