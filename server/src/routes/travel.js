@@ -15,11 +15,11 @@ const DRIVE_COST_PER_KM       = 0.10;   // £/km
 const DRIVE_MS_PER_KM         = 1500;   // 1.5s per km of road = ~25 min per 1000km
 const CONDITION_LOSS_PER_KM   = 1 / 500; // 1% per 500km
 
-// Live flight schedule. Every 10 UTC minutes a flight departs each
-// route; the last 60 seconds before departure is the boarding window.
-// Tickets locked in before that window are valid; once departure
-// passes without boarding, the ticket lapses and the cash is gone.
-const FLIGHT_INTERVAL_MS = 10 * 60 * 1000;
+// Live flight schedule. Each cycle is 5 minutes 9 seconds total —
+// 4:39 wait, then a 30 s boarding window, then takeoff. Tickets
+// locked in before the window are valid; once the window passes
+// without boarding, the ticket lapses and the cash is gone.
+const FLIGHT_INTERVAL_MS = (4 * 60 + 39 + 30) * 1000;
 const BOARDING_WINDOW_MS = 30 * 1000;
 
 function nextDepartureAt(now = Date.now()) {
