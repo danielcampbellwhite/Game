@@ -25,6 +25,7 @@ const CITIES = {
   moscow:      { center: [55.7558,  37.6173], spanKm: 8,  count: 6 },
   rio:         { center: [-22.9068, -43.1729], spanKm: 7, count: 6 },
   // small cities — 4 areas
+  liverpool:   { center: [53.4084,  -2.9916], spanKm: 6,  count: 4 },
   kingston:    { center: [17.9970, -76.7936], spanKm: 6,  count: 4 },
   cape_town:   { center: [-33.9249, 18.4241], spanKm: 8,  count: 4 },
 };

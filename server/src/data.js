@@ -24,6 +24,7 @@ export const CITIES = [
   { id: 'rio',         name: 'Rio',          emoji: '', drugMul: 0.80, businessMul: 0.85, flightBase: 1800, unlockLevel: 25 },
   //  Europe
   { id: 'london',      name: 'London',       emoji: '', drugMul: 1.05, businessMul: 1.15, flightBase: 1400, unlockLevel: 1  },
+  { id: 'liverpool',   name: 'Liverpool',    emoji: '', drugMul: 0.95, businessMul: 0.95, flightBase: 1300, unlockLevel: 8  },
   { id: 'paris',       name: 'Paris',        emoji: '', drugMul: 1.00, businessMul: 1.10, flightBase: 1400, unlockLevel: 10 },
   { id: 'berlin',      name: 'Berlin',       emoji: '', drugMul: 0.95, businessMul: 1.00, flightBase: 1500, unlockLevel: 15 },
   { id: 'moscow',      name: 'Moscow',       emoji: '', drugMul: 0.90, businessMul: 0.95, flightBase: 2000, unlockLevel: 30 },
@@ -49,7 +50,9 @@ export const LAND_EDGES = [
   { a: 'new_york',    b: 'miami',       km: 2100 },
   { a: 'los_angeles', b: 'miami',       km: 4400 },
   // Eurasian chain
+  { a: 'london',      b: 'liverpool',   km: 350  }, // M6 north
   { a: 'london',      b: 'paris',       km: 470  }, // via Channel Tunnel
+  { a: 'liverpool',   b: 'paris',       km: 820  }, // M6 → Tunnel
   { a: 'paris',       b: 'berlin',      km: 1050 },
   { a: 'berlin',      b: 'moscow',      km: 1800 },
   { a: 'moscow',      b: 'dubai',       km: 3500 }, // via Iran

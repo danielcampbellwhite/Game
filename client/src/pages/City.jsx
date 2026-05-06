@@ -56,6 +56,7 @@ const CITY_DATA = {
   kingston:    { emoji: '', vibe: 'Reggae, rum, and ganja. Easy product, easygoing law.' },
   rio:         { emoji: '', vibe: 'Carnival energy, favela networks, cheap product.' },
   london:      { emoji: '', vibe: 'Old money, older syndicates. The financial heart of Europe.' },
+  liverpool:   { emoji: '', vibe: 'Dockside firms and Scally networks. Cheap, scrappy, well-connected.' },
   paris:       { emoji: '', vibe: 'Couture on top, catacombs underneath.' },
   berlin:      { emoji: '', vibe: 'Cold concrete and warehouse beats. Weird, gritty, alive at 4am.' },
   moscow:      { emoji: '', vibe: 'Bratva country. Discreet money, quiet operators.' },

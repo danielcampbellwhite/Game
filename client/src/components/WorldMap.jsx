@@ -12,6 +12,7 @@ const CITY_COORDS = {
   kingston:    { lat: 18.0,  lng:  -76.8 },
   rio:         { lat: -22.9, lng:  -43.2 },
   london:      { lat: 51.5,  lng:   -0.1 },
+  liverpool:   { lat: 53.4,  lng:   -3.0 },
   paris:       { lat: 48.9,  lng:    2.4 },
   berlin:      { lat: 52.5,  lng:   13.4 },
   moscow:      { lat: 55.8,  lng:   37.6 },

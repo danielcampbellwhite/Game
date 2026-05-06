@@ -14,6 +14,7 @@ const CITY_VIEWS = {
   kingston:    { center: [17.9970, -76.7936], zoom: 13 },
   rio:         { center: [-22.9068, -43.1729], zoom: 13 },
   london:      { center: [51.5074,  -0.1278], zoom: 13 },
+  liverpool:   { center: [53.4084,  -2.9916], zoom: 13 },
   paris:       { center: [48.8566,   2.3522], zoom: 13 },
   berlin:      { center: [52.5200,  13.4050], zoom: 13 },
   moscow:      { center: [55.7558,  37.6173], zoom: 12 },
