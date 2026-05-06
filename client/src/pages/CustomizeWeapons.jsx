@@ -26,22 +26,22 @@ function WeaponRow({ item, equipped, onPick }) {
       className={`text-left rounded-lg p-3 border bg-ink-950/40 hover:border-blood-500/40 transition ${isEq ? 'border-money-500/60' : 'border-ink-100/10'}`}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="font-medium">{item.base?.name || item.base_item_id}</div>
-        <span className="text-[10px] text-ink-100/55">
+        <span className="text-[12px] text-ink-100/55">
           {item.kind === 'instance' ? ' modded' : `×${item.qty}`}
         </span>
       </div>
-      {item.base?.maker && <div className="text-[10px] text-ink-100/50">{item.base.maker}</div>}
-      <div className="text-[11px] text-ink-100/60">
+      {item.base?.maker && <div className="text-[12px] text-ink-100/50">{item.base.maker}</div>}
+      <div className="text-[13px] text-ink-100/60">
         DMG <b>{item.stats.dmg}</b>
         {item.stats.accuracy > 0 && <span className="text-money-400"> · +{item.stats.accuracy} acc</span>}
         {item.base?.ammoType ? ` · ${item.base.ammoType}` : ' · melee'}
       </div>
       {item.stats.mods.length > 0 && (
-        <div className="text-[10px] text-ink-100/55 mt-1 truncate">
+        <div className="text-[12px] text-ink-100/55 mt-1 truncate">
           {item.stats.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
         </div>
       )}
-      {isEq && <div className="text-[10px] text-money-400 mt-1"> equipped</div>}
+      {isEq && <div className="text-[12px] text-money-400 mt-1"> equipped</div>}
     </button>
   );
 }
@@ -50,9 +50,9 @@ function ModPicker({ slot, currentModId, compatible, busy, onInstall, character 
   const slotMods = compatible.filter(m => m.slot === slot);
   return (
     <div className="space-y-2">
-      <div className="text-[10px] uppercase text-ink-100/55">{SLOT_LABEL[slot]} slot</div>
+      <div className="text-[12px] uppercase text-ink-100/55">{SLOT_LABEL[slot]} slot</div>
       {slotMods.length === 0 ? (
-        <p className="text-[11px] text-ink-100/45">No {slot} mods compatible with this weapon.</p>
+        <p className="text-[13px] text-ink-100/45">No {slot} mods compatible with this weapon.</p>
       ) : (
         <div className="grid sm:grid-cols-2 gap-2">
           {slotMods.map(m => {
@@ -62,16 +62,16 @@ function ModPicker({ slot, currentModId, compatible, busy, onInstall, character 
               <div key={m.id} className={`rounded-md p-2 border ${isCurrent ? 'border-money-500 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/30'}`}>
                 <div className="flex items-baseline justify-between gap-1">
                   <div className="text-sm font-medium">{m.emoji} {m.name}</div>
-                  <div className="text-[11px] text-money-400 tabular-nums shrink-0">{fmt(m.cost)}</div>
+                  <div className="text-[13px] text-money-400 tabular-nums shrink-0">{fmt(m.cost)}</div>
                 </div>
-                <div className="text-[10px] text-ink-100/55 mt-0.5">
+                <div className="text-[12px] text-ink-100/55 mt-0.5">
                   {m.stats?.dmg ? `${m.stats.dmg > 0 ? '+' : ''}${m.stats.dmg} dmg` : ''}
                   {m.stats?.dmg && m.stats?.accuracy ? ' · ' : ''}
                   {m.stats?.accuracy ? `${m.stats.accuracy > 0 ? '+' : ''}${m.stats.accuracy} acc` : ''}
                   {!m.stats?.dmg && !m.stats?.accuracy && 'cosmetic'}
                 </div>
                 {isCurrent ? (
-                  <div className="text-[10px] uppercase text-money-400 mt-1">installed</div>
+                  <div className="text-[12px] uppercase text-money-400 mt-1">installed</div>
                 ) : (
                   <button onClick={() => onInstall(slot, m.id)} disabled={busy || cantAfford}
                     className="btn btn-primary text-xs w-full mt-2">
@@ -143,19 +143,19 @@ function DetailPane({ pickRef, character, onChanged }) {
         right={<button onClick={equip} disabled={busy === 'equip'} className="btn btn-money text-xs">{busy === 'equip' ? '…' : 'Equip'}</button>}>
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Damage</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Damage</div>
             <div className="font-display text-2xl tabular-nums">{data.stats?.dmg ?? data.base?.dmg_base ?? 4}</div>
-            <div className="text-[10px] text-ink-100/55">base {data.base?.dmg_base ?? 0}</div>
+            <div className="text-[12px] text-ink-100/55">base {data.base?.dmg_base ?? 0}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Accuracy</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Accuracy</div>
             <div className="font-display text-2xl tabular-nums">+{data.stats?.accuracy || 0}</div>
-            <div className="text-[10px] text-ink-100/55">from mods</div>
+            <div className="text-[12px] text-ink-100/55">from mods</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Status</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Status</div>
             <div className="text-sm">{data.stats?.is_modified ? ' Modified' : 'Stock'}</div>
-            {data.kind === 'stock' && <div className="text-[10px] text-ink-100/55">×{data.qty} in stack</div>}
+            {data.kind === 'stock' && <div className="text-[12px] text-ink-100/55">×{data.qty} in stack</div>}
           </div>
         </div>
         {msg && <p className="text-xs text-blood-400 mt-2">{msg}</p>}

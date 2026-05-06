@@ -47,7 +47,7 @@ export default function StatAllocator({ value, onChange }) {
           </span>
           <button type="button" onClick={reset}
             disabled={remaining === STAT_POINTS}
-            className="text-[10px] uppercase tracking-wide text-ink-100/55 hover:text-ink-100/85 disabled:opacity-40">
+            className="text-[12px] uppercase tracking-wide text-ink-100/55 hover:text-ink-100/85 disabled:opacity-40">
             reset
           </button>
         </span>
@@ -57,7 +57,7 @@ export default function StatAllocator({ value, onChange }) {
           <div key={s.id} className="flex items-center gap-3 rounded-md border border-ink-100/10 bg-ink-950/40 p-2">
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium">{s.label}</div>
-              <div className="text-[10px] text-ink-100/50 truncate">{s.desc}</div>
+              <div className="text-[12px] text-ink-100/50 truncate">{s.desc}</div>
             </div>
             <button type="button" onClick={() => bump(s.id, -1)}
               disabled={(value[s.id] || STAT_BASE) <= STAT_BASE}

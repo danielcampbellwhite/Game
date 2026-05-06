@@ -79,7 +79,7 @@ export default function CarDealer() {
             <h3 className="font-display text-xl text-ink-50">{shop.name}</h3>
             <p className="text-xs text-ink-100/60 mt-1">Showroom in {data.cityName}. Cars are titled to you, no questions asked.</p>
             {data.garage && (
-              <p className={`text-[11px] mt-2 ${data.garage.free === 0 ? 'text-blood-400' : 'text-ink-100/55'}`}>
+              <p className={`text-[13px] mt-2 ${data.garage.free === 0 ? 'text-blood-400' : 'text-ink-100/55'}`}>
                 Local garage: <span className="tabular-nums">{data.garage.used}/{data.garage.capacity}</span>
                 {data.garage.free === 0
                   ? ' — full. Sell or ship a car before buying another here.'
@@ -109,11 +109,11 @@ export default function CarDealer() {
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium">{data.active.maker} {data.active.name}</div>
-              <div className="text-[11px] text-ink-100/55">
+              <div className="text-[13px] text-ink-100/55">
                 Tier {data.active.tier} · {data.active.acquired_via === 'stolen' ? 'stolen' : 'bought'}
               </div>
               {data.active.acquired_via !== 'bought' && (
-                <p className="text-[11px] text-ink-100/55 mt-1">
+                <p className="text-[13px] text-ink-100/55 mt-1">
                   We only deal in clean paperwork — try a chop shop or the black-market dealer for that one.
                 </p>
               )}
@@ -144,10 +144,10 @@ export default function CarDealer() {
                     <div className="font-medium">{v.maker} {v.name}</div>
                     {v.locked && <LockBadge level={v.levelGate} />}
                   </div>
-                  <div className="text-[11px] text-ink-100/60">Book: {fmt(v.bookPrice)}</div>
+                  <div className="text-[13px] text-ink-100/60">Book: {fmt(v.bookPrice)}</div>
                   <div className="text-money-400 font-semibold tabular-nums mt-1">{fmt(v.price)}</div>
                   {!v.locked && noLicence && (
-                    <div className="text-[10px] text-yellow-300 mt-1">
+                    <div className="text-[12px] text-yellow-300 mt-1">
                       Need driving {v.drivingGate}+ to drive — buy + ship is fine, equip later.
                     </div>
                   )}

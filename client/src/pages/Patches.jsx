@@ -28,7 +28,7 @@ export default function Patches() {
         <Card key={p.version + p.date}
           title={p.title}
           subtitle={
-            <span className="text-[11px] tabular-nums">
+            <span className="text-[13px] tabular-nums">
               v{p.version} · {formatDate(p.date)}
               {i === 0 && <span className="ml-2 text-money-400 uppercase tracking-wide">latest</span>}
             </span>
@@ -37,7 +37,7 @@ export default function Patches() {
             {(p.sections || [{ notes: p.notes || [] }]).map((s, si) => (
               <div key={si}>
                 {s.heading && (
-                  <div className="text-[10px] uppercase tracking-wide text-ink-100/55 mb-1">{s.heading}</div>
+                  <div className="text-[12px] uppercase tracking-wide text-ink-100/55 mb-1">{s.heading}</div>
                 )}
                 <ul className="space-y-1.5 text-sm text-ink-100/80">
                   {(s.notes || []).map((n, ni) => (
@@ -53,7 +53,7 @@ export default function Patches() {
         </Card>
       ))}
 
-      <div className="text-center text-[11px] text-ink-100/40">
+      <div className="text-center text-[13px] text-ink-100/40">
         <Link to="/" className="hover:text-blood-300 transition">← Back to MAFIA LIFE</Link>
       </div>
     </div>

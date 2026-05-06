@@ -16,11 +16,11 @@ function EventCard({ event, onBet, busy, character }) {
     <div className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
       <div className="flex justify-between items-start gap-2">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-wide text-ink-100/45">{event.sport}</div>
+          <div className="text-[12px] uppercase tracking-wide text-ink-100/45">{event.sport}</div>
           <div className="font-medium leading-tight">{event.name}</div>
-          <div className="text-[11px] text-ink-100/55 mt-0.5">{event.description}</div>
+          <div className="text-[13px] text-ink-100/55 mt-0.5">{event.description}</div>
         </div>
-        <div className="text-right text-[10px] text-ink-100/55 whitespace-nowrap">
+        <div className="text-right text-[12px] text-ink-100/55 whitespace-nowrap">
           Closes in<br/>
           <span className="text-ink-100/85"><Timer until={event.resolves_at} /></span>
         </div>
@@ -32,7 +32,7 @@ function EventCard({ event, onBet, busy, character }) {
             onClick={() => setOutcome(o.id)}
             className={`rounded-md border px-3 py-2 text-left text-xs ${outcome === o.id ? 'border-blood-500 bg-blood-700/20' : 'border-ink-100/10 hover:bg-ink-800/40'}`}>
             <div className="truncate">{o.name}</div>
-            <div className="text-[10px] text-gold-400 tabular-nums mt-0.5">@ {o.odds.toFixed(2)}</div>
+            <div className="text-[12px] text-gold-400 tabular-nums mt-0.5">@ {o.odds.toFixed(2)}</div>
           </button>
         ))}
       </div>
@@ -48,7 +48,7 @@ function EventCard({ event, onBet, busy, character }) {
           </button>
         </div>
       )}
-      {closed && <p className="text-[11px] text-blood-400 mt-2">Betting closed.</p>}
+      {closed && <p className="text-[13px] text-blood-400 mt-2">Betting closed.</p>}
     </div>
   );
 }

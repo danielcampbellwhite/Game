@@ -22,18 +22,18 @@ function PlayerRow({ p }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
           <span className="font-medium truncate">{p.name}</span>
-          <span className="text-[10px] uppercase text-ink-100/40">L{p.level}</span>
+          <span className="text-[12px] uppercase text-ink-100/40">L{p.level}</span>
           {p.online
-            ? <span className="text-[10px] uppercase tracking-wide text-money-400"> online</span>
-            : <span className="text-[10px] text-ink-100/40">{timeAgo(p.last_active_at)}</span>}
+            ? <span className="text-[12px] uppercase tracking-wide text-money-400"> online</span>
+            : <span className="text-[12px] text-ink-100/40">{timeAgo(p.last_active_at)}</span>}
           <FactionBadge faction={p.faction} />
           {p.same_city && (
-            <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300">
+            <span className="text-[12px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300">
               in your city
             </span>
           )}
         </div>
-        <div className="text-[11px] text-ink-100/55">{p.rank}</div>
+        <div className="text-[13px] text-ink-100/55">{p.rank}</div>
       </div>
     </Link>
   );
@@ -59,7 +59,7 @@ function FactionRepCard() {
             style={{ width: `${Math.max(2, f.percent)}%` }} title={`${f.name} — ${f.percent}%`} />
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-2 mt-2 text-[11px]">
+      <div className="grid grid-cols-3 gap-2 mt-2 text-[13px]">
         {data.factions.map(f => (
           <div key={f.id}>
             <div className="text-ink-100/60">{f.name}</div>
@@ -109,7 +109,7 @@ export default function Players() {
           autoFocus
         />
         {data.error && <p className="text-xs text-blood-400 mt-2">{data.error}</p>}
-        {!q && <p className="text-[11px] text-ink-100/45 mt-2">Showing recently active players. Type 2+ characters to search.</p>}
+        {!q && <p className="text-[13px] text-ink-100/45 mt-2">Showing recently active players. Type 2+ characters to search.</p>}
       </Card>
 
       {busy && data.players.length === 0 && (

@@ -35,9 +35,9 @@ function AmmoCard({ a, character, buy, sell, busy }) {
     <div className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
       <div className="flex items-baseline justify-between">
         <div className="font-medium">{a.name}</div>
-        {owned > 0 && <span className="text-[10px] text-ink-100/55 tabular-nums">{owned} on hand</span>}
+        {owned > 0 && <span className="text-[12px] text-ink-100/55 tabular-nums">{owned} on hand</span>}
       </div>
-      <div className="text-[11px] text-ink-100/60">{a.packSize} rounds / pack · £{a.cost}/round</div>
+      <div className="text-[13px] text-ink-100/60">{a.packSize} rounds / pack · £{a.cost}/round</div>
       <div className="text-money-400 tabular-nums mt-1">{fmt(a.packCost)}/pack</div>
       <button disabled={character.cash < a.packCost || busy === `ammo-${a.id}`} className="btn btn-money w-full text-xs mt-2"
         onClick={() => buy('ammo', a, 1)}>
@@ -45,7 +45,7 @@ function AmmoCard({ a, character, buy, sell, busy }) {
       </button>
       {owned > 0 && (
         <div className="mt-3 pt-3 border-t border-ink-100/10">
-          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Sell back · {fmt(ratePerRound)}/round</div>
+          <div className="text-[12px] uppercase text-ink-100/55 mb-1">Sell back · {fmt(ratePerRound)}/round</div>
           <div className="flex gap-2">
             <input type="number" min="1" max={owned} value={sellQty}
               onChange={e => setSellQty(Math.max(1, Math.min(owned, parseInt(e.target.value, 10) || 1)))}
@@ -149,13 +149,13 @@ export default function GunStore() {
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{w.name}</div>
-                      {w.maker && <div className="text-[10px] text-ink-100/50 truncate">{w.maker}</div>}
+                      {w.maker && <div className="text-[12px] text-ink-100/50 truncate">{w.maker}</div>}
                     </div>
                     {w.locked
                       ? <LockBadge level={w.level} className="whitespace-nowrap" />
-                      : <div className="text-[10px] text-ink-100/50 whitespace-nowrap">Lvl {w.level}+</div>}
+                      : <div className="text-[12px] text-ink-100/50 whitespace-nowrap">Lvl {w.level}+</div>}
                   </div>
-                  <div className="text-[11px] text-ink-100/60 mt-1.5">
+                  <div className="text-[13px] text-ink-100/60 mt-1.5">
                     DMG <span className="text-ink-50 font-medium">{w.dmg}</span>
                     {w.ammoType ? <> · ammo: <span className="text-yellow-300">{AMMO_LABEL[w.ammoType] || w.ammoType}</span></> : ' · melee'}
                   </div>
@@ -179,7 +179,7 @@ export default function GunStore() {
                 <div className="font-medium">{a.name}</div>
                 {a.locked && <LockBadge level={a.level} className="whitespace-nowrap" />}
               </div>
-              <div className="text-[11px] text-ink-100/60">DEF {a.def}{!a.locked && <> · Lvl {a.level}+</>}</div>
+              <div className="text-[13px] text-ink-100/60">DEF {a.def}{!a.locked && <> · Lvl {a.level}+</>}</div>
               <div className="text-money-400 tabular-nums mt-1">{fmt(a.cost)}</div>
               <button disabled={a.locked || character.cash < a.cost || busy === `armour-${a.id}`} className="btn btn-primary w-full text-xs mt-2"
                 onClick={() => buy('armour', a)}>

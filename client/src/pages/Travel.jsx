@@ -55,9 +55,9 @@ export default function Travel() {
                   <div className="font-medium">{d.name}</div>
                   {d.locked
                     ? <LockBadge level={d.unlockLevel} />
-                    : <div className="text-[10px] text-ink-100/45 tabular-nums">{d.km.toLocaleString()} km</div>}
+                    : <div className="text-[12px] text-ink-100/45 tabular-nums">{d.km.toLocaleString()} km</div>}
                 </div>
-                <div className="text-[11px] text-ink-100/60 mt-0.5">
+                <div className="text-[13px] text-ink-100/60 mt-0.5">
                   {fmt(d.cost)} petrol · {Math.round(d.durationMs / 60000)} min · -{d.conditionCost.toFixed(1)}% condition
                 </div>
                 <button disabled={d.locked || !!busy || character.cash < d.cost} className="btn btn-money w-full text-xs mt-2"
@@ -90,8 +90,8 @@ export default function Travel() {
                     onClick={() => fly(f.city, k)}>
                     <div>
                       <div className="capitalize">{k}</div>
-                      <div className="text-[10px] text-ink-100/60">{fmt(v.cost)}</div>
-                      <div className="text-[10px] text-ink-100/40">{v.durationMs === 0 ? 'instant' : `${Math.round(v.durationMs/60000)}m`}</div>
+                      <div className="text-[12px] text-ink-100/60">{fmt(v.cost)}</div>
+                      <div className="text-[12px] text-ink-100/40">{v.durationMs === 0 ? 'instant' : `${Math.round(v.durationMs/60000)}m`}</div>
                     </div>
                   </button>
                 ))}

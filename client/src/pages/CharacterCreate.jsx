@@ -78,7 +78,7 @@ export default function CharacterCreate() {
           <button type="button" onClick={rollName} disabled={rolling} className="btn btn-ghost text-xs mt-2">
             {rolling ? '…' : ' Random name'}
           </button>
-          {!gender && <p className="text-[10px] text-ink-100/40 mt-1">Pick a gender below to weight the random names.</p>}
+          {!gender && <p className="text-[12px] text-ink-100/40 mt-1">Pick a gender below to weight the random names.</p>}
         </div>
 
         <div>
@@ -108,15 +108,15 @@ export default function CharacterCreate() {
                     : 'border-ink-100/10 hover:bg-ink-800/60'
                   }`}>
                   <div className="font-medium truncate">{c.name}</div>
-                  {locked && <div className="text-[9px] uppercase tracking-wide text-ink-100/55 mt-0.5"> Lvl {c.unlockLevel}</div>}
-                  <div className="text-[10px] text-ink-100/50 mt-1">
+                  {locked && <div className="text-[11px] uppercase tracking-wide text-ink-100/55 mt-0.5"> Lvl {c.unlockLevel}</div>}
+                  <div className="text-[12px] text-ink-100/50 mt-1">
                     {locked ? 'Unlocks for travel later' : `drugs ×${c.drugMul} · biz ×${c.businessMul}`}
                   </div>
                 </button>
               );
             })}
           </div>
-          <p className="text-[10px] text-ink-100/40 mt-1">
+          <p className="text-[12px] text-ink-100/40 mt-1">
             Higher-tier hubs are visible but locked at character creation — they unlock once you reach their travel level.
           </p>
         </div>

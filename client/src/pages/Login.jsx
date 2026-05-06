@@ -55,7 +55,7 @@ function StatBlock({ value, label }) {
   return (
     <div className="text-center">
       <div className="font-display text-3xl text-blood-400 tabular-nums">{value}</div>
-      <div className="text-[10px] uppercase text-ink-100/55 tracking-wide mt-1">{label}</div>
+      <div className="text-[12px] uppercase text-ink-100/55 tracking-wide mt-1">{label}</div>
     </div>
   );
 }
@@ -72,7 +72,7 @@ function ShowcaseCard({ s }) {
       )}
       <div className="p-3 border-t border-ink-100/10">
         <div className="text-sm font-medium text-ink-50">{s.title}</div>
-        <div className="text-[11px] text-ink-100/55 leading-snug mt-0.5">{s.blurb}</div>
+        <div className="text-[13px] text-ink-100/55 leading-snug mt-0.5">{s.blurb}</div>
       </div>
     </div>
   );
@@ -111,7 +111,7 @@ export default function Login() {
         <div className="text-center mb-4">
           <div className="font-display text-5xl text-blood-500">MAFIA LIFE</div>
           <p className="text-xs text-ink-100/50 mt-1">Build an empire — or rot in jail trying.</p>
-          <p className="text-[11px] text-ink-100/40 mt-1">
+          <p className="text-[13px] text-ink-100/40 mt-1">
             <Link to="/patches" className="hover:text-blood-300 transition">Patches & updates →</Link>
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function Login() {
               onClick={() => setShowPassword(s => !s)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               aria-pressed={showPassword}
-              className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-[11px] uppercase tracking-wide text-ink-100/60 hover:text-ink-50 transition">
+              className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-[13px] uppercase tracking-wide text-ink-100/60 hover:text-ink-50 transition">
               {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>

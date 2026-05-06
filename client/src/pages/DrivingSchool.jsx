@@ -39,13 +39,13 @@ export default function DrivingSchool() {
         subtitle="Permanent driving-skill gains. Higher driving boosts your odds in street races and softens the wear-and-tear on long road trips. Cost scales as you climb.">
         <div className="text-xs flex items-baseline gap-4">
           <div>
-            <span className="text-[10px] uppercase text-ink-100/50">Driving</span>
+            <span className="text-[12px] uppercase text-ink-100/50">Driving</span>
             <div className="font-display text-3xl text-yellow-300 tabular-nums">
               {data.driving}{data.cap != null && <span className="text-ink-100/40"> / {data.cap}</span>}
             </div>
           </div>
           {data.maxed && (
-            <span className="text-[10px] uppercase tracking-wide text-money-400 font-bold">MAX</span>
+            <span className="text-[12px] uppercase tracking-wide text-money-400 font-bold">MAX</span>
           )}
         </div>
       </Card>
@@ -73,14 +73,14 @@ export default function DrivingSchool() {
                 <div key={c.id} className={`rounded-lg p-3 border bg-ink-950/40 ${onCd ? 'opacity-60' : 'border-ink-100/10'}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-medium">{c.emoji} {c.name}</div>
-                    <div className="text-[10px] text-ink-100/50 text-right whitespace-nowrap">
+                    <div className="text-[12px] text-ink-100/50 text-right whitespace-nowrap">
                       {c.energy} en · {fmt(c.cost)}
                     </div>
                   </div>
-                  <div className="text-[11px] text-ink-100/55 mt-1">{c.desc}</div>
+                  <div className="text-[13px] text-ink-100/55 mt-1">{c.desc}</div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[10px] uppercase text-yellow-300 tracking-wide">+{c.gain} DRV (permanent)</span>
-                    <span className="text-[10px] text-ink-100/45">cooldown {cooldownLabel(c.cooldownSec)}</span>
+                    <span className="text-[12px] uppercase text-yellow-300 tracking-wide">+{c.gain} DRV (permanent)</span>
+                    <span className="text-[12px] text-ink-100/45">cooldown {cooldownLabel(c.cooldownSec)}</span>
                   </div>
                   <button disabled={onCd || cantAfford || noEnergy || busy === c.id} className="btn btn-gold w-full text-xs mt-3"
                     onClick={() => study(c)}>

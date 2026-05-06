@@ -68,18 +68,18 @@ export default function Specialisations() {
             <Card key={p.id} className={isMe ? `${tone.border} ${tone.bg}` : ''}>
               <div className="flex items-baseline justify-between gap-2 mb-1">
                 <h3 className={`font-display text-xl ${tone.text}`}>{p.name}</h3>
-                {isMe && <span className="text-[10px] uppercase tracking-wide text-money-300">your path</span>}
+                {isMe && <span className="text-[12px] uppercase tracking-wide text-money-300">your path</span>}
               </div>
-              <p className="text-[11px] text-ink-100/60 mb-3">{p.blurb}</p>
+              <p className="text-[13px] text-ink-100/60 mb-3">{p.blurb}</p>
               <ul className="space-y-2">
                 {p.nodes.map(n => {
                   const unlocked = isMe && (character?.level || 1) >= n.level;
                   return (
-                    <li key={n.level} className={`rounded-md border p-2 text-[11px] ${unlocked ? `${tone.border} ${tone.bg}` : 'border-ink-100/10 bg-ink-950/40 opacity-70'}`}>
+                    <li key={n.level} className={`rounded-md border p-2 text-[13px] ${unlocked ? `${tone.border} ${tone.bg}` : 'border-ink-100/10 bg-ink-950/40 opacity-70'}`}>
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="font-medium text-ink-50">{n.name}</span>
                         {unlocked
-                          ? <span className={`text-[9px] uppercase tracking-wide ${tone.text}`}>active</span>
+                          ? <span className={`text-[11px] uppercase tracking-wide ${tone.text}`}>active</span>
                           : <LockBadge level={n.level} />}
                       </div>
                       <p className="text-ink-100/65 mt-0.5">{n.blurb}</p>

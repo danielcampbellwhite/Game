@@ -70,20 +70,20 @@ function OtherPatients({ character, refreshChar }) {
                   <Link to={`/players/${p.id}`} className="flex items-center gap-2 min-w-0 hover:underline">
                     <span className="min-w-0">
                       <span className="font-medium truncate">{p.name}</span>
-                      <span className="ml-2 text-[10px] uppercase text-ink-100/40">L{p.level}</span>
-                      {p.gang && <span className="ml-2 text-[10px] text-blood-400">[{p.gang.tag}]</span>}
-                      <span className="block text-[11px] text-ink-100/55">{p.rank}</span>
+                      <span className="ml-2 text-[12px] uppercase text-ink-100/40">L{p.level}</span>
+                      {p.gang && <span className="ml-2 text-[12px] text-blood-400">[{p.gang.tag}]</span>}
+                      <span className="block text-[13px] text-ink-100/55">{p.rank}</span>
                     </span>
                   </Link>
                   <div className="text-right shrink-0">
-                    <div className="text-[10px] uppercase text-ink-100/50">Discharge in</div>
+                    <div className="text-[12px] uppercase text-ink-100/50">Discharge in</div>
                     <div className="font-display text-sm text-blue-300">
                       <Timer until={p.hospital_until} onExpire={refresh} />
                     </div>
                   </div>
                 </div>
                 {p.hospital_reason && (
-                  <p className="text-[11px] text-ink-100/55 italic">{p.hospital_reason}</p>
+                  <p className="text-[13px] text-ink-100/55 italic">{p.hospital_reason}</p>
                 )}
                 <button
                   disabled={busy === p.id || !canPay}
@@ -152,11 +152,11 @@ export default function Hospital() {
 
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Health</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Health</div>
             <div className="font-display text-2xl">{info.health} / {info.max_health}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Discharge in</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Discharge in</div>
             <div className="font-display text-2xl">
               {inHospital ? <Timer until={info.hospital_until} onExpire={() => { refresh(); load(); }} /> : '—'}
             </div>
@@ -172,7 +172,7 @@ export default function Hospital() {
         </button>
 
         {treatCost > 0 && character.cash < treatCost && (
-          <p className="text-blood-400 text-[11px] mt-2">Not enough cash to pay the bill — you'll have to wait it out.</p>
+          <p className="text-blood-400 text-[13px] mt-2">Not enough cash to pay the bill — you'll have to wait it out.</p>
         )}
 
         {msg && <p className="text-xs text-money-400 mt-2">{msg}</p>}

@@ -41,7 +41,7 @@ export default function Repair() {
             <div className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
               <div className="flex justify-between items-baseline gap-2">
                 <div className="font-medium">{a.maker} {a.name}</div>
-                <div className="text-[10px] text-ink-100/45">Tier {a.tier} · book {fmt(a.cityBook)}</div>
+                <div className="text-[12px] text-ink-100/45">Tier {a.tier} · book {fmt(a.cityBook)}</div>
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex-1 h-2 rounded-full bg-ink-800 overflow-hidden">
@@ -58,7 +58,7 @@ export default function Repair() {
               <p className="text-xs text-money-400">Already in perfect shape — nothing to do here.</p>
             ) : (
               <div className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
-                <p className="text-[11px] text-ink-100/60">
+                <p className="text-[13px] text-ink-100/60">
                   Restore <span className="text-ink-50">{Math.round(100 - a.condition)}%</span> condition for
                   <span className="text-money-400 tabular-nums"> {fmt(a.cost)}</span>.
                 </p>

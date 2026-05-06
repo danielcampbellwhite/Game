@@ -45,7 +45,7 @@ export default function Missions() {
       <Card title=" Daily Missions"
         subtitle="Three rolls every UTC midnight. Knock them out for a big XP bump."
         right={
-          <div className="text-right text-[11px] text-ink-100/60">
+          <div className="text-right text-[13px] text-ink-100/60">
             <div>Resets in</div>
             <div className="text-money-400 font-mono">
               <Timer until={data.resets_at} onExpire={load} />
@@ -64,12 +64,12 @@ export default function Missions() {
             <Card key={m.id}>
               <div className="flex items-baseline justify-between">
                 <div className="font-medium text-base">{m.emoji} {m.name}</div>
-                <span className={`text-[10px] uppercase tracking-wide ${style.color}`}>{style.label}</span>
+                <span className={`text-[12px] uppercase tracking-wide ${style.color}`}>{style.label}</span>
               </div>
               <p className="text-xs text-ink-100/70 mt-1">{m.desc}</p>
 
               <div className="mt-3">
-                <div className="flex justify-between text-[11px] text-ink-100/60 mb-1">
+                <div className="flex justify-between text-[13px] text-ink-100/60 mb-1">
                   <span>Progress</span>
                   <span className="tabular-nums">{m.progress} / {m.target}</span>
                 </div>
@@ -96,7 +96,7 @@ export default function Missions() {
                   {busy === m.id ? '...' : 'Claim reward'}
                 </button>
               ) : (
-                <div className="mt-3 text-[11px] text-ink-100/40 text-center">In progress…</div>
+                <div className="mt-3 text-[13px] text-ink-100/40 text-center">In progress…</div>
               )}
             </Card>
           );
@@ -104,7 +104,7 @@ export default function Missions() {
       </div>
 
       <Card>
-        <p className="text-[11px] text-ink-100/60">
+        <p className="text-[13px] text-ink-100/60">
           Some missions need props from the <Link to="/general-store" className="underline text-money-400">General Store</Link>.
           Buy them, then use them from your inventory there.
         </p>

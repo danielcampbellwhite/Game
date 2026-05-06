@@ -16,7 +16,7 @@ function Slider({ label, value, onChange, hint, max = 5 }) {
       </div>
       <input type="range" min="1" max={max} value={value} onChange={e => onChange(parseInt(e.target.value, 10))}
         className="w-full accent-blood-500" />
-      <p className="text-[10px] text-ink-100/50">{hint}</p>
+      <p className="text-[12px] text-ink-100/50">{hint}</p>
     </div>
   );
 }
@@ -57,7 +57,7 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
 
   return (
     <Card title=" Found a new business" subtitle={`In ${currentCityName} — fly elsewhere to build there instead.`}>
-      <p className="text-[11px] text-ink-100/50 mb-3">
+      <p className="text-[13px] text-ink-100/50 mb-3">
         Pick a template, name your venture, and tune the sliders.{' '}
         <b>Scale</b> raises cost and hourly income.{' '}
         <b>Risk</b> only applies to illegal fronts — it boosts profit but amplifies police <i>raid</i> chance.{' '}
@@ -83,7 +83,7 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
                   <div className="font-medium leading-tight">{t.name}</div>
                   {locked
                     ? <LockBadge level={t.levelGate} className="mt-0.5" />
-                    : <div className="text-[10px] text-ink-100/50">Lvl {t.levelGate}+</div>}
+                    : <div className="text-[12px] text-ink-100/50">Lvl {t.levelGate}+</div>}
                 </button>
               );
             })}
@@ -105,7 +105,7 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
                   <div className="font-medium leading-tight">{t.name}</div>
                   {locked
                     ? <LockBadge level={t.levelGate} className="mt-0.5" />
-                    : <div className="text-[10px] text-ink-100/50">Lvl {t.levelGate}+</div>}
+                    : <div className="text-[12px] text-ink-100/50">Lvl {t.levelGate}+</div>}
                 </button>
               );
             })}
@@ -134,11 +134,11 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
             <div className="text-xs text-ink-100/60">Located in {currentCityName}.</div>
             <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
               <div>
-                <div className="text-[10px] uppercase text-ink-100/50">Build cost</div>
+                <div className="text-[12px] uppercase text-ink-100/50">Build cost</div>
                 <div className={`tabular-nums ${preview && character.cash < preview.cost ? 'text-blood-400' : 'text-money-400'}`}>{fmt(preview?.cost)}</div>
               </div>
               <div>
-                <div className="text-[10px] uppercase text-ink-100/50">{picked.produces ? 'Output' : 'Hourly'}</div>
+                <div className="text-[12px] uppercase text-ink-100/50">{picked.produces ? 'Output' : 'Hourly'}</div>
                 <div className={`tabular-nums ${picked.illegal ? 'text-blood-400' : 'text-money-400'}`}>
                   {picked.produces
                     ? `${picked.produces.perHour}/hr ${picked.produces.drug}`
@@ -147,12 +147,12 @@ function Founder({ templates, currentCity, currentCityName, onFounded, character
               </div>
               {picked.illegal && (
                 <div>
-                  <div className="text-[10px] uppercase text-ink-100/50">Raid chance / collect</div>
+                  <div className="text-[12px] uppercase text-ink-100/50">Raid chance / collect</div>
                   <div className="tabular-nums">{((preview?.raidChance || 0) * 100).toFixed(2)}%</div>
                 </div>
               )}
               <div>
-                <div className="text-[10px] uppercase text-ink-100/50">{picked.produces ? 'Sells (base)' : 'Payback (cap 12h)'}</div>
+                <div className="text-[12px] uppercase text-ink-100/50">{picked.produces ? 'Sells (base)' : 'Payback (cap 12h)'}</div>
                 <div className="tabular-nums">
                   {picked.produces
                     ? `~£${picked.produces.perHour}× base`
@@ -213,11 +213,11 @@ export default function Businesses() {
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="font-medium">{b.emoji} {b.name}</div>
-                    <div className="text-[10px] text-ink-100/50">{b.template_name} · Lvl {b.level} · {b.cityName}</div>
+                    <div className="text-[12px] text-ink-100/50">{b.template_name} · Lvl {b.level} · {b.cityName}</div>
                   </div>
-                  {b.illegal && <span className="text-blood-400 text-[10px] uppercase">illegal</span>}
+                  {b.illegal && <span className="text-blood-400 text-[12px] uppercase">illegal</span>}
                 </div>
-                <div className="text-[11px] text-ink-100/60 mt-1">
+                <div className="text-[13px] text-ink-100/60 mt-1">
                   {b.produces ? (
                     <>
                       {b.produces.perHour.toFixed(1)} {b.produces.drug}/hr · pending: <span className="text-blood-400">{b.pendingDrug?.qty || 0} {b.produces.drug}</span>
@@ -233,14 +233,14 @@ export default function Businesses() {
                   const hoursSince = (Date.now() - b.last_collected) / 3600000;
                   if (hoursSince < 9) return null;
                   return (
-                    <div className={`text-[10px] mt-0.5 ${hoursSince >= 12 ? 'text-blood-400' : 'text-yellow-400'}`}>
+                    <div className={`text-[12px] mt-0.5 ${hoursSince >= 12 ? 'text-blood-400' : 'text-yellow-400'}`}>
                       {hoursSince >= 12
                         ? 'Capped — collect to start earning again.'
                         : `Approaching 12h cap (${Math.round(hoursSince)}h since last collect).`}
                     </div>
                   );
                 })()}
-                <div className="text-[10px] text-ink-100/40 mt-0.5">scale {b.scale} · risk {b.risk} · quality {b.quality}</div>
+                <div className="text-[12px] text-ink-100/40 mt-0.5">scale {b.scale} · risk {b.risk} · quality {b.quality}</div>
                 <div className="flex gap-2 mt-2">
                   <button
                     disabled={busy === `c${b.id}` || (b.produces ? !b.pendingDrug?.qty : b.pending <= 0)}

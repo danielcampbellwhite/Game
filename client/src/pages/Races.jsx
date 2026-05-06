@@ -50,19 +50,19 @@ export default function Races() {
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
 
       <Card title=" Street Races" subtitle="Live PvP — challenge a player from their profile, both put up the stake, winner takes the pot. Both cars take 5–20% condition damage either way.">
-        <p className="text-[11px] text-ink-100/55">
+        <p className="text-[13px] text-ink-100/55">
           Find a target on the <Link to="/players" className="text-blood-300 underline">Players</Link> page —
           they have to be in your city, driving an active car of the same tier, and in your race bracket.
         </p>
         {data.bracket && (
-          <div className="mt-3 grid sm:grid-cols-4 gap-2 text-[11px]">
+          <div className="mt-3 grid sm:grid-cols-4 gap-2 text-[13px]">
             {data.brackets.map(b => {
               const me = b.id === data.bracket.id;
               return (
                 <div key={b.id} className={`rounded-md border p-2 ${me ? 'border-money-500/60 bg-money-600/10' : 'border-ink-100/10 bg-ink-950/40 opacity-70'}`}>
                   <div className="flex items-baseline justify-between gap-1">
                     <span className={me ? 'text-money-300 font-medium' : 'text-ink-100/65'}>{b.name}</span>
-                    {me && <span className="text-[9px] uppercase tracking-wide text-money-400">you</span>}
+                    {me && <span className="text-[11px] uppercase tracking-wide text-money-400">you</span>}
                   </div>
                   <div className="text-ink-100/55">DRV {b.min}{b.max < 999 ? `-${b.max}` : '+'}</div>
                   <div className="text-ink-100/45">stake ≤ {fmt(b.maxStake)}</div>
@@ -115,22 +115,22 @@ function RacePending({ r, character, side, busy, onAccept, onDecline, onCancel }
         <div>
           <span className="font-medium">Tier {r.tier}</span> · stake <span className="text-money-400 tabular-nums">{fmt(r.stake)}</span>
         </div>
-        <div className="text-[10px] text-ink-100/45">
+        <div className="text-[12px] text-ink-100/45">
           <Timer until={r.expires_at} prefix="Expires in " />
         </div>
       </div>
       <div className="mt-2 flex gap-2">
         {side === 'opponent' ? (
           <>
-            <button disabled={!!busy} onClick={onAccept} className="btn btn-money text-[11px] flex-1">
+            <button disabled={!!busy} onClick={onAccept} className="btn btn-money text-[13px] flex-1">
               {busy === `accept-${r.id}` ? '…' : `Race for ${fmt(r.stake)}`}
             </button>
-            <button disabled={!!busy} onClick={onDecline} className="btn btn-ghost text-[11px]">
+            <button disabled={!!busy} onClick={onDecline} className="btn btn-ghost text-[13px]">
               {busy === `decline-${r.id}` ? '…' : 'Decline'}
             </button>
           </>
         ) : (
-          <button disabled={!!busy} onClick={onCancel} className="btn btn-ghost text-[11px] ml-auto">
+          <button disabled={!!busy} onClick={onCancel} className="btn btn-ghost text-[13px] ml-auto">
             {busy === `cancel-${r.id}` ? '…' : 'Cancel'}
           </button>
         )}
@@ -146,17 +146,17 @@ function RaceHistory({ r, character }) {
     <div className={`rounded-md border p-3 text-xs ${tone}`}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="flex items-baseline gap-2 min-w-0">
-          <span className={`uppercase text-[10px] tracking-wide ${won ? 'text-money-300' : r.status === 'completed' ? 'text-blood-300' : 'text-ink-100/55'}`}>
+          <span className={`uppercase text-[12px] tracking-wide ${won ? 'text-money-300' : r.status === 'completed' ? 'text-blood-300' : 'text-ink-100/55'}`}>
             {r.status === 'completed' ? (won ? 'Won' : 'Lost') : statusLabel(r.status)}
           </span>
           <span className="text-ink-100/70 truncate">Tier {r.tier} · {fmt(r.stake)}</span>
         </div>
         {r.result?.chance != null && (
-          <span className="text-[10px] text-ink-100/40 tabular-nums">{Math.round(r.result.chance * 100)}% odds</span>
+          <span className="text-[12px] text-ink-100/40 tabular-nums">{Math.round(r.result.chance * 100)}% odds</span>
         )}
       </div>
       {r.result && (
-        <div className="text-[10px] text-ink-100/55 mt-1">
+        <div className="text-[12px] text-ink-100/55 mt-1">
           {r.result.challenger?.car} ({Math.round(r.result.challenger?.condition_after)}% after) · vs ·
           {' '}{r.result.opponent?.car} ({Math.round(r.result.opponent?.condition_after)}% after)
         </div>

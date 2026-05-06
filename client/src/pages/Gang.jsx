@@ -26,7 +26,7 @@ function DeclareWarForm({ gangs, cities, onSubmit, busy }) {
   return (
     <form onSubmit={e => { e.preventDefault(); if (target && city) onSubmit(parseInt(target, 10), city); }} className="space-y-3">
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Target gang</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Target gang</label>
         <select value={target} onChange={e=>setTarget(e.target.value)}
           className="w-full bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm">
           <option value="">— pick a rival —</option>
@@ -34,14 +34,14 @@ function DeclareWarForm({ gangs, cities, onSubmit, busy }) {
         </select>
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Contested city</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Contested city</label>
         <select value={city} onChange={e=>setCity(e.target.value)}
           className="w-full bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm">
           <option value="">— pick a city —</option>
           {cities.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
         </select>
       </div>
-      <p className="text-[11px] text-ink-100/55">
+      <p className="text-[13px] text-ink-100/55">
         War lasts 24h. KOs and murders between members of the two gangs in the chosen city earn points.
         Leader of the score at the end holds the city for 7 days.
       </p>
@@ -69,11 +69,11 @@ function MemberRow({ member, you, gang, onAct }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <Link to={`/players/${member.char_id}`} className="font-medium hover:text-blood-400">{member.name}</Link>
-            <span className={`text-[10px] uppercase tracking-wide ${ROLE_STYLE[member.role]}`}>{member.role}</span>
-            <span className="text-[10px] text-ink-100/40">L{member.level}</span>
+            <span className={`text-[12px] uppercase tracking-wide ${ROLE_STYLE[member.role]}`}>{member.role}</span>
+            <span className="text-[12px] text-ink-100/40">L{member.level}</span>
           </div>
           {(member.title || canTitle) && !editing && (
-            <div className="text-[11px] text-ink-100/55 italic">
+            <div className="text-[13px] text-ink-100/55 italic">
               {member.title ? `“${member.title}”` : <span className="text-ink-100/30">no title</span>}
             </div>
           )}
@@ -81,26 +81,26 @@ function MemberRow({ member, you, gang, onAct }) {
             <div className="flex gap-1 mt-1">
               <input value={title} onChange={e=>setTitle(e.target.value)} maxLength={32}
                 className="flex-1 bg-ink-950/60 border border-ink-100/15 rounded-md px-2 py-1 text-xs" />
-              <button className="btn btn-primary text-[10px] px-2" onClick={async () => { await onAct('title', { target_id: member.char_id, title }); setEditing(false); }}>Save</button>
-              <button className="btn btn-ghost text-[10px] px-2" onClick={() => { setTitle(member.title || ''); setEditing(false); }}>Cancel</button>
+              <button className="btn btn-primary text-[12px] px-2" onClick={async () => { await onAct('title', { target_id: member.char_id, title }); setEditing(false); }}>Save</button>
+              <button className="btn btn-ghost text-[12px] px-2" onClick={() => { setTitle(member.title || ''); setEditing(false); }}>Cancel</button>
             </div>
           )}
         </div>
       </div>
-      <div className="text-[10px] text-ink-100/40 mt-1">contributed {fmt(member.contributed)}</div>
+      <div className="text-[12px] text-ink-100/40 mt-1">contributed {fmt(member.contributed)}</div>
       {(canTitle && !editing && !member.is_self) && (
         <div className="mt-2 flex flex-wrap gap-1">
-          <button onClick={() => setEditing(true)} className="btn btn-ghost text-[10px] px-2">Set title</button>
+          <button onClick={() => setEditing(true)} className="btn btn-ghost text-[12px] px-2">Set title</button>
           {isLeader && member.role !== 'leader' && (
             <>
-              {member.role !== 'officer' && <button onClick={() => onAct('promote', { target_id: member.char_id, role: 'officer' })} className="btn btn-ghost text-[10px] px-2">→ Officer</button>}
-              {member.role !== 'soldier' && <button onClick={() => onAct('promote', { target_id: member.char_id, role: 'soldier' })} className="btn btn-ghost text-[10px] px-2">→ Soldier</button>}
-              {member.role !== 'recruit' && <button onClick={() => onAct('promote', { target_id: member.char_id, role: 'recruit' })} className="btn btn-ghost text-[10px] px-2">→ Recruit</button>}
-              <button onClick={() => { if (confirm('Hand over leadership?')) onAct('promote', { target_id: member.char_id, role: 'leader' }); }} className="btn btn-ghost text-[10px] px-2 text-gold-400">→ Leader</button>
+              {member.role !== 'officer' && <button onClick={() => onAct('promote', { target_id: member.char_id, role: 'officer' })} className="btn btn-ghost text-[12px] px-2">→ Officer</button>}
+              {member.role !== 'soldier' && <button onClick={() => onAct('promote', { target_id: member.char_id, role: 'soldier' })} className="btn btn-ghost text-[12px] px-2">→ Soldier</button>}
+              {member.role !== 'recruit' && <button onClick={() => onAct('promote', { target_id: member.char_id, role: 'recruit' })} className="btn btn-ghost text-[12px] px-2">→ Recruit</button>}
+              <button onClick={() => { if (confirm('Hand over leadership?')) onAct('promote', { target_id: member.char_id, role: 'leader' }); }} className="btn btn-ghost text-[12px] px-2 text-gold-400">→ Leader</button>
             </>
           )}
           {canKick && (
-            <button onClick={() => { if (confirm(`Kick ${member.name}?`)) onAct('kick', { target_id: member.char_id }); }} className="btn btn-ghost text-[10px] px-2 text-blood-400">Kick</button>
+            <button onClick={() => { if (confirm(`Kick ${member.name}?`)) onAct('kick', { target_id: member.char_id }); }} className="btn btn-ghost text-[12px] px-2 text-blood-400">Kick</button>
           )}
         </div>
       )}
@@ -152,12 +152,12 @@ function GangChat({ gangId, you }) {
           <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${m.mine ? 'bg-blood-700/40' : 'bg-ink-800/60'}`}>
               {!m.mine && (
-                <div className="text-[10px] text-ink-100/55 mb-0.5">
+                <div className="text-[12px] text-ink-100/55 mb-0.5">
                   <span className="mr-1">{m.sender_avatar}</span>{m.sender_name}
                 </div>
               )}
               <div className="whitespace-pre-wrap break-words">{m.body}</div>
-              <div className="text-[10px] text-ink-100/45 mt-0.5">{timeShort(m.created_at)}</div>
+              <div className="text-[12px] text-ink-100/45 mt-0.5">{timeShort(m.created_at)}</div>
             </div>
           </div>
         ))}
@@ -216,8 +216,8 @@ function GangManagement({ gang, onChange }) {
     <Card title=" Leader controls" subtitle="Skim crime payouts into the treasury. Spend it to climb the ladder.">
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Treasury cut</div>
-          <p className="text-[11px] text-ink-100/65 mb-2">
+          <div className="text-[12px] uppercase text-ink-100/55 mb-1">Treasury cut</div>
+          <p className="text-[13px] text-ink-100/65 mb-2">
             % of every member's successful crime payout that flows into the gang vault. 0–15%.
           </p>
           <div className="flex items-center gap-2">
@@ -231,10 +231,10 @@ function GangManagement({ gang, onChange }) {
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Next tier</div>
+          <div className="text-[12px] uppercase text-ink-100/55 mb-1">Next tier</div>
           {next ? (
             <>
-              <p className="text-[11px] text-ink-100/65">
+              <p className="text-[13px] text-ink-100/65">
                 <span className="text-ink-50">★ {next.level}</span> — {next.perk}
               </p>
               <div className="flex items-baseline justify-between gap-2 mt-2">
@@ -246,14 +246,14 @@ function GangManagement({ gang, onChange }) {
               </div>
             </>
           ) : (
-            <p className="text-[11px] text-money-400">Top tier reached. ★ {gang.level}</p>
+            <p className="text-[13px] text-money-400">Top tier reached. ★ {gang.level}</p>
           )}
         </div>
       </div>
       {levels && (
         <div className="mt-4 pt-3 border-t border-ink-100/10">
-          <div className="text-[10px] uppercase text-ink-100/55 mb-1">Tier ladder</div>
-          <ul className="space-y-1 text-[11px]">
+          <div className="text-[12px] uppercase text-ink-100/55 mb-1">Tier ladder</div>
+          <ul className="space-y-1 text-[13px]">
             {levels.map(l => {
               const have = (gang.level || 1) >= l.level;
               return (
@@ -267,7 +267,7 @@ function GangManagement({ gang, onChange }) {
           </ul>
         </div>
       )}
-      {msg && <p className="text-[11px] text-money-300 mt-2">{msg}</p>}
+      {msg && <p className="text-[13px] text-money-300 mt-2">{msg}</p>}
     </Card>
   );
 }
@@ -398,22 +398,22 @@ export default function Gang() {
           <div>
             <div className="font-display text-3xl">{g.name} <span className="text-base text-ink-100/55 font-mono">[{g.tag}]</span></div>
             <p className="text-xs text-ink-100/55 mt-1">{g.description || <span className="italic text-ink-100/40">No description.</span>}</p>
-            <div className="text-[10px] text-ink-100/40 mt-2">{g.member_count} member{g.member_count === 1 ? '' : 's'} · founded {new Date(g.founded_at).toLocaleDateString()}</div>
+            <div className="text-[12px] text-ink-100/40 mt-2">{g.member_count} member{g.member_count === 1 ? '' : 's'} · founded {new Date(g.founded_at).toLocaleDateString()}</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase text-ink-100/50">Tier</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Tier</div>
             <div className="font-display text-2xl text-blood-300 tabular-nums">★ {g.level || 1}</div>
-            <div className="text-[10px] uppercase text-ink-100/50 mt-2">Treasury</div>
+            <div className="text-[12px] uppercase text-ink-100/50 mt-2">Treasury</div>
             <div className="font-display text-2xl text-gold-400 tabular-nums">{fmt(g.treasury)}</div>
-            <div className="text-[10px] text-ink-100/45 mt-1">Cut: {Math.round((g.crime_cut_pct || 0) * 100)}%</div>
+            <div className="text-[12px] text-ink-100/45 mt-1">Cut: {Math.round((g.crime_cut_pct || 0) * 100)}%</div>
           </div>
         </div>
         {you && (
           <div className="mt-3 pt-3 border-t border-ink-100/10 flex flex-wrap items-baseline gap-3 text-xs">
             <span>You: <span className={`uppercase ${ROLE_STYLE[you.role]}`}>{you.role}</span></span>
             {you.title && <span className="text-ink-100/60 italic">“{you.title}”</span>}
-            {!isLeader && <button disabled={busy === 'leave'} onClick={leave} className="btn btn-ghost text-[11px] ml-auto">{busy === 'leave' ? '…' : 'Leave gang'}</button>}
-            {isLeader && <button disabled={busy === 'disband'} onClick={disband} className="btn btn-ghost text-[11px] ml-auto text-blood-400">{busy === 'disband' ? '…' : 'Disband'}</button>}
+            {!isLeader && <button disabled={busy === 'leave'} onClick={leave} className="btn btn-ghost text-[13px] ml-auto">{busy === 'leave' ? '…' : 'Leave gang'}</button>}
+            {isLeader && <button disabled={busy === 'disband'} onClick={disband} className="btn btn-ghost text-[13px] ml-auto text-blood-400">{busy === 'disband' ? '…' : 'Disband'}</button>}
           </div>
         )}
       </Card>
@@ -424,13 +424,13 @@ export default function Gang() {
         <Card>
           <div className="flex items-baseline justify-between gap-3">
             <div>
-              <div className="text-[10px] uppercase text-blood-400 tracking-wide"> AT WAR</div>
+              <div className="text-[12px] uppercase text-blood-400 tracking-wide"> AT WAR</div>
               <div className="text-sm mt-1">
                 Contested city: <b>{war.contested_city_name}</b>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] uppercase text-ink-100/55">Time remaining</div>
+              <div className="text-[12px] uppercase text-ink-100/55">Time remaining</div>
               <div className="font-mono text-lg tabular-nums">
                 {(() => {
                   const left = Math.max(0, Math.floor((war.ends_at - Date.now()) / 1000));
@@ -444,15 +444,15 @@ export default function Gang() {
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div className={`rounded-lg p-3 border ${war.you_role === 'a' ? 'border-money-500/40 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
-              <div className="text-[10px] text-ink-100/55">{war.you_role === 'a' ? 'YOUR GANG' : 'DECLARER'}</div>
+              <div className="text-[12px] text-ink-100/55">{war.you_role === 'a' ? 'YOUR GANG' : 'DECLARER'}</div>
               <div className="font-display text-2xl text-money-400 tabular-nums">{war.score_a}</div>
             </div>
             <div className={`rounded-lg p-3 border ${war.you_role === 'b' ? 'border-money-500/40 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
-              <div className="text-[10px] text-ink-100/55">{war.you_role === 'b' ? 'YOUR GANG' : 'TARGET'}</div>
+              <div className="text-[12px] text-ink-100/55">{war.you_role === 'b' ? 'YOUR GANG' : 'TARGET'}</div>
               <div className="font-display text-2xl text-blood-400 tabular-nums">{war.score_b}</div>
             </div>
           </div>
-          <p className="text-[11px] text-ink-100/55 mt-3">
+          <p className="text-[13px] text-ink-100/55 mt-3">
             KO an opposing-gang member in {war.contested_city_name} → +1 point. Murder them → +5.
             Whoever leads when the clock runs out holds the city for 7 days.
           </p>
@@ -480,7 +480,7 @@ export default function Gang() {
         <Card title=" Treasury">
           <div className="grid sm:grid-cols-2 gap-3">
             <form onSubmit={e => { e.preventDefault(); act('deposit', { amount: parseInt(depAmount, 10) }); }}>
-              <label className="text-[10px] uppercase text-ink-100/55">Deposit</label>
+              <label className="text-[12px] uppercase text-ink-100/55">Deposit</label>
               <div className="flex gap-2 mt-1">
                 <input value={depAmount} onChange={e=>setDepAmount(e.target.value)} type="number" min="1"
                   className="flex-1 bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm" placeholder="amount £" />
@@ -489,7 +489,7 @@ export default function Gang() {
             </form>
             {canManage && (
               <form onSubmit={e => { e.preventDefault(); act('withdraw', { amount: parseInt(withAmount, 10) }); }}>
-                <label className="text-[10px] uppercase text-ink-100/55">Withdraw {!canManage && <span className="text-ink-100/40">(officer+)</span>}</label>
+                <label className="text-[12px] uppercase text-ink-100/55">Withdraw {!canManage && <span className="text-ink-100/40">(officer+)</span>}</label>
                 <div className="flex gap-2 mt-1">
                   <input value={withAmount} onChange={e=>setWithAmount(e.target.value)} type="number" min="1"
                     className="flex-1 bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm" placeholder="amount £" />

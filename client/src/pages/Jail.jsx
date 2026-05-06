@@ -65,7 +65,7 @@ function VisitingHours({ character, refreshChar }) {
     <Card title=" Visiting hours"
       subtitle={`Players locked up in ${cityName(character.city)} right now. Bail them out for cash, or roll the dice on a bust.`}
       right={<button onClick={load} className="btn btn-ghost text-xs">↻ Refresh</button>}>
-      <p className="text-[11px] text-ink-100/45 mb-3">
+      <p className="text-[13px] text-ink-100/45 mb-3">
         <b>Bail</b> always works — pay their way out. <b>Bust</b> is free, but only
         succeeds <b>{data?.bust_chance_pct ?? '…'}%</b> of the time (scales with intelligence).
         Fail and you'll take their cell.
@@ -87,20 +87,20 @@ function VisitingHours({ character, refreshChar }) {
                   <Link to={`/players/${p.id}`} className="flex items-center gap-2 min-w-0 hover:underline">
                     <span className="min-w-0">
                       <span className="font-medium truncate">{p.name}</span>
-                      <span className="ml-2 text-[10px] uppercase text-ink-100/40">L{p.level}</span>
-                      {p.gang && <span className="ml-2 text-[10px] text-blood-400">[{p.gang.tag}]</span>}
-                      <span className="block text-[11px] text-ink-100/55">{p.rank}</span>
+                      <span className="ml-2 text-[12px] uppercase text-ink-100/40">L{p.level}</span>
+                      {p.gang && <span className="ml-2 text-[12px] text-blood-400">[{p.gang.tag}]</span>}
+                      <span className="block text-[13px] text-ink-100/55">{p.rank}</span>
                     </span>
                   </Link>
                   <div className="text-right shrink-0">
-                    <div className="text-[10px] uppercase text-ink-100/50">Sentence</div>
+                    <div className="text-[12px] uppercase text-ink-100/50">Sentence</div>
                     <div className="font-display text-sm text-yellow-300">
                       <Timer until={p.jail_until} onExpire={refresh} />
                     </div>
                   </div>
                 </div>
                 {p.jail_reason && (
-                  <p className="text-[11px] text-ink-100/55 italic">{p.jail_reason}</p>
+                  <p className="text-[13px] text-ink-100/55 italic">{p.jail_reason}</p>
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -184,13 +184,13 @@ export default function Jail() {
 
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Sentence remaining</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Sentence remaining</div>
             <div className="font-display text-2xl">
               <Timer until={character.jail_until} onExpire={refresh} />
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Status</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Status</div>
             <div className="font-display text-2xl text-yellow-300">Detained</div>
           </div>
         </div>
@@ -199,22 +199,22 @@ export default function Jail() {
           <button disabled={busy || character.cash < lawyer} className="btn"
             onClick={() => act('lawyer')}>
             {busy === 'lawyer' ? '...' : `Hire lawyer — ${fmt(lawyer)}`}
-            <div className="text-[10px] opacity-70">cuts sentence in half</div>
+            <div className="text-[12px] opacity-70">cuts sentence in half</div>
           </button>
           <button disabled={busy || character.cash < bribe} className="btn btn-primary"
             onClick={() => act('bribe')}>
             {busy === 'bribe' ? '...' : `Bribe guard — ${fmt(bribe)}`}
-            <div className="text-[10px] opacity-70">90% walk · 10% sentence doubles</div>
+            <div className="text-[12px] opacity-70">90% walk · 10% sentence doubles</div>
           </button>
           <button disabled={busy} className="btn btn-ghost"
             onClick={() => act('escape')}>
             {busy === 'escape' ? '...' : 'Run for it'}
-            <div className="text-[10px] opacity-70">50/50 · fail → 2× original sentence</div>
+            <div className="text-[12px] opacity-70">50/50 · fail → 2× original sentence</div>
           </button>
         </div>
 
         {(character.cash < lawyer) && (
-          <p className="text-blood-400 text-[11px] mt-2">
+          <p className="text-blood-400 text-[13px] mt-2">
             Not enough cash for either option — you'll have to wait it out.
           </p>
         )}

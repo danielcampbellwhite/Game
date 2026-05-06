@@ -40,9 +40,9 @@ export default function FactionPicker({ factions = [], value, onChange }) {
               onClick={() => onChange(f.id)}
               className={`text-left p-3 rounded-lg border transition ${selected ? pal.selected : `bg-ink-950/40 ${pal.unselected}`}`}>
               <div className={`font-display text-lg ${pal.accent}`}>{f.name}</div>
-              <div className="text-[11px] text-ink-100/60 mt-1 leading-snug">{f.blurb}</div>
+              <div className="text-[13px] text-ink-100/60 mt-1 leading-snug">{f.blurb}</div>
               {f.perks && (
-                <div className="mt-2 space-y-0.5 text-[10px]">
+                <div className="mt-2 space-y-0.5 text-[12px]">
                   {(f.perks.pros || []).map((p, i) => (
                     <div key={`pro-${i}`} className="text-money-400">+ {p}</div>
                   ))}

@@ -15,7 +15,7 @@ export default function FactionBadge({ faction, className = '' }) {
   const meta = FACTION_DISPLAY[faction];
   if (!meta) return null;
   return (
-    <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${meta.cls} ${className}`}>
+    <span className={`text-[12px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${meta.cls} ${className}`}>
       {meta.label}
     </span>
   );

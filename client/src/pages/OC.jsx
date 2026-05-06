@@ -58,9 +58,9 @@ export default function OC() {
                   className="block rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
                   <div className="flex items-baseline justify-between">
                     <div className="font-medium">{p.crime?.emoji} {p.crime?.name}</div>
-                    <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{p.status}</div>
+                    <div className="text-[12px] uppercase tracking-wide text-ink-100/55">{p.status}</div>
                   </div>
-                  <div className="text-[11px] text-ink-100/55 mt-1">
+                  <div className="text-[13px] text-ink-100/55 mt-1">
                     Crew: {p.filled} / {p.total}{character?.id === p.leader_id ? ' · you lead' : ''}
                   </div>
                 </Link>
@@ -82,13 +82,13 @@ export default function OC() {
                   <div className="font-medium">{c.emoji} {c.name}</div>
                   {tooLow
                     ? <LockBadge level={c.levelGate} />
-                    : <div className={`text-[10px] uppercase ${RISK_STYLE[c.risk]}`}>{c.risk}</div>}
+                    : <div className={`text-[12px] uppercase ${RISK_STYLE[c.risk]}`}>{c.risk}</div>}
                 </div>
-                <p className="text-[11px] text-ink-100/55 mt-1">{c.desc}</p>
-                <div className="text-[11px] text-ink-100/65 mt-2">
+                <p className="text-[13px] text-ink-100/55 mt-1">{c.desc}</p>
+                <div className="text-[13px] text-ink-100/65 mt-2">
                   Payout {fmt(c.payoutMin)}–{fmt(c.payoutMax)} · Energy {c.energy}{!tooLow && <> · Lvl {c.levelGate}+</>}
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-1 text-[11px]">
+                <div className="mt-2 grid grid-cols-2 gap-1 text-[13px]">
                   {c.roles.map(r => (
                     <div key={r.id} className="text-ink-100/65">
                       <span className="text-ink-100/85">{r.name}</span>

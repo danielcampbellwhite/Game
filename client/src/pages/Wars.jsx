@@ -56,12 +56,12 @@ export default function Wars() {
                   <div className="mt-2 grid grid-cols-2 gap-2 items-center">
                     <Link to={`/gangs/${w.gang_a.id}`} className={`rounded-lg p-2 border text-center transition ${a_lead ? 'border-money-500/40 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
                       <div className="font-medium">{w.gang_a.name}</div>
-                      <div className="text-[10px] text-ink-100/55">[{w.gang_a.tag}]</div>
+                      <div className="text-[12px] text-ink-100/55">[{w.gang_a.tag}]</div>
                       <div className="font-display text-2xl text-money-400 mt-1 tabular-nums">{w.score_a}</div>
                     </Link>
                     <Link to={`/gangs/${w.gang_b.id}`} className={`rounded-lg p-2 border text-center transition ${b_lead ? 'border-money-500/40 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
                       <div className="font-medium">{w.gang_b.name}</div>
-                      <div className="text-[10px] text-ink-100/55">[{w.gang_b.tag}]</div>
+                      <div className="text-[12px] text-ink-100/55">[{w.gang_b.tag}]</div>
                       <div className="font-display text-2xl text-blood-400 mt-1 tabular-nums">{w.score_b}</div>
                     </Link>
                   </div>
@@ -82,11 +82,11 @@ export default function Wars() {
               return (
                 <div key={t.city} className="rounded-lg p-3 border border-gold-500/30 bg-gold-700/10">
                   <div className="text-sm font-medium">{t.city_name}</div>
-                  <div className="text-[11px] text-ink-100/65 mt-1">
+                  <div className="text-[13px] text-ink-100/65 mt-1">
                     Held by <Link to={`/gangs/${t.gang.id}`} className="text-gold-400 hover:underline">{t.gang.name}</Link>
                     <span className="text-ink-100/45"> [{t.gang.tag}]</span>
                   </div>
-                  <div className="text-[10px] text-ink-100/45 mt-2 tabular-nums">expires in {timeLeft(left)}</div>
+                  <div className="text-[12px] text-ink-100/45 mt-2 tabular-nums">expires in {timeLeft(left)}</div>
                 </div>
               );
             })}

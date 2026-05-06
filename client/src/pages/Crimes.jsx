@@ -58,25 +58,25 @@ function PlayerCrimes({ character }) {
         <button onClick={() => toggle('rob')}
           className={`text-left rounded-lg p-3 border transition ${open === 'rob' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
           <div className="font-medium">Rob a Player</div>
-          <div className="text-[11px] text-ink-100/55 mt-1">
+          <div className="text-[13px] text-ink-100/55 mt-1">
             Mug them on the spot. Win → all their cash on hand + hospitalised. Lose → caught.
           </div>
-          <div className="text-[10px] text-ink-100/40 mt-1">10 energy · 1h cooldown · single roll</div>
+          <div className="text-[12px] text-ink-100/40 mt-1">10 energy · 1h cooldown · single roll</div>
         </button>
         <button onClick={() => toggle('murder')}
           className={`text-left rounded-lg p-3 border transition ${open === 'murder' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
           <div className="font-medium">Attempt Murder</div>
-          <div className="text-[11px] text-ink-100/55 mt-1">
+          <div className="text-[13px] text-ink-100/55 mt-1">
             Async hit. Pick bullets if you've got a gun. Permadeath on success — but jail either way.
           </div>
-          <div className="text-[10px] text-ink-100/40 mt-1">25 energy · 24h cooldown · per-bullet hit rolls</div>
+          <div className="text-[12px] text-ink-100/40 mt-1">25 energy · 24h cooldown · per-bullet hit rolls</div>
         </button>
       </div>
 
       {open && (
         <div className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
           <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[10px] uppercase text-ink-100/55">
+            <span className="text-[12px] uppercase text-ink-100/55">
               Pick a target in your city
             </span>
             <button onClick={loadPlayers} disabled={busy}
@@ -93,9 +93,9 @@ function PlayerCrimes({ character }) {
                   className="text-left rounded-md p-2 border border-ink-100/10 bg-ink-900/40 hover:border-blood-500/40 hover:bg-ink-900/70 transition">
                   <div className="flex items-baseline gap-2">
                     <span className="font-medium truncate">{p.name}</span>
-                    <span className="text-[10px] uppercase text-ink-100/40">L{p.level}</span>
+                    <span className="text-[12px] uppercase text-ink-100/40">L{p.level}</span>
                   </div>
-                  <div className="text-[10px] text-ink-100/55 mt-0.5">{p.rank}</div>
+                  <div className="text-[12px] text-ink-100/55 mt-0.5">{p.rank}</div>
                 </button>
               ))}
             </div>
@@ -143,14 +143,14 @@ function DailyContractBanner({ character, onChange }) {
         <div className="text-2xl shrink-0"></div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wide text-yellow-300">Daily Contract · Anonymous tip</span>
-            {closed && <span className="text-[10px] uppercase tracking-wide text-ink-100/45">{c.status}</span>}
+            <span className="text-[12px] uppercase tracking-wide text-yellow-300">Daily Contract · Anonymous tip</span>
+            {closed && <span className="text-[12px] uppercase tracking-wide text-ink-100/45">{c.status}</span>}
           </div>
           <div className="font-medium mt-0.5">{c.crime.name} · <span className="text-ink-100/55">{c.cityName}</span></div>
-          <div className="text-[11px] text-ink-100/65 mt-0.5">
+          <div className="text-[13px] text-ink-100/65 mt-0.5">
             {fmt(c.minPayout)}–{fmt(c.maxPayout)} (3× normal) · {c.crime.energy} energy · risk {c.crime.risk}
           </div>
-          {msg && <p className="text-[11px] text-money-300 mt-1">{msg}</p>}
+          {msg && <p className="text-[13px] text-money-300 mt-1">{msg}</p>}
           {!closed && (
             <button onClick={attempt}
               disabled={busy || !inCity || (character?.energy || 0) < c.crime.energy}
@@ -159,7 +159,7 @@ function DailyContractBanner({ character, onChange }) {
               {busy ? '…' : !inCity ? `Travel to ${c.cityName} first` : `Take the job — ${fmt(c.minPayout)}–${fmt(c.maxPayout)}`}
             </button>
           )}
-          {closed && <p className="text-[11px] text-ink-100/45 mt-1">A new tip arrives at midnight UTC.</p>}
+          {closed && <p className="text-[13px] text-ink-100/45 mt-1">A new tip arrives at midnight UTC.</p>}
         </div>
       </div>
     </Card>
@@ -175,7 +175,7 @@ function CrimeResult({ last, crimeId }) {
   if (last.error) {
     return (
       <div className="mt-3 rounded-md border-2 border-blood-500/70 bg-blood-700/25 p-2.5 text-center">
-        <div className="text-[10px] uppercase tracking-wider text-blood-300">Error</div>
+        <div className="text-[12px] uppercase tracking-wider text-blood-300">Error</div>
         <div className="text-sm font-semibold text-blood-200 mt-0.5">{last.error}</div>
       </div>
     );
@@ -215,15 +215,15 @@ function CrimeResult({ last, crimeId }) {
 
   return (
     <div className={`mt-3 rounded-md border-2 ${TONE.border} ${TONE.bg} p-2.5 text-center`}>
-      <div className={`text-[10px] uppercase tracking-wider ${TONE.label}`}>{label}</div>
+      <div className={`text-[12px] uppercase tracking-wider ${TONE.label}`}>{label}</div>
       <div className={`text-sm font-bold ${TONE.text} mt-0.5`}>{headline}</div>
       {(r.xp || r.levels) && (
-        <div className="text-[11px] text-ink-100/70 mt-0.5">
+        <div className="text-[13px] text-ink-100/70 mt-0.5">
           +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels > 1 ? 's' : ''}!` : ''}
         </div>
       )}
       {r.consumed?.length > 0 && (
-        <div className="text-[10px] text-ink-100/55 mt-0.5">
+        <div className="text-[12px] text-ink-100/55 mt-0.5">
           Used: {r.consumed.map(c => `${c.qty}× ${c.name}`).join(', ')}.
         </div>
       )}
@@ -270,7 +270,7 @@ export default function Crimes() {
       <Card title="Heat" subtitle="Each crime attracts attention. High heat shaves your success chance and bumps jail risk on failure. Decays ~1/min while you lay low.">
         <div className="flex items-baseline gap-3">
           <div className={`font-display text-3xl tabular-nums ${heatColor}`}>{heat}</div>
-          <div className="text-[11px] text-ink-100/55 uppercase tracking-wide">/ 100</div>
+          <div className="text-[13px] text-ink-100/55 uppercase tracking-wide">/ 100</div>
         </div>
         <div className="h-1.5 mt-2 rounded-full bg-ink-100/10 overflow-hidden">
           <div
@@ -294,7 +294,7 @@ export default function Crimes() {
           <li><b className="text-blood-300">Execute.</b> Once every seat is filled, the leader pulls the trigger. The roll factors in every member's relevant stat plus the role weights.</li>
           <li><b className="text-blood-300">Split the take.</b> Success → the payout splits across the crew. Failure → everyone shares the heat (and possibly jail time).</li>
         </ul>
-        <p className="text-[11px] text-ink-100/45 mt-2">
+        <p className="text-[13px] text-ink-100/45 mt-2">
           Heists are async — crew members don't all need to be online at the same time. Once a role is accepted, the seat is locked until execution or cancellation.
         </p>
         <Link to="/oc" className="btn btn-primary text-xs w-full mt-3 block text-center">
@@ -316,17 +316,17 @@ export default function Crimes() {
                     <div className="font-medium">{c.name}</div>
                     {c.locked
                       ? <LockBadge level={c.level} />
-                      : <div className="text-[10px] text-ink-100/50">Lvl {c.level}+</div>}
+                      : <div className="text-[12px] text-ink-100/50">Lvl {c.level}+</div>}
                   </div>
-                  <div className="text-[11px] text-ink-100/60 mt-1">
+                  <div className="text-[13px] text-ink-100/60 mt-1">
                     Energy {c.energy} · {c.tier === 'gta' ? `Tier ${c.vehicleTier} car` : `${fmt(c.min)}–${fmt(c.max)}`} · {c.xp}xp · risk: {c.risk}
                   </div>
-                  <div className="text-[10px] text-ink-100/40 mt-0.5">cooldown {cooldownLabel(c.cooldownSec)}</div>
+                  <div className="text-[12px] text-ink-100/40 mt-0.5">cooldown {cooldownLabel(c.cooldownSec)}</div>
                   {c.requires?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {c.requires.map(r => (
                         <span key={r.item_id}
-                          className={`text-[10px] px-1.5 py-0.5 rounded border ${r.ok ? 'border-money-500/40 text-money-300' : 'border-blood-500/50 text-blood-300'}`}
+                          className={`text-[12px] px-1.5 py-0.5 rounded border ${r.ok ? 'border-money-500/40 text-money-300' : 'border-blood-500/50 text-blood-300'}`}
                           title={r.consumed ? 'Single-use — destroyed on commit.' : 'Required to commit.'}>
                           {r.consumed ? '× ' : ''}{r.name} {r.have}/{r.need}
                         </span>

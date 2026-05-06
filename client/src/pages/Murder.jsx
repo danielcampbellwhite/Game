@@ -29,7 +29,7 @@ function OutcomeBanner({ result }) {
         Hits {hits}/{strikes} · damage {totalDamage}{bulletsUsed > 0 ? ` · ${bulletsUsed} bullets used` : ''}
       </div>
       {cashTaken > 0 && (
-        <div className="text-[11px] mt-1">Took {fmt(cashTaken)}.</div>
+        <div className="text-[13px] mt-1">Took {fmt(cashTaken)}.</div>
       )}
     </div>
   );
@@ -98,23 +98,23 @@ export default function Murder() {
       <Card title="Your loadout">
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Equipped weapon</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Equipped weapon</div>
             <div className="font-medium">{weapon?.name || 'Fists'}</div>
-            <div className="text-[11px] text-ink-100/60">
+            <div className="text-[13px] text-ink-100/60">
               {weapon?.maker && `${weapon.maker} · `}
               DMG {weapon?.dmg ?? 4}{isGun ? ` · ${weapon.ammoType}` : ' · melee'}
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Energy cost</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Energy cost</div>
             <div className="text-yellow-300 font-semibold tabular-nums">{cost.energy}</div>
-            <div className="text-[11px] text-ink-100/60">you have {character?.energy ?? 0}</div>
+            <div className="text-[13px] text-ink-100/60">you have {character?.energy ?? 0}</div>
           </div>
         </div>
 
         {isGun && (
           <div className="mt-4 border-t border-ink-100/10 pt-3 space-y-2">
-            <div className="text-[10px] uppercase text-ink-100/55">Bullets to use</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Bullets to use</div>
             <div className="flex items-center gap-3">
               <input type="number" min="0" max={maxBullets} value={bullets}
                 onChange={e => setBullets(Math.max(0, Math.min(maxBullets, parseInt(e.target.value, 10) || 0)))}
@@ -124,15 +124,15 @@ export default function Murder() {
                 onChange={e => setBullets(parseInt(e.target.value, 10) || 0)}
                 disabled={busy || maxBullets === 0}
                 className="flex-1" />
-              <span className="text-[11px] text-ink-100/55 tabular-nums">/ {ammo.on_hand} on hand</span>
+              <span className="text-[13px] text-ink-100/55 tabular-nums">/ {ammo.on_hand} on hand</span>
             </div>
-            <p className="text-[11px] text-ink-100/55">
+            <p className="text-[13px] text-ink-100/55">
               Each round is a separate hit roll. More bullets = more chances to land damage,
               but also more rounds spent if you miss. Min hit chance ≈ 5%, max ≈ 85%.
               Bullets are consumed regardless of outcome.
             </p>
             {maxBullets === 0 && (
-              <p className="text-[11px] text-blood-400">No {weapon.ammoType} rounds in your inventory. Buy ammo at the Gun Store first.</p>
+              <p className="text-[13px] text-blood-400">No {weapon.ammoType} rounds in your inventory. Buy ammo at the Gun Store first.</p>
             )}
           </div>
         )}
@@ -145,7 +145,7 @@ export default function Murder() {
           <li><b className="text-yellow-200">Wound</b> — ≥ 20% of max HP. Hospital 15–45 min. No cash transfer.</li>
           <li><b>Miss</b> — they get notified, ammo + energy spent, you walk away.</li>
         </ul>
-        <p className="text-[11px] text-ink-100/45 mt-2">
+        <p className="text-[13px] text-ink-100/45 mt-2">
           24h cooldown on you afterwards; 24h immunity for them. New characters are protected for the first <b>3 days</b> after creation.
         </p>
       </Card>

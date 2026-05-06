@@ -9,10 +9,10 @@ import Timer from '../components/Timer.jsx';
 
 function StatusPill({ trade }) {
   if (trade.status === 'pending')
-    return <span className="text-[10px] uppercase text-yellow-400"> pending</span>;
+    return <span className="text-[12px] uppercase text-yellow-400"> pending</span>;
   if (trade.status === 'active')
-    return <span className="text-[10px] uppercase text-money-400"> active</span>;
-  return <span className="text-[10px] uppercase text-ink-100/45"> {trade.status}</span>;
+    return <span className="text-[12px] uppercase text-money-400"> active</span>;
+  return <span className="text-[12px] uppercase text-ink-100/45"> {trade.status}</span>;
 }
 
 function TradeRow({ trade, character }) {
@@ -26,12 +26,12 @@ function TradeRow({ trade, character }) {
           <span className="font-medium truncate">{other?.name}</span>
           <StatusPill trade={trade} />
         </div>
-        <div className="text-[11px] text-ink-100/55 mt-0.5">
+        <div className="text-[13px] text-ink-100/55 mt-0.5">
           {youInitiated ? 'You initiated' : 'They invited you'} · expires in <Timer until={trade.expires_at} />
         </div>
       </div>
       {trade.status === 'pending' && !youInitiated && (
-        <span className="text-[10px] uppercase text-yellow-300">awaiting your accept →</span>
+        <span className="text-[12px] uppercase text-yellow-300">awaiting your accept →</span>
       )}
     </Link>
   );

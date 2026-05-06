@@ -43,7 +43,7 @@ function Tile({ to, name, blurb }) {
       className="group flex p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
       <div className="min-w-0">
         <div className="font-medium text-sm group-hover:text-blood-400 transition">{name}</div>
-        <div className="text-[11px] text-ink-100/55 leading-snug mt-0.5">{blurb}</div>
+        <div className="text-[13px] text-ink-100/55 leading-snug mt-0.5">{blurb}</div>
       </div>
     </Link>
   );
@@ -113,10 +113,10 @@ function TerritoryCard({ characterCity, characterFaction }) {
               <span className="font-medium text-sm">{a.name}</span>
               {a.faction
                 ? <FactionBadge faction={a.faction} />
-                : <span className="text-[10px] uppercase tracking-wide text-ink-100/45">Unclaimed</span>}
+                : <span className="text-[12px] uppercase tracking-wide text-ink-100/45">Unclaimed</span>}
             </div>
             {a.flipped_at && Date.now() - a.flipped_at < 24*60*60*1000 && (
-              <div className="text-[10px] text-yellow-400/85 mt-1"> Locked until UTC midnight</div>
+              <div className="text-[12px] text-yellow-400/85 mt-1"> Locked until UTC midnight</div>
             )}
             <button
               onClick={() => attempt(a)}
@@ -184,8 +184,8 @@ export default function City() {
           const total = (f.fraudster || 0) + (f.mafia || 0) + (f.cartel || 0);
           if (total === 0) return null;
           return (
-            <div className="mt-3 pt-3 border-t border-ink-100/10 flex flex-wrap gap-x-4 gap-y-1 text-[11px] tabular-nums">
-              <span className="text-ink-100/50 uppercase text-[10px] tracking-wide">Factions in city</span>
+            <div className="mt-3 pt-3 border-t border-ink-100/10 flex flex-wrap gap-x-4 gap-y-1 text-[13px] tabular-nums">
+              <span className="text-ink-100/50 uppercase text-[12px] tracking-wide">Factions in city</span>
               <span className="text-gold-400">Fraudster <b>{f.fraudster || 0}</b></span>
               <span className="text-blood-400">Mafia <b>{f.mafia || 0}</b></span>
               <span className="text-money-400">Cartel <b>{f.cartel || 0}</b></span>

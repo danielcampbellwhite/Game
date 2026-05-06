@@ -16,7 +16,7 @@ const VITAL_COLOURS = {
 
 function effectChips(effects) {
   return Object.entries(effects).map(([k, v]) => (
-    <span key={k} className={`text-[10px] uppercase tracking-wide ${VITAL_COLOURS[k] || 'text-ink-50'}`}>
+    <span key={k} className={`text-[12px] uppercase tracking-wide ${VITAL_COLOURS[k] || 'text-ink-50'}`}>
       {v > 0 ? '+' : ''}{v} {k}
     </span>
   ));
@@ -70,7 +70,7 @@ export default function GeneralStore() {
       <Card title={`${shop.name} — ${data.cityName}`}
         subtitle="Odds, ends, and props. Most are mission props with no other use; a couple lift your spirits.">
         {cityMul !== 1 && (
-          <p className="text-[11px] text-ink-100/50">Local prices are at ×{cityMul.toFixed(2)} of base.</p>
+          <p className="text-[13px] text-ink-100/50">Local prices are at ×{cityMul.toFixed(2)} of base.</p>
         )}
         {msg && <p className="text-xs text-money-400 mt-1">{msg}</p>}
       </Card>
@@ -83,22 +83,22 @@ export default function GeneralStore() {
             <Card key={i.id}>
               <div className="flex justify-between items-start">
                 <div className="font-medium">{i.emoji} {i.name}</div>
-                <div className="text-[11px] text-gold-400 tabular-nums">{fmt(i.cityCost)}</div>
+                <div className="text-[13px] text-gold-400 tabular-nums">{fmt(i.cityCost)}</div>
               </div>
-              <p className="text-[11px] text-ink-100/60 mt-1">{i.desc}</p>
+              <p className="text-[13px] text-ink-100/60 mt-1">{i.desc}</p>
               {i.effects && (
                 <div className="mt-2 flex flex-wrap gap-x-2">{effectChips(i.effects)}</div>
               )}
               {i.oneShotCash && (
-                <div className="mt-2 text-[10px] uppercase tracking-wide text-gold-400">
+                <div className="mt-2 text-[12px] uppercase tracking-wide text-gold-400">
                   random £{i.oneShotCash.min}–£{i.oneShotCash.max}
                 </div>
               )}
               {i.missionOnly && (
-                <div className="mt-2 text-[10px] uppercase tracking-wide text-ink-100/40">mission item</div>
+                <div className="mt-2 text-[12px] uppercase tracking-wide text-ink-100/40">mission item</div>
               )}
 
-              <div className="mt-2 flex items-center justify-between text-[11px]">
+              <div className="mt-2 flex items-center justify-between text-[13px]">
                 <span className="text-ink-100/50">owned</span>
                 <span className="tabular-nums text-ink-100/80">{i.owned}</span>
               </div>
@@ -123,7 +123,7 @@ export default function GeneralStore() {
       </div>
 
       <Card>
-        <p className="text-[11px] text-ink-100/60">
+        <p className="text-[13px] text-ink-100/60">
           Working through your <Link to="/missions" className="underline text-money-400">daily missions</Link>?
           Items used here count toward "Prep Kit", "Ghost Caller", "Cracksman", and similar objectives.
         </p>

@@ -49,7 +49,7 @@ function PostForm({ categories, onPosted, disabled }) {
     <form onSubmit={submit} className="space-y-3">
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className="text-[10px] uppercase text-ink-100/55">Category</label>
+          <label className="text-[12px] uppercase text-ink-100/55">Category</label>
           <select value={category} onChange={e => setCategory(e.target.value)} className="w-full" disabled={busy || disabled}>
             {categories.map(c => (
               <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
@@ -57,7 +57,7 @@ function PostForm({ categories, onPosted, disabled }) {
           </select>
         </div>
         <div>
-          <label className="text-[10px] uppercase text-ink-100/55">Rate (free-form)</label>
+          <label className="text-[12px] uppercase text-ink-100/55">Rate (free-form)</label>
           <input value={rateText} onChange={e => setRateText(e.target.value)}
             maxLength={RATE_MAX}
             placeholder='e.g. £500/job · 1% of take · negotiable'
@@ -65,21 +65,21 @@ function PostForm({ categories, onPosted, disabled }) {
         </div>
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Title</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Title</label>
         <input value={title} onChange={e => setTitle(e.target.value)}
           maxLength={TITLE_MAX}
           placeholder='e.g. Wheelman available — clean record, fast cars'
           className="w-full" disabled={busy || disabled} />
-        <div className="text-[10px] text-ink-100/40 text-right">{title.length}/{TITLE_MAX}</div>
+        <div className="text-[12px] text-ink-100/40 text-right">{title.length}/{TITLE_MAX}</div>
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Description</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Description</label>
         <textarea value={body} onChange={e => setBody(e.target.value)}
           maxLength={BODY_MAX}
           rows={4}
           placeholder='What you offer, what you need, terms, how to reach you. Keep it short — interested players DM you.'
           className="w-full" disabled={busy || disabled} />
-        <div className="text-[10px] text-ink-100/40 text-right">{body.length}/{BODY_MAX}</div>
+        <div className="text-[12px] text-ink-100/40 text-right">{body.length}/{BODY_MAX}</div>
       </div>
       {err && <p className="text-blood-400 text-xs">{err}</p>}
       <button disabled={busy || disabled} className="btn btn-primary w-full text-sm" type="submit">
@@ -99,10 +99,10 @@ function ListingCard({ l, isMine, onRetract, busy }) {
           </span>
           <span className="font-medium truncate">{l.title}</span>
         </div>
-        <span className="text-[10px] text-ink-100/45 shrink-0">expires in {timeUntil(l.expires_at)}</span>
+        <span className="text-[12px] text-ink-100/45 shrink-0">expires in {timeUntil(l.expires_at)}</span>
       </div>
       <p className="text-[12px] text-ink-100/75 whitespace-pre-wrap break-words">{l.body}</p>
-      <div className="flex items-baseline justify-between gap-2 text-[11px]">
+      <div className="flex items-baseline justify-between gap-2 text-[13px]">
         <div className="text-ink-100/55">
           Posted by{' '}
           {l.poster ? (
@@ -176,7 +176,7 @@ export default function JobBoard() {
             {showForm ? 'Hide form' : '+ Post a listing'}
           </button>
         }>
-        <p className="text-[11px] text-ink-100/55">
+        <p className="text-[13px] text-ink-100/55">
           Listings are scoped to your current city. Reach out via DM — payment is settled
           between you and the other player however you arrange (bank transfer, cash drop, hand-shake).
           You can have up to <b>{data.max_per_player}</b> listings active at once;

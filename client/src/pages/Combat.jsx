@@ -114,13 +114,13 @@ function PvpChallengeSection({ character }) {
               <div className="flex items-baseline justify-between gap-2">
                 <div className="flex items-baseline gap-2 min-w-0">
                   <Link to={`/players/${p.id}`} className="font-medium truncate hover:underline">{p.name}</Link>
-                  <span className="text-[10px] uppercase text-ink-100/45">L{p.level}</span>
+                  <span className="text-[12px] uppercase text-ink-100/45">L{p.level}</span>
                 </div>
                 {p.online
-                  ? <span className="text-[10px] uppercase text-money-400"> online</span>
-                  : <span className="text-[10px] text-ink-100/45">{timeAgo(p.last_active_at)}</span>}
+                  ? <span className="text-[12px] uppercase text-money-400"> online</span>
+                  : <span className="text-[12px] text-ink-100/45">{timeAgo(p.last_active_at)}</span>}
               </div>
-              <div className="text-[11px] text-ink-100/55 mt-1">{p.rank}</div>
+              <div className="text-[13px] text-ink-100/55 mt-1">{p.rank}</div>
               <button
                 disabled={busy === 'chal-' + p.id || pendingId != null}
                 onClick={() => challenge(p)}
@@ -232,17 +232,17 @@ export default function Combat() {
                   <div className="flex items-baseline justify-between">
                     <span className="font-medium">{m.emoji} {m.name}</span>
                     {!m.defensive && (
-                      <span className="text-[10px] text-ink-100/50 tabular-nums">×{m.dmgMul}</span>
+                      <span className="text-[12px] text-ink-100/50 tabular-nums">×{m.dmgMul}</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-ink-100/55 mt-1 leading-snug">{m.desc}</div>
+                  <div className="text-[12px] text-ink-100/55 mt-1 leading-snug">{m.desc}</div>
                   {!m.defensive && (
-                    <div className="mt-2 flex justify-between text-[10px] tabular-nums">
+                    <div className="mt-2 flex justify-between text-[12px] tabular-nums">
                       <span className="text-money-400">hit {Math.round(m.hit * 100)}%</span>
                       <span className="text-yellow-400">crit {Math.round(m.crit * 100)}%</span>
                     </div>
                   )}
-                  {busy === id && <div className="text-[10px] text-ink-100/60 mt-1">…</div>}
+                  {busy === id && <div className="text-[12px] text-ink-100/60 mt-1">…</div>}
                 </button>
               );
             })}
@@ -254,7 +254,7 @@ export default function Combat() {
             {fight.log.length === 0 && <p className="text-ink-100/45">Throw the first punch.</p>}
             {fight.log.map((entry, i) => (
               <div key={i} className={`flex gap-2 ${KIND_STYLE[entry.kind] || 'text-ink-100/80'}`}>
-                <span className="text-[10px] tabular-nums text-ink-100/40 shrink-0 w-8">R{entry.round}</span>
+                <span className="text-[12px] tabular-nums text-ink-100/40 shrink-0 w-8">R{entry.round}</span>
                 <span className="flex-1">{entry.text}</span>
               </div>
             ))}
@@ -300,9 +300,9 @@ export default function Combat() {
             <div key={t.id} className={`rounded-lg p-3 border bg-ink-950/40 ${t.locked ? 'opacity-50 border-ink-100/5' : t.recommended ? 'border-money-500/40' : 'border-ink-100/10'}`}>
               <div className="flex justify-between">
                 <div className="font-medium">{t.name}</div>
-                <div className="text-[10px] text-ink-100/50">Lvl {t.level}</div>
+                <div className="text-[12px] text-ink-100/50">Lvl {t.level}</div>
               </div>
-              <div className="text-[11px] text-ink-100/60 mt-1">
+              <div className="text-[13px] text-ink-100/60 mt-1">
                 STR {t.str} · DEF {t.def} · SPD {t.spd} · HP {t.hp} · loot {fmt(t.loot[0])}–{fmt(t.loot[1])}
               </div>
               <button

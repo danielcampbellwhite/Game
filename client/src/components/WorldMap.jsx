@@ -212,28 +212,28 @@ export default function WorldMap({ cities, you }) {
             transform: hover.x > (wrapRef.current?.clientWidth || 0) - 180 ? 'translateX(calc(-100% - 28px))' : undefined,
           }}>
           <div className="text-sm font-medium text-ink-50">{hoverCity.name}</div>
-          <div className="text-[11px] text-ink-100/70 tabular-nums">
+          <div className="text-[13px] text-ink-100/70 tabular-nums">
             {hoverCity.players} player{hoverCity.players === 1 ? '' : 's'}
           </div>
           {(hoverCity.online || 0) > 0 && (
-            <div className="text-[11px] text-money-400 tabular-nums"> {hoverCity.online} online</div>
+            <div className="text-[13px] text-money-400 tabular-nums"> {hoverCity.online} online</div>
           )}
           {hoverCity.id === you && (
-            <div className="text-[10px] text-yellow-400 uppercase tracking-wide mt-0.5">You are here</div>
+            <div className="text-[12px] text-yellow-400 uppercase tracking-wide mt-0.5">You are here</div>
           )}
         </div>
       )}
 
       <div className="mt-3 rounded-md border border-ink-100/10 bg-ink-950/40 px-3 py-2 flex flex-wrap items-baseline justify-between gap-2 text-xs">
         <div className="tabular-nums">
-          <span className="text-ink-100/50 uppercase text-[10px] tracking-wide mr-2">Online now</span>
+          <span className="text-ink-100/50 uppercase text-[12px] tracking-wide mr-2">Online now</span>
           <span className="font-display text-lg text-blood-400">{totalOnline}</span>
           <span className="text-ink-100/45"> / {totalPlayers} player{totalPlayers === 1 ? '' : 's'} across {populatedCities} cit{populatedCities === 1 ? 'y' : 'ies'}</span>
         </div>
-        <div className="text-[10px] text-ink-100/40 normal-case">Numbers next to each dot are total players in that city.</div>
+        <div className="text-[12px] text-ink-100/40 normal-case">Numbers next to each dot are total players in that city.</div>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] uppercase tracking-wide text-ink-100/55">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] uppercase tracking-wide text-ink-100/55">
         <span className="flex items-center gap-1">
           <span className="inline-block w-2 h-2 rounded-full bg-yellow-400" /> you are here
         </span>

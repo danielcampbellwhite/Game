@@ -18,7 +18,7 @@ const EFFECT_TONE = {
 function effectChips(effects) {
   if (!effects) return null;
   return Object.entries(effects).map(([k, v]) => (
-    <span key={k} className={`text-[10px] uppercase tracking-wide ${EFFECT_TONE[k] || 'text-ink-50'}`}>
+    <span key={k} className={`text-[12px] uppercase tracking-wide ${EFFECT_TONE[k] || 'text-ink-50'}`}>
       {v > 0 ? '+' : ''}{v} {k}
     </span>
   ));
@@ -53,7 +53,7 @@ export default function Shop() {
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
       <Card title={` ${data.name} — ${data.cityName}`} subtitle={data.blurb}>
-        <p className="text-[11px] text-ink-100/55">
+        <p className="text-[13px] text-ink-100/55">
           Items go straight into your inventory. Use them from there or the General Store's "use"
           flow when you need the boost.
         </p>
@@ -66,13 +66,13 @@ export default function Shop() {
             <div key={i.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
               <div className="flex justify-between items-start gap-2">
                 <div className="font-medium">{i.emoji} {i.name}</div>
-                <div className="text-[11px] text-money-400 tabular-nums">{fmt(i.cityCost)}</div>
+                <div className="text-[13px] text-money-400 tabular-nums">{fmt(i.cityCost)}</div>
               </div>
-              <p className="text-[11px] text-ink-100/60 mt-1">{i.desc}</p>
+              <p className="text-[13px] text-ink-100/60 mt-1">{i.desc}</p>
               {i.effects && (
                 <div className="mt-2 flex flex-wrap gap-x-2">{effectChips(i.effects)}</div>
               )}
-              <div className="mt-3 flex items-baseline justify-between gap-2 text-[10px] text-ink-100/50">
+              <div className="mt-3 flex items-baseline justify-between gap-2 text-[12px] text-ink-100/50">
                 <span>Owned: {i.owned}</span>
               </div>
               <button

@@ -179,7 +179,7 @@ export default function PvpFight() {
           <span className={`text-xs uppercase tracking-wide ${isYourTurn ? 'text-money-400' : 'text-ink-100/55'}`}>
             {isYourTurn ? 'Your turn — pick a move' : `Waiting for ${fight.opponent?.name}…`}
           </span>
-          <span className="text-[11px] tabular-nums text-ink-100/60">{turnLeft}s</span>
+          <span className="text-[13px] tabular-nums text-ink-100/60">{turnLeft}s</span>
         </div>
         {error && <p className="text-xs text-blood-400 mt-2">{error}</p>}
       </Card>
@@ -197,17 +197,17 @@ export default function PvpFight() {
                 <div className="flex items-baseline justify-between">
                   <span className="font-medium">{m.emoji} {m.name}</span>
                   {!m.defensive && (
-                    <span className="text-[10px] text-ink-100/50 tabular-nums">×{m.dmgMul}</span>
+                    <span className="text-[12px] text-ink-100/50 tabular-nums">×{m.dmgMul}</span>
                   )}
                 </div>
-                <div className="text-[10px] text-ink-100/55 mt-1 leading-snug">{m.desc}</div>
+                <div className="text-[12px] text-ink-100/55 mt-1 leading-snug">{m.desc}</div>
                 {!m.defensive && (
-                  <div className="mt-2 flex justify-between text-[10px] tabular-nums">
+                  <div className="mt-2 flex justify-between text-[12px] tabular-nums">
                     <span className="text-money-400">hit {Math.round(m.hit * 100)}%</span>
                     <span className="text-yellow-400">crit {Math.round(m.crit * 100)}%</span>
                   </div>
                 )}
-                {busy === id && <div className="text-[10px] text-ink-100/60 mt-1">…</div>}
+                {busy === id && <div className="text-[12px] text-ink-100/60 mt-1">…</div>}
               </button>
             );
           })}
@@ -219,7 +219,7 @@ export default function PvpFight() {
           {fight.log.length === 0 && <p className="text-ink-100/45">Pick a move and throw the first punch.</p>}
           {fight.log.map((entry, i) => (
             <div key={i} className={`flex gap-2 ${KIND_STYLE[entry.kind] || 'text-ink-100/80'}`}>
-              <span className="text-[10px] tabular-nums text-ink-100/40 shrink-0 w-8">R{entry.round}</span>
+              <span className="text-[12px] tabular-nums text-ink-100/40 shrink-0 w-8">R{entry.round}</span>
               <span className="flex-1">{entry.text}</span>
             </div>
           ))}

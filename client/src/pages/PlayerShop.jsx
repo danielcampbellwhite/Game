@@ -16,9 +16,9 @@ function ListingRow({ listing, isOwner, onBuy, onDelist, busy, sameCity }) {
         <div className="font-medium">{listing.emoji} {listing.name}</div>
         <div className="text-money-400 tabular-nums">{fmt(listing.price_each)}</div>
       </div>
-      {listing.desc && <div className="text-[11px] text-ink-100/55">{listing.desc}</div>}
+      {listing.desc && <div className="text-[13px] text-ink-100/55">{listing.desc}</div>}
       <EffectsPills effects={listing.effects} />
-      <div className="flex items-baseline justify-between gap-2 text-[11px]">
+      <div className="flex items-baseline justify-between gap-2 text-[13px]">
         <span className="text-ink-100/55">in stock: <b className="text-ink-100/85 tabular-nums">{listing.qty}</b></span>
         <span className="text-ink-100/40">{listing.source === 'wholesale' ? 'Wholesale stock' : 'Owner-listed'}</span>
       </div>
@@ -116,7 +116,7 @@ function ListFromInventoryForm({ shop, onListed }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Pick an item from your inventory</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Pick an item from your inventory</label>
         <select value={pickKey} onChange={e => {
           setPickKey(e.target.value);
           const next = items.find(c => refOf(c) === e.target.value);
@@ -133,9 +133,9 @@ function ListFromInventoryForm({ shop, onListed }) {
             </option>
           ))}
         </select>
-        {item?.sub && <div className="text-[10px] text-ink-100/55 mt-1">{item.sub}</div>}
+        {item?.sub && <div className="text-[12px] text-ink-100/55 mt-1">{item.sub}</div>}
         {item?.equipped && (
-          <div className="text-[11px] text-yellow-300 mt-1">
+          <div className="text-[13px] text-yellow-300 mt-1">
              This is currently equipped. Listing it will unequip you.
           </div>
         )}
@@ -143,14 +143,14 @@ function ListFromInventoryForm({ shop, onListed }) {
       <div className="grid grid-cols-2 gap-2">
         {!isPerInstance && (
           <div>
-            <label className="text-[10px] uppercase text-ink-100/55">Qty (max {ownedQty})</label>
+            <label className="text-[12px] uppercase text-ink-100/55">Qty (max {ownedQty})</label>
             <input type="number" min="1" max={ownedQty} value={qty}
               onChange={e => setQty(Math.max(1, Math.min(ownedQty, parseInt(e.target.value, 10) || 1)))}
               disabled={busy} />
           </div>
         )}
         <div className={isPerInstance ? 'col-span-2' : ''}>
-          <label className="text-[10px] uppercase text-ink-100/55">
+          <label className="text-[12px] uppercase text-ink-100/55">
             {isPerInstance ? 'Retail price' : 'Retail per unit'}
           </label>
           <input type="number" min="1" value={retail}
@@ -158,7 +158,7 @@ function ListFromInventoryForm({ shop, onListed }) {
             disabled={busy} />
         </div>
       </div>
-      <p className="text-[11px] text-ink-100/55">
+      <p className="text-[13px] text-ink-100/55">
         {isPerInstance
           ? 'Modded items are unique. Once listed, you can\'t equip / further-modify it until sold or delisted.'
           : 'Stacks move from your inventory into the shop. Until they\'re sold, they\'re locked in the listing — delisting or closing returns them to you.'}
@@ -210,7 +210,7 @@ function StockFromWholesaleForm({ shop, onStocked }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Item from wholesaler</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Item from wholesaler</label>
         <select value={itemId} onChange={e => {
           setItemId(e.target.value);
           const next = catalogue.find(c => c.id === e.target.value);
@@ -230,29 +230,29 @@ function StockFromWholesaleForm({ shop, onStocked }) {
             );
           })}
         </select>
-        {item.desc && <div className="text-[11px] text-ink-100/55 mt-2">{item.desc}</div>}
+        {item.desc && <div className="text-[13px] text-ink-100/55 mt-2">{item.desc}</div>}
         {item.effects && (
           <div className="mt-2">
-            <div className="text-[9px] uppercase tracking-wide text-ink-100/45 mb-1">Effects when used</div>
+            <div className="text-[11px] uppercase tracking-wide text-ink-100/45 mb-1">Effects when used</div>
             <EffectsPills effects={item.effects} />
           </div>
         )}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[10px] uppercase text-ink-100/55">Qty</label>
+          <label className="text-[12px] uppercase text-ink-100/55">Qty</label>
           <input type="number" min="1" max="999" value={qty}
             onChange={e => setQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
             disabled={busy} />
         </div>
         <div>
-          <label className="text-[10px] uppercase text-ink-100/55">Retail per unit</label>
+          <label className="text-[12px] uppercase text-ink-100/55">Retail per unit</label>
           <input type="number" min="1" value={retail}
             onChange={e => setRetail(Math.max(1, parseInt(e.target.value, 10) || 0))}
             disabled={busy} />
         </div>
       </div>
-      <p className="text-[11px] text-ink-100/55">
+      <p className="text-[13px] text-ink-100/55">
         Wholesale spend: <b className="text-blood-400">{fmt(totalCost)}</b> ·
         Potential gross at retail: <b className="text-money-400">{fmt(retail * qty)}</b>.
         Restocking the same item adds to existing stock and updates the retail price.
@@ -294,16 +294,16 @@ function EditShopForm({ shop, onSaved }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Shop name</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Shop name</label>
         <input value={name} maxLength={SHOP_NAME_MAX}
           onChange={e => setName(e.target.value)} className="w-full" disabled={busy} />
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Description (optional — shown to visitors)</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Description (optional — shown to visitors)</label>
         <textarea value={description} maxLength={SHOP_DESC_MAX} rows={3}
           placeholder='e.g. The freshest gear in town. We deal in volume — drop us a DM for bulk orders.'
           onChange={e => setDescription(e.target.value)} className="w-full" disabled={busy} />
-        <div className="text-[10px] text-ink-100/40 text-right">{description.length}/{SHOP_DESC_MAX}</div>
+        <div className="text-[12px] text-ink-100/40 text-right">{description.length}/{SHOP_DESC_MAX}</div>
       </div>
       {err && <p className="text-blood-400 text-xs">{err}</p>}
       <div className="flex gap-2 items-baseline">
@@ -312,7 +312,7 @@ function EditShopForm({ shop, onSaved }) {
           {busy ? 'Saving…' : 'Save changes'}
         </button>
         {savedAt > 0 && Date.now() - savedAt < 4000 && !dirty && (
-          <span className="text-[11px] text-money-400"> Saved.</span>
+          <span className="text-[13px] text-money-400"> Saved.</span>
         )}
       </div>
     </form>
@@ -356,24 +356,24 @@ function OwnerPanel({ shop, onChanged }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-4">
         <div>
-          <div className="text-[10px] uppercase text-ink-100/55">Sales till</div>
+          <div className="text-[12px] uppercase text-ink-100/55">Sales till</div>
           <div className="text-money-400 font-semibold tabular-nums">{fmt(shop.sales_cash)}</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase text-ink-100/55">Lifetime revenue</div>
+          <div className="text-[12px] uppercase text-ink-100/55">Lifetime revenue</div>
           <div className="tabular-nums">{fmt(shop.total_revenue)}</div>
         </div>
         <div>
-          <div className="text-[10px] uppercase text-ink-100/55">Net (after tax)</div>
+          <div className="text-[12px] uppercase text-ink-100/55">Net (after tax)</div>
           <div className={`tabular-nums ${profit >= 0 ? 'text-money-400' : 'text-blood-400'}`}>
             {fmt(profit)}
           </div>
-          <div className="text-[10px] text-ink-100/55">tax paid {fmt(shop.total_tax_paid)}</div>
+          <div className="text-[12px] text-ink-100/55">tax paid {fmt(shop.total_tax_paid)}</div>
         </div>
       </div>
 
       <div className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
-        <div className="text-[10px] uppercase text-ink-100/55 mb-2">Withdraw from sales</div>
+        <div className="text-[12px] uppercase text-ink-100/55 mb-2">Withdraw from sales</div>
         <div className="flex gap-2">
           <input type="number" min="0" max={shop.sales_cash} value={withdraw}
             onChange={e => setWithdraw(Math.max(0, parseInt(e.target.value, 10) || 0))}
@@ -441,11 +441,11 @@ export default function PlayerShop() {
           </p>
         )}
         {!sameCity && (
-          <div className="text-[11px] text-ink-100/55">
+          <div className="text-[13px] text-ink-100/55">
             You're not in {shop.cityName} — fly there to make a purchase.
           </div>
         )}
-        <div className="text-[10px] text-ink-100/45 mt-2">
+        <div className="text-[12px] text-ink-100/45 mt-2">
           Sales tax: {(sales_tax_pct * 100).toFixed(0)}% off the top of every purchase (sink).
         </div>
       </Card>

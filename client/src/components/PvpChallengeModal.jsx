@@ -100,7 +100,7 @@ export default function PvpChallengeModal() {
                 {challenge.other?.name}
               </Link>
             </div>
-            <div className={`text-[10px] uppercase tracking-wide ${isMurder ? 'text-blood-300' : 'text-blood-400'}`}>
+            <div className={`text-[12px] uppercase tracking-wide ${isMurder ? 'text-blood-300' : 'text-blood-400'}`}>
               {isMurder ? ' Wants to KILL you' : ' Wants to fight you'}
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function PvpChallengeModal() {
             A bare-knuckle fight, turn-based. Loser ends up in hospital and forfeits 5% of cash on hand.
           </p>
         )}
-        <div className="text-[11px] text-ink-100/55 tabular-nums">Auto-declines in {remaining}s</div>
+        <div className="text-[13px] text-ink-100/55 tabular-nums">Auto-declines in {remaining}s</div>
         <div className="grid grid-cols-2 gap-2">
           <button disabled={busy != null} onClick={decline} className="btn btn-ghost text-xs">
             {busy === 'decline' ? '…' : 'Decline'}

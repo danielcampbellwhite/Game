@@ -137,7 +137,7 @@ function NotificationBell() {
         title="Notifications">
         🔔
         {data.unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
+          <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[11px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
             {data.unreadCount > 99 ? '99+' : data.unreadCount}
           </span>
         )}
@@ -149,7 +149,7 @@ function NotificationBell() {
           className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-ink-100/15 bg-ink-950/95 backdrop-blur shadow-2xl shadow-black/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-ink-100/10 flex items-baseline justify-between">
             <span className="text-xs uppercase tracking-wide text-ink-100/60">Notifications</span>
-            <span className="text-[10px] text-ink-100/40">{data.items.length} recent</span>
+            <span className="text-[12px] text-ink-100/40">{data.items.length} recent</span>
           </div>
           {!data.items.length ? (
             <div className="p-4 text-xs text-ink-100/45 text-center">No notifications yet.</div>
@@ -159,8 +159,8 @@ function NotificationBell() {
                 <li key={n.id}
                   className={`px-3 py-2 border-b border-ink-100/5 last:border-0 ${n.unread ? 'bg-blood-700/10' : ''}`}>
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className={`uppercase text-[9px] tracking-wide ${TYPE_COLOR[n.type] || 'text-ink-100/60'}`}>{n.type}</span>
-                    <span className="text-[10px] text-ink-100/40 whitespace-nowrap">{timeAgo(n.created_at)} ago</span>
+                    <span className={`uppercase text-[11px] tracking-wide ${TYPE_COLOR[n.type] || 'text-ink-100/60'}`}>{n.type}</span>
+                    <span className="text-[12px] text-ink-100/40 whitespace-nowrap">{timeAgo(n.created_at)} ago</span>
                   </div>
                   <div className="text-xs text-ink-100/85 mt-0.5">{n.message}</div>
                 </li>
@@ -180,7 +180,7 @@ function MiniStat({ label, value, max, color, money }) {
   const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <div className="min-w-0 leading-tight">
-      <div className={`flex items-baseline gap-2 text-[10px] uppercase text-ink-100/55 ${money ? 'justify-end' : 'justify-between'}`}>
+      <div className={`flex items-baseline gap-2 text-[12px] uppercase text-ink-100/55 ${money ? 'justify-end' : 'justify-between'}`}>
         <span>{label}</span>
         <span className={`tabular-nums ${money ? 'text-money-400 font-medium' : 'text-ink-100/85'}`}>
           {money ? fmt(value) : `${value}/${max}`}
@@ -254,7 +254,7 @@ export default function Nav() {
         <Link to="/" onClick={onClickGuard} className={charChipClass + ' min-w-0 hidden md:flex'} aria-label="Dashboard">
           <div className="leading-tight min-w-0">
             <div className="text-sm font-medium truncate">{character?.name}</div>
-            <div className="text-[10px] text-ink-100/50">
+            <div className="text-[12px] text-ink-100/50">
               Lvl {character?.level}{character?.prestige ? ` ★${character.prestige}` : ''} · {character?.rank}
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function Nav() {
               <path d="M3 7l9 6 9-6" />
             </svg>
             {dmUnread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
+              <span className="absolute -top-0.5 -right-0.5 bg-blood-500 text-white text-[11px] font-bold rounded-full px-1.5 py-0.5 min-w-[16px] text-center leading-tight">
                 {dmUnread > 99 ? '99+' : dmUnread}
               </span>
             )}
@@ -309,7 +309,7 @@ export default function Nav() {
             <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
             <MiniStat label="Happy"   value={character.happiness} max={100}                  color="bg-pink-400"   />
             <div className="min-w-0 leading-tight">
-              <div className="flex items-baseline justify-between gap-2 text-[10px] uppercase text-ink-100/55">
+              <div className="flex items-baseline justify-between gap-2 text-[12px] uppercase text-ink-100/55">
                 <span>{character.at_max_level ? 'Max Lvl' : 'XP'}</span>
                 <span className="tabular-nums text-ink-100/85">
                   {character.at_max_level ? 'MAX' : `${character.xp}/${character.xp_to_next}`}

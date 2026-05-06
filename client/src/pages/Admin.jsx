@@ -70,13 +70,13 @@ function PlayerEditor({ player, onSaved }) {
       <div className="grid sm:grid-cols-2 gap-3">
         {NUMERIC_FIELDS.map(f => (
           <label key={f.id} className="block">
-            <span className="text-[10px] uppercase text-ink-100/60">{f.label}</span>
+            <span className="text-[12px] uppercase text-ink-100/60">{f.label}</span>
             <input
               type="number"
               value={draft[f.id]}
               onChange={e => set(f.id, e.target.value)}
               className="w-full" />
-            <span className="text-[10px] text-ink-100/40">
+            <span className="text-[12px] text-ink-100/40">
               current: {f.money ? fmt(player[f.id]) : (player[f.id] ?? '—')}
             </span>
           </label>
@@ -84,7 +84,7 @@ function PlayerEditor({ player, onSaved }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-ink-100/10">
-        <label className="text-[10px] uppercase text-ink-100/60">Faction</label>
+        <label className="text-[12px] uppercase text-ink-100/60">Faction</label>
         <select
           defaultValue={player.faction || ''}
           onChange={e => applyAction({ faction: e.target.value }, `Faction → ${e.target.value || 'cleared'}`)}
@@ -171,7 +171,7 @@ export default function Admin() {
       <Card title="Admin Panel"
         subtitle="God mode. Edits apply immediately and are written to the system log of the targeted character."
         right={<button onClick={load} className="btn btn-ghost text-xs">↻ Refresh</button>}>
-        <p className="text-[11px] text-ink-100/55">
+        <p className="text-[13px] text-ink-100/55">
           Logged in as <b>{character.name}</b> (admin). Pick a player below to edit their stats, money, level, or release them from jail/hospital.
         </p>
         {err && <p className="text-blood-400 text-xs mt-2">{err}</p>}
@@ -180,7 +180,7 @@ export default function Admin() {
       <Card title="Populate world"
         subtitle="Generate randomised NPC players. They're real DB rows — robbable, murderable, messageable — backdated 30 days so they're past new-character protection.">
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-[10px] uppercase text-ink-100/60">Count</label>
+          <label className="text-[12px] uppercase text-ink-100/60">Count</label>
           <input type="number" min="1" max="500" value={seedCount}
             onChange={e => setSeedCount(e.target.value)}
             disabled={seedBusy}
@@ -193,7 +193,7 @@ export default function Admin() {
           </button>
         </div>
         {seedMsg && <p className="text-money-400 text-xs mt-2">{seedMsg}</p>}
-        <p className="text-[10px] text-ink-100/40 mt-2">
+        <p className="text-[12px] text-ink-100/40 mt-2">
           Seeded users have <code>username</code> starting with <code>npc_</code>.
           Purge wipes them along with everything they own (cascade delete).
         </p>
@@ -218,9 +218,9 @@ export default function Admin() {
                       className={`w-full text-left rounded-md p-2 border text-xs ${selectedId === p.id ? 'border-blood-500 bg-blood-700/15' : 'border-ink-100/10 bg-ink-950/40 hover:border-ink-100/30'}`}>
                       <div className="flex items-baseline justify-between">
                         <span className="font-medium truncate">{p.name}</span>
-                        <span className="text-[10px] text-ink-100/45">L{p.level}</span>
+                        <span className="text-[12px] text-ink-100/45">L{p.level}</span>
                       </div>
-                      <div className="text-[10px] text-ink-100/55 flex items-baseline justify-between">
+                      <div className="text-[12px] text-ink-100/55 flex items-baseline justify-between">
                         <span>@{p.username}{p.is_admin ? ' · admin' : ''}</span>
                         <span className="text-money-300">{fmt(p.cash)}</span>
                       </div>

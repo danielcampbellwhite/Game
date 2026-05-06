@@ -36,7 +36,7 @@ export default function LogFeed({ items = [], max = 30 }) {
       {items.slice(0, max).map(i => (
         <li key={i.id} className="text-xs">
           <span className="text-ink-100/40 mr-2 tabular-nums">{timeAgo(i.created_at)}</span>
-          <span className={`${COLORS[i.type] || 'text-ink-50'} uppercase text-[10px] tracking-wide mr-2`}>{i.type}</span>
+          <span className={`${COLORS[i.type] || 'text-ink-50'} uppercase text-[12px] tracking-wide mr-2`}>{i.type}</span>
           <span className="text-ink-100/85">{i.message}</span>
         </li>
       ))}

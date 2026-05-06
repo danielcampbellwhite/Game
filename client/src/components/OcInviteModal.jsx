@@ -39,7 +39,7 @@ export default function OcInviteModal() {
           <div className="text-4xl">{invite.crime?.emoji}</div>
           <div className="min-w-0">
             <div className="font-display text-xl">{invite.crime?.name}</div>
-            <div className="text-[10px] uppercase tracking-wide text-money-400"> Heist invite</div>
+            <div className="text-[12px] uppercase tracking-wide text-money-400"> Heist invite</div>
           </div>
         </div>
         <p className="text-xs text-ink-100/65">
@@ -48,7 +48,7 @@ export default function OcInviteModal() {
           </Link>{' '}
           wants you on the crew as <b>{role?.name || invite.role_id}</b>.
         </p>
-        <div className="text-[11px] text-ink-100/55">
+        <div className="text-[13px] text-ink-100/55">
           Payout {fmt(invite.crime?.payoutMin)}–{fmt(invite.crime?.payoutMax)} · {invite.crime?.risk} risk · Lvl {invite.crime?.levelGate}+
         </div>
         <div className="grid grid-cols-2 gap-2">

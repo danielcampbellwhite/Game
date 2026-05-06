@@ -13,7 +13,7 @@ export function fmt(n) {
 export default function Money({ value, dirty = false, className = '' }) {
   return (
     <span className={`tabular-nums ${dirty ? 'text-blood-400' : 'text-money-400'} ${className}`}>
-      {fmt(value)}{dirty && <span className="ml-1 text-[10px] uppercase opacity-70">dirty</span>}
+      {fmt(value)}{dirty && <span className="ml-1 text-[12px] uppercase opacity-70">dirty</span>}
     </span>
   );
 }

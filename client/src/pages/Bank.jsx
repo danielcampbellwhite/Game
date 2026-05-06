@@ -60,21 +60,21 @@ export default function Bank() {
       <Card title=" Credit Profile" subtitle="Like a real-world credit score: built from your level, reputation, and net worth.">
         <div className="grid sm:grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Rating</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Rating</div>
             <div className={`font-display text-2xl ${TIER_COLOR[tier]}`}>{tier}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Loan rate</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Loan rate</div>
             <div className="font-display text-2xl">{(rate * 100).toFixed(0)}%</div>
-            <div className="text-[10px] text-ink-100/45">flat, 7-day term</div>
+            <div className="text-[12px] text-ink-100/45">flat, 7-day term</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Borrow capacity</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Borrow capacity</div>
             <div className="font-display text-2xl text-money-400">{fmt(info.maxLoan)}</div>
           </div>
         </div>
         {info.breakdown && (
-          <div className="mt-3 pt-3 border-t border-ink-100/10 text-[11px] text-ink-100/55">
+          <div className="mt-3 pt-3 border-t border-ink-100/10 text-[13px] text-ink-100/55">
             From level: <b className="text-ink-100/85">{fmt(info.breakdown.fromLevel)}</b> &nbsp;·&nbsp;
             From reputation: <b className="text-ink-100/85">{fmt(info.breakdown.fromRep)}</b> &nbsp;·&nbsp;
             From net worth: <b className="text-ink-100/85">{fmt(info.breakdown.fromNw)}</b>{' '}
@@ -84,7 +84,7 @@ export default function Bank() {
             )}
           </div>
         )}
-        <p className="text-[10px] text-ink-100/40 mt-2">
+        <p className="text-[12px] text-ink-100/40 mt-2">
           Tiers: Building → Fair (lvl 8) → Good (lvl 18, rep 500) → Excellent (lvl 30, rep 2k) → Elite (lvl 50, rep 5k). Better tier = lower rate.
         </p>
       </Card>
@@ -95,7 +95,7 @@ export default function Bank() {
           <button disabled={!loan || busy === 'l'} className="btn btn-primary" onClick={() => act('loan', { amount: +loan }, 'l', 'Loan taken')}>Take loan</button>
         </div>
         {loan && (
-          <p className="text-[11px] text-ink-100/55 mb-2">
+          <p className="text-[13px] text-ink-100/55 mb-2">
             You'll owe <b className="text-blood-400">{fmt(Math.floor(Number(loan) * (1 + rate)))}</b> total.
           </p>
         )}

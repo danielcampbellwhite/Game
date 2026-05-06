@@ -42,11 +42,11 @@ function OfferDisplay({ offer, label, isMine }) {
   return (
     <div className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 space-y-2">
       <div className="flex items-baseline justify-between">
-        <span className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</span>
-        {isMine && <span className="text-[10px] text-money-400">your side</span>}
+        <span className="text-[12px] uppercase tracking-wide text-ink-100/55">{label}</span>
+        {isMine && <span className="text-[12px] text-money-400">your side</span>}
       </div>
       {offer.items.length === 0 && offer.cash === 0 ? (
-        <p className="text-[11px] text-ink-100/45 italic">No items, no cash.</p>
+        <p className="text-[13px] text-ink-100/45 italic">No items, no cash.</p>
       ) : (
         <ul className="text-sm space-y-1">
           {offer.items.map((it, i) => (
@@ -115,18 +115,18 @@ function MyOfferEditor({ inv, offer, onChange, disabled }) {
   return (
     <div className="rounded-lg border border-blood-500/40 bg-blood-700/5 p-3 space-y-3">
       <div className="flex items-baseline justify-between">
-        <span className="text-[10px] uppercase tracking-wide text-money-400">Your offer</span>
+        <span className="text-[12px] uppercase tracking-wide text-money-400">Your offer</span>
       </div>
 
       {offer.items.length === 0 && offer.cash === 0 ? (
-        <p className="text-[11px] text-ink-100/45 italic">Add items and / or cash below.</p>
+        <p className="text-[13px] text-ink-100/45 italic">Add items and / or cash below.</p>
       ) : (
         <ul className="text-sm space-y-1">
           {offer.items.map((it, i) => (
             <li key={i} className="flex items-baseline justify-between">
-              <span>{it.emoji} {it.name} <span className="text-ink-100/55 tabular-nums text-[11px]">×{it.qty}</span></span>
+              <span>{it.emoji} {it.name} <span className="text-ink-100/55 tabular-nums text-[13px]">×{it.qty}</span></span>
               <button onClick={() => removeItem(i)} disabled={disabled}
-                className="text-[11px] text-blood-400 hover:underline disabled:opacity-50">
+                className="text-[13px] text-blood-400 hover:underline disabled:opacity-50">
                 remove
               </button>
             </li>
@@ -141,9 +141,9 @@ function MyOfferEditor({ inv, offer, onChange, disabled }) {
       )}
 
       <div className="border-t border-ink-100/10 pt-3 space-y-2">
-        <div className="text-[10px] uppercase text-ink-100/55">Add an item from your inventory</div>
+        <div className="text-[12px] uppercase text-ink-100/55">Add an item from your inventory</div>
         {availableItems.length === 0 ? (
-          <p className="text-[11px] text-ink-100/45">Nothing else to offer.</p>
+          <p className="text-[13px] text-ink-100/45">Nothing else to offer.</p>
         ) : (
           <div className="grid grid-cols-[1fr_70px_70px] gap-2">
             <select value={pickKey} onChange={e => { setPickKey(e.target.value); setPickQty(1); }}
@@ -167,7 +167,7 @@ function MyOfferEditor({ inv, offer, onChange, disabled }) {
       </div>
 
       <div className="border-t border-ink-100/10 pt-3 space-y-1">
-        <div className="text-[10px] uppercase text-ink-100/55">Cash to include</div>
+        <div className="text-[12px] uppercase text-ink-100/55">Cash to include</div>
         <input type="number" min="0" value={offer.cash}
           onChange={e => setCash(e.target.value)} disabled={disabled}
           className="w-full text-sm" placeholder="0" />
@@ -193,12 +193,12 @@ function ChatPane({ messages, character, onSend }) {
 
   return (
     <div className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 space-y-2">
-      <div className="text-[10px] uppercase text-ink-100/55">Trade chat</div>
+      <div className="text-[12px] uppercase text-ink-100/55">Trade chat</div>
       <div ref={scrollRef} className="max-h-48 overflow-y-auto space-y-1 text-sm">
-        {messages.length === 0 && <p className="text-[11px] text-ink-100/40 italic">No messages yet.</p>}
+        {messages.length === 0 && <p className="text-[13px] text-ink-100/40 italic">No messages yet.</p>}
         {messages.map(m => (
           <div key={m.id} className={`text-sm ${m.sender_id === character.id ? 'text-money-300' : 'text-ink-50'}`}>
-            <span className="text-[10px] uppercase text-ink-100/45 mr-2">
+            <span className="text-[12px] uppercase text-ink-100/45 mr-2">
               {m.sender_id === character.id ? 'you' : 'them'}
             </span>
             {m.body}
@@ -306,7 +306,7 @@ export default function Trade() {
       <Card title=" Trade"
         subtitle={other ? `With ${other.name} (Lvl ${other.level})` : 'Loading…'}
         right={<Link to="/trades" className="btn btn-ghost text-xs">← All trades</Link>}>
-        <div className="text-[11px] text-ink-100/55">
+        <div className="text-[13px] text-ink-100/55">
           Status: <b>{trade.status}</b> · expires in <Timer until={trade.expires_at} onExpire={load} /> · 5% tax on cash flowing in either direction (sink).
         </div>
       </Card>
@@ -342,7 +342,7 @@ export default function Trade() {
                 : <MyOfferEditor inv={inv} offer={draft}
                     disabled={busy === 'offer'}
                     onChange={(next) => { setDraft(next); setDraftDirty(true); }} />}
-              <div className="mt-2 flex flex-wrap gap-2 items-center text-[11px]">
+              <div className="mt-2 flex flex-wrap gap-2 items-center text-[13px]">
                 {myConfirmed
                   ? <span className="text-money-400"> Your side is confirmed</span>
                   : <span className="text-ink-100/55">Your side is unconfirmed</span>}
@@ -365,20 +365,20 @@ export default function Trade() {
                 )}
               </div>
               {myOffer.cash > 0 && (
-                <div className="text-[10px] text-ink-100/45 mt-1">
+                <div className="text-[12px] text-ink-100/45 mt-1">
                   At commit they'll receive {fmt(myCashOut)} (you pay {fmt(myCashTax)} tax).
                 </div>
               )}
             </div>
             <div>
               <OfferDisplay offer={theirOffer} label={`${other?.name}'s offer`} />
-              <div className="mt-2 text-[11px]">
+              <div className="mt-2 text-[13px]">
                 {theirConfirmed
                   ? <span className="text-money-400"> Their side is confirmed</span>
                   : <span className="text-ink-100/55">Waiting for them to confirm…</span>}
               </div>
               {theirOffer.cash > 0 && (
-                <div className="text-[10px] text-ink-100/45 mt-1">
+                <div className="text-[12px] text-ink-100/45 mt-1">
                   At commit you'll receive {fmt(theirCashIn)} (they pay {fmt(theirCashTax)} tax).
                 </div>
               )}

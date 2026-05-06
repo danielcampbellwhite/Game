@@ -120,8 +120,8 @@ export default function NewCharacter() {
                       : 'border-ink-100/10 hover:bg-ink-800/60'
                     }`}>
                     <div className="font-medium truncate">{c.name}</div>
-                    {locked && <div className="text-[9px] uppercase tracking-wide text-ink-100/55 mt-0.5"> Lvl {c.unlockLevel}</div>}
-                    <div className="text-[10px] text-ink-100/50 mt-1">
+                    {locked && <div className="text-[11px] uppercase tracking-wide text-ink-100/55 mt-0.5"> Lvl {c.unlockLevel}</div>}
+                    <div className="text-[12px] text-ink-100/50 mt-1">
                       {locked ? 'Unlocks for travel later' : `drugs ×${c.drugMul} · biz ×${c.businessMul}`}
                     </div>
                   </button>
@@ -132,7 +132,7 @@ export default function NewCharacter() {
           <FactionPicker factions={opts.factions || []} value={faction} onChange={setFaction} />
           <StatAllocator value={stats} onChange={setStats} />
           <StarterPicker starter={opts.starter} city={city} value={starter} onChange={setStarter} />
-          <p className="text-[11px] text-ink-100/55">
+          <p className="text-[13px] text-ink-100/55">
             Starting level <b>10</b> · {STAT_POINTS} stat points to spend · cash <b>£500</b> · empty inventory.
           </p>
           {err && <p className="text-blood-400 text-xs">{err}</p>}

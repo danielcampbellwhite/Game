@@ -30,7 +30,7 @@ export default function EffectsPills({ effects, className = '' }) {
         const cls = v >= 0 ? meta.pos : meta.neg;
         return (
           <span key={key}
-            className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${cls} tabular-nums`}>
+            className={`text-[12px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${cls} tabular-nums`}>
             {v > 0 ? '+' : ''}{v} {meta.label}
           </span>
         );

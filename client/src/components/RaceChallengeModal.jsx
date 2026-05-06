@@ -78,14 +78,14 @@ export default function RaceChallengeModal() {
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-ink-950 border border-yellow-500/40 rounded-xl shadow-2xl shadow-black/60 max-w-sm w-full p-5 space-y-4">
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-yellow-300"> Street race</div>
+          <div className="text-[12px] uppercase tracking-wide text-yellow-300"> Street race</div>
           <div className="font-display text-xl mt-0.5">Tier {race.tier} for {fmt(race.stake)}</div>
         </div>
         <p className="text-xs text-ink-100/65">
           You both put up <span className="text-money-300 tabular-nums">{fmt(race.stake)}</span>. Winner takes
           the pot. Both cars lose 5–20% condition either way.
         </p>
-        <div className="text-[11px] text-ink-100/55 tabular-nums">Auto-declines in {remaining}s</div>
+        <div className="text-[13px] text-ink-100/55 tabular-nums">Auto-declines in {remaining}s</div>
         <div className="grid grid-cols-2 gap-2">
           <button disabled={busy != null} onClick={decline} className="btn btn-ghost text-xs">
             {busy === 'decline' ? '…' : 'Decline'}

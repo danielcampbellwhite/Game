@@ -49,14 +49,14 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
     }`}>
       <div className="flex items-baseline justify-between gap-2 min-w-0">
         <div className="font-medium truncate min-w-0">{v.maker} {v.name}</div>
-        {v.is_active && <span className="text-[10px] uppercase tracking-wide text-money-300 shrink-0">driving</span>}
-        {!v.is_active && v.is_modified && <span className="text-[10px] uppercase text-yellow-300 shrink-0">modded</span>}
+        {v.is_active && <span className="text-[12px] uppercase tracking-wide text-money-300 shrink-0">driving</span>}
+        {!v.is_active && v.is_modified && <span className="text-[12px] uppercase text-yellow-300 shrink-0">modded</span>}
       </div>
-      <div className="text-[11px] text-ink-100/60 truncate">
+      <div className="text-[13px] text-ink-100/60 truncate">
         Tier {v.tier} · book {fmt(v.bookPrice)}
         {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)})</span>}
       </div>
-      <div className="text-[10px] text-ink-100/40 mt-0.5 truncate">
+      <div className="text-[12px] text-ink-100/40 mt-0.5 truncate">
         {v.acquired_via === 'stolen' ? 'stolen' : 'bought'} · {
           v.is_active
             ? 'with you'
@@ -73,27 +73,27 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
               style={{ width: `${Math.max(0, Math.min(100, v.condition))}%`, height: '100%' }}
             />
           </div>
-          <span className="text-[10px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.condition)}%</span>
+          <span className="text-[12px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.condition)}%</span>
         </div>
       )}
       {v.mods?.length > 0 && (
-        <div className="text-[10px] text-ink-100/55 mt-1 truncate">
+        <div className="text-[12px] text-ink-100/55 mt-1 truncate">
           {v.mods.map(m => `${m.emoji}${m.name}`).join(' · ')}
         </div>
       )}
       <div className="mt-2 flex flex-col sm:flex-row sm:justify-end sm:flex-wrap gap-2">
         {inTransit ? null : v.is_active ? (
           <button onClick={() => call('store-vehicle')} disabled={busy}
-            className="btn btn-ghost text-[11px] w-full sm:w-auto">{busy ? '…' : 'Store'}</button>
+            className="btn btn-ghost text-[13px] w-full sm:w-auto">{busy ? '…' : 'Store'}</button>
         ) : (
           <>
             {inCurrentCity && !hasActive && (
               <button onClick={() => call('equip-vehicle')} disabled={busy}
-                className="btn btn-ghost text-[11px] w-full sm:w-auto">{busy ? '…' : 'Drive'}</button>
+                className="btn btn-ghost text-[13px] w-full sm:w-auto">{busy ? '…' : 'Drive'}</button>
             )}
             <button
               onClick={() => setShipping(s => !s)}
-              className="btn btn-ghost text-[11px] w-full sm:w-auto"
+              className="btn btn-ghost text-[13px] w-full sm:w-auto"
               disabled={destinations.length === 0 || busy}
               title={destinations.length === 0 ? 'No other city has free garage space' : 'Ship to another city'}>
               {shipping ? 'Cancel' : 'Ship'}
@@ -101,7 +101,7 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
           </>
         )}
       </div>
-      {err && <p className="text-[11px] text-blood-400 mt-1">{err}</p>}
+      {err && <p className="text-[13px] text-blood-400 mt-1">{err}</p>}
       {shipping && !v.is_active && (
         <div className="mt-2 pt-2 border-t border-ink-100/10 text-xs space-y-2">
           <select className="w-full" value={to} onChange={e => setTo(e.target.value)}>
@@ -111,7 +111,7 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
             ))}
           </select>
           {quote && (
-            <div className="text-[11px] text-ink-100/60">
+            <div className="text-[13px] text-ink-100/60">
               Shipping cost: <span className="text-money-400 tabular-nums">{fmt(quote.cost)}</span>
             </div>
           )}
@@ -142,7 +142,7 @@ function CountBadge({ n, tone = 'ink' }) {
   const cls = tone === 'blood'
     ? 'bg-blood-700/30 text-blood-200'
     : 'bg-ink-800/60 text-ink-100/70';
-  return <span className={`ml-2 text-[10px] tabular-nums px-1.5 py-0.5 rounded ${cls}`}>{n}</span>;
+  return <span className={`ml-2 text-[12px] tabular-nums px-1.5 py-0.5 rounded ${cls}`}>{n}</span>;
 }
 
 function EquippedSummary({ inv }) {
@@ -154,17 +154,17 @@ function EquippedSummary({ inv }) {
       right={<Link to="/gun-store" className="btn btn-ghost text-xs">→ Gun Store</Link>}>
       <div className="grid sm:grid-cols-2 gap-4 text-sm">
         <div>
-          <div className="text-[10px] uppercase text-ink-100/50">Weapon</div>
+          <div className="text-[12px] uppercase text-ink-100/50">Weapon</div>
           <div className="font-medium">
             {eq.weapon === 'fists' ? 'Fists' : (wDetail?.name || eq.weapon)}
           </div>
-          <div className="text-[11px] text-ink-100/60">
+          <div className="text-[13px] text-ink-100/60">
             {wDetail?.maker ? `${wDetail.maker} · ` : ''}
             DMG {wDetail?.dmg ?? 4}
             {wDetail?.ammoType ? ` · ${wDetail.ammoType}` : ' · melee'}
           </div>
           {wDetail?.ammoType && (
-            <div className="text-[11px] mt-1 tabular-nums">
+            <div className="text-[13px] mt-1 tabular-nums">
               <span className="text-ink-100/50">Rounds in pocket:</span>{' '}
               <span className={eq.weapon_ammo > 0 ? 'text-money-400' : 'text-blood-400'}>
                 {eq.weapon_ammo}
@@ -173,11 +173,11 @@ function EquippedSummary({ inv }) {
           )}
         </div>
         <div>
-          <div className="text-[10px] uppercase text-ink-100/50">Armour</div>
+          <div className="text-[12px] uppercase text-ink-100/50">Armour</div>
           <div className="font-medium">
             {eq.armour === 'none' ? 'No armour' : (aDetail?.name || eq.armour)}
           </div>
-          <div className="text-[11px] text-ink-100/60">DEF {aDetail?.def ?? 0}</div>
+          <div className="text-[13px] text-ink-100/60">DEF {aDetail?.def ?? 0}</div>
         </div>
       </div>
     </Card>
@@ -281,27 +281,27 @@ export default function Inventory() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card title=" Weapons" right={<button onClick={() => setTab('weapons')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.weapons}</div>
-              <div className="text-[11px] text-ink-100/55">in your stash</div>
+              <div className="text-[13px] text-ink-100/55">in your stash</div>
             </Card>
             <Card title=" Armour" right={<button onClick={() => setTab('armour')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.armour}</div>
-              <div className="text-[11px] text-ink-100/55">vests / jackets</div>
+              <div className="text-[13px] text-ink-100/55">vests / jackets</div>
             </Card>
             <Card title=" Ammo" right={<button onClick={() => setTab('ammo')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.ammo}</div>
-              <div className="text-[11px] text-ink-100/55">rounds total</div>
+              <div className="text-[13px] text-ink-100/55">rounds total</div>
             </Card>
             <Card title=" Drugs" right={<button onClick={() => setTab('drugs')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.drugs}</div>
-              <div className="text-[11px] text-ink-100/55">units on you</div>
+              <div className="text-[13px] text-ink-100/55">units on you</div>
             </Card>
             <Card title=" Items" right={<button onClick={() => setTab('items')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.items}</div>
-              <div className="text-[11px] text-ink-100/55">misc / shop-bought</div>
+              <div className="text-[13px] text-ink-100/55">misc / shop-bought</div>
             </Card>
             <Card title=" Vehicles" right={<button onClick={() => setTab('vehicles')} className="btn btn-ghost text-xs">View all</button>}>
               <div className="text-2xl font-display tabular-nums">{counts.vehicles}</div>
-              <div className="text-[11px] text-ink-100/55">in garages worldwide</div>
+              <div className="text-[13px] text-ink-100/55">in garages worldwide</div>
             </Card>
           </div>
         </>
@@ -315,21 +315,21 @@ export default function Inventory() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border ${eq.weapon === 'fists' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
               <div className="font-medium">Fists</div>
-              <div className="text-[11px] text-ink-100/60">DMG 4 · melee</div>
+              <div className="text-[13px] text-ink-100/60">DMG 4 · melee</div>
               {eq.weapon === 'fists'
-                ? <div className="text-[10px] uppercase mt-2 text-blood-300">equipped</div>
+                ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                 : <button className="btn text-xs w-full mt-2" onClick={() => equip('weapon', 'fists')}>Equip</button>}
             </div>
             {inv.weapons.filter(w => w.id !== 'fists').map(w => (
               <div key={w.id} className={`rounded-lg p-3 border ${eq.weapon === w.id ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-medium">{w.name}</div>
-                  {w.qty > 1 && <span className="text-[10px] text-ink-100/50">×{w.qty}</span>}
+                  {w.qty > 1 && <span className="text-[12px] text-ink-100/50">×{w.qty}</span>}
                 </div>
-                {w.maker && <div className="text-[10px] text-ink-100/50">{w.maker}</div>}
-                <div className="text-[11px] text-ink-100/60">DMG {w.dmg}{w.ammoType ? ` · ${w.ammoType}` : ' · melee'}</div>
+                {w.maker && <div className="text-[12px] text-ink-100/50">{w.maker}</div>}
+                <div className="text-[13px] text-ink-100/60">DMG {w.dmg}{w.ammoType ? ` · ${w.ammoType}` : ' · melee'}</div>
                 {eq.weapon === w.id
-                  ? <div className="text-[10px] uppercase mt-2 text-blood-300">equipped</div>
+                  ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                   : <button disabled={busy === `eq-weapon-${w.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('weapon', w.id)}>Equip</button>}
               </div>
             ))}
@@ -343,20 +343,20 @@ export default function Inventory() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className={`rounded-lg p-3 border ${eq.armour === 'none' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
               <div className="font-medium">No Armour</div>
-              <div className="text-[11px] text-ink-100/60">DEF 0</div>
+              <div className="text-[13px] text-ink-100/60">DEF 0</div>
               {eq.armour === 'none'
-                ? <div className="text-[10px] uppercase mt-2 text-blood-300">equipped</div>
+                ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                 : <button className="btn text-xs w-full mt-2" onClick={() => equip('armour', 'none')}>Unequip</button>}
             </div>
             {inv.armours.map(a => (
               <div key={a.id} className={`rounded-lg p-3 border ${eq.armour === a.id ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-medium">{a.name}</div>
-                  {a.qty > 1 && <span className="text-[10px] text-ink-100/50">×{a.qty}</span>}
+                  {a.qty > 1 && <span className="text-[12px] text-ink-100/50">×{a.qty}</span>}
                 </div>
-                <div className="text-[11px] text-ink-100/60">DEF {a.def}</div>
+                <div className="text-[13px] text-ink-100/60">DEF {a.def}</div>
                 {eq.armour === a.id
-                  ? <div className="text-[10px] uppercase mt-2 text-blood-300">equipped</div>
+                  ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                   : <button disabled={busy === `eq-armour-${a.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('armour', a.id)}>Equip</button>}
               </div>
             ))}
@@ -377,9 +377,9 @@ export default function Inventory() {
                 return (
                   <div key={a.id} className={`rounded-lg p-3 border ${isEquippedType ? 'border-yellow-600/60 bg-yellow-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
                     <div className="font-medium">{a.name}</div>
-                    <div className="text-[11px] text-ink-100/60 tabular-nums">{a.qty} rounds</div>
+                    <div className="text-[13px] text-ink-100/60 tabular-nums">{a.qty} rounds</div>
                     {isEquippedType && (
-                      <div className="text-[10px] uppercase mt-1 text-yellow-300">for equipped weapon</div>
+                      <div className="text-[12px] uppercase mt-1 text-yellow-300">for equipped weapon</div>
                     )}
                   </div>
                 );
@@ -400,7 +400,7 @@ export default function Inventory() {
               {inv.drugs.map(d => (
                 <div key={d.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                   <div className="font-medium">{d.name}</div>
-                  <div className="text-[11px] text-ink-100/60 tabular-nums">{d.qty} units</div>
+                  <div className="text-[13px] text-ink-100/60 tabular-nums">{d.qty} units</div>
                 </div>
               ))}
             </div>
@@ -420,9 +420,9 @@ export default function Inventory() {
                 <div key={m.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 flex flex-col">
                   <div className="flex items-baseline justify-between gap-2">
                     <div className="font-medium">{m.emoji} {m.name}</div>
-                    <span className="text-[11px] text-ink-100/60 tabular-nums">×{m.qty}</span>
+                    <span className="text-[13px] text-ink-100/60 tabular-nums">×{m.qty}</span>
                   </div>
-                  {m.desc && <div className="text-[11px] text-ink-100/55 mt-1 flex-1">{m.desc}</div>}
+                  {m.desc && <div className="text-[13px] text-ink-100/55 mt-1 flex-1">{m.desc}</div>}
                   <button
                     disabled={busy === `use-${m.id}` || m.qty <= 0}
                     onClick={() => useMisc(m)}
@@ -453,7 +453,7 @@ export default function Inventory() {
             </div>
           </div>
           {inv.garages?.length > 0 && (
-            <div className="mb-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[11px]">
+            <div className="mb-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[13px]">
               {inv.garages.map(g => (
                 <div key={g.city} className="rounded-md border border-ink-100/10 bg-ink-950/40 px-2 py-1.5">
                   <div className="text-ink-100/60">{g.cityName}</div>

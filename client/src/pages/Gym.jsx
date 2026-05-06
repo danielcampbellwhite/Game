@@ -15,13 +15,13 @@ const STAT_COLORS = {
 
 function BuffStrip({ buffs }) {
   const active = ['strength', 'defence', 'speed'].filter(s => buffs?.[s]?.current > 0);
-  if (!active.length) return <p className="text-[11px] text-ink-100/50">No active buffs. Train below to gain temporary stat boosts (decay 1 point per hour).</p>;
+  if (!active.length) return <p className="text-[13px] text-ink-100/50">No active buffs. Train below to gain temporary stat boosts (decay 1 point per hour).</p>;
   return (
     <div className="flex flex-wrap gap-3 text-xs">
       {active.map(s => (
         <div key={s} className="flex flex-col">
           <span className={`uppercase tracking-wide ${STAT_COLORS[s]}`}>{s} +{buffs[s].current}</span>
-          <span className="text-[10px] text-ink-100/50">fades in <Timer until={buffs[s].fadesAt} /></span>
+          <span className="text-[12px] text-ink-100/50">fades in <Timer until={buffs[s].fadesAt} /></span>
         </div>
       ))}
     </div>
@@ -59,7 +59,7 @@ export default function Gym() {
       <Card title=" Iron Foundry Gym" subtitle="Temporary buffs decay 1 point per hour. Keep training and you'll also slowly grow your base stats permanently — until you hit the cap, after which it's just temp buffs.">
         <BuffStrip buffs={data.buffs} />
         <div className="mt-3 pt-3 border-t border-ink-100/10">
-          <div className="text-[10px] uppercase text-ink-100/55 mb-2">Permanent stat progress (next +1)</div>
+          <div className="text-[12px] uppercase text-ink-100/55 mb-2">Permanent stat progress (next +1)</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             {['strength','defence','speed'].map(s => {
               const cap = character.stat_caps?.[s];
@@ -72,7 +72,7 @@ export default function Gym() {
                     <span className="text-ink-100/55 tabular-nums">{data.base[s]}{cap != null ? ` / ${cap}` : ''}</span>
                   </div>
                   <div className="bar mt-1"><div className={atCap ? 'bg-money-500' : (s === 'strength' ? 'bg-blood-500' : s === 'defence' ? 'bg-blue-400' : 'bg-yellow-400')} style={{ width: pct + '%' }} /></div>
-                  <div className="text-[10px] tabular-nums">
+                  <div className="text-[12px] tabular-nums">
                     {atCap ? <span className="text-money-400 uppercase">MAX — temp buffs only</span> : <span className="text-ink-100/40">{pct}%</span>}
                   </div>
                 </div>
@@ -92,12 +92,12 @@ export default function Gym() {
               <div key={m.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                 <div className="flex items-start justify-between gap-2">
                   <div className="font-medium">{m.emoji} {m.name}</div>
-                  <div className="text-[10px] text-ink-100/50">{m.energy} en · {fmt(m.cost)}</div>
+                  <div className="text-[12px] text-ink-100/50">{m.energy} en · {fmt(m.cost)}</div>
                 </div>
-                <div className="text-[11px] text-ink-100/55 mt-1">{m.desc}</div>
+                <div className="text-[13px] text-ink-100/55 mt-1">{m.desc}</div>
                 <div className="flex flex-wrap gap-x-2 mt-2">
                   {Object.entries(m.buffs).map(([s, v]) => (
-                    <span key={s} className={`text-[10px] uppercase tracking-wide ${STAT_COLORS[s]}`}>+{v} {s}</span>
+                    <span key={s} className={`text-[12px] uppercase tracking-wide ${STAT_COLORS[s]}`}>+{v} {s}</span>
                   ))}
                 </div>
                 <button disabled={cant || busy === m.id} className="btn btn-gold w-full text-xs mt-3"

@@ -14,14 +14,14 @@ function PickRow({ label, options, selectedId, onSelect, budgetLeft, currentPric
   if (!options.length) {
     return (
       <div>
-        <div className="text-[10px] uppercase text-ink-100/60 mb-1">{label}</div>
+        <div className="text-[12px] uppercase text-ink-100/60 mb-1">{label}</div>
         <p className="text-xs text-ink-100/55 italic">Nothing available — pick a different starting city.</p>
       </div>
     );
   }
   return (
     <div>
-      <div className="text-[10px] uppercase text-ink-100/60 mb-1">{label}</div>
+      <div className="text-[12px] uppercase text-ink-100/60 mb-1">{label}</div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {options.map(o => {
           const selected = selectedId === o.id;
@@ -41,8 +41,8 @@ function PickRow({ label, options, selectedId, onSelect, budgetLeft, currentPric
                     : 'border-ink-100/10 hover:bg-ink-800/60'
               }`}>
               <div className="text-xs font-medium leading-tight">{o.name}</div>
-              {o.address && <div className="text-[9px] text-ink-100/50 leading-tight mt-0.5">{o.address}</div>}
-              <div className="text-[10px] text-money-300 tabular-nums mt-1">{fmt(o.price)}</div>
+              {o.address && <div className="text-[11px] text-ink-100/50 leading-tight mt-0.5">{o.address}</div>}
+              <div className="text-[12px] text-money-300 tabular-nums mt-1">{fmt(o.price)}</div>
             </button>
           );
         })}
@@ -102,7 +102,7 @@ export default function StarterPicker({ starter, city, value, onChange }) {
       />
 
       {overBudget && (
-        <p className="text-[11px] text-blood-400">
+        <p className="text-[13px] text-blood-400">
           Over budget by {fmt(-left)}. Drop one of your picks for a cheaper option.
         </p>
       )}

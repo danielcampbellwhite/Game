@@ -158,7 +158,7 @@ function Roulette() {
             <button key={k} disabled={busy}
               onClick={() => setBetType(k)}
               className={`btn text-xs ${betType === k ? 'btn-primary' : 'btn-ghost'}`}>
-              <div>{label}<div className="text-[9px] opacity-70">{payout}</div></div>
+              <div>{label}<div className="text-[11px] opacity-70">{payout}</div></div>
             </button>
           ))}
           <button disabled={busy}
@@ -279,7 +279,7 @@ function Slots() {
           {busy ? 'Spinning…' : `Spin for ${fmt(Number(amount) || 0)}`}
         </button>
       </div>
-      <p className="text-[11px] text-ink-100/45">
+      <p className="text-[13px] text-ink-100/45">
         Three of a kind:  ×5 ·  ×8 ·  ×12 ·  ×25 ·  ×75 · 7️⃣ ×250
       </p>
     </div>
@@ -461,7 +461,7 @@ function Blackjack() {
       {hand ? (
         <div className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-4 space-y-4">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">
+            <div className="text-[12px] uppercase text-ink-100/55">
               Dealer {!animating && hand.dealerTotal != null && `(${hand.dealerTotal})`}
             </div>
             <div className="font-display text-4xl tabular-nums tracking-widest mt-1 min-h-[3rem]">
@@ -470,7 +470,7 @@ function Blackjack() {
             </div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">
+            <div className="text-[12px] uppercase text-ink-100/55">
               You ({hand.playerTotal ?? '…'}) · staking {fmt(hand.bet)}
             </div>
             <div className="font-display text-4xl tabular-nums tracking-widest mt-1 min-h-[3rem]">
@@ -551,13 +551,13 @@ export default function Casino() {
                 className={`btn ${tab === t.key ? 'btn-primary' : 'btn-ghost'} flex-1 ${locked ? 'opacity-60' : ''}`}
                 onClick={() => setTab(t.key)}>
                 {t.label}
-                {locked && <span className="block text-[9px] uppercase tracking-wide text-ink-100/55 mt-0.5">Lvl {gates[t.key]}</span>}
+                {locked && <span className="block text-[11px] uppercase tracking-wide text-ink-100/55 mt-0.5">Lvl {gates[t.key]}</span>}
               </button>
             );
           })}
         </div>
         {state && (
-          <p className="text-[11px] text-ink-100/55 mt-2">
+          <p className="text-[13px] text-ink-100/55 mt-2">
             High-stakes bets ({fmt(state.highStakesThreshold)}+) unlock at level {gates.high_stakes}.
           </p>
         )}

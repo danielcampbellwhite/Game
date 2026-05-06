@@ -31,8 +31,8 @@ function PlayerSearch({ onPick }) {
               <button onClick={() => onPick(p)} className="w-full text-left p-2 hover:bg-ink-800/60 transition">
                 <span className="text-xl mr-2">{p.avatar}</span>
                 <span className="text-sm font-medium">{p.name}</span>
-                <span className="text-[10px] text-ink-100/50 ml-2">L{p.level} · {p.rank}</span>
-                {p.online && <span className="text-[10px] text-money-400 ml-2"> online</span>}
+                <span className="text-[12px] text-ink-100/50 ml-2">L{p.level} · {p.rank}</span>
+                {p.online && <span className="text-[12px] text-money-400 ml-2"> online</span>}
               </button>
             </li>
           ))}
@@ -155,14 +155,14 @@ export default function OCPlan() {
           <div>
             <div className="font-display text-3xl">{plan.crime?.emoji} {plan.crime?.name}</div>
             <p className="text-xs text-ink-100/55 mt-1">{plan.crime?.desc}</p>
-            <div className="text-[11px] text-ink-100/45 mt-2">
+            <div className="text-[13px] text-ink-100/45 mt-2">
               Payout {fmt(plan.crime?.payoutMin)}–{fmt(plan.crime?.payoutMax)} · Risk {plan.crime?.risk} · Energy {plan.crime?.energy}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase text-ink-100/55">Crew</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Crew</div>
             <div className="font-display text-2xl tabular-nums">{plan.filled} / {plan.total}</div>
-            <div className="text-[10px] uppercase text-ink-100/45 mt-1">{plan.status}</div>
+            <div className="text-[12px] uppercase text-ink-100/45 mt-1">{plan.status}</div>
           </div>
         </div>
         {plan.status === 'recruiting' || plan.status === 'ready' ? (
@@ -184,7 +184,7 @@ export default function OCPlan() {
             )}
           </div>
         ) : (
-          <p className="text-[11px] text-ink-100/45 mt-3 italic">Plan is {plan.status}.</p>
+          <p className="text-[13px] text-ink-100/45 mt-3 italic">Plan is {plan.status}.</p>
         )}
       </Card>
 
@@ -194,17 +194,17 @@ export default function OCPlan() {
             <div key={r.role_id} className={`rounded-lg p-3 border ${r.filled ? 'border-money-500/30 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
               <div className="flex items-baseline justify-between gap-2">
                 <div className="font-medium">{r.name}</div>
-                <div className="text-[10px] text-ink-100/55">{r.stat} ≥ {r.min} · {Math.round((r.share || 0) * 100)}%</div>
+                <div className="text-[12px] text-ink-100/55">{r.stat} ≥ {r.min} · {Math.round((r.share || 0) * 100)}%</div>
               </div>
               {r.filled ? (
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-2xl">{r.assigned?.avatar}</span>
                   <Link to={`/players/${r.assigned?.id}`} className="text-sm font-medium hover:text-blood-400">{r.assigned?.name}</Link>
-                  <span className="text-[10px] text-ink-100/45 ml-1">L{r.assigned?.level}</span>
+                  <span className="text-[12px] text-ink-100/45 ml-1">L{r.assigned?.level}</span>
                 </div>
               ) : (
                 <>
-                  <p className="text-[11px] text-ink-100/55 mt-1 italic">Open</p>
+                  <p className="text-[13px] text-ink-100/55 mt-1 italic">Open</p>
                   {isLeader && plan.status === 'recruiting' && r.role_id !== plan.roles[0].role_id && (
                     <div className="mt-2">
                       {invitingRole === r.role_id ? (

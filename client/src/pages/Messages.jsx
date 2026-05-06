@@ -35,17 +35,17 @@ function ThreadList({ threads, activeId, onPick }) {
                 <span className="text-xl shrink-0">{t.other.avatar}</span>
                 <span className="font-medium text-sm truncate flex-1">{t.other.name}</span>
                 {t.unread > 0 && (
-                  <span className="bg-blood-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                  <span className="bg-blood-500 text-white text-[12px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
                     {t.unread > 99 ? '99+' : t.unread}
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-ink-100/60 mt-1 truncate">
+              <div className="text-[13px] text-ink-100/60 mt-1 truncate">
                 {t.last_message
                   ? <>{t.last_message.mine ? <span className="text-ink-100/40">you: </span> : null}{t.last_message.body}</>
                   : <span className="italic text-ink-100/40">No messages yet.</span>}
               </div>
-              <div className="text-[10px] text-ink-100/35 mt-1">{timeShort(t.last_message_at)}</div>
+              <div className="text-[12px] text-ink-100/35 mt-1">{timeShort(t.last_message_at)}</div>
             </button>
           </li>
         );
@@ -138,7 +138,7 @@ function Conversation({ otherId, character }) {
         <span className="text-xl">{data.other?.avatar}</span>
         <div className="flex-1 min-w-0">
           <Link to={`/players/${data.other?.id}`} className="font-medium hover:text-blood-400">{data.other?.name}</Link>
-          <div className="text-[10px] text-ink-100/50">{data.other?.online ? 'online' : 'offline'}</div>
+          <div className="text-[12px] text-ink-100/50">{data.other?.online ? 'online' : 'offline'}</div>
         </div>
       </div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar p-3 space-y-2">
@@ -149,7 +149,7 @@ function Conversation({ otherId, character }) {
           <div key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.mine ? 'bg-blood-700/40 text-ink-50' : 'bg-ink-800/60 text-ink-50'}`}>
               <div className="whitespace-pre-wrap break-words">{m.body}</div>
-              <div className="text-[10px] text-ink-100/45 mt-1">{timeShort(m.created_at)}</div>
+              <div className="text-[12px] text-ink-100/45 mt-1">{timeShort(m.created_at)}</div>
             </div>
           </div>
         ))}
@@ -170,7 +170,7 @@ function Conversation({ otherId, character }) {
         </button>
       </form>
       {(data.blocks_you || data.you_block) && (
-        <p className="text-[11px] text-ink-100/55 px-3 pb-3">
+        <p className="text-[13px] text-ink-100/55 px-3 pb-3">
           {data.you_block ? "You've blocked this player." : 'This player has blocked you.'}
         </p>
       )}

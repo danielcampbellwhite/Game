@@ -28,17 +28,17 @@ function FoundForm({ onCreated }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Name (3–32 chars)</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Name (3–32 chars)</label>
         <input value={name} onChange={e=>setName(e.target.value)} maxLength={32}
           className="w-full bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Tag (2–5 chars)</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Tag (2–5 chars)</label>
         <input value={tag} onChange={e=>setTag(e.target.value.toUpperCase())} maxLength={5}
           className="w-full bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm font-mono uppercase" />
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Description (optional, 280 chars)</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Description (optional, 280 chars)</label>
         <textarea value={desc} onChange={e=>setDesc(e.target.value)} maxLength={280} rows={3}
           className="w-full bg-ink-950/60 border border-ink-100/15 rounded-md px-3 py-2 text-sm" />
       </div>
@@ -117,7 +117,7 @@ export default function Gangs() {
           <p className="text-sm">
             You're in <Link to={`/gang`} className="text-blood-400 hover:underline font-medium">
               {data.you.gang.name} [{data.you.gang.tag}]
-            </Link> as a <span className="uppercase text-[10px] tracking-wide">{data.you.role}</span>.
+            </Link> as a <span className="uppercase text-[12px] tracking-wide">{data.you.role}</span>.
           </p>
         </Card>
       )}
@@ -130,9 +130,9 @@ export default function Gangs() {
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="text-sm">
                     <span className="font-medium">{i.gang_name}</span>
-                    <span className="text-[10px] text-ink-100/40 ml-2">[{i.gang_tag}]</span>
+                    <span className="text-[12px] text-ink-100/40 ml-2">[{i.gang_tag}]</span>
                   </div>
-                  <div className="text-[10px] text-ink-100/45">from {i.inviter_avatar} {i.inviter_name}</div>
+                  <div className="text-[12px] text-ink-100/45">from {i.inviter_avatar} {i.inviter_name}</div>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <button disabled={busy === 'decline-' + i.id} onClick={() => decline(i.id)} className="btn btn-ghost text-xs">
@@ -162,7 +162,7 @@ export default function Gangs() {
             </button>
           </div>
           {(character?.level ?? 0) < 10 && (
-            <p className="text-[11px] text-ink-100/45 mt-2">You're level {character?.level} — need level 10.</p>
+            <p className="text-[13px] text-ink-100/45 mt-2">You're level {character?.level} — need level 10.</p>
           )}
         </Card>
       )}
@@ -179,7 +179,7 @@ export default function Gangs() {
         subtitle={`${data.gangs.length} gang${data.gangs.length === 1 ? '' : 's'} · gangs are sub-divisions of factions`}>
         {/* Faction filter — default 'mine' so the page opens to your own
             faction's gangs. Unaligned characters see "all" by default. */}
-        <div className="flex flex-wrap gap-1 mb-3 text-[11px] uppercase tracking-wide">
+        <div className="flex flex-wrap gap-1 mb-3 text-[13px] uppercase tracking-wide">
           {[
             { id: 'mine',      label: data.your_faction ? 'My faction' : 'My faction (none)' },
             { id: 'all',       label: 'All' },
@@ -210,11 +210,11 @@ export default function Gangs() {
                   <span className="font-medium">{g.name}</span>
                   <div className="flex items-center gap-2">
                     <FactionBadge faction={g.faction} />
-                    <span className="text-[10px] font-mono text-ink-100/55">[{g.tag}]</span>
+                    <span className="text-[12px] font-mono text-ink-100/55">[{g.tag}]</span>
                   </div>
                 </div>
-                <div className="text-[11px] text-ink-100/55 mt-1 line-clamp-2">{g.description || <span className="italic text-ink-100/40">No description.</span>}</div>
-                <div className="text-[10px] text-ink-100/45 mt-2 flex justify-between">
+                <div className="text-[13px] text-ink-100/55 mt-1 line-clamp-2">{g.description || <span className="italic text-ink-100/40">No description.</span>}</div>
+                <div className="text-[12px] text-ink-100/45 mt-2 flex justify-between">
                   <span>{g.member_count} member{g.member_count === 1 ? '' : 's'}</span>
                   <span>founded {timeAgo(g.founded_at)} ago</span>
                 </div>

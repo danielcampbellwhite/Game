@@ -43,24 +43,24 @@ export default function Fence() {
       <Card title=" The Fence" subtitle="Discreet contact in the city's underworld. Turns illegal cash into legal at 70% — but sting operations happen, and the bigger the wash the higher the heat.">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Your illegal cash</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Your illegal cash</div>
             <div className="font-display text-2xl text-blood-300 tabular-nums">{fmt(illegalCash)}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Conversion rate</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Conversion rate</div>
             <div className="font-display text-2xl tabular-nums">{Math.round(data.rate * 100)}%</div>
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
-          <label className="text-[11px] text-ink-100/60">Amount to launder</label>
+          <label className="text-[13px] text-ink-100/60">Amount to launder</label>
           <div className="flex flex-wrap items-center gap-2">
             <input type="number" min={0} step={1000} value={amount}
               onChange={e => setAmount(e.target.value)} className="flex-1 min-w-[140px]" />
-            <button className="btn btn-ghost text-[11px]" onClick={() => setAmount(illegalCash)}>Max</button>
+            <button className="btn btn-ghost text-[13px]" onClick={() => setAmount(illegalCash)}>Max</button>
           </div>
           {num > 0 && (
-            <div className="text-[11px] text-ink-100/65 space-y-0.5">
+            <div className="text-[13px] text-ink-100/65 space-y-0.5">
               <div>Payout if it goes clean: <span className="text-money-400 tabular-nums">{fmt(expected)}</span> legal.</div>
               <div>Bust chance at this size: <span className="tabular-nums">{Math.round(bustChance * 100)}%</span> — sting seizes the cash and jails you.</div>
             </div>

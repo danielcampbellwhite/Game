@@ -146,19 +146,19 @@ export default function Player() {
               {p.rank} · Level {p.level}{p.prestige ? ` · ⭐ ${p.prestige}` : ''}
               {p.driving != null && <> · Driving <span className="tabular-nums text-yellow-300">{p.driving}</span></>}
             </div>
-            <div className="text-[11px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="text-[13px] text-ink-100/45 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
               {p.online
                 ? <span className="text-money-400"> online now</span>
                 : <span>last seen {timeAgo(p.last_active_at)}</span>}
               <FactionBadge faction={p.faction} />
               {p.same_city && (
-                <span className="px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300 uppercase tracking-wide text-[10px]">
+                <span className="px-1.5 py-0.5 rounded border border-blood-500/40 text-blood-300 uppercase tracking-wide text-[12px]">
                   in your city
                 </span>
               )}
             </div>
             {p.gang && (
-              <div className="text-[11px] mt-1">
+              <div className="text-[13px] mt-1">
                 Gang: <Link to={`/gangs/${p.gang.id}`} className="text-blood-400 hover:underline">{p.gang.name} <span className="text-ink-100/55 font-mono">[{p.gang.tag}]</span></Link>
               </div>
             )}
@@ -235,13 +235,13 @@ export default function Player() {
 
         {showRace && !isSelf && (
           <div className="mt-3 p-3 rounded-md border border-yellow-500/30 bg-yellow-500/5">
-            <div className="text-[10px] uppercase tracking-wide text-yellow-300 mb-1">Street race challenge</div>
-            <p className="text-[11px] text-ink-100/65 mb-2">
+            <div className="text-[12px] uppercase tracking-wide text-yellow-300 mb-1">Street race challenge</div>
+            <p className="text-[13px] text-ink-100/65 mb-2">
               Both your active cars must be the same tier. Tier matches whichever car you're driving right now —
               {character?.active_vehicle_id ? ' make sure it slots their car.' : ' equip a car first.'}
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="text-[11px] text-ink-100/55">Stake</label>
+              <label className="text-[13px] text-ink-100/55">Stake</label>
               <input
                 type="number" min={100} step={100} value={raceStake}
                 onChange={e => setRaceStake(e.target.value)}
@@ -256,13 +256,13 @@ export default function Player() {
 
         {showBounty && !isSelf && (
           <div className="mt-3 p-3 rounded-md border border-blood-500/30 bg-blood-700/5">
-            <div className="text-[10px] uppercase tracking-wide text-blood-300 mb-1"> Place a bounty</div>
-            <p className="text-[11px] text-ink-100/65 mb-2">
+            <div className="text-[12px] uppercase tracking-wide text-blood-300 mb-1"> Place a bounty</div>
+            <p className="text-[13px] text-ink-100/65 mb-2">
               Cash is held in escrow and paid to whoever murders {p.name}. You can cancel anytime
               for a full refund.{bountyMin ? <> Minimum on a {bountyMin.targetRank} is {fmt(bountyMin.min)}.</> : null}
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="text-[11px] text-ink-100/55">Amount</label>
+              <label className="text-[13px] text-ink-100/55">Amount</label>
               <input type="number" min={bountyMin?.min || 1000} step={1000} value={bountyAmount}
                 onChange={e => setBountyAmount(e.target.value)} className="w-32" />
               <button onClick={placeBounty} disabled={busy === 'bounty'} className="btn btn-primary text-xs">
@@ -273,10 +273,10 @@ export default function Player() {
         )}
 
         {data.blocks_you && (
-          <p className="text-[11px] text-blood-400 mt-3">This player has blocked you.</p>
+          <p className="text-[13px] text-blood-400 mt-3">This player has blocked you.</p>
         )}
         {data.you_block && (
-          <p className="text-[11px] text-yellow-400 mt-3">You've blocked this player.</p>
+          <p className="text-[13px] text-yellow-400 mt-3">You've blocked this player.</p>
         )}
       </Card>
 
@@ -284,19 +284,19 @@ export default function Player() {
       <Card title=" Loadout" subtitle="What this player is carrying right now.">
         <div className="grid sm:grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Weapon</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Weapon</div>
             <div className="font-medium">
               {!data.loadout?.weapon || data.loadout.weapon.id === 'fists'
                 ? 'Fists'
                 : data.loadout.weapon.name}
             </div>
-            <div className="text-[11px] text-ink-100/60">
+            <div className="text-[13px] text-ink-100/60">
               {data.loadout?.weapon?.maker ? `${data.loadout.weapon.maker} · ` : ''}
               DMG {data.loadout?.weapon?.dmg ?? 4}
               {data.loadout?.weapon?.ammoType ? ` · ${data.loadout.weapon.ammoType}` : ' · melee'}
             </div>
             {data.loadout?.weapon?.ammoType && (
-              <div className="text-[11px] mt-1 tabular-nums">
+              <div className="text-[13px] mt-1 tabular-nums">
                 <span className="text-ink-100/50">Rounds left:</span>{' '}
                 <span className={data.loadout.weapon_ammo > 0 ? 'text-money-400' : 'text-blood-400'}>
                   {data.loadout.weapon_ammo}
@@ -305,13 +305,13 @@ export default function Player() {
             )}
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/50">Armour</div>
+            <div className="text-[12px] uppercase text-ink-100/50">Armour</div>
             <div className="font-medium">
               {!data.loadout?.armour || data.loadout.armour.id === 'none'
                 ? 'No armour'
                 : data.loadout.armour.name}
             </div>
-            <div className="text-[11px] text-ink-100/60">DEF {data.loadout?.armour?.def ?? 0}</div>
+            <div className="text-[13px] text-ink-100/60">DEF {data.loadout?.armour?.def ?? 0}</div>
           </div>
         </div>
       </Card>
@@ -324,8 +324,8 @@ export default function Player() {
             {data.garage.map(v => (
               <div key={v.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                 <div className="font-medium">{v.maker} {v.name}</div>
-                <div className="text-[11px] text-ink-100/60">Tier {v.tier} · book {fmt(v.bookPrice)}</div>
-                <div className="text-[10px] text-ink-100/40 mt-0.5">
+                <div className="text-[13px] text-ink-100/60">Tier {v.tier} · book {fmt(v.bookPrice)}</div>
+                <div className="text-[12px] text-ink-100/40 mt-0.5">
                   {v.acquired_via === 'stolen' ? ' stolen' : ' bought'} · in {v.cityName}
                 </div>
               </div>
@@ -342,8 +342,8 @@ export default function Player() {
             {data.properties.map(p => (
               <div key={p.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                 <div className="font-medium">{p.name}</div>
-                {p.address && <div className="text-[11px] text-ink-100/55">{p.address}</div>}
-                <div className="text-[10px] text-ink-100/40 mt-0.5">
+                {p.address && <div className="text-[13px] text-ink-100/55">{p.address}</div>}
+                <div className="text-[12px] text-ink-100/40 mt-0.5">
                   {p.cityName} · {fmt(p.cost)}
                 </div>
               </div>
@@ -361,13 +361,13 @@ export default function Player() {
               <div key={b.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-medium">{b.name}</div>
-                  <span className="text-[10px] uppercase text-ink-100/40">L{b.level}</span>
+                  <span className="text-[12px] uppercase text-ink-100/40">L{b.level}</span>
                 </div>
-                <div className="text-[11px] text-ink-100/60">
+                <div className="text-[13px] text-ink-100/60">
                   {b.template_name}
                   {b.illegal && <span className="ml-1 text-blood-400">· illegal</span>}
                 </div>
-                <div className="text-[10px] text-ink-100/40 mt-0.5">
+                <div className="text-[12px] text-ink-100/40 mt-0.5">
                   {b.cityName} · {fmt(b.hourly)}/hr
                 </div>
               </div>

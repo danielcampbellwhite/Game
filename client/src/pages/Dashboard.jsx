@@ -101,7 +101,7 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
           </div>
           <div className="px-1.5 py-1">
             <div className="font-display text-sm sm:text-base text-stone-900 leading-tight">{node.label}</div>
-            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
+            <div className="text-[11px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
           </div>
         </div>
       ) : (
@@ -116,7 +116,7 @@ function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
             }} />
           <div className="relative px-1.5 py-1.5 pl-3">
             <div className="font-display text-sm sm:text-base text-stone-900 leading-tight">{node.label}</div>
-            <div className="text-[9px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
+            <div className="text-[11px] italic text-stone-700/85 leading-snug mt-0.5">{node.teaser}</div>
           </div>
         </div>
       )}
@@ -162,7 +162,7 @@ function PolaroidFrame({ character }) {
           }}
         />
       </div>
-      <div className="absolute bottom-0 left-0 right-0 text-center text-[7px] sm:text-[9px] uppercase tracking-[0.3em] text-stone-700 pb-1 truncate px-1">
+      <div className="absolute bottom-0 left-0 right-0 text-center text-[7px] sm:text-[11px] uppercase tracking-[0.3em] text-stone-700 pb-1 truncate px-1">
         {character?.name || 'wanted'}
       </div>
     </div>
@@ -375,7 +375,7 @@ function AvatarUploader({ entity, onChange }) {
         className="relative block group focus:outline-none focus-visible:ring-2 focus-visible:ring-blood-500 rounded-full">
         <Avatar entity={entity} size={64} />
         <span
-          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-[10px] uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-[12px] uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition pointer-events-none"
           aria-hidden>
           {busy ? '…' : entity?.avatar_image ? 'Edit' : 'Upload'}
         </span>
@@ -395,11 +395,11 @@ function AvatarUploader({ entity, onChange }) {
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={pick} />
       {entity?.avatar_image && (
         <button type="button" disabled={busy} onClick={clearImage}
-          className="block mt-1 text-[10px] text-ink-100/45 hover:text-ink-100/75 transition w-full text-center">
+          className="block mt-1 text-[12px] text-ink-100/45 hover:text-ink-100/75 transition w-full text-center">
           Remove
         </button>
       )}
-      {err && <div className="text-[10px] text-blood-400 mt-0.5 max-w-[120px] text-center">{err}</div>}
+      {err && <div className="text-[12px] text-blood-400 mt-0.5 max-w-[120px] text-center">{err}</div>}
     </div>
   );
 }
@@ -430,7 +430,7 @@ function CharacterSheet({ c, onAvatarChange }) {
             Lvl {c.level}{c.prestige ? ` ★${c.prestige}` : ''} · {c.rank}
             {c.city && <> · <PrettyCity city={c.city} /></>}
           </p>
-          <p className="text-[10px] uppercase tracking-wide text-ink-100/45 mt-0.5">
+          <p className="text-[12px] uppercase tracking-wide text-ink-100/45 mt-0.5">
             Reputation <span className="text-gold-400 tabular-nums">{c.reputation.toLocaleString()}</span>
           </p>
         </div>
@@ -439,7 +439,7 @@ function CharacterSheet({ c, onAvatarChange }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
         {money.map(([label, value]) => (
           <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</div>
+            <div className="text-[12px] uppercase tracking-wide text-ink-100/55">{label}</div>
             <div className="text-sm tabular-nums text-money-400 font-medium truncate">{fmt(value)}</div>
           </div>
         ))}
@@ -448,7 +448,7 @@ function CharacterSheet({ c, onAvatarChange }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
         {stats.map(([label, value]) => (
           <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 text-center leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-ink-100/55">{label}</div>
+            <div className="text-[12px] uppercase tracking-wide text-ink-100/55">{label}</div>
             <div className="text-sm tabular-nums text-ink-50">{value.toLocaleString()}</div>
           </div>
         ))}
@@ -482,11 +482,11 @@ function RetirementCard({ c, onDone }) {
         and gain <span className="text-money-400">+2% max energy & nerve forever</span>{' '}
         (★ {newPrestige}/5).
       </p>
-      <p className="text-[11px] text-ink-100/55 mt-1">
+      <p className="text-[13px] text-ink-100/55 mt-1">
         Reset: level → 1, all stats → 1, reputation → 0, inventory wiped, equipped gear cleared,
         gang membership lost. The streets won't remember your old grind.
       </p>
-      {err && <p className="text-[11px] text-blood-400 mt-2">{err}</p>}
+      {err && <p className="text-[13px] text-blood-400 mt-2">{err}</p>}
       {!confirming ? (
         <button onClick={() => setConfirming(true)} disabled={busy}
           className="btn btn-primary text-xs mt-3">

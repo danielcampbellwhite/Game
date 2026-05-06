@@ -134,7 +134,7 @@ export default function CityMap({ city = 'new_york' }) {
         </MapContainer>
 
         {/* Legend bottom-left */}
-        <div className="absolute bottom-2 left-2 z-[1000] text-[9px] text-ink-100/55 bg-ink-950/80 border border-ink-100/10 rounded px-1.5 py-1 leading-tight pointer-events-none">
+        <div className="absolute bottom-2 left-2 z-[1000] text-[11px] text-ink-100/55 bg-ink-950/80 border border-ink-100/10 rounded px-1.5 py-1 leading-tight pointer-events-none">
           <div className="font-medium uppercase tracking-wider text-ink-100/70 mb-0.5">Faction control</div>
           {Object.entries(FACTION_COLOURS).map(([f, col]) => (
             <div key={f} className="flex items-center gap-1.5 capitalize">
@@ -158,31 +158,31 @@ export default function CityMap({ city = 'new_york' }) {
         <div className="rounded-lg border border-ink-100/15 bg-ink-950/85 p-3 space-y-2">
           <div className="flex items-baseline justify-between gap-2">
             <div className="font-medium">{selectedArea.name}</div>
-            <button onClick={() => setSelected(null)} className="text-[10px] text-ink-100/50 hover:text-ink-100/85">close</button>
+            <button onClick={() => setSelected(null)} className="text-[12px] text-ink-100/50 hover:text-ink-100/85">close</button>
           </div>
-          <div className="text-[11px] text-ink-100/65">
+          <div className="text-[13px] text-ink-100/65">
             {selectedArea.faction
               ? <>Held by <b className="text-ink-50">{selectedArea.faction}</b> faction · captured {selectedArea.captured_at ? new Date(selectedArea.captured_at).toLocaleString() : 'unknown'}</>
               : <>Currently unclaimed — first gang to attempt takes it at 80% odds.</>}
           </div>
           {selectedArea.flipped_at && Date.now() - selectedArea.flipped_at < 24*60*60*1000 && (
-            <div className="text-[11px] text-yellow-400/85"> This area has changed hands today — locked until next UTC midnight.</div>
+            <div className="text-[13px] text-yellow-400/85"> This area has changed hands today — locked until next UTC midnight.</div>
           )}
           {!inSameCity ? (
-            <p className="text-[11px] text-ink-100/45">Travel to this city to attempt capture.</p>
+            <p className="text-[13px] text-ink-100/45">Travel to this city to attempt capture.</p>
           ) : !inGang ? (
-            <p className="text-[11px] text-ink-100/45">Join a gang to fight for territory.</p>
+            <p className="text-[13px] text-ink-100/45">Join a gang to fight for territory.</p>
           ) : (
             <button onClick={() => attempt(selectedArea)} disabled={busy === selectedArea.id}
               className="btn btn-primary text-xs w-full">
               {busy === selectedArea.id ? '…' : `Attempt capture`}
             </button>
           )}
-          {msg && <p className="text-[11px] text-money-300">{msg}</p>}
+          {msg && <p className="text-[13px] text-money-300">{msg}</p>}
         </div>
       )}
 
-      <p className="text-[10px] text-ink-100/45 text-center">
+      <p className="text-[12px] text-ink-100/45 text-center">
         Real streets via OpenStreetMap · scroll/pinch to zoom · drag to pan · tap a sector to see its controller and attempt capture.
       </p>
     </div>

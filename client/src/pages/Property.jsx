@@ -44,15 +44,15 @@ export default function Property() {
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
                       <div className="font-medium text-sm">{TIER_EMOJI[p.tier] || ''} {p.name}</div>
-                      {p.address && <div className="text-[10px] text-ink-100/45">{p.address}</div>}
-                      <div className="text-[10px] mt-0.5">
+                      {p.address && <div className="text-[12px] text-ink-100/45">{p.address}</div>}
+                      <div className="text-[12px] mt-0.5">
                         <span className="text-ink-100/55">{p.cityName}</span>
-                        <span className={`ml-2 text-[9px] uppercase tracking-wide ${here ? 'text-money-400' : 'text-ink-100/40'}`}>
+                        <span className={`ml-2 text-[11px] uppercase tracking-wide ${here ? 'text-money-400' : 'text-ink-100/40'}`}>
                           {here ? ' Active here' : 'Inactive'}
                         </span>
                       </div>
                     </div>
-                    <div className={`text-[10px] text-right whitespace-nowrap ${here ? 'text-money-400' : 'text-ink-100/40'}`}>
+                    <div className={`text-[12px] text-right whitespace-nowrap ${here ? 'text-money-400' : 'text-ink-100/40'}`}>
                       +{p.bonuses?.max_energy} en<br/>
                       +{p.bonuses?.max_nerve} nv<br/>
                       +{p.bonuses?.happiness} hp
@@ -73,19 +73,19 @@ export default function Property() {
                 <div className="flex justify-between items-start gap-2">
                   <div className="min-w-0">
                     <div className="font-medium">{TIER_EMOJI[p.tier] || ''} {p.name}</div>
-                    <div className="text-[10px] text-ink-100/45">{p.address}</div>
-                    <div className="text-[10px] text-ink-100/50">{p.tierLabel} · Tier {p.tier}</div>
+                    <div className="text-[12px] text-ink-100/45">{p.address}</div>
+                    <div className="text-[12px] text-ink-100/50">{p.tierLabel} · Tier {p.tier}</div>
                   </div>
                   <div className="text-right whitespace-nowrap">
                     <div className="text-money-400 tabular-nums">{fmt(p.cost)}</div>
                     {p.locked && <div className="mt-1"><LockBadge level={p.levelGate} /></div>}
                   </div>
                 </div>
-                <div className="text-[11px] text-ink-100/60 mt-2">
+                <div className="text-[13px] text-ink-100/60 mt-2">
                   +{p.bonuses.max_energy} energy · +{p.bonuses.max_nerve} nerve · +{p.bonuses.happiness} happiness
                 </div>
                 {p.garage > 0 && (
-                  <div className="text-[10px] text-ink-100/50 mt-0.5"> {p.garage} garage spaces</div>
+                  <div className="text-[12px] text-ink-100/50 mt-0.5"> {p.garage} garage spaces</div>
                 )}
                 <button disabled={p.locked || character.cash < p.cost || busy === p.id} className="btn btn-primary w-full text-xs mt-3" onClick={() => buy(p)}>
                   {busy === p.id

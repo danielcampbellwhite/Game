@@ -38,13 +38,13 @@ export default function University() {
       <Card title=" Northbridge University" subtitle="Permanent intelligence gains. Cost scales with your current INT — each point gets dearer as you climb. Real-world course durations apply: short courses every few hours, top tutors only every few days.">
         <div className="text-xs flex items-baseline gap-4">
           <div>
-            <span className="text-[10px] uppercase text-ink-100/50">Intelligence</span>
+            <span className="text-[12px] uppercase text-ink-100/50">Intelligence</span>
             <div className="font-display text-3xl text-violet-300 tabular-nums">
               {data.intelligence}{data.cap != null && <span className="text-ink-100/40"> / {data.cap}</span>}
             </div>
           </div>
           {data.maxed && (
-            <span className="text-[10px] uppercase tracking-wide text-money-400 font-bold">MAX</span>
+            <span className="text-[12px] uppercase tracking-wide text-money-400 font-bold">MAX</span>
           )}
         </div>
       </Card>
@@ -73,14 +73,14 @@ export default function University() {
                 <div key={c.id} className={`rounded-lg p-3 border bg-ink-950/40 ${onCd ? 'opacity-60' : 'border-ink-100/10'}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-medium">{c.emoji} {c.name}</div>
-                    <div className="text-[10px] text-ink-100/50 text-right whitespace-nowrap">
+                    <div className="text-[12px] text-ink-100/50 text-right whitespace-nowrap">
                       {c.energy} en · {fmt(c.cost)}
                     </div>
                   </div>
-                  <div className="text-[11px] text-ink-100/55 mt-1">{c.desc}</div>
+                  <div className="text-[13px] text-ink-100/55 mt-1">{c.desc}</div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[10px] uppercase text-violet-300 tracking-wide">+{c.gain} INT (permanent)</span>
-                    <span className="text-[10px] text-ink-100/45">cooldown {cooldownLabel(c.cooldownSec)}</span>
+                    <span className="text-[12px] uppercase text-violet-300 tracking-wide">+{c.gain} INT (permanent)</span>
+                    <span className="text-[12px] text-ink-100/45">cooldown {cooldownLabel(c.cooldownSec)}</span>
                   </div>
                   <button disabled={onCd || cantAfford || noEnergy || busy === c.id} className="btn btn-gold w-full text-xs mt-3"
                     onClick={() => study(c)}>

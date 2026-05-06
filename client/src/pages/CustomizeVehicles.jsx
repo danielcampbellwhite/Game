@@ -22,15 +22,15 @@ function VehicleRow({ v, picked, onPick }) {
       className={`text-left rounded-lg p-3 border bg-ink-950/40 hover:border-blood-500/40 transition w-full ${isPicked ? 'border-money-500/60' : 'border-ink-100/10'}`}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="font-medium truncate">{v.maker} {v.name}</div>
-        {v.is_modified && <span className="text-[10px] uppercase text-yellow-300"> modded</span>}
+        {v.is_modified && <span className="text-[12px] uppercase text-yellow-300"> modded</span>}
       </div>
-      <div className="text-[11px] text-ink-100/55">Tier {v.tier} · {v.acquired_via === 'stolen' ? ' stolen' : ' bought'}</div>
-      <div className="text-[11px] text-ink-100/55">
+      <div className="text-[13px] text-ink-100/55">Tier {v.tier} · {v.acquired_via === 'stolen' ? ' stolen' : ' bought'}</div>
+      <div className="text-[13px] text-ink-100/55">
         Book: <b className="text-money-400">{fmt(v.book_price)}</b>
         {v.value_delta > 0 && <span className="text-money-400/70"> (+{fmt(v.value_delta)} from mods)</span>}
       </div>
       {v.power > 0 || v.handling > 0 ? (
-        <div className="text-[10px] text-ink-100/55 mt-0.5">
+        <div className="text-[12px] text-ink-100/55 mt-0.5">
           {v.power > 0 && <span>+{v.power} pwr </span>}
           {v.handling > 0 && <span>+{v.handling} hndl</span>}
         </div>
@@ -43,9 +43,9 @@ function ModPicker({ slot, currentModId, compatible, busy, onInstall, character 
   const slotMods = compatible.filter(m => m.slot === slot);
   return (
     <div className="space-y-2">
-      <div className="text-[10px] uppercase text-ink-100/55">{SLOT_LABEL[slot]} slot</div>
+      <div className="text-[12px] uppercase text-ink-100/55">{SLOT_LABEL[slot]} slot</div>
       {slotMods.length === 0 ? (
-        <p className="text-[11px] text-ink-100/45">No {slot} mods compatible with this vehicle's tier.</p>
+        <p className="text-[13px] text-ink-100/45">No {slot} mods compatible with this vehicle's tier.</p>
       ) : (
         <div className="grid sm:grid-cols-2 gap-2">
           {slotMods.map(m => {
@@ -55,16 +55,16 @@ function ModPicker({ slot, currentModId, compatible, busy, onInstall, character 
               <div key={m.id} className={`rounded-md p-2 border ${isCurrent ? 'border-money-500 bg-money-700/10' : 'border-ink-100/10 bg-ink-950/30'}`}>
                 <div className="flex items-baseline justify-between gap-1">
                   <div className="text-sm font-medium">{m.emoji} {m.name}</div>
-                  <div className="text-[11px] text-money-400 tabular-nums shrink-0">{fmt(m.cost)}</div>
+                  <div className="text-[13px] text-money-400 tabular-nums shrink-0">{fmt(m.cost)}</div>
                 </div>
-                <div className="text-[10px] text-ink-100/55 mt-0.5">
+                <div className="text-[12px] text-ink-100/55 mt-0.5">
                   {m.stats?.power ? `+${m.stats.power} pwr · ` : ''}
                   {m.stats?.handling ? `+${m.stats.handling} hndl · ` : ''}
                   {m.stats?.value ? `+${fmt(m.stats.value)} value` : ''}
                   {m.min_tier > 1 && <span className="ml-1 text-ink-100/40">(tier {m.min_tier}+)</span>}
                 </div>
                 {isCurrent ? (
-                  <div className="text-[10px] uppercase text-money-400 mt-1">installed</div>
+                  <div className="text-[12px] uppercase text-money-400 mt-1">installed</div>
                 ) : (
                   <button onClick={() => onInstall(slot, m.id)} disabled={busy || cantAfford}
                     className="btn btn-primary text-xs w-full mt-2">
@@ -122,21 +122,21 @@ function VehicleDetail({ id, character, onChanged }) {
         subtitle={`Tier ${v.tier} · ${v.cityName} · ${v.acquired_via === 'stolen' ? ' stolen' : ' bought'}`}>
         <div className="grid grid-cols-3 gap-3 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Book value</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Book value</div>
             <div className="font-display text-2xl text-money-400 tabular-nums">{fmt(v.book_price)}</div>
-            <div className="text-[10px] text-ink-100/55">base {fmt(v.base_book_price)}{v.value_delta > 0 && ` · +${fmt(v.value_delta)} from mods`}</div>
+            <div className="text-[12px] text-ink-100/55">base {fmt(v.base_book_price)}{v.value_delta > 0 && ` · +${fmt(v.value_delta)} from mods`}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Power</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Power</div>
             <div className="font-display text-2xl tabular-nums">+{v.power}</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Handling</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Handling</div>
             <div className="font-display text-2xl tabular-nums">+{v.handling}</div>
           </div>
         </div>
         {v.is_modified && (
-          <p className="text-[11px] text-yellow-300 mt-3">
+          <p className="text-[13px] text-yellow-300 mt-3">
              Modified — chop shop and dealer won't take this. Sell to other players via your shop.
           </p>
         )}

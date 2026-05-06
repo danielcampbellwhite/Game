@@ -64,11 +64,11 @@ function StockCard({ stock, holding, qty, setQty, onTrade, busy }) {
         <div className="min-w-0">
           <span className="font-medium tracking-wide">{stock.id}</span>
           <span className="text-ink-100/50 text-xs ml-2">{stock.name}</span>
-          {stock.sector && <span className="text-[9px] uppercase tracking-wider text-ink-100/35 ml-2">{stock.sector}</span>}
+          {stock.sector && <span className="text-[11px] uppercase tracking-wider text-ink-100/35 ml-2">{stock.sector}</span>}
         </div>
         <div className="text-right">
           <div className="font-display text-xl tabular-nums">£{stock.price.toFixed(2)}</div>
-          <div className={`text-[11px] tabular-nums ${up ? 'text-money-400' : 'text-blood-400'}`}>
+          <div className={`text-[13px] tabular-nums ${up ? 'text-money-400' : 'text-blood-400'}`}>
             {up ? '' : ''} {up ? '+' : ''}{delta.toFixed(2)} ({up ? '+' : ''}{deltaPct.toFixed(2)}%) <span className="text-ink-100/40 ml-1">12h</span>
           </div>
         </div>
@@ -77,17 +77,17 @@ function StockCard({ stock, holding, qty, setQty, onTrade, busy }) {
       <div className="mt-2 -mx-3 border-y border-ink-100/5">
         <Sparkline points={points} up={up} />
       </div>
-      <div className="flex justify-between text-[10px] text-ink-100/40 tabular-nums mt-1">
+      <div className="flex justify-between text-[12px] text-ink-100/40 tabular-nums mt-1">
         <span>L £{low.toFixed(2)}</span>
         <span>H £{high.toFixed(2)}</span>
       </div>
 
       {holding ? (
-        <div className="text-[11px] mt-2">
+        <div className="text-[13px] mt-2">
           Held <b>{holding.shares}</b> @ £{holding.avg_price.toFixed(2)} ·
           P/L <span className={holding.pl >= 0 ? 'text-money-400' : 'text-blood-400'}>{fmt(holding.pl)}</span>
         </div>
-      ) : <div className="text-[11px] text-ink-100/40 mt-2">No position</div>}
+      ) : <div className="text-[13px] text-ink-100/40 mt-2">No position</div>}
 
       {locked && (
         <div className="mt-2"><LockBadge level={stock.levelGate} /></div>

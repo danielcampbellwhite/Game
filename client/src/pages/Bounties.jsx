@@ -41,7 +41,7 @@ export default function Bounties() {
                   </Link>
                   <span className="text-money-400 tabular-nums font-semibold">{fmt(b.amount)}</span>
                 </div>
-                <div className="text-[10px] text-ink-100/55 mt-0.5">
+                <div className="text-[12px] text-ink-100/55 mt-0.5">
                   {b.target.rank} · placed by <Link to={`/players/${b.placer.id}`} className="hover:underline">{b.placer.name}</Link>
                   {b.you_target && <span className="text-blood-300 uppercase tracking-wide ml-2">that's you</span>}
                 </div>
@@ -58,12 +58,12 @@ export default function Bounties() {
               <div key={b.id} className="rounded-md border border-ink-100/10 bg-ink-950/40 p-3 text-xs flex items-baseline justify-between gap-2">
                 <div className="min-w-0">
                   <span className="text-ink-100/70">{b.target.name}</span>
-                  <span className="text-[10px] text-ink-100/45 ml-2 uppercase tracking-wide">{b.status}</span>
+                  <span className="text-[12px] text-ink-100/45 ml-2 uppercase tracking-wide">{b.status}</span>
                 </div>
                 <div className="flex items-baseline gap-2 shrink-0">
                   <span className="text-money-400 tabular-nums">{fmt(b.amount)}</span>
                   {b.status === 'open' && (
-                    <button onClick={() => cancel(b.id)} disabled={!!busy} className="btn btn-ghost text-[11px]">
+                    <button onClick={() => cancel(b.id)} disabled={!!busy} className="btn btn-ghost text-[13px]">
                       {busy === `cancel-${b.id}` ? '…' : 'Cancel'}
                     </button>
                   )}

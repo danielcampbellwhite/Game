@@ -15,7 +15,7 @@ function OutcomeBanner({ result }) {
         <div className="text-xs mt-1 tabular-nums">
           Took {fmt(result.cashTaken)} · they're in hospital {result.hospitalMins} min.
         </div>
-        <div className="text-[11px] mt-2 text-money-200/80 italic">
+        <div className="text-[13px] mt-2 text-money-200/80 italic">
           You slipped away. There's no telling whether they got a good look at you.
         </div>
       </div>
@@ -76,14 +76,14 @@ export default function Rob() {
       <Card title="The odds">
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Win chance</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Win chance</div>
             <div className="font-display text-2xl text-money-400 tabular-nums">{Math.round(win_chance * 100)}%</div>
-            <div className="text-[10px] text-ink-100/55">Strength + Speed vs their Defence + Speed (incl. buffs).</div>
+            <div className="text-[12px] text-ink-100/55">Strength + Speed vs their Defence + Speed (incl. buffs).</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase text-ink-100/55">Energy cost</div>
+            <div className="text-[12px] uppercase text-ink-100/55">Energy cost</div>
             <div className="text-yellow-300 font-semibold tabular-nums">{cost.energy}</div>
-            <div className="text-[10px] text-ink-100/55">you have {character?.energy ?? 0}</div>
+            <div className="text-[12px] text-ink-100/55">you have {character?.energy ?? 0}</div>
           </div>
         </div>
       </Card>
@@ -93,7 +93,7 @@ export default function Rob() {
           <li><b className="text-money-400">Win</b> — take a random <b>50%–100%</b> of their cash on hand. They're hospitalised 10–30 min. <span className="text-yellow-300">50/50 chance they recognise you</span> — and you'll never know which.</li>
           <li><b className="text-blood-400">Lose</b> — they fought you off. They get notified (50/50 reveal); you walk away empty-handed.</li>
         </ul>
-        <p className="text-[11px] text-ink-100/45 mt-2">
+        <p className="text-[13px] text-ink-100/45 mt-2">
           No jail time on either outcome. 1h cooldown on you afterwards · 30m immunity for them. New characters are protected for the first <b>3 days</b> after creation. Works on online and offline targets.
         </p>
       </Card>

@@ -17,9 +17,9 @@ function ShopRow({ shop, isMine }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="font-medium truncate">{shop.name}</span>
-          {isMine && <span className="text-[10px] uppercase text-blood-400">your shop</span>}
+          {isMine && <span className="text-[12px] uppercase text-blood-400">your shop</span>}
         </div>
-        <div className="text-[11px] text-ink-100/55 mt-0.5">
+        <div className="text-[13px] text-ink-100/55 mt-0.5">
           {shop.listing_count} listing{shop.listing_count === 1 ? '' : 's'}
           {shop.owner && <> · run by <span className="text-ink-100/75">{shop.owner.avatar} {shop.owner.name}</span></>}
         </div>
@@ -50,19 +50,19 @@ function FoundShopForm({ character, onFounded }) {
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Shop name</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Shop name</label>
         <input value={name} onChange={e => setName(e.target.value)} maxLength={32}
           placeholder='e.g. Danny’s Tuned Cars'
           className="w-full" disabled={busy} />
       </div>
       <div>
-        <label className="text-[10px] uppercase text-ink-100/55">Description (optional)</label>
+        <label className="text-[12px] uppercase text-ink-100/55">Description (optional)</label>
         <textarea value={description} onChange={e => setDescription(e.target.value)} maxLength={280} rows={3}
           placeholder='Quick blurb shown on the storefront — what you sell, who you are, how to reach you.'
           className="w-full" disabled={busy} />
-        <div className="text-[10px] text-ink-100/40 text-right">{description.length}/280 — editable later</div>
+        <div className="text-[12px] text-ink-100/40 text-right">{description.length}/280 — editable later</div>
       </div>
-      <p className="text-[11px] text-ink-100/55">
+      <p className="text-[13px] text-ink-100/55">
         Founding costs <b className="text-money-400">{fmt(FOUNDING_COST)}</b>. No rent — your only ongoing cost is the
         5% sales tax taken off every sale. Stock unlimited items via the wholesaler or your own inventory.
       </p>
