@@ -166,6 +166,37 @@ function DailyContractBanner({ character, onChange }) {
   );
 }
 
+// Inline outcome line shown directly under the crime card's button so
+// the player never gets scrolled away after a commit. Returns null
+// when there's nothing to render for this crime yet.
+function CrimeResult({ last, crimeId }) {
+  if (!last || last.crime.id !== crimeId) return null;
+  if (last.error) return <p className="text-blood-400 text-[11px] mt-2">{last.error}</p>;
+  const r = last.result;
+  return (
+    <div className="text-[11px] mt-2 leading-snug">
+      {r.success && r.vehicle && (
+        <p className="text-money-400">
+           Drove off in a <b>{r.vehicle.maker} {r.vehicle.name}</b> (T{r.vehicle.tier}, book {fmt(r.vehicle.bookPrice)}). +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels>1?'s':''}!` : ''}
+        </p>
+      )}
+      {r.success && !r.vehicle && (
+        <p className="text-money-400">
+           +{fmt(r.payout)} {r.dirty ? '(dirty)' : ''} · +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels>1?'s':''}!` : ''}
+        </p>
+      )}
+      {r.success === false && r.jailed   && <p className="text-yellow-400">Caught — jailed {r.jail_min}m.</p>}
+      {r.success === false && r.hospital && <p className="text-blue-300">Hurt — hospital {r.hosp_min}m.</p>}
+      {r.success === false && r.escaped  && <p className="text-ink-100/70">Failed but escaped clean.</p>}
+      {r.consumed?.length > 0 && (
+        <p className="text-[10px] text-ink-100/50 mt-0.5">
+          Used: {r.consumed.map(c => `${c.qty}× ${c.name}`).join(', ')}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function Crimes() {
   const { character, refresh, updateFromResponse } = useGame();
   const [list, setList] = useState([]);
@@ -184,12 +215,7 @@ export default function Crimes() {
       await refresh();
       await load();
     } catch (e) { setLast({ crime, error: e.message }); }
-    finally {
-      setBusyId(null);
-      // Scroll to top so the result card is visible regardless of which
-      // crime tier the player clicked from.
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    finally { setBusyId(null); }
   }
 
   const grouped = list.reduce((m, c) => ((m[c.tier] = m[c.tier] || []).push(c), m), {});
@@ -223,26 +249,6 @@ export default function Crimes() {
           />
         </div>
       </Card>
-      {last && (
-        <Card title="Last attempt">
-          {last.error ? <p className="text-blood-400 text-sm">{last.error}</p> : (
-            <div className="text-sm">
-              {last.result.success && last.result.vehicle && (
-                <p className="text-money-400"> {last.crime.name} succeeded — drove off in a <b>{last.result.vehicle.maker} {last.result.vehicle.name}</b> (Tier {last.result.vehicle.tier}, book {fmt(last.result.vehicle.bookPrice)}). +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>
-              )}
-              {last.result.success && !last.result.vehicle && <p className="text-money-400"> {last.crime.name} succeeded — +{fmt(last.result.payout)} {last.result.dirty ? '(dirty)' : ''} +{last.result.xp}xp{last.result.levels ? ` · ↑${last.result.levels} level${last.result.levels>1?'s':''}!` : ''}</p>}
-              {last.result.success === false && last.result.jailed && <p className="text-yellow-400">Caught — jailed {last.result.jail_min} min.</p>}
-              {last.result.success === false && last.result.hospital && <p className="text-blue-300">Hurt — hospital {last.result.hosp_min} min.</p>}
-              {last.result.success === false && last.result.escaped && <p className="text-ink-100/70">Failed but escaped clean.</p>}
-              {last.result.consumed?.length > 0 && (
-                <p className="text-[11px] text-ink-100/50 mt-1">
-                  Used up: {last.result.consumed.map(c => `${c.qty}× ${c.name}`).join(', ')}.
-                </p>
-              )}
-            </div>
-          )}
-        </Card>
-      )}
       <PlayerCrimes character={character} />
 
       <Card title="Multiplayer Crimes (Heists)"
@@ -307,6 +313,7 @@ export default function Crimes() {
                               ? <>Ready in <Timer until={c.cooldownUntil} onExpire={load} /></>
                               : 'Attempt'}
                   </button>
+                  <CrimeResult last={last} crimeId={c.id} />
                 </div>
               );
             })}
