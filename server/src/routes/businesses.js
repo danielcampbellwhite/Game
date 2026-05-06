@@ -4,7 +4,7 @@ import { requireAuth, requireCharacter, requireFreeCharacter } from '../middlewa
 import { BUSINESSES, businessById, cityById, computeBusiness } from '../data.js';
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
-import { factionBonusMul } from '../services/territories.js';
+import { factionBonusMul } from '../services/areas.js';
 
 const router = Router();
 

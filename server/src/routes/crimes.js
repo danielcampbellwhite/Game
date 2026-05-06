@@ -27,7 +27,7 @@ function pickRandomPlayerInCity(attackerId, city) {
   `).all(city, attackerId, now, now, now);
   return rows[0] || null;
 }
-import { factionBonusMul, factionGlobalCrimeMul } from '../services/territories.js';
+import { factionBonusMul, factionGlobalCrimeMul } from '../services/areas.js';
 
 const router = Router();
 

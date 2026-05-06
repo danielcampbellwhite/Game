@@ -655,6 +655,23 @@ export function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_territories_gang    ON territories(gang_id);
     CREATE INDEX IF NOT EXISTS idx_territories_faction ON territories(city, faction);
+
+    -- Voronoi-style polygon areas — gang-vs-gang turf war units that
+    -- replace the named-slot territories above. Each row is one area
+    -- (e.g. "ny_a3"); gang_id is NULL when uncontrolled. flipped_at
+    -- locks the area until next UTC midnight after a successful flip,
+    -- enforcing one ownership change per area per day.
+    CREATE TABLE IF NOT EXISTS city_areas (
+      area_id         TEXT    PRIMARY KEY,
+      city            TEXT    NOT NULL,
+      gang_id         INTEGER REFERENCES gangs(id) ON DELETE SET NULL,
+      faction         TEXT,
+      captured_at     INTEGER,
+      flipped_at      INTEGER,
+      last_attempt_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_city_areas_gang    ON city_areas(gang_id);
+    CREATE INDEX IF NOT EXISTS idx_city_areas_faction ON city_areas(city, faction);
   `);
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps

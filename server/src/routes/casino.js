@@ -5,7 +5,7 @@ import { rouletteColor, ROULETTE_PAYOUTS, rollSlot } from '../data-casino.js';
 import { drawCard, cardLabel, handTotal, isBlackjack, dealerPlay, settle } from '../services/blackjack.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
-import { factionBonusMul } from '../services/territories.js';
+import { factionBonusMul } from '../services/areas.js';
 
 const router = Router();
 

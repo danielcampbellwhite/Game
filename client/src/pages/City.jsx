@@ -66,94 +66,70 @@ const CITY_DATA = {
   cape_town:   { emoji: '', vibe: 'Untapped, unpredictable, undervalued.' },
 };
 
-// Card showing the city's flagship territory — current holder, capture
-// button (gated to officers/leaders of an aligned gang), and a hint
-// about the bonus while held. Lives on the City page so it's the first
-// thing players see when they land somewhere.
+// Renders the area-control summary for the player's current city.
+// One row per polygon area; shows current controlling faction +
+// gang and a button to attempt capture. The map view at /city ?
+// tab=map overlays the same data on real OSM streets.
 function TerritoryCard({ characterCity, characterFaction }) {
-  const [terrs, setTerrs] = useState(null);
-  const [you, setYou] = useState(null);
+  const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
 
   async function load() {
-    try {
-      const r = await api.get(`/territories`);
-      setTerrs(r.territories.filter(t => t.city === characterCity));
-      setYou(r.you);
-    } catch (e) { setMsg(e.message); }
+    try { setData(await api.get(`/areas/city/${characterCity}`)); }
+    catch (e) { setMsg(e.message); }
   }
   useEffect(() => { load(); }, [characterCity]);
 
-  async function attempt(t) {
-    setBusy(t.id); setMsg(null);
+  async function attempt(area) {
+    setBusy(area.id); setMsg(null);
     try {
-      const r = await api.post(`/territories/${t.id}/capture`, {});
-      setMsg(r.captured ? `Captured ${t.name}.` : `Failed — ${t.name} held.`);
+      const r = await api.post(`/areas/${area.id}/capture`, {});
+      const atkLost = r.atkCasualties.length;
+      const defLost = r.defCasualties.length;
+      setMsg(
+        (r.captured ? ` Captured ${area.name}.` : `Failed to take ${area.name}.`) +
+        ` Atk ${r.atkPower} vs Def ${r.defPower} (${Math.round(r.winChance * 100)}%).` +
+        ` Casualties — your side: ${atkLost}, enemy: ${defLost}.`
+      );
       await load();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
   }
 
-  if (!terrs) return null;
-  if (terrs.length === 0) return null;
-
-  // Officer/leader of an aligned gang can attempt; otherwise show why.
-  const inGang = !!you?.gang;
-  const role = you?.gang?.role;   // server returns row from gang_members JOIN
-  const canAttack = inGang
-    && (you.gang.faction)
-    && (role === 'leader' || role === 'officer' || // we don't actually return role on /territories yet — leave permissive client-side; server still gates
-        true);
-
+  if (!data) return null;
   return (
-    <Card title="City Territories"
-      subtitle="Three locations per city. Hold them and faction members operating here earn the matching bonus.">
-      <div className="grid sm:grid-cols-3 gap-3">
-        {terrs.map(t => (
-          <div key={t.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 flex flex-col">
+    <Card title={`Areas in ${characterCity.replace(/_/g, ' ')}`}
+      subtitle={`${data.total} sectors. Each area you hold gives your faction +5% on crimes, business and casino payouts in this city.`}>
+      {data.yourFactionHolds > 0 && (
+        <p className="text-xs text-money-300 mb-3">
+          Your faction controls <b>{data.yourFactionHolds} / {data.total}</b> sectors here ({Math.round(data.yourFactionHolds * 5)}% bonus).
+        </p>
+      )}
+      <div className="grid sm:grid-cols-2 gap-2">
+        {data.areas.map(a => (
+          <div key={a.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3 flex flex-col">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="font-medium">{t.name}</span>
-              {t.faction
-                ? <FactionBadge faction={t.faction} />
+              <span className="font-medium text-sm">{a.name}</span>
+              {a.faction
+                ? <FactionBadge faction={a.faction} />
                 : <span className="text-[10px] uppercase tracking-wide text-ink-100/45">Unclaimed</span>}
             </div>
-            <p className="text-[11px] text-ink-100/55 mt-1 flex-1">{t.blurb}</p>
-            {t.bonus && (
-              <div className="text-[10px] uppercase tracking-wide text-money-400 mt-2">
-                +{Math.round(t.bonus.pct * 100)}% {bonusLabel(t.bonus.type)}
-              </div>
+            {a.flipped_at && Date.now() - a.flipped_at < 24*60*60*1000 && (
+              <div className="text-[10px] text-yellow-400/85 mt-1"> Locked until UTC midnight</div>
             )}
-            <div className="text-[11px] text-ink-100/55 mt-1">
-              {t.gang
-                ? <>Held by <Link to={`/gangs/${t.gang.id}`} className="text-blood-300 hover:underline">{t.gang.name} <span className="text-ink-100/45">[{t.gang.tag}]</span></Link></>
-                : <span className="italic text-ink-100/40">Unclaimed.</span>}
-            </div>
-            {inGang ? (
-              <button
-                onClick={() => attempt(t)}
-                disabled={busy === t.id}
-                className="btn btn-primary text-xs w-full mt-3">
-                {busy === t.id ? '…' : t.gang?.id === you.gang.id ? 'Already yours' : 'Attempt capture'}
-              </button>
-            ) : (
-              <p className="text-[11px] text-ink-100/40 mt-3">Join a gang to fight for it.</p>
-            )}
+            <button
+              onClick={() => attempt(a)}
+              disabled={busy === a.id}
+              className="btn btn-primary text-xs w-full mt-3">
+              {busy === a.id ? '…' : 'Attempt capture'}
+            </button>
           </div>
         ))}
       </div>
-      {msg && <p className="text-xs mt-2 text-money-400">{msg}</p>}
+      {msg && <p className="text-xs mt-3 text-money-300 whitespace-pre-line">{msg}</p>}
     </Card>
   );
-}
-
-function bonusLabel(type) {
-  switch (type) {
-    case 'crime_cash': return 'crime cash';
-    case 'gambling':   return 'gambling winnings';
-    case 'business':   return 'business income';
-    default:           return type;
-  }
 }
 
 // Persist the active tab across visits. Default to "town" — the

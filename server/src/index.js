@@ -56,7 +56,7 @@ import turfsRoutes from './routes/turfs.js';
 import ocRoutes from './routes/oc.js';
 import incarcerationRoutes from './routes/incarceration.js';
 import adminRoutes from './routes/admin.js';
-import territoryRoutes from './routes/territories.js';
+import areaRoutes from './routes/areas.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -121,7 +121,7 @@ app.use('/api/turfs', turfsRoutes);
 app.use('/api/oc', ocRoutes);
 app.use('/api/incarceration', incarcerationRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/territories', territoryRoutes);
+app.use('/api/areas', areaRoutes);
 
 //  Static SPA serving (production / deploy) 
 //

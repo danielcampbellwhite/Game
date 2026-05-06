@@ -1,114 +1,84 @@
-import React, { useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import L from 'leaflet';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-
-// Real OSM-backed city map. Each city has a centre and zoom that
-// frames its core; venues are scattered around that centre using
-// percentage offsets into a fixed bounding box, so the existing
-// (x, y) layout used by the previous stylised map carries over.
-//
-// Tile source: Carto "dark_all" — monochrome dark basemap that fits
-// the game's noir aesthetic. Free for low-volume use, attribution
-// retained in the bottom-right.
-
-const VENUES = [
-  // Civic / financial
-  { to: '/bank',           name: 'Bank',           x: 22, y: 18, tone: 'gold' },
-  { to: '/stocks',         name: 'Stock Broker',   x: 30, y: 27, tone: 'gold' },
-  { to: '/property',       name: 'Estate Agent',   x: 18, y: 32, tone: 'gold' },
-  { to: '/jail',           name: 'Jail',           x: 13, y: 14, tone: 'gold' },
-  // Medical / academic
-  { to: '/hospital',       name: 'Hospital',       x: 78, y: 16, tone: 'gold' },
-  { to: '/shop/pharmacy',  name: 'Pharmacy',       x: 70, y: 22, tone: 'gold' },
-  { to: '/university',     name: 'University',     x: 86, y: 28, tone: 'gold' },
-  { to: '/driving-school', name: 'Driving School', x: 78, y: 34, tone: 'gold' },
-  // High street
-  { to: '/general-store',     name: 'General Store',   x: 42, y: 46, tone: 'gold' },
-  { to: '/shop/coffee',       name: 'Coffee Shop',     x: 50, y: 40, tone: 'gold' },
-  { to: '/shop/gift_shop',    name: 'Gift Shop',       x: 58, y: 46, tone: 'gold' },
-  { to: '/shop/deli',         name: 'Late-Night Deli', x: 50, y: 52, tone: 'gold' },
-  { to: '/shop/off_licence',  name: 'Off-Licence',     x: 38, y: 54, tone: 'gold' },
-  { to: '/gun-store',         name: 'Weapon Dealer',   x: 62, y: 54, tone: 'gold' },
-  // Training
-  { to: '/gym',            name: 'Gym',            x: 18, y: 50, tone: 'gold' },
-  { to: '/range',          name: 'Shooting Range', x: 82, y: 50, tone: 'gold' },
-  // Commerce / transport
-  { to: '/dealership',     name: 'Car Dealership', x: 72, y: 70, tone: 'gold' },
-  { to: '/repair',         name: 'Repair Shop',    x: 80, y: 76, tone: 'gold' },
-  { to: '/travel',         name: 'Airport',        x: 88, y: 88, tone: 'gold' },
-  // Underworld
-  { to: '/chop-shop',      name: 'Chop Shop',      x: 22, y: 84, tone: 'blood' },
-  { to: '/fence',          name: 'The Fence',      x: 32, y: 78, tone: 'blood' },
-  { to: '/casino',         name: 'Casino',         x: 30, y: 92, tone: 'blood' },
-  { to: '/bookmaker',      name: 'Bookmaker',      x: 42, y: 88, tone: 'blood' },
-];
+import { api } from '../api.js';
+import { useGame } from '../context/GameContext.jsx';
 
 // Per-city map view: real lat/lng for the city centre + a default
-// zoom level that frames the central business district. spanKm is
-// the side length of the bounding box used to spread venue pins
-// around the centre — bigger spread = more legible map, smaller
-// spread = denser cluster.
+// zoom level. The polygons themselves come from the server (which
+// holds the deterministic Voronoi cells generated at build time).
 const CITY_VIEWS = {
-  new_york:    { center: [40.7580, -73.9855], zoom: 13, spanKm: 6 },
-  los_angeles: { center: [34.0522, -118.2437], zoom: 12, spanKm: 9 },
-  miami:       { center: [25.7617, -80.1918], zoom: 13, spanKm: 6 },
-  kingston:    { center: [17.9970, -76.7936], zoom: 13, spanKm: 6 },
-  rio:         { center: [-22.9068, -43.1729], zoom: 13, spanKm: 7 },
-  london:      { center: [51.5074,  -0.1278], zoom: 13, spanKm: 6 },
-  paris:       { center: [48.8566,   2.3522], zoom: 13, spanKm: 5 },
-  berlin:      { center: [52.5200,  13.4050], zoom: 13, spanKm: 6 },
-  moscow:      { center: [55.7558,  37.6173], zoom: 12, spanKm: 8 },
-  dubai:       { center: [25.2048,  55.2708], zoom: 12, spanKm: 9 },
-  tokyo:       { center: [35.6762, 139.6503], zoom: 12, spanKm: 8 },
-  hong_kong:   { center: [22.3193, 114.1694], zoom: 13, spanKm: 6 },
-  sydney:      { center: [-33.8688, 151.2093], zoom: 13, spanKm: 6 },
-  cape_town:   { center: [-33.9249,  18.4241], zoom: 12, spanKm: 8 },
+  new_york:    { center: [40.7580, -73.9855], zoom: 13 },
+  los_angeles: { center: [34.0522, -118.2437], zoom: 12 },
+  miami:       { center: [25.7617, -80.1918], zoom: 13 },
+  kingston:    { center: [17.9970, -76.7936], zoom: 13 },
+  rio:         { center: [-22.9068, -43.1729], zoom: 13 },
+  london:      { center: [51.5074,  -0.1278], zoom: 13 },
+  paris:       { center: [48.8566,   2.3522], zoom: 13 },
+  berlin:      { center: [52.5200,  13.4050], zoom: 13 },
+  moscow:      { center: [55.7558,  37.6173], zoom: 12 },
+  dubai:       { center: [25.2048,  55.2708], zoom: 12 },
+  tokyo:       { center: [35.6762, 139.6503], zoom: 12 },
+  hong_kong:   { center: [22.3193, 114.1694], zoom: 13 },
+  sydney:      { center: [-33.8688, 151.2093], zoom: 13 },
+  cape_town:   { center: [-33.9249,  18.4241], zoom: 12 },
 };
-const DEFAULT_VIEW = { center: [40.7580, -73.9855], zoom: 13, spanKm: 6 };
+const DEFAULT_VIEW = { center: [40.7580, -73.9855], zoom: 13 };
 
-// Convert a venue's percentage layout (x: 0..100 = W→E, y: 0..100 =
-// N→S) into a real lat/lng inside the city's bounding box.
-function venueLatLng(view, venue) {
-  const [lat, lng] = view.center;
-  const halfDegLat = (view.spanKm / 2) / 111;
-  const halfDegLng = (view.spanKm / 2) / (111 * Math.cos(lat * Math.PI / 180));
-  const dLng = (venue.x / 100 - 0.5) * 2 * halfDegLng;
-  const dLat = -(venue.y / 100 - 0.5) * 2 * halfDegLat;
-  return [lat + dLat, lng + dLng];
-}
+// Faction → polygon paint. Uncontrolled = grey. The dark Carto tiles
+// underneath are very desaturated so coloured fills read clearly even
+// at low alpha.
+const FACTION_COLOURS = {
+  italian:  '#ef4444',  // blood
+  russian:  '#f59e0b',  // amber
+  irish:    '#10b981',  // green
+  yakuza:   '#a855f7',  // purple
+  cartel:   '#facc15',  // gold
+  triad:    '#06b6d4',  // cyan
+  default:  '#94a3b8',  // slate
+};
+const UNCONTROLLED = 'rgba(160,160,160,0.5)';
 
-const TONE_FILL = { gold: '#facc15', blood: '#ef4444' };
-const TONE_STROKE = { gold: '#fde047', blood: '#fca5a5' };
-
-// Custom DivIcon — a circular dot with a labelled tag below. Inline
-// SVG + HTML so we don't ship Leaflet's default marker images.
-function venueIcon(v) {
-  const fill = TONE_FILL[v.tone];
-  const stroke = TONE_STROKE[v.tone];
-  return L.divIcon({
-    html: `
-      <div class="city-pin" style="--fill:${fill};--stroke:${stroke}">
-        <span class="city-pin-dot"></span>
-        <span class="city-pin-label">${v.name}</span>
-      </div>
-    `,
-    className: '',
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
-  });
+function fillFor(area) {
+  if (!area.faction) return UNCONTROLLED;
+  return FACTION_COLOURS[area.faction] || FACTION_COLOURS.default;
 }
 
 export default function CityMap({ city = 'new_york' }) {
   const view = CITY_VIEWS[city] || DEFAULT_VIEW;
-  const navigate = useNavigate();
-  // Memoise icons so they don't re-instantiate every render.
-  const icons = useMemo(() => Object.fromEntries(VENUES.map(v => [v.to, venueIcon(v)])), []);
+  const { character, refresh } = useGame();
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [selected, setSelected] = useState(null);   // area id
 
-  // Re-key the MapContainer on city change so it remounts cleanly
-  // (Leaflet doesn't reactively update center/zoom from props once
-  // mounted — would otherwise need a useMap helper).
+  async function load() {
+    try { setData(await api.get(`/areas/city/${city}`)); }
+    catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { setData(null); setSelected(null); load(); }, [city]);
+
+  async function attempt(area) {
+    setBusy(area.id); setMsg(null);
+    try {
+      const r = await api.post(`/areas/${area.id}/capture`, {});
+      const atkLost = r.atkCasualties.length;
+      const defLost = r.defCasualties.length;
+      setMsg(
+        (r.captured ? `Captured ${area.name}.` : `Failed to take ${area.name}.`) +
+        ` Atk ${r.atkPower} vs Def ${r.defPower} (${Math.round(r.winChance * 100)}%). ` +
+        `Casualties — yours: ${atkLost}, theirs: ${defLost}.`
+      );
+      await load();
+      await refresh();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  const selectedArea = data?.areas?.find(a => a.id === selected) || null;
+  const inSameCity = character?.city === city;
+  const inGang = !!character?.gang;
+
   return (
     <div className="space-y-2">
       <style>{`
@@ -120,29 +90,25 @@ export default function CityMap({ city = 'new_york' }) {
           border-color: rgba(255,255,255,0.15) !important;
         }
         .leaflet-control-zoom a:hover { background: rgba(20,17,15,0.95) !important; border-color: rgba(220,38,38,0.6) !important; }
-        .city-pin { transform: translate(-50%, -100%); cursor: pointer; pointer-events: auto; }
-        .city-pin-dot {
-          display: block; width: 11px; height: 11px; border-radius: 9999px;
-          background: var(--fill); box-shadow: 0 0 0 2px var(--stroke), 0 0 8px rgba(0,0,0,0.7);
-          margin: 0 auto;
+        .area-tip {
+          background: rgba(10,9,8,0.92) !important;
+          border: 1px solid rgba(255,255,255,0.15) !important;
+          color: #f5f5f4 !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          padding: 3px 6px !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.6) !important;
         }
-        .city-pin-label {
-          display: block; margin-top: 2px;
-          font-size: 10px; font-weight: 600; line-height: 1.1;
-          color: #f5f5f4; text-align: center; white-space: nowrap;
-          padding: 1px 5px; border-radius: 3px;
-          background: rgba(10,9,8,0.85);
-          text-shadow: 0 1px 2px rgba(0,0,0,0.9);
-        }
-        .city-pin:hover .city-pin-dot { transform: scale(1.25); }
+        .area-tip::before { display:none !important; }
       `}</style>
+
       <div className="relative w-full aspect-square max-w-5xl mx-auto rounded-xl border border-ink-100/10 overflow-hidden bg-ink-1000">
         <MapContainer
           key={city}
           center={view.center}
           zoom={view.zoom}
           minZoom={11}
-          maxZoom={17}
+          maxZoom={16}
           scrollWheelZoom
           style={{ height: '100%', width: '100%' }}
           attributionControl>
@@ -151,23 +117,69 @@ export default function CityMap({ city = 'new_york' }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             subdomains={['a', 'b', 'c', 'd']}
           />
-          {VENUES.map(v => (
-            <Marker
-              key={v.to}
-              position={venueLatLng(view, v)}
-              icon={icons[v.to]}
-              eventHandlers={{ click: () => navigate(v.to) }}
-            />
+          {(data?.areas || []).map(a => (
+            <Polygon
+              key={a.id}
+              positions={a.polygon}
+              pathOptions={{
+                color: '#0a0908',
+                weight: 2,
+                opacity: 0.9,
+                fillColor: fillFor(a),
+                fillOpacity: selected === a.id ? 0.55 : 0.30,
+              }}
+              eventHandlers={{ click: () => setSelected(a.id) }}
+            >
+              <Tooltip className="area-tip" direction="top" sticky>
+                {a.name}{a.faction ? ` · ${a.faction}` : ' · unclaimed'}
+              </Tooltip>
+            </Polygon>
           ))}
         </MapContainer>
-        {/* Legend overlay */}
-        <div className="absolute bottom-2 left-2 z-[1000] text-[9px] text-ink-100/55 bg-ink-950/80 border border-ink-100/10 rounded px-1.5 py-1 leading-tight pointer-events-none">
-          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gold-400 ring-1 ring-gold-200/60" /> Around town</div>
-          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blood-500 ring-1 ring-blood-300/50" /> Underworld</div>
+
+        {/* Legend bottom-left */}
+        <div className="absolute bottom-2 left-2 z-[1000] text-[9px] text-ink-100/55 bg-ink-950/80 border border-ink-100/10 rounded px-1.5 py-1 leading-tight pointer-events-none max-w-[140px]">
+          <div className="font-medium uppercase tracking-wider text-ink-100/70 mb-0.5">Faction control</div>
+          {Object.entries(FACTION_COLOURS).filter(([k]) => k !== 'default').map(([f, col]) => (
+            <div key={f} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: col }} /> {f}
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-slate-400" /> unclaimed</div>
         </div>
       </div>
+
+      {/* Selected-area panel */}
+      {selectedArea && (
+        <div className="rounded-lg border border-ink-100/15 bg-ink-950/85 p-3 space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="font-medium">{selectedArea.name}</div>
+            <button onClick={() => setSelected(null)} className="text-[10px] text-ink-100/50 hover:text-ink-100/85">close</button>
+          </div>
+          <div className="text-[11px] text-ink-100/65">
+            {selectedArea.faction
+              ? <>Held by <b className="text-ink-50">{selectedArea.faction}</b> faction · captured {selectedArea.captured_at ? new Date(selectedArea.captured_at).toLocaleString() : 'unknown'}</>
+              : <>Currently unclaimed — first gang to attempt takes it at 80% odds.</>}
+          </div>
+          {selectedArea.flipped_at && Date.now() - selectedArea.flipped_at < 24*60*60*1000 && (
+            <div className="text-[11px] text-yellow-400/85"> This area has changed hands today — locked until next UTC midnight.</div>
+          )}
+          {!inSameCity ? (
+            <p className="text-[11px] text-ink-100/45">Travel to this city to attempt capture.</p>
+          ) : !inGang ? (
+            <p className="text-[11px] text-ink-100/45">Join a gang to fight for territory.</p>
+          ) : (
+            <button onClick={() => attempt(selectedArea)} disabled={busy === selectedArea.id}
+              className="btn btn-primary text-xs w-full">
+              {busy === selectedArea.id ? '…' : `Attempt capture`}
+            </button>
+          )}
+          {msg && <p className="text-[11px] text-money-300">{msg}</p>}
+        </div>
+      )}
+
       <p className="text-[10px] text-ink-100/45 text-center">
-        Real streets via OpenStreetMap · scroll or pinch to zoom · drag to pan · tap any pin to walk in.
+        Real streets via OpenStreetMap · scroll/pinch to zoom · drag to pan · tap a sector to see its controller and attempt capture.
       </p>
     </div>
   );
