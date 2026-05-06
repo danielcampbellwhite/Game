@@ -163,7 +163,7 @@ export default function CityMap({ city = 'new_york' }) {
           <div className="text-[13px] text-ink-100/65">
             {selectedArea.faction
               ? <>Held by <b className="text-ink-50">{selectedArea.faction}</b> faction · captured {selectedArea.captured_at ? new Date(selectedArea.captured_at).toLocaleString() : 'unknown'}</>
-              : <>Currently unclaimed — first gang to attempt takes it at 80% odds.</>}
+              : <>Currently unclaimed — walk in and plant a flag, no fight.</>}
           </div>
           {selectedArea.flipped_at && Date.now() - selectedArea.flipped_at < 24*60*60*1000 && (
             <div className="text-[13px] text-yellow-400/85"> This area has changed hands today — locked until next UTC midnight.</div>

@@ -142,32 +142,35 @@ export function captureArea(attacker, gang, areaId) {
     return { error: 'No gang members are present in the city to lead the attack.' };
   }
 
-  // Pull defender state. If the area is unclaimed, defenders = [], the
-  // attacker rolls solo against a low fixed defence (50 base) so first
-  // claim isn't a free walk-over.
+  // Pull defender state. Uncontrolled areas are unopposed — first
+  // gang to plant a flag walks in unscathed, no roll, no casualties.
   const defGang = state.gang_id;
   const defenders = defGang
     ? gangMembersInCity(defGang, meta.city)
     : [];
+  const unopposed = !defGang;
 
   // Combined power: every present gang member counts (the gang-size
-  // cap elsewhere keeps the pool reasonable). Defenders against an
-  // unclaimed area roll against a fixed 50 baseline so first claims
-  // aren't completely free.
+  // cap elsewhere keeps the pool reasonable).
   const atkPower = attackers.reduce((s, m) => s + (m.strength || 1), 0);
-  const defPower = defenders.reduce((s, m) => s + (m.defence  || 1), 0) || 50;
+  const defPower = defenders.reduce((s, m) => s + (m.defence  || 1), 0);
 
   // Win chance: 50/50 at parity, tilts with stats differential.
-  let winChance = 0.5 + 0.5 * (atkPower - defPower) / Math.max(1, atkPower + defPower);
-  winChance = Math.max(MIN_WIN_CHANCE, Math.min(MAX_WIN_CHANCE, winChance));
-  // Unclaimed areas roll at a fixed 80% to encourage land-grabs.
-  if (!defGang) winChance = 0.80;
+  // Uncontrolled areas auto-resolve at 100% with no fight.
+  let winChance;
+  if (unopposed) {
+    winChance = 1;
+  } else {
+    winChance = 0.5 + 0.5 * (atkPower - defPower) / Math.max(1, atkPower + defPower);
+    winChance = Math.max(MIN_WIN_CHANCE, Math.min(MAX_WIN_CHANCE, winChance));
+  }
 
-  const captured = Math.random() < winChance;
+  const captured = unopposed || Math.random() < winChance;
 
-  // Casualties — rolled against every member who took part.
-  const atkCasualties = rollCasualties(attackers);
-  const defCasualties = rollCasualties(defenders);
+  // Casualties — only when there's an actual fight. Walking into an
+  // empty sector is a free flag-plant, no one gets hurt.
+  const atkCasualties = unopposed ? [] : rollCasualties(attackers);
+  const defCasualties = unopposed ? [] : rollCasualties(defenders);
 
   // Apply casualties.
   applyCasualties(atkCasualties, `Wounded in turf battle for ${meta.name}.`);
