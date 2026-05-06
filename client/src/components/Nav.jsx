@@ -180,7 +180,7 @@ function MiniStat({ label, value, max, color, money }) {
   const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
     <div className="min-w-0 leading-tight">
-      <div className="flex items-baseline justify-between gap-2 text-[10px] uppercase text-ink-100/55">
+      <div className={`flex items-baseline gap-2 text-[10px] uppercase text-ink-100/55 ${money ? 'justify-end' : 'justify-between'}`}>
         <span>{label}</span>
         <span className={`tabular-nums ${money ? 'text-money-400 font-medium' : 'text-ink-100/85'}`}>
           {money ? fmt(value) : `${value}/${max}`}
