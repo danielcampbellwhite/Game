@@ -1,8 +1,27 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Polygon, Tooltip, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Tooltip, Rectangle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
+
+// On every cityBounds change, push the new pan/zoom limits onto the
+// live Leaflet map. react-leaflet only reads its initial-prop values
+// once on mount — without this, the bounds prop is null at mount
+// time (data hasn't loaded) and never gets re-applied, so the player
+// can drag/scroll anywhere even though we set maxBounds in JSX.
+function MapBoundsController({ bounds }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!bounds) return;
+    map.setMaxBounds(bounds);
+    // 1.0 = the boundary is fully sticky (drag bounces back instantly).
+    map.options.maxBoundsViscosity = 1.0;
+    // Make the city fit comfortably and prevent zooming out past it.
+    map.fitBounds(bounds, { animate: false, padding: [8, 8] });
+    map.setMinZoom(map.getZoom());
+  }, [bounds, map]);
+  return null;
+}
 
 // Per-city map view: real lat/lng for the city centre + a default
 // zoom level. The polygons themselves come from the server (which
@@ -142,6 +161,7 @@ export default function CityMap({ city = 'new_york' }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             subdomains={['a', 'b', 'c', 'd']}
           />
+          <MapBoundsController bounds={cityBounds} />
           {/* City-limit border: visible outline + drag stop. */}
           {cityBounds && (
             <Rectangle
