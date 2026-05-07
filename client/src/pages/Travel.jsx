@@ -121,7 +121,7 @@ export default function Travel() {
 
       <Card title=" Departures" subtitle={
           `Next flight in ${mmss(boardingOpensAt - now)}` +
-          (inBoardingWindow ? ` · BOARDING NOW (${mmss(departsAt - now)} left)` : ` · 4:39 wait, 30 s boarding window`)
+          (inBoardingWindow ? ` · BOARDING NOW (${mmss(departsAt - now)} left)` : ` · 5 min cycle, 30 s boarding window`)
         }>
         {grounded && (
           <p className="text-xs text-yellow-300 mb-3">
@@ -129,8 +129,7 @@ export default function Travel() {
           </p>
         )}
         <div className="rounded-md bg-ink-900/50 border border-ink-100/10 px-3 py-2 mb-3 flex items-baseline justify-between text-xs">
-          <span className="text-ink-100/55 uppercase tracking-wide text-[11px]">Schedule (UTC)</span>
-          <span className="tabular-nums text-money-300">{new Date(departsAt).toUTCString().slice(17, 22)} departure</span>
+          <span className="text-ink-100/55 uppercase tracking-wide text-[11px]">Next flight</span>
           <span className={`tabular-nums font-medium ${inBoardingWindow ? 'text-blood-300' : 'text-ink-100'}`}>
             {inBoardingWindow ? `Take off in ${mmss(departsAt - now)}` : `Boarding opens in ${mmss(boardingOpensAt - now)}`}
           </span>
