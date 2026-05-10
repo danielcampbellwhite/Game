@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { GYMS, gymById, GYM_MACHINES, STAT_CAPS } from '../data.js';
+import { GYM_MACHINES, STAT_CAPS } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { applyTrainingBuffs, buffSnapshot } from '../services/buffs.js';
 import { bumpMission } from '../services/missions.js';
@@ -8,106 +8,42 @@ import { writeLog } from '../services/log.js';
 
 const router = Router();
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const machineById = id => GYM_MACHINES.find(m => m.id === id);
-
-// Permanent-stat progression rate. Multiplied by the current gym's
-// `progressionMul` so the high-tier members reach the cap faster.
-const PROGRESS_PER_BUFF_POINT = 0.025;
-const PERMANENT_STATS = ['strength', 'defence', 'speed'];
-
-function currentMembership(ch, now = Date.now()) {
-  if (!ch.gym_id || !ch.gym_until || ch.gym_until <= now) return null;
-  const gym = gymById(ch.gym_id);
-  if (!gym) return null;
-  return { gym, expiresAt: ch.gym_until };
-}
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
-  const now = Date.now();
-  const active = currentMembership(ch, now);
   res.json({
-    gyms: GYMS.map(g => ({
-      ...g,
-      locked: (ch.level || 1) < g.levelGate,
-      youHere: active?.gym.id === g.id,
-    })),
-    membership: active ? { gymId: active.gym.id, expiresAt: active.expiresAt, msLeft: active.expiresAt - now } : null,
-    // Every machine; client filters by minTier <= active gym tier.
     machines: GYM_MACHINES,
     buffs: buffSnapshot(ch),
     progress: {
       strength: ch.strength_progress || 0,
-      defence:  ch.defence_progress  || 0,
-      speed:    ch.speed_progress    || 0,
+      defence: ch.defence_progress || 0,
+      speed: ch.speed_progress || 0,
     },
     base: {
       strength: ch.strength,
-      defence:  ch.defence,
-      speed:    ch.speed,
+      defence: ch.defence,
+      speed: ch.speed,
     },
   });
 });
 
-// Join (or switch to) a gym — pay the weekly fee and overwrite any
-// existing membership. Switching forfeits the remaining time on the
-// old one. Locked gyms (below player level) refused.
-router.post('/join', requireAuth, requireCharacter, (req, res) => {
-  const ch = req.character;
-  const gym = gymById(req.body?.gym_id);
-  if (!gym) return res.status(400).json({ error: 'Unknown gym.' });
-  if ((ch.level || 1) < gym.levelGate) {
-    return res.status(403).json({ error: `${gym.name} unlocks at level ${gym.levelGate}.` });
-  }
-  if (ch.cash < gym.weeklyFee) {
-    return res.status(400).json({ error: `Need £${gym.weeklyFee.toLocaleString()} for a week's membership.` });
-  }
-  ch.cash -= gym.weeklyFee;
-  ch.gym_id = gym.id;
-  ch.gym_until = Date.now() + WEEK_MS;
-  writeLog(ch.id, 'gym', `Signed up at ${gym.name} for £${gym.weeklyFee.toLocaleString()} (1 week).`);
-  saveCharacter(ch);
-  res.json({ ok: true, character: publicCharacter(ch) });
-});
-
-// Renew the current membership for another week — same gym, same fee.
-// Adds 7 days from now (or from current expiry if still active, so a
-// keen player who renews a day early doesn't lose that day).
-router.post('/renew', requireAuth, requireCharacter, (req, res) => {
-  const ch = req.character;
-  if (!ch.gym_id) return res.status(400).json({ error: 'You\'re not a member of any gym.' });
-  const gym = gymById(ch.gym_id);
-  if (!gym) return res.status(404).json({ error: 'Gym catalogue missing.' });
-  if (ch.cash < gym.weeklyFee) {
-    return res.status(400).json({ error: `Need £${gym.weeklyFee.toLocaleString()} to renew.` });
-  }
-  ch.cash -= gym.weeklyFee;
-  const now = Date.now();
-  const base = (ch.gym_until && ch.gym_until > now) ? ch.gym_until : now;
-  ch.gym_until = base + WEEK_MS;
-  writeLog(ch.id, 'gym', `Renewed ${gym.name} membership (£${gym.weeklyFee.toLocaleString()}, +1 week).`);
-  saveCharacter(ch);
-  res.json({ ok: true, character: publicCharacter(ch) });
-});
+const PROGRESS_PER_BUFF_POINT = 0.025;
+const PERMANENT_STATS = ['strength', 'defence', 'speed'];
 
 router.post('/train', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const m = machineById(req.body?.machine_id);
   if (!m) return res.status(400).json({ error: 'Unknown machine' });
-  const active = currentMembership(ch);
-  if (!active) return res.status(403).json({ error: 'Join a gym before training.' });
-  if (active.gym.tier < m.minTier) {
-    return res.status(403).json({ error: `That machine is at a tier-${m.minTier} gym — upgrade your membership to use it.` });
-  }
-  if (ch.energy < m.energy) return res.status(400).json({ error: `Not enough energy — needs ${m.energy}.` });
+  if (ch.energy < m.energy) return res.status(400).json({ error: 'Not enough energy' });
+  if (ch.cash < m.cost) return res.status(400).json({ error: `Need £${m.cost}` });
 
   ch.energy -= m.energy;
+  ch.cash -= m.cost;
   applyTrainingBuffs(ch, m.buffs);
   ch.happiness = Math.min(100, ch.happiness + 1);
   bumpMission(ch, 'gym_session', 1, { machine: m.id });
 
-  const mul = active.gym.progressionMul || 1;
   const permanentGains = {};
   for (const stat of PERMANENT_STATS) {
     const buffAmount = m.buffs[stat] || 0;
@@ -118,7 +54,7 @@ router.post('/train', requireAuth, requireCharacter, requireFreeCharacter, (req,
       continue;
     }
     const before = ch[`${stat}_progress`] || 0;
-    let progress = before + buffAmount * PROGRESS_PER_BUFF_POINT * mul;
+    let progress = before + buffAmount * PROGRESS_PER_BUFF_POINT;
     let gained = 0;
     while (progress >= 1.0 && (ch[stat] || 0) < cap) {
       ch[stat] = (ch[stat] || 0) + 1;
@@ -133,9 +69,9 @@ router.post('/train', requireAuth, requireCharacter, requireFreeCharacter, (req,
   const buffSummary = Object.entries(m.buffs).map(([s, v]) => `+${v} ${s}`).join(', ');
   const permSummary = Object.entries(permanentGains).map(([s, v]) => `+${v} ${s} (PERMANENT)`).join(', ');
   const logMsg = permSummary
-    ? `${m.emoji} ${m.name} @ ${active.gym.name} — ${buffSummary}; ${permSummary}.`
-    : `${m.emoji} ${m.name} @ ${active.gym.name} — ${buffSummary} (decays over time).`;
-  writeLog(ch.id, 'training', logMsg, { machine: m.id, gym: active.gym.id, permanentGains });
+    ? `${m.emoji} ${m.name} — ${buffSummary}; ${permSummary}.`
+    : `${m.emoji} ${m.name} — ${buffSummary} (decays over time).`;
+  writeLog(ch.id, 'training', logMsg, { machine: m.id, permanentGains });
   saveCharacter(ch);
   res.json({ ok: true, permanentGains, character: publicCharacter(ch), buffs: buffSnapshot(ch) });
 });
