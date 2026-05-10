@@ -25,6 +25,15 @@ const machineById = id => GYM_MACHINES.find(m => m.id === id);
 const PROGRESS_PER_BUFF_POINT = 0.025;
 const PERMANENT_STATS = ['strength', 'defence', 'speed'];
 
+// saveCharacter() writes a hardcoded column list that doesn't include
+// gym_id / gym_until — they were added by the inline ALTER TABLE above
+// without an edit to the character service. Persist them directly
+// whenever the route mutates them so they actually hit disk.
+function persistGymMembership(ch) {
+  db.prepare('UPDATE characters SET gym_id = ?, gym_until = ? WHERE id = ?')
+    .run(ch.gym_id || null, ch.gym_until || null, ch.id);
+}
+
 function currentMembership(ch, now = Date.now()) {
   if (!ch.gym_id || !ch.gym_until || ch.gym_until <= now) return null;
   const gym = gymById(ch.gym_id);
@@ -77,6 +86,7 @@ router.post('/join', requireAuth, requireCharacter, (req, res) => {
   ch.gym_until = Date.now() + WEEK_MS;
   writeLog(ch.id, 'gym', `Signed up at ${gym.name} for £${gym.weeklyFee.toLocaleString()} (1 week).`);
   saveCharacter(ch);
+  persistGymMembership(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
@@ -97,6 +107,7 @@ router.post('/renew', requireAuth, requireCharacter, (req, res) => {
   ch.gym_until = base + WEEK_MS;
   writeLog(ch.id, 'gym', `Renewed ${gym.name} membership (£${gym.weeklyFee.toLocaleString()}, +1 week).`);
   saveCharacter(ch);
+  persistGymMembership(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
