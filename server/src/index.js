@@ -59,6 +59,7 @@ import adminRoutes from './routes/admin.js';
 import areaRoutes from './routes/areas.js';
 import newspaperRoutes from './routes/newspaper.js';
 import chasesRoutes from './routes/chases.js';
+import burglaryRoutes from './routes/burglary.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -123,6 +124,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/areas', areaRoutes);
 app.use('/api/newspaper', newspaperRoutes);
 app.use('/api/chases', chasesRoutes);
+app.use('/api/burglary', burglaryRoutes);
 
 const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
 if (fs.existsSync(CLIENT_DIST)) {
