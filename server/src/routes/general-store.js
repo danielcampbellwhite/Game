@@ -9,6 +9,34 @@ import { writeLog } from '../services/log.js';
 
 const router = Router();
 
+// Prize-table overrides applied at request time. The shipped table for
+// scratch_gold in data.js carried a +112% EV (£529 expected payout on a
+// £250 ticket) which was an unlimited money printer at scale. This
+// rebalanced table targets ~85% payback — slight house edge, real-world
+// scratcher numbers, jackpot dialled to £250k. Lives here rather than in
+// the 150KB data.js so the override stays diffable.
+const PRIZE_OVERRIDES = {
+  scratch_gold: {
+    desc: 'Premium card. £0 to £250,000 jackpot.',
+    prizes: [
+      { chance: 0.60000, amount: 0      },
+      { chance: 0.25000, amount: 250    },
+      { chance: 0.08000, amount: 500    },
+      { chance: 0.03500, amount: 1000   },
+      { chance: 0.01300, amount: 2500   },
+      { chance: 0.00400, amount: 5000   },
+      { chance: 0.00100, amount: 10000  },
+      { chance: 0.00010, amount: 50000  },
+      { chance: 0.00001, amount: 250000 },
+    ],
+  },
+};
+function applyPrizeOverride(item) {
+  const o = item && PRIZE_OVERRIDES[item.id];
+  if (!o) return item;
+  return { ...item, ...o };
+}
+
 function ownedQty(charId, itemId) {
   const r = db.prepare("SELECT qty FROM inventory WHERE char_id = ? AND kind = 'misc' AND item_id = ?")
     .get(charId, itemId);
@@ -26,11 +54,14 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   // already have (and resellers buy from the wholesaler endpoint).
   const items = MISC_ITEMS
     .filter(i => !i.wholesale_only)
-    .map(i => ({
-      ...i,
-      cityCost: Math.floor(i.cost * cityMul),
-      owned: ownedMap[i.id] || 0,
-    }));
+    .map(i => {
+      const o = applyPrizeOverride(i);
+      return {
+        ...o,
+        cityCost: Math.floor(o.cost * cityMul),
+        owned: ownedMap[o.id] || 0,
+      };
+    });
   res.json({ items, cityName: cityById(ch.city)?.name });
 });
 
@@ -56,7 +87,7 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
 
 router.post('/use', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
-  const item = miscItemById(req.body?.item_id);
+  const item = applyPrizeOverride(miscItemById(req.body?.item_id));
   if (!item) return res.status(400).json({ error: 'Unknown item' });
   const have = ownedQty(ch.id, item.id);
   if (have <= 0) return res.status(400).json({ error: "You don't have that." });

@@ -72,6 +72,11 @@ router.post('/', requireAuth, requireCharacter, (req, res) => {
   }
   const target = loadCharacterById(targetId);
   if (!target) return res.status(404).json({ error: 'Target not found.' });
+  // Same-user (alt) bounty blocked at the source so it never becomes
+  // a self-collect channel. settleBountiesOnKill has a matching guard.
+  if (target.user_id === ch.user_id) {
+    return res.status(400).json({ error: "Can't post a bounty on your own alt." });
+  }
   const min = minBountyForRep(target.reputation || 0);
   if (amount < min) {
     return res.status(400).json({ error: `Minimum bounty on a ${rankFor(target.reputation || 0).name} is £${min.toLocaleString()}.` });
@@ -106,21 +111,46 @@ router.post('/:id/cancel', requireAuth, requireCharacter, (req, res) => {
 });
 
 // Settle every open bounty on `targetId` — paying the killer for each
-// one. Called from the murder route on a successful kill. Returns the
-// total cash credited so the route can include it in its response.
+// one. Called from the murder route (and the live-PvP service) on a
+// successful kill. Bounties placed by anyone sharing a user account
+// with the killer are refunded instead of paid out, killing the
+// "post bounty on alt, kill alt, collect" exploit.
 export function settleBountiesOnKill(killerId, targetId) {
-  const open = db.prepare(`SELECT * FROM bounties WHERE target_id = ? AND status = 'open'`).all(targetId);
+  const killer = db.prepare('SELECT user_id FROM characters WHERE id = ?').get(killerId);
+  if (!killer) return { count: 0, total: 0 };
+  const open = db.prepare(`
+    SELECT b.*, p.user_id AS placer_user_id
+    FROM bounties b
+    JOIN characters p ON p.id = b.placer_id
+    WHERE b.target_id = ? AND b.status = 'open'
+  `).all(targetId);
   if (!open.length) return { count: 0, total: 0 };
   const now = Date.now();
   let total = 0;
+  let refunded = 0;
+  let paidCount = 0;
   for (const b of open) {
+    if (b.placer_user_id === killer.user_id) {
+      // Self-collect: refund the placer, mark cancelled. The placer
+      // can re-post on a non-alt target if they really wanted the kill.
+      db.prepare(`UPDATE bounties SET status='cancelled', ended_at=? WHERE id=?`)
+        .run(now, b.id);
+      db.prepare('UPDATE characters SET cash = cash + ? WHERE id = ?')
+        .run(b.amount, b.placer_id);
+      refunded += b.amount;
+      sendEvent(b.placer_id, 'bounty.refunded', { id: b.id, amount: b.amount, reason: 'self_collect' });
+      continue;
+    }
     db.prepare(`UPDATE bounties SET status='claimed', collector_id=?, ended_at=? WHERE id=?`)
       .run(killerId, now, b.id);
     total += b.amount;
+    paidCount += 1;
     sendEvent(b.placer_id, 'bounty.claimed', { id: b.id, amount: b.amount });
   }
-  db.prepare(`UPDATE characters SET cash = cash + ? WHERE id = ?`).run(total, killerId);
-  return { count: open.length, total };
+  if (total > 0) {
+    db.prepare(`UPDATE characters SET cash = cash + ? WHERE id = ?`).run(total, killerId);
+  }
+  return { count: paidCount, total, refunded };
 }
 
 export default router;
