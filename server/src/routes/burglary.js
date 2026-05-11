@@ -130,18 +130,27 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
 
   let result;
   if (succeeded) {
-    // Take 3–8% of victim's liquid cash, floored at MIN_LOOT and
-    // capped at MAX_LOOT to keep low-cash victims from being ruined
-    // and to stop a single break-in from emptying a whale's wallet.
+    // Take 3–8% of victim's liquid cash, capped at MAX_LOOT to stop a
+    // single break-in from emptying a whale's wallet. The MIN_LOOT
+    // floor only applies up to whatever the victim actually has —
+    // otherwise burgling a broke alt would mint cash from nothing
+    // (see burglary mint exploit). The burglar's payout is always
+    // exactly what the victim loses.
     const pct = 0.03 + Math.random() * 0.05;
-    const rawTake = Math.floor((target.owner_cash || 0) * pct);
-    const take = Math.min(MAX_LOOT, Math.max(MIN_LOOT, rawTake));
+    const ownerCash = Math.max(0, target.owner_cash || 0);
+    const rawTake = Math.floor(ownerCash * pct);
+    const take = Math.min(MAX_LOOT, ownerCash, Math.max(MIN_LOOT, rawTake));
     db.prepare('UPDATE characters SET cash = MAX(0, cash - ?) WHERE id = ?').run(take, target.char_id);
     ch.cash += take;
-    const xp = 80 + Math.floor(meta.tier * 30);
-    awardXp(ch, xp);
-    ch.reputation += 12;
-    ch.happiness = Math.min(100, ch.happiness + 2);
+    // XP / rep / happiness only when there was real cash to take —
+    // otherwise burgling a string of broke alts becomes a passive
+    // XP/rep farm even with the cash payout gated.
+    const xp = take > 0 ? 80 + Math.floor(meta.tier * 30) : 0;
+    if (xp > 0) awardXp(ch, xp);
+    if (take > 0) {
+      ch.reputation += 12;
+      ch.happiness = Math.min(100, ch.happiness + 2);
+    }
     writeLog(ch.id, 'crime',
       `Broke into ${meta.name} (${target.owner_name}) — took £${take.toLocaleString()} (stealth ${stealth} vs def ${defence}, +${xp}xp).`,
       { burglary: true, target: target.char_id, take, xp });

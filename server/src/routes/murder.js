@@ -13,6 +13,7 @@ import { writeLog } from '../services/log.js';
 import { bumpMission } from '../services/missions.js';
 import { settleBountiesOnKill } from './bounties.js';
 import { softDeath } from '../services/death.js';
+import { debitTargetCash, hospitaliseTarget } from '../services/pvp-cash.js';
 
 const router = Router();
 
@@ -201,7 +202,9 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   if (outcome === 'kill') {
     // Permadeath branch — same shape as PvP murder mode.
     cashPct = CASH_PCT_KILL;
-    cashTaken = Math.floor((target.cash || 0) * cashPct);
+    // Atomic debit: re-read target.cash inside a transaction so we credit
+    // exactly what the target currently has, not the stale snapshot value.
+    cashTaken = debitTargetCash(target.id, Math.floor((target.cash || 0) * cashPct));
     if (cashTaken > 0) ch.cash += cashTaken;
 
     const xp = 80 + (target.level || 1) * 6;
@@ -235,16 +238,13 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
 
   if (outcome === 'severe_wound' || outcome === 'wound') {
     cashPct = outcome === 'severe_wound' ? CASH_PCT_SEVERE_WOUND : CASH_PCT_WOUND;
-    cashTaken = Math.floor((target.cash || 0) * cashPct);
-    if (cashTaken > 0) {
-      target.cash = Math.max(0, target.cash - cashTaken);
-      ch.cash += cashTaken;
-    }
-    // Drop target HP to 1 and hospitalise.
+    // Atomic debit + precise hospital UPDATE; avoids saveCharacter(target)
+    // which would blow away any parallel writes the target made.
+    cashTaken = debitTargetCash(target.id, Math.floor((target.cash || 0) * cashPct));
+    if (cashTaken > 0) ch.cash += cashTaken;
     const hospitalMins = outcome === 'severe_wound' ? rng(60, 180) : rng(15, 45);
-    target.health = 1;
-    target.hospital_until = now + hospitalMins * 60 * 1000;
-    target.hospital_reason = `Found bleeding out — attacker: ${ch.name}.`;
+    hospitaliseTarget(target.id, now + hospitalMins * 60 * 1000,
+      `Found bleeding out — attacker: ${ch.name}.`);
 
     // XP / rep on a non-fatal hit.
     const xp = outcome === 'severe_wound' ? 30 : 10;
@@ -259,7 +259,6 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
       { attacker: ch.id, outcome }, true);
 
     saveCharacter(ch);
-    saveCharacter(target);
     sendEvent(target.id, 'pvp.attacked', { by: { id: ch.id, name: ch.name }, outcome, hospitalMins });
     return res.json({
       ok: true,

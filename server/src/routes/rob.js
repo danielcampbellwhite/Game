@@ -7,6 +7,7 @@ import { effectiveStats } from '../services/buffs.js';
 import { sendEvent } from '../services/events.js';
 import { writeLog } from '../services/log.js';
 import { bumpMission } from '../services/missions.js';
+import { debitTargetCash, hospitaliseTarget } from '../services/pvp-cash.js';
 
 const router = Router();
 
@@ -107,20 +108,19 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
 
   if (win) {
     // Random share of cash on hand — keeps marginal robberies thrilling.
+    // Atomic debit so the credit matches whatever the target currently has,
+    // not the snapshot. Stops a parallel target deposit being clobbered.
     const robPct = CASH_PCT_MIN + Math.random() * (CASH_PCT_MAX - CASH_PCT_MIN);
-    const cashTaken = Math.floor((target.cash || 0) * robPct);
-    target.cash = (target.cash || 0) - cashTaken;
+    const cashTaken = debitTargetCash(target.id, Math.floor((target.cash || 0) * robPct));
     ch.cash += cashTaken;
-
-    const hospitalMins = rng(HOSPITAL_MIN[0], HOSPITAL_MIN[1]);
-    target.health = 1;
-    target.hospital_until = now + hospitalMins * 60 * 1000;
 
     // Reveal coin-flip. Result is stored only in the victim's log /
     // notification — attacker is never told either way.
+    const hospitalMins = rng(HOSPITAL_MIN[0], HOSPITAL_MIN[1]);
     const revealed = Math.random() < REVEAL_PCT;
     const robberLabel = revealed ? ch.name : 'an unknown assailant';
-    target.hospital_reason = `Mugged in the alley by ${robberLabel}.`;
+    hospitaliseTarget(target.id, now + hospitalMins * 60 * 1000,
+      `Mugged in the alley by ${robberLabel}.`);
 
     const xp = 25 + Math.floor(target.level / 2);
     awardXp(ch, xp);
@@ -135,7 +135,6 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
       { attacker_id: revealed ? ch.id : null, cashTaken, revealed }, true);
 
     saveCharacter(ch);
-    saveCharacter(target);
     sendEvent(target.id, 'pvp.attacked', {
       by: revealed ? { id: ch.id, name: ch.name } : null,
       outcome: 'robbed', cashTaken, hospitalMins,
