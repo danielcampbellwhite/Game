@@ -12,10 +12,12 @@ import { freeGarageSpace } from '../services/garage.js';
 import { sendEvent } from '../services/events.js';
 import { crimeHourMul, hourBucket, BUCKET_LABEL } from '../services/clock.js';
 import { startChase, resolveExpiredChase } from './chases.js';
+import {
+  recordCrimeForInvestigation,
+  getPendingTrial,
+  jailMultiplier,
+} from '../services/investigations.js';
 
-// Pick a viable street-mug target — same city, not the attacker,
-// not in jail/hospital/travel, with at least a token wallet so the
-// roll is worthwhile. Returns null when nobody fits.
 function pickRandomPlayerInCity(attackerId, city) {
   const now = Date.now();
   const rows = db.prepare(`
@@ -159,8 +161,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
 router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
 
-  // Lazy-resolve any chase the player ignored — applies jail if past
-  // its 12s window. Frees the slot for the next chase.
+  // Resolve any expired police chase first.
   const expired = resolveExpiredChase(ch);
   if (expired) {
     return res.status(409).json({
@@ -170,12 +171,22 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       character: publicCharacter(ch),
     });
   }
-  // Block new crimes while a live chase is on the table.
   const activeChase = db.prepare('SELECT char_id FROM active_chases WHERE char_id = ?').get(ch.id);
   if (activeChase) {
     return res.status(409).json({
       error: 'You\'re mid-chase — resolve it before pulling another job.',
       chaseActive: true,
+    });
+  }
+
+  // Pending trial gate — until the player pleads, hires, bribes, or
+  // takes their day in court, no new crimes (real-life logic: you're
+  // on bail, lying low).
+  const pendingTrial = getPendingTrial(ch.id);
+  if (pendingTrial) {
+    return res.status(409).json({
+      error: 'You\'re facing charges. Resolve your trial before pulling another job.',
+      trialPending: true,
     });
   }
 
@@ -218,9 +229,10 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   const hourMul = crimeHourMul(crime.id, ch.city, now);
   const success = Math.max(5, Math.min(95, (crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus - heatPenalty) * hourMul));
   const roll = Math.random() * 100;
+  const succeeded = roll < success;
 
   let result;
-  if (roll < success) {
+  if (succeeded) {
     const happyMul = 1 + (ch.happiness - 50) / 200;
     const xpGain = Math.floor(crime.xp * happyMul);
     const lvls = awardXp(ch, xpGain);
@@ -319,10 +331,11 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     const adjustedJail = Math.max(jailFloor, jailCeil);
     const consequence = Math.random();
     if (consequence < adjustedJail) {
-      const mins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
-      // GTA twist: hand the player a chase mini-game before applying
-      // the sentence. Server holds the intended jail in active_chases;
-      // resolve / give-up / timeout decides the final outcome.
+      // Record-weight multiplier — repeat offenders eat longer time
+      // on the same flubbed crime. Phase 6 wiring.
+      const recMul = jailMultiplier(ch.id);
+      const baseMins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
+      const mins = Math.floor(baseMins * recMul);
       if (crime.tier === 'gta') {
         const payload = startChase(ch, { crimeId: crime.id, crimeName: crime.name, jailMin: mins });
         const msg = `🚨 Sirens behind you mid-getaway from "${crime.name}". Outrun them or it's ${mins}m inside.`;
@@ -359,6 +372,11 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   const heatBefore = heatNow;
   const heatAfter  = addHeat(ch, HEAT_BY_RISK[crime.risk] || 5);
 
+  // Detective drip — every commit (success or failure) feeds the
+  // investigation slot. Spawns one when heat crosses 50; auto-files
+  // a trial once evidence hits 100. See services/investigations.js.
+  const investigation = recordCrimeForInvestigation(ch, crime.tier, succeeded, heatAfter);
+
   saveCharacter(ch);
   res.json({
     ...result,
@@ -367,6 +385,7 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     heat: { before: Math.round(heatBefore), after: Math.round(heatAfter) },
     hourMul,
     hourBonusPct: Math.round((hourMul - 1) * 100),
+    investigation,
     character: publicCharacter(ch),
   });
 });
