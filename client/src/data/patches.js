@@ -25,7 +25,7 @@ export const PATCHES = [
         notes: [
           'Cross the heat threshold and a named detective opens a case on you. Every crime — successful or not — drips evidence into their file. Failed jobs drip 1.6× more.',
           'When the file fills, charges are filed and you\'re hauled into court. The Trial page lets you plead guilty (60% sentence, certain conviction), hire up to 3 lawyers (each shaves 20% off effective evidence), bribe the judge (-30% conviction chance), or take your chances at trial.',
-          'Convictions stack into a permanent criminal record (60-day rolling window). 3+ convictions = jail times +25%; 5+ = +50% and some services start refusing you.',
+          'Convictions stack into a permanent criminal record (30-day rolling window). 3+ convictions = jail times +25%; 5+ = +50% and some services start refusing you.',
           'A new Dashboard banner shows the live investigation, the detective\'s name and the file\'s progress.',
         ],
       },
