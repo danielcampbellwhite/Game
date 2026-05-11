@@ -9,6 +9,57 @@
 
 export const PATCHES = [
   {
+    version: '0.9.0',
+    date: '2026-05-11',
+    title: 'Realism pass · day/night · detectives · chases · burglary · property mods',
+    sections: [
+      {
+        heading: 'Day & night',
+        notes: [
+          'Every city now has a local clock. Crime success chance shifts by time-of-day: cover-of-darkness jobs (mugging, break-ins, GTA) peak at night (+15-25%); crowd jobs (pickpocket, shoplift, phishing) peak in business hours; bank robberies invert and want a daytime crowd.',
+          'Venues have opening hours. Casinos open 14:00-04:00 local; bookmakers stay open 24/7. Outside hours, the door is shut and you\'ll be told when it reopens.',
+        ],
+      },
+      {
+        heading: 'Detective, trial & criminal record',
+        notes: [
+          'Cross the heat threshold and a named detective opens a case on you. Every crime — successful or not — drips evidence into their file. Failed jobs drip 1.6× more.',
+          'When the file fills, charges are filed and you\'re hauled into court. The Trial page lets you plead guilty (60% sentence, certain conviction), hire up to 3 lawyers (each shaves 20% off effective evidence), bribe the judge (-30% conviction chance), or take your chances at trial.',
+          'Convictions stack into a permanent criminal record (60-day rolling window). 3+ convictions = jail times +25%; 5+ = +50% and some services start refusing you.',
+          'A new Dashboard banner shows the live investigation, the detective\'s name and the file\'s progress.',
+        ],
+      },
+      {
+        heading: 'Police chase mini-game',
+        notes: [
+          'Fail a GTA and the cops give chase instead of cuffing you on the spot. A 5-button arrow sequence appears with a 12-second timer — nail it to escape clean, miss and you\'re jailed for the original sentence. Driving skill softens the difficulty.',
+          'The chase persists across refreshes: log back in mid-pursuit and it picks up where it left off.',
+        ],
+      },
+      {
+        heading: 'NPC city contacts',
+        notes: [
+          'Every city has a named fence — your relationship with them grows every time you launder a clean wash. Bands run Stranger → Regular (+1%) → Trusted (+3%) → Inner Circle (+5%) on top of the base 70% and the Cleaner perk.',
+          'The Fence page now shows your contact, their blurb, and a live breakdown of the effective rate.',
+        ],
+      },
+      {
+        heading: 'Property: mods, burglary & player-to-player sales',
+        notes: [
+          'Five new mod slots on every property (alarm, doors, cameras, guards, safe) — 13 mods across the slots that raise both resale value and defence against burglary.',
+          'Burglary (Underworld): pick a player\'s home to break into. Stealth vs. defence roll on top of a 1-hour cooldown. Success lifts 3-8% of their cash; failure rolls jail / hospital / clean escape.',
+          'Estate Agent now hosts a player marketplace — list any property you own for sale at your asking price. 5% sales tax skim on the deal; mods transfer with the property.',
+        ],
+      },
+      {
+        heading: 'City newspaper',
+        notes: [
+          'New /newspaper page per city: top earners, turf control breakdown, police blotter, deterministic daily weather, and yesterday\'s headlines. Lower-rep players get pseudonyms ("a small-time hustler") so you have to work for your reputation before your name shows up.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-05-06',
     title: 'Progression rework · player photos · daily contracts · gang treasury',
