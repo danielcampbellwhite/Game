@@ -9,6 +9,44 @@
 
 export const PATCHES = [
   {
+    version: '0.9.1',
+    date: '2026-05-11',
+    title: 'Economy hardening · twelve exploit fixes',
+    sections: [
+      {
+        heading: 'Money printers off',
+        notes: [
+          'Gold Scratcher (Murphy\'s General Store) rebalanced. The old prize table paid back +112% on every ticket — buy 99, spam Use, walk away rich. New table is real-world scratcher math: ~85% payback, jackpot dialled to £250k. Still fun, no longer an ATM.',
+          'Vehicle dealership arbitrage closed. Buying a car in a cheap city (Cape Town, businessMul 0.80) and selling in an expensive one (Dubai, 1.50) yielded a 12.5% round-trip gain. Trade-in is now capped to the depreciated purchase price; the dealer never pays you more than you paid them.',
+          'Burglary cash mint closed. The £500 minimum-loot floor used to pay out even when the victim had £0 — meaning a freshly-rolled alt with an empty wallet was worth £500/hr to your main. The burglar\'s payout now matches what the victim actually loses, and XP/rep are gated on real take.',
+        ],
+      },
+      {
+        heading: 'PvP races + collusion',
+        notes: [
+          'Bounty self-collect (post bounty on alt, murder alt, collect) is dead. Same-user bounties are refunded to the placer instead of paid to the killer, and you can\'t post a bounty on your own alt in the first place.',
+          'Murder and Rob no longer race their own SQL. The target\'s cash is debited atomically inside a transaction, so any parallel deposit/bet the target makes can\'t be silently overwritten by the attacker\'s save. The attacker is credited exactly what the target loses — never more, never less.',
+          'New characters (3-day PvP protection window) can\'t move cash *out* to a gang treasury or initiate / accept trades. Closes the alt-mule cash funnel.',
+        ],
+      },
+      {
+        heading: 'Wash-trade taxes equalised',
+        notes: [
+          'Gang treasury withdrawals now take a 5% skim, matching the trade tax. The treasury was a tax-free transfer pipe between members — promote your alt to officer, deposit, withdraw, free transfer. Now there\'s the same friction as a trade.',
+        ],
+      },
+      {
+        heading: 'Casino + bank + stocks',
+        notes: [
+          'Bank loans: one open at a time. Stacking loans against an inflated stock-priced net worth and dumping the cash into illiquid assets (vehicles, properties, businesses) used to leave the auto-defaulter empty-handed. Repay before borrowing again.',
+          'Stocks now have a small bid/ask spread (0.5% each side, 1% round-trip). Stops players parking cash in stocks just to dodge robbery — round-tripping costs something now.',
+          'Blackjack hit/stand/double now gate on requireFreeCharacter, matching the rest of the casino. No more playing your hand from the cell.',
+          'Daily reward streak resets cleanly on retire so prestige cycles start fresh.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.0',
     date: '2026-05-11',
     title: 'Realism pass · day/night · detectives · chases · burglary · property mods',
