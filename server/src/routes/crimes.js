@@ -10,6 +10,7 @@ import { checkRequirements, consumeRequirements, annotateRequirements } from '..
 import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_MULTIPLIER } from '../services/heat.js';
 import { freeGarageSpace } from '../services/garage.js';
 import { sendEvent } from '../services/events.js';
+import { crimeHourMul, hourBucket, BUCKET_LABEL } from '../services/clock.js';
 
 // Pick a viable street-mug target — same city, not the attacker,
 // not in jail/hospital/travel, with at least a token wallet so the
@@ -134,18 +135,20 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   // Turf perk: gangs holding the city give their members -20% crime cooldown
   // while operating in that city. Multiplier applies to the published cooldown.
   const turfPerk = holdsTurfPerk(ch.id, ch.city);
+  const localBucket = hourBucket(ch.city);
+  const localBucketLabel = BUCKET_LABEL[localBucket];
   res.json({
     turf_perk_active: turfPerk,
+    hourBucket: localBucket,
+    hourLabel: localBucketLabel,
     crimes: CRIMES.map(c => {
       const baseCd = crimeCooldownSec(c);
       const cooldownSec = turfPerk ? Math.max(15, Math.floor(baseCd * TURF_CRIME_COOLDOWN_MUL)) : baseCd;
       const used = cdMap[c.id] || 0;
       const cooldownUntil = used + cooldownSec * 1000;
-      // Requirements: annotate with current ownership counts so the client
-      // can render "you have X / Y" chips and dim the Attempt button
-      // without a second roundtrip.
       const requires = annotateRequirements(ch.id, crimeRequirements(c));
       const requirementsMet = requires.every(r => r.ok);
+      const hourMul = crimeHourMul(c.id, ch.city);
       return {
         ...c,
         locked: ch.level < c.level,
@@ -155,6 +158,9 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
         ready: Date.now() >= cooldownUntil,
         requires,
         requirementsMet,
+        hourMul,
+        // Round to a friendly +/-N% string for the client to render.
+        hourBonusPct: Math.round((hourMul - 1) * 100),
       };
     }),
   });
@@ -166,13 +172,10 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   if (!crime) return res.status(400).json({ error: 'Unknown crime' });
   if (ch.level < crime.level) return res.status(403).json({ error: `Requires level ${crime.level}` });
   if (ch.energy < crime.energy) return res.status(400).json({ error: 'Not enough energy' });
-  // GTA: can't lift a car when you've already got one warming the seat.
-  // Drop your active ride first (sell or store).
   if (crime.tier === 'gta' && ch.active_vehicle_id) {
     return res.status(400).json({ error: 'Can\'t boost a car while you\'re already driving one — sell or store your current ride first.' });
   }
 
-  // Cooldown check (turf perk same as in GET above)
   const baseCd = crimeCooldownSec(crime);
   const cdSec = holdsTurfPerk(ch.id, ch.city)
     ? Math.max(15, Math.floor(baseCd * TURF_CRIME_COOLDOWN_MUL))
@@ -184,9 +187,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     if (now < readyAt) return res.status(429).json({ error: 'Crime is on cooldown', cooldownUntil: readyAt });
   }
 
-  // Item requirements (e.g. ATM Skim needs an ATM Skimmer in inventory).
-  // Checked before any state mutation; consumed after commit-point so the
-  // tool is destroyed even if the crime fails.
   const requires = crimeRequirements(crime);
   const reqCheck = checkRequirements(ch.id, requires);
   if (!reqCheck.ok) {
@@ -198,16 +198,16 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   }
 
   ch.energy -= crime.energy;
-  // Consume crime tools — destroyed regardless of success/failure.
   const consumed = consumeRequirements(ch.id, requires);
 
-  // Snapshot heat before this commit. Higher heat shaves the success
-  // base and inflates jail risk on failure (see RISK_TABLE pull below).
   const heatNow = effectiveHeat(ch);
   const heatPenalty = heatNow * HEAT_SUCCESS_PENALTY;
 
   const intelBonus = (crime.intelBonus || 0) * (ch.intelligence * 0.3);
-  const success = Math.max(5, Math.min(95, crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus - heatPenalty));
+  // Time-of-day multiplier — see services/clock.js. Cover-of-darkness
+  // crimes pull >1 at night, public-foot-traffic crimes the opposite.
+  const hourMul = crimeHourMul(crime.id, ch.city, now);
+  const success = Math.max(5, Math.min(95, (crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus - heatPenalty) * hourMul));
   const roll = Math.random() * 100;
 
   let result;
@@ -218,8 +218,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     ch.reputation += Math.floor(crime.xp / 4);
     ch.happiness = Math.min(100, ch.happiness + 1);
     bumpMission(ch, 'crime_success', 1, { tier: crime.tier, crime: crime.id });
-    // Tally a faction crime — drives the "faction reputation" share
-    // surfaced on /api/factions/reputation. Skipped for unaligned chars.
     if (ch.faction) {
       db.prepare(`
         INSERT INTO faction_stats (faction_id, crimes_committed) VALUES (?, 1)
@@ -228,10 +226,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     }
 
     if (crime.tier === 'gta' && crime.vehicleTier) {
-      // Stolen car becomes the player's active ride. Earlier guard
-      // already ensured they had no active vehicle before the heist.
-      // Stolen cars roll 75-100% condition — they've been driven by
-      // somebody before you, after all.
       const v = rollVehicleFromTier(crime.vehicleTier);
       let stolenCondition = 100;
       let stolenActive = false;
@@ -247,14 +241,9 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
           ch.active_vehicle_id = info.lastInsertRowid;
           stolenActive = true;
         } else if (freeGarageSpace(ch.id, ch.city) > 0) {
-          // Driver's licence too low — stash in the local garage
-          // instead. Player can equip it once their driving stat
-          // catches up.
           db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
             .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
         } else {
-          // Can't drive AND no garage room → unload at the chop shop
-          // for 15% of book so the heist isn't a total loss.
           chopPayout = Math.floor(v.bookPrice * 0.15);
           ch.cash += chopPayout;
           chopped = true;
@@ -271,33 +260,18 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       result = { ok: true, success: true, vehicle: v, condition: stolenCondition, xp: xpGain, levels: lvls, active: stolenActive, chopped, chopPayout };
     } else {
       const cityMul = cityById(ch.city)?.businessMul || 1.0;
-      // Territory-control bonuses:
-      // - Local: per-city, sum of crime_cash pcts the player's faction
-      //   holds in this city (1.0 = no holdings, up to ~1.05 today).
-      // - Global: faction-wide, scales with unique cities held (up to
-      //   ~1.07 with all 14 cities).
       const localTerrMul  = factionBonusMul(ch.faction, ch.city, 'crime_cash');
       const globalTerrMul = factionGlobalCrimeMul(ch.faction);
       const territoryBonus = localTerrMul * globalTerrMul;
-      // Hacker 'Quick fingers' boosts cyber payouts; specPerk returns
-      // 0 unless the player is on the cyber path with that node.
       const cyberMul = crime.tier === 'cyber' ? (1 + specPerk(ch, 'cyber_payout_pct')) : 1;
       const grossPayout = Math.floor(rng(crime.min, crime.max) * cityMul * happyMul * territoryBonus * cyberMul);
 
-      // Mugging — 12% chance the mark is a real player rolling
-      // through the same city, in which case the payout is a slice
-      // of *their* cash on hand instead of the NPC range. Same risk
-      // profile (failure path is unchanged); the upside is the
-      // wallet of whoever you grabbed.
       if (crime.id === 'mugging' && Math.random() < 0.12) {
         const target = pickRandomPlayerInCity(ch.id, ch.city);
         if (target && (target.cash || 0) >= 200) {
           const taken = Math.max(100, Math.floor((target.cash || 0) * (0.20 + Math.random() * 0.10)));
           db.prepare('UPDATE characters SET cash = MAX(0, cash - ?) WHERE id = ?').run(taken, target.id);
           ch.cash += taken;
-          // 30% chance the victim catches the description / sees a
-          // note pinned to their dashboard. Otherwise the cash just
-          // vanishes from their pocket and they're none the wiser.
           const informed = Math.random() < 0.30;
           const skim = applyGangCrimeCut(ch, taken);
           ch.cash -= skim;
@@ -311,7 +285,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
           }
           result = { ok: true, success: true, payout: taken, gangSkim: skim, victim: { id: target.id, name: target.name }, informed, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
         } else {
-          // No suitable mark in town — fall through to the regular NPC payout.
           const skim = applyGangCrimeCut(ch, grossPayout);
           const payout = grossPayout - skim;
           if (crime.dirty) ch.dirty_cash += payout;
@@ -321,11 +294,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
           result = { ok: true, success: true, payout, gangSkim: skim, dirty: !!crime.dirty, xp: xpGain, levels: lvls };
         }
       } else {
-        // Gang treasury skim — leader-set fraction of every successful
-        // crime payout flows into the gang vault. Boss 'Lieutenant' adds
-        // to the share that ends up in the treasury vs the member's
-        // pocket (player's perspective: more goes to the gang for less
-        // personal but they get the perks to share later).
         const skim = applyGangCrimeCut(ch, grossPayout);
         const payout = grossPayout - skim;
         if (crime.dirty) ch.dirty_cash += payout;
@@ -336,9 +304,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       }
     }
   } else {
-    // failure: jail/hospital based on risk. Heat amplifies jail
-    // probability — clamped so it can't push past `risk.jail + risk.hosp`
-    // (otherwise an "escape clean" outcome could disappear entirely).
     const risk = RISK_TABLE[crime.risk] || RISK_TABLE.low;
     const jailFloor = risk.jail;
     const jailCeil  = Math.min(risk.jail + risk.hosp, jailFloor * (1 + heatNow * HEAT_JAIL_MULTIPLIER));
@@ -366,17 +331,12 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     }
   }
 
-  // Record cooldown — applies whether you succeeded or got nicked.
   db.prepare(`
     INSERT INTO consumable_cooldowns (char_id, item_id, used_at) VALUES (?, ?, ?)
     ON CONFLICT(char_id, item_id) DO UPDATE SET used_at = excluded.used_at
   `).run(ch.id, cooldownKey(crime.id), now);
   const cooldownUntil = now + cdSec * 1000;
 
-  // Heat applies to every outcome — success, escape, hospital, AND
-  // jail. Each crime adds to the trail; jail bumps it harder because
-  // the cops now have your face on file (and you're sketchy on
-  // release).
   const heatBefore = heatNow;
   const heatAfter  = addHeat(ch, HEAT_BY_RISK[crime.risk] || 5);
 
@@ -386,6 +346,8 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     consumed,
     cooldownUntil,
     heat: { before: Math.round(heatBefore), after: Math.round(heatAfter) },
+    hourMul,
+    hourBonusPct: Math.round((hourMul - 1) * 100),
     character: publicCharacter(ch),
   });
 });
