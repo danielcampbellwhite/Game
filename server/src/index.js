@@ -57,6 +57,7 @@ import ocRoutes from './routes/oc.js';
 import incarcerationRoutes from './routes/incarceration.js';
 import adminRoutes from './routes/admin.js';
 import areaRoutes from './routes/areas.js';
+import newspaperRoutes from './routes/newspaper.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -122,6 +123,7 @@ app.use('/api/oc', ocRoutes);
 app.use('/api/incarceration', incarcerationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/areas', areaRoutes);
+app.use('/api/newspaper', newspaperRoutes);
 
 //  Static SPA serving (production / deploy) 
 //
