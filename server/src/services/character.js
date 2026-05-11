@@ -5,6 +5,20 @@ import { buffSnapshot } from './buffs.js';
 import { effectiveHeat } from './heat.js';
 import { writeLog } from './log.js';
 
+// Pending-trial flag is surfaced on publicCharacter so App.jsx's
+// Protected wrapper can redirect into /trial the moment charges
+// are filed. Done with a direct SQL query (rather than importing
+// from investigations.js) to dodge the cyclic import that would
+// otherwise form: character ↔ investigations.
+function hasPendingTrial(charId) {
+  try {
+    const row = db.prepare('SELECT 1 FROM pending_trials WHERE char_id = ?').get(charId);
+    return !!row;
+  } catch {
+    return false;
+  }
+}
+
 const ENERGY_REGEN_MS = 5 * 60 * 1000;   // 1 energy per 5 min
 const NERVE_REGEN_MS  = 5 * 60 * 1000;   // 1 nerve per 5 min
 const HEALTH_REGEN_MS = 60 * 1000;       // 1 hp per minute (out of hospital)
@@ -398,6 +412,11 @@ export function publicCharacter(ch) {
     // Live, decayed heat — computed fresh from the stored snapshot so
     // the dashboard ticks down as the player idles.
     heat: Math.round(effectiveHeat(ch)),
+    // Pending-trial lockout flag — App.jsx redirects into /trial when
+    // this is true so the player can't carry on with crime while a
+    // case is filed against them. Cleared automatically when the trial
+    // resolves (plead / acquitted / convicted).
+    pending_trial: hasPendingTrial(ch.id),
     is_admin: !!ch.is_admin,
   };
 }
