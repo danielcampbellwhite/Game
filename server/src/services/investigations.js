@@ -53,7 +53,7 @@ export const LAWYER_PER_EV      = 100;       // cost scales with evidence
 export const LAWYER_REDUCE_PCT  = 0.20;      // each hire knocks 20% off effective evidence
 export const BRIBE_COST         = 50_000;
 export const BRIBE_REDUCTION    = 0.30;      // flat -30% conviction chance
-export const RECORD_TTL_MS      = 60 * 24 * 60 * 60 * 1000; // 60 days
+export const RECORD_TTL_MS      = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // Per-tier evidence weight — successful crimes drip a little, failed
 // ones drip more (witnesses, fingerprints, etc.).
