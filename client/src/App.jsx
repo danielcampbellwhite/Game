@@ -30,6 +30,7 @@ import Inventory from './pages/Inventory.jsx';
 import Missions from './pages/Missions.jsx';
 import GeneralStore from './pages/GeneralStore.jsx';
 import Newspaper from './pages/Newspaper.jsx';
+import Burglary from './pages/Burglary.jsx';
 import Players from './pages/Players.jsx';
 import Player from './pages/Player.jsx';
 import Messages from './pages/Messages.jsx';
@@ -66,21 +67,16 @@ function Protected({ children }) {
   if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
   if (!character) return <Navigate to="/create" replace />;
 
-  // Death lockout — character has been killed; player must roll a new
-  // character before they can resume play.
   if (character.status === 'pending_new_character' && location.pathname !== '/new-character') {
     return <Navigate to="/new-character" replace />;
   }
 
-  // Hospital lockout — you can't go anywhere except the Hospital page until
-  // you pay your bills or wait out the timer.
   const now = Date.now();
   const inHospital = character.hospital_until && character.hospital_until > now;
   if (inHospital && location.pathname !== '/hospital') {
     return <Navigate to="/hospital" replace />;
   }
 
-  // Jail lockout — same idea. Pay a lawyer, bribe out, or sit there.
   const inJail = character.jail_until && character.jail_until > now;
   if (inJail && location.pathname !== '/jail') {
     return <Navigate to="/jail" replace />;
@@ -182,6 +178,7 @@ export default function App() {
           <Route path="/missions" element={<Protected><Missions /></Protected>} />
           <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />
           <Route path="/newspaper" element={<Protected><Newspaper /></Protected>} />
+          <Route path="/burglary" element={<Protected><Burglary /></Protected>} />
           <Route path="/players" element={<Protected><Players /></Protected>} />
           <Route path="/players/:id" element={<Protected><Player /></Protected>} />
           <Route path="/messages" element={<Protected><Messages /></Protected>} />
