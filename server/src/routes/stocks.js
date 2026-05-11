@@ -8,6 +8,15 @@ import { getStockPrice, getAllStocks } from '../services/market.js';
 
 const router = Router();
 
+// Bid/ask spread — players pay slightly more than mid to buy and receive
+// slightly less than mid to sell. Without a spread, stocks round-trip for
+// zero cost and let players park cash off the "robbable" surface for free
+// (the rob route only takes from `cash`, not stocks). The spread is small
+// (0.5% each side, 1% round-trip) so day-to-day trading still feels free
+// — it just makes parking cash there to dodge robbery cost something.
+const SPREAD_BUY  = 1.005;
+const SPREAD_SELL = 0.995;
+
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const lvl = ch.level || 1;
@@ -31,20 +40,21 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   if (!stock) return res.status(400).json({ error: 'Unknown stock' });
   const gate = stock.levelGate || 1;
   if ((ch.level || 1) < gate) return res.status(403).json({ error: `${stock.name} unlocks at level ${gate}.` });
-  const price = getStockPrice(stock.id);
-  const cost = Math.floor(price * shares);
+  const mid = getStockPrice(stock.id);
+  const askPrice = mid * SPREAD_BUY;
+  const cost = Math.floor(askPrice * shares);
   if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost}` });
   ch.cash -= cost;
   const existing = db.prepare('SELECT * FROM stocks_owned WHERE char_id = ? AND stock_id = ?').get(ch.id, stock.id);
   if (existing) {
     const total = existing.shares + shares;
-    const avg = ((existing.avg_price * existing.shares) + price * shares) / total;
+    const avg = ((existing.avg_price * existing.shares) + askPrice * shares) / total;
     db.prepare('UPDATE stocks_owned SET shares = ?, avg_price = ? WHERE id = ?').run(total, avg, existing.id);
   } else {
     db.prepare('INSERT INTO stocks_owned (char_id, stock_id, shares, avg_price) VALUES (?, ?, ?, ?)')
-      .run(ch.id, stock.id, shares, price);
+      .run(ch.id, stock.id, shares, askPrice);
   }
-  writeLog(ch.id, 'stock', `Bought ${shares} ${stock.id} @ £${price.toFixed(2)} (-£${cost}).`);
+  writeLog(ch.id, 'stock', `Bought ${shares} ${stock.id} @ £${askPrice.toFixed(2)} (-£${cost}).`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });
@@ -56,16 +66,17 @@ router.post('/sell', requireAuth, requireCharacter, (req, res) => {
   if (!stock) return res.status(400).json({ error: 'Unknown stock' });
   const existing = db.prepare('SELECT * FROM stocks_owned WHERE char_id = ? AND stock_id = ?').get(ch.id, stock.id);
   if (!existing || existing.shares < shares) return res.status(400).json({ error: 'Not enough shares' });
-  const price = getStockPrice(stock.id);
-  const earn = Math.floor(price * shares);
+  const mid = getStockPrice(stock.id);
+  const bidPrice = mid * SPREAD_SELL;
+  const earn = Math.floor(bidPrice * shares);
   ch.cash += earn;
   if (existing.shares === shares) {
     db.prepare('DELETE FROM stocks_owned WHERE id = ?').run(existing.id);
   } else {
     db.prepare('UPDATE stocks_owned SET shares = shares - ? WHERE id = ?').run(shares, existing.id);
   }
-  const pl = Math.floor((price - existing.avg_price) * shares);
-  writeLog(ch.id, 'stock', `Sold ${shares} ${stock.id} @ £${price.toFixed(2)} (+£${earn}, P/L £${pl}).`);
+  const pl = Math.floor((bidPrice - existing.avg_price) * shares);
+  writeLog(ch.id, 'stock', `Sold ${shares} ${stock.id} @ £${bidPrice.toFixed(2)} (+£${earn}, P/L £${pl}).`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch), earn, pl });
 });

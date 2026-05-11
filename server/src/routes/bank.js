@@ -79,6 +79,14 @@ router.post('/loan', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const amount = Math.max(1000, parseInt(req.body?.amount || 0, 10));
   const loans = db.prepare('SELECT * FROM loans WHERE char_id = ?').all(ch.id);
+  // Single-open-loan rule. Without this you could stack loans against
+  // an inflated net-worth surface (live stock prices, vehicle book
+  // values) and then cash out into illiquid assets — the auto-default
+  // only seizes cash and bank, so the rest of your portfolio stayed
+  // safe. Repay the open loan before taking another.
+  if (loans.length > 0) {
+    return res.status(409).json({ error: 'You already have an open loan. Repay it before taking another.' });
+  }
   const totalOwed = loans.reduce((a, l) => a + l.principal, 0);
   const networth = computeNetWorth(ch);
   const borrow = maxBorrow(ch, networth, totalOwed);

@@ -8,10 +8,34 @@ import { freeGarageSpace, garageCapacity, vehicleCount } from '../services/garag
 
 const router = Router();
 
+// Inline migration: record what the player actually paid for each car so
+// the trade-in can't ever exceed the depreciated purchase price. Without
+// this, buying in a low-businessMul city (Cape Town 0.80) and selling in
+// a high-mul one (Dubai 1.50) yielded a 12.5% round-trip gain per cycle
+// — pure cross-city arbitrage.
+try { db.exec('ALTER TABLE vehicles_owned ADD COLUMN purchase_price INTEGER NULL'); } catch {}
+
+const DEALER_BUYBACK_RATE = 0.60;
+
 // Legal-dealer price respects the city's businessMul (luxury markets cost more).
 function dealerPrice(vehicle, city) {
   const mul = cityById(city)?.businessMul || 1.0;
   return Math.floor(vehicle.bookPrice * mul);
+}
+
+// What the dealer will actually offer for a row right now. The buyback
+// is the smaller of (a) sell-city book × buyback × cond — the legacy
+// formula — and (b) what you actually paid × buyback × cond. Cars
+// bought before this migration have no recorded purchase_price; they
+// keep the legacy formula (b is Infinity).
+function buybackPayout(vehicleDef, row, sellCity) {
+  const cityMul = cityById(sellCity)?.businessMul || 1.0;
+  const condMul = Math.max(0, row.condition ?? 100) / 100;
+  const legacy  = Math.floor(vehicleDef.bookPrice * cityMul * DEALER_BUYBACK_RATE * condMul);
+  const capPaid = row.purchase_price != null
+    ? Math.floor(row.purchase_price * DEALER_BUYBACK_RATE * condMul)
+    : Infinity;
+  return Math.min(legacy, capPaid);
 }
 
 router.get('/', requireAuth, requireCharacter, (req, res) => {
@@ -37,8 +61,6 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     if (row) {
       const av = vehicleById(row.vehicle_id);
       if (av) {
-        const cityMul = cityById(ch.city)?.businessMul || 1.0;
-        const condMul = Math.max(0, row.condition ?? 100) / 100;
         active = {
           id: row.id,
           name: av.name,
@@ -46,9 +68,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
           tier: av.tier,
           acquired_via: row.acquired_via,
           condition: row.condition ?? 100,
-          tradeIn: row.acquired_via === 'bought'
-            ? Math.floor(av.bookPrice * cityMul * DEALER_BUYBACK_RATE * condMul)
-            : null,
+          tradeIn: row.acquired_via === 'bought' ? buybackPayout(av, row, ch.city) : null,
         };
       }
     }
@@ -87,19 +107,20 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   const price = dealerPrice(v, ch.city);
   if (ch.cash < price) return res.status(400).json({ error: `Need £${price.toLocaleString()}` });
   ch.cash -= price;
-  const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at) VALUES (?, ?, ?, ?, ?)')
-    .run(ch.id, v.id, 'bought', ch.city, Date.now());
+  const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, purchase_price) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(ch.id, v.id, 'bought', ch.city, Date.now(), price);
   if (willBeActive) ch.active_vehicle_id = info.lastInsertRowid;
   writeLog(ch.id, 'dealership', `Bought ${v.maker} ${v.name} for £${price.toLocaleString()}${willBeActive ? ' — driving it off the lot.' : ' — parked at the garage.'}`, { vehicle: v.id, price, active: willBeActive });
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
-// Trade-in: sell the active vehicle back to the dealer at 60% of its
-// city-adjusted book price. Only works for cars you bought legitimately
-// (acquired_via='bought'); stolen cars have to move through the chop
-// shop or the black-market dealer.
-const DEALER_BUYBACK_RATE = 0.60;
+// Trade-in: sell the active vehicle back to the dealer at min(legacy
+// city-adjusted formula, depreciated purchase price). The purchase-price
+// cap means buying cheap in one city and selling dear in another can no
+// longer beat the standard depreciation curve. Only works for cars you
+// bought legitimately (acquired_via='bought'); stolen cars have to move
+// through the chop shop or the black-market dealer.
 router.post('/sell', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   if (!ch.active_vehicle_id) return res.status(400).json({ error: 'You have no active car to sell.' });
@@ -118,9 +139,7 @@ router.post('/sell', requireAuth, requireCharacter, (req, res) => {
   const listed = db.prepare("SELECT id FROM shop_listings WHERE kind = 'vehicle' AND instance_id = ?").get(row.id);
   if (listed) return res.status(400).json({ error: 'This car is listed in a player shop — delist it first.' });
 
-  const cityMul = cityById(ch.city)?.businessMul || 1.0;
-  const condMul = Math.max(0, row.condition ?? 100) / 100;
-  const payout = Math.floor(v.bookPrice * cityMul * DEALER_BUYBACK_RATE * condMul);
+  const payout = buybackPayout(v, row, ch.city);
   ch.cash += payout;
   ch.active_vehicle_id = null;
   db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id);
