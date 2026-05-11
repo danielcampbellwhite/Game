@@ -19,6 +19,7 @@ const AROUND_TOWN = [
   { to: '/university', icon: '', name: 'University',               blurb: 'Programmes that permanently raise intelligence.', hideWhen: c => c.intelligence >= (c.stat_caps?.intelligence || Infinity) },
   { to: '/driving-school', icon: '', name: 'Driving School',       blurb: 'Train your driving skill — boosts race odds and lessens car wear.', hideWhen: c => (c.driving || 1) >= (c.stat_caps?.driving || Infinity) },
   { to: '/general-store', icon: '', name: 'General Store',         blurb: 'Odds, ends, and props. Most are mission gear; a few lift your mood.' },
+  { to: '/newspaper',  icon: '', name: 'The City Gazette',         blurb: 'Today\'s front page — headlines, top earners, turf footprint, police blotter.' },
   { to: '/shop/coffee',     icon: '', name: 'Coffee Shop',           blurb: 'Espresso, energy drinks, pre-workout — quick energy refuels.' },
   { to: '/shop/pharmacy',   icon: '', name: 'Pharmacy',              blurb: 'First aid, painkillers, vitamins — patch up between runs.' },
   { to: '/shop/off_licence',icon: '', name: 'Off-Licence',           blurb: 'Booze and cigars — nerve, happiness, sometimes a health hit.' },
@@ -67,10 +68,6 @@ const CITY_DATA = {
   cape_town:   { emoji: '', vibe: 'Untapped, unpredictable, undervalued.' },
 };
 
-// Renders the area-control summary for the player's current city.
-// One row per polygon area; shows current controlling faction +
-// gang and a button to attempt capture. The map view at /city ?
-// tab=map overlays the same data on real OSM streets.
 function TerritoryCard({ characterCity, characterFaction }) {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -133,10 +130,6 @@ function TerritoryCard({ characterCity, characterFaction }) {
   );
 }
 
-// Persist the active tab across visits. Default to "town" — the
-// Persist the active tab across visits. City Map opens by default —
-// the visual map is the most compact way to spot every venue at a
-// glance; the text grids stay around for accessibility / quick scan.
 const TAB_PREF_KEY = 'mafia.cityTab';
 const TABS = [
   { id: 'world',      label: 'World Map' },
@@ -165,7 +158,6 @@ export default function City() {
   const meta = CITY_DATA[character.city] || { emoji: '', vibe: '' };
   const cityName = character.city.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  // World-map header summary (used in the World tab).
   const totalOnline = worldCities?.cities.reduce((n, c) => n + (c.online || 0), 0) || 0;
   const totalPlayers = worldCities?.cities.reduce((n, c) => n + (c.players || 0), 0) || 0;
 
@@ -179,8 +171,6 @@ export default function City() {
         {(() => {
           const here = worldCities?.cities.find(c => c.id === character.city);
           if (!here) return null;
-          // Faction headcount in your current city — quick read on who
-          // dominates the streets you're walking.
           const f = here.factions || {};
           const total = (f.fraudster || 0) + (f.mafia || 0) + (f.cartel || 0);
           if (total === 0) return null;
