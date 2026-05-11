@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import Card from '../components/Card.jsx';
 import Timer from '../components/Timer.jsx';
 import LockBadge from '../components/LockBadge.jsx';
+import PoliceChase from '../components/PoliceChase.jsx';
 import { fmt } from '../components/Money.jsx';
 
 function cooldownLabel(sec) {
@@ -23,15 +24,12 @@ const TIER_ORDER  = ['street', 'cyber', 'gta', 'major'];
 
 const TIER_SUBTITLES = {
   cyber: 'Intelligence-driven jobs. Lower energy cost, payouts scale with your INT.',
-  gta:   'Steal a car. The vehicle IS the prize — sell it at the Chop Shop or keep it.',
+  gta:   'Steal a car. The vehicle IS the prize — sell it at the Chop Shop or keep it. Caught? You\'ll get a chance to outrun the cops.',
 };
 
-// Two of the player-versus-player attack types live here as crimes,
-// since they're felonies and each attempt lands the attacker in jail.
-// Mutual combat (live PvP knockout in Fight Club) lives elsewhere.
 function PlayerCrimes({ character }) {
   const nav = useNavigate();
-  const [open, setOpen] = useState(null);   // null | 'rob' | 'murder'
+  const [open, setOpen] = useState(null);
   const [players, setPlayers] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -39,9 +37,6 @@ function PlayerCrimes({ character }) {
     setBusy(true);
     try {
       const r = await api.get('/players/search');
-      // Show only same-city targets — server tags them with same_city.
-      // Cross-city targets aren't actionable (rob/murder require same city)
-      // and their location is private, so listing them would just confuse.
       setPlayers(r.players.filter(p => p.same_city && p.id !== character.id));
     } finally { setBusy(false); }
   }
@@ -106,9 +101,6 @@ function PlayerCrimes({ character }) {
   );
 }
 
-// Daily contract banner — fetches the day's tip on mount, attempts
-// it inline. The contract auto-generates server-side on first read,
-// so the banner is always populated for level-2+ players.
 function DailyContractBanner({ character, onChange }) {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -166,10 +158,6 @@ function DailyContractBanner({ character, onChange }) {
   );
 }
 
-// Inline outcome banner shown directly under the crime card's button
-// so the player never gets scrolled away after a commit. Loud enough
-// that the result is the first thing your eye lands on without being
-// so big it shoves the next card off-screen.
 function CrimeResult({ last, crimeId }) {
   if (!last || last.crime.id !== crimeId) return null;
   if (last.error) {
@@ -182,8 +170,6 @@ function CrimeResult({ last, crimeId }) {
   }
   const r = last.result;
 
-  // Pick the loudest single outcome to drive the banner's tone +
-  // headline; supplemental lines (xp, items used) follow underneath.
   let tone, label, headline;
   if (r.success && r.vehicle) {
     tone = 'money';
@@ -193,6 +179,10 @@ function CrimeResult({ last, crimeId }) {
     tone = 'money';
     label = 'Score';
     headline = `+${fmt(r.payout)}${r.dirty ? ' (dirty)' : ''}`;
+  } else if (r.chase) {
+    tone = 'blood';
+    label = 'On the run';
+    headline = `Police chase — outrun them or do ${r.chase.jailMin}m.`;
   } else if (r.jailed) {
     tone = 'gold';
     label = 'Caught';
@@ -210,6 +200,7 @@ function CrimeResult({ last, crimeId }) {
     money: { border: 'border-money-500/70', bg: 'bg-money-600/20', label: 'text-money-300', text: 'text-money-100' },
     gold:  { border: 'border-yellow-500/70', bg: 'bg-yellow-700/20', label: 'text-yellow-300', text: 'text-yellow-100' },
     blue:  { border: 'border-blue-400/70',  bg: 'bg-blue-700/20',  label: 'text-blue-300',  text: 'text-blue-100' },
+    blood: { border: 'border-blood-500/70', bg: 'bg-blood-700/25', label: 'text-blood-300', text: 'text-blood-100' },
     ghost: { border: 'border-ink-100/40',   bg: 'bg-ink-900/60',   label: 'text-ink-100/65', text: 'text-ink-100/90' },
   }[tone];
 
@@ -217,7 +208,7 @@ function CrimeResult({ last, crimeId }) {
     <div className={`mt-3 rounded-md border-2 ${TONE.border} ${TONE.bg} p-2.5 text-center`}>
       <div className={`text-[12px] uppercase tracking-wider ${TONE.label}`}>{label}</div>
       <div className={`text-sm font-bold ${TONE.text} mt-0.5`}>{headline}</div>
-      {(r.xp || r.levels) && (
+      {(r.xp || r.levels) && !r.chase && (
         <div className="text-[13px] text-ink-100/70 mt-0.5">
           +{r.xp}xp{r.levels ? ` · ↑${r.levels} lvl${r.levels > 1 ? 's' : ''}!` : ''}
         </div>
@@ -236,9 +227,19 @@ export default function Crimes() {
   const [list, setList] = useState([]);
   const [last, setLast] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  // Police-chase mini-game state. Populated either by a /crimes/commit
+  // response that returned a `chase`, or by a GET /chases on mount
+  // (covers refresh-during-chase).
+  const [chase, setChase] = useState(null);
 
   async function load() { const d = await api.get('/crimes'); setList(d.crimes); }
-  useEffect(() => { load(); }, []);
+  async function loadChase() {
+    try {
+      const r = await api.get('/chases');
+      if (r.chase) setChase(r.chase);
+    } catch { /* no active chase */ }
+  }
+  useEffect(() => { load(); loadChase(); }, []);
 
   async function commit(crime) {
     setBusyId(crime.id);
@@ -246,6 +247,7 @@ export default function Crimes() {
       const r = await api.post('/crimes/commit', { crime_id: crime.id });
       updateFromResponse(r);
       setLast({ crime, result: r });
+      if (r.chase) setChase(r.chase);
       await refresh();
       await load();
     } catch (e) { setLast({ crime, error: e.message }); }
@@ -255,9 +257,6 @@ export default function Crimes() {
   const grouped = list.reduce((m, c) => ((m[c.tier] = m[c.tier] || []).push(c), m), {});
   const orderedTiers = TIER_ORDER.filter(t => grouped[t]);
 
-  // Heat readout — colour shifts as the player heats up. Shown right at
-  // the top so players see the cost of stacking attempts before they
-  // fire off another one.
   const heat = character?.heat || 0;
   const heatColor =
     heat >= 70 ? 'text-blood-400'
@@ -266,6 +265,13 @@ export default function Crimes() {
 
   return (
     <div className="space-y-4">
+      {chase && (
+        <PoliceChase
+          chase={chase}
+          onResolved={async () => { await refresh(); await load(); }}
+          onClose={() => setChase(null)}
+        />
+      )}
       <DailyContractBanner character={character} onChange={async () => { await refresh(); }} />
       <Card title="Heat" subtitle="Each crime attracts attention. High heat shaves your success chance and bumps jail risk on failure. Decays ~1/min while you lay low.">
         <div className="flex items-baseline gap-3">
