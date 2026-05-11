@@ -209,7 +209,7 @@ router.post('/blackjack/deal', requireAuth, requireCharacter, requireFreeCharact
   res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
 });
 
-router.post('/blackjack/hit', requireAuth, requireCharacter, (req, res) => {
+router.post('/blackjack/hit', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const hand = loadHand(ch.id);
   if (!hand || hand.status !== 'playing') return res.status(400).json({ error: 'No active hand' });
@@ -224,7 +224,7 @@ router.post('/blackjack/hit', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
 });
 
-router.post('/blackjack/stand', requireAuth, requireCharacter, (req, res) => {
+router.post('/blackjack/stand', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const hand = loadHand(ch.id);
   if (!hand || hand.status !== 'playing') return res.status(400).json({ error: 'No active hand' });
@@ -240,7 +240,7 @@ router.post('/blackjack/stand', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, hand: publicHand(hand), character: publicCharacter(ch) });
 });
 
-router.post('/blackjack/double', requireAuth, requireCharacter, (req, res) => {
+router.post('/blackjack/double', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const hand = loadHand(ch.id);
   if (!hand || hand.status !== 'playing') return res.status(400).json({ error: 'No active hand' });

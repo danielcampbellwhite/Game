@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
-import { saveCharacter, publicCharacter, loadCharacterById } from '../services/character.js';
+import { saveCharacter, publicCharacter, loadCharacterById, isNewCharProtected, newCharProtectionHoursLeft } from '../services/character.js';
 import { CITIES, cityById, GANG_LEVELS, gangLevelMeta, nextGangLevelMeta } from '../data.js';
 import {
   foundGang, loadGang, loadMembership, loadMembers,
@@ -292,6 +292,13 @@ router.post('/:id/deposit', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const id = parseInt(req.params.id, 10);
   const amount = Math.max(1, parseInt(req.body?.amount, 10) || 0);
+  // New-char protection covers outbound cash too — otherwise a freshly
+  // rolled alt could siphon cash into a gang treasury for the main to
+  // withdraw, with the alt being PvP-untouchable for the 3-day window.
+  if (isNewCharProtected(ch)) {
+    const hrs = newCharProtectionHoursLeft(ch);
+    return res.status(403).json({ error: `New characters can't move cash into a gang treasury for the first 3 days (${hrs}h to go).` });
+  }
   const g = loadGang(id);
   if (!g) return res.status(404).json({ error: 'Gang not found.' });
   const my = loadMembership(ch.id);
@@ -306,6 +313,12 @@ router.post('/:id/deposit', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, character: publicCharacter(ch), gang: publicGang(loadGang(g.id), ch.id) });
 });
 
+// Treasury withdraw skim mirrors the 5% sales tax applied to trades and
+// player shops. Without this, the gang treasury was a 0-tax wash-trade
+// channel: main deposits, alt promoted to officer withdraws, free
+// transfer between accounts. The skim doesn't apply to deposits — the
+// friction is on getting cash out, the same way it works for trades.
+const GANG_TREASURY_TAX_PCT = 0.05;
 router.post('/:id/withdraw', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const id = parseInt(req.params.id, 10);
@@ -316,12 +329,16 @@ router.post('/:id/withdraw', requireAuth, requireCharacter, (req, res) => {
   if (!my || my.gang_id !== id) return res.status(403).json({ error: 'Not in this gang.' });
   if (!hasMinRole(my, 'officer')) return res.status(403).json({ error: 'Officers and the leader can withdraw.' });
   if ((g.treasury || 0) < amount) return res.status(400).json({ error: 'Treasury too small.' });
+  const tax = Math.floor(amount * GANG_TREASURY_TAX_PCT);
+  const net = amount - tax;
   db.prepare('UPDATE gangs SET treasury = treasury - ? WHERE id = ?').run(amount, g.id);
-  ch.cash += amount;
+  ch.cash += net;
   saveCharacter(ch);
   broadcastGang(g.id, 'gang.treasury', { delta: -amount, by: { id: ch.id, name: ch.name } });
-  writeLog(ch.id, 'gang', `Withdrew £${amount.toLocaleString()} from "${g.name}".`, { gang_id: g.id });
-  res.json({ ok: true, character: publicCharacter(ch), gang: publicGang(loadGang(g.id), ch.id) });
+  writeLog(ch.id, 'gang',
+    `Withdrew £${amount.toLocaleString()} from "${g.name}" — £${net.toLocaleString()} after 5% skim.`,
+    { gang_id: g.id, gross: amount, tax, net });
+  res.json({ ok: true, character: publicCharacter(ch), gang: publicGang(loadGang(g.id), ch.id), tax, net });
 });
 
 //  Wars + turf 
