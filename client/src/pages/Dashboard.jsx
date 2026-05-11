@@ -311,6 +311,73 @@ function PrettyCity({ city }) {
   return city.replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
 }
 
+// Slim banner shown when a detective has opened a case on the player.
+// Reads /api/investigations on mount and re-polls every 30s. Hidden
+// when there's no active investigation. The pending-trial state is
+// handled separately by App.jsx's lockout redirect to /trial.
+function InvestigationBanner() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      try {
+        const r = await api.get('/investigations');
+        if (alive) setData(r);
+      } catch { /* ignore — banner is non-critical */ }
+    }
+    load();
+    const t = setInterval(load, 30_000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+
+  const inv = data?.investigation;
+  const record = data?.record;
+  if (!inv && (!record || record.weight === 0)) return null;
+  if (!inv) {
+    // No live case, but you've got a record. Soft reminder, no progress bar.
+    return (
+      <Card>
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] uppercase tracking-wider text-ink-100/45">Criminal record</div>
+            <div className="font-display text-base text-ink-50 mt-0.5">
+              {record.bandLabel} <span className="text-ink-100/45 text-[13px]">· {record.weight} conviction{record.weight === 1 ? '' : 's'} on file</span>
+            </div>
+            {record.weight >= 3 && (
+              <p className="text-[12px] text-ink-100/55 leading-snug mt-1">
+                Cops aren't going easy on you. Jail times are {record.weight >= 5 ? '+50%' : '+25%'} until older marks roll off.
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+  const pct = Math.round(inv.progress * 100);
+  const colour = pct < 40 ? 'bg-gold-400' : pct < 75 ? 'bg-blood-500' : 'bg-blood-400';
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="text-[11px] uppercase tracking-wider text-blood-400">Active investigation</div>
+          <div className="font-display text-base text-ink-50 mt-0.5">{inv.detective}</div>
+          <p className="text-[12px] text-ink-100/55 leading-snug mt-1">
+            Building a case on you. Every crime — successful or not — drips evidence into their file.
+            When the file fills, charges get filed and you're in court.
+          </p>
+        </div>
+        <div className="text-right shrink-0 tabular-nums">
+          <div className="text-[12px] uppercase text-ink-100/45">File</div>
+          <div className="text-lg text-ink-50">{pct}%</div>
+        </div>
+      </div>
+      <div className="mt-2 h-1.5 bg-ink-900/70 rounded overflow-hidden">
+        <div className={`h-full ${colour} transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+    </Card>
+  );
+}
+
 // Resize the picked file to a square 256px webp on a canvas, then
 // base64-encode and POST to /api/character/avatar. The server
 // validates type + size; we keep the heavy lifting on the client so
@@ -559,6 +626,8 @@ export default function Dashboard() {
           )}
         </Card>
       )}
+
+      <InvestigationBanner />
 
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 
