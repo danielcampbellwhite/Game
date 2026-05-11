@@ -11,6 +11,7 @@ import { effectiveHeat, addHeat, HEAT_BY_RISK, HEAT_SUCCESS_PENALTY, HEAT_JAIL_M
 import { freeGarageSpace } from '../services/garage.js';
 import { sendEvent } from '../services/events.js';
 import { crimeHourMul, hourBucket, BUCKET_LABEL } from '../services/clock.js';
+import { startChase, resolveExpiredChase } from './chases.js';
 
 // Pick a viable street-mug target — same city, not the attacker,
 // not in jail/hospital/travel, with at least a token wallet so the
@@ -32,11 +33,6 @@ import { factionBonusMul, factionGlobalCrimeMul } from '../services/areas.js';
 
 const router = Router();
 
-// Most failures should be "got away clean, just lost the take" — heat
-// carries the long-term cost. Jail and hospital are the rare, expensive
-// outcomes for unlucky rolls or already-hot players.
-//
-// (jail + hosp + escape) sums to <= 1; whatever is left is escape-clean.
 const RISK_TABLE = {
   tiny:    { jail: 0.05, hosp: 0.02, jailMin: 3,   hospMin: 2  },
   low:     { jail: 0.10, hosp: 0.05, jailMin: 8,   hospMin: 5  },
@@ -45,9 +41,6 @@ const RISK_TABLE = {
   extreme: { jail: 0.45, hosp: 0.20, jailMin: 120, hospMin: 50 },
 };
 
-// Narrative failure messages, picked at random per attempt. Templates
-// support {name} and {mins} interpolation. Tier-keyed so a phishing
-// flop reads differently from a botched mugging.
 const FAIL_MESSAGES = {
   street: {
     escape: [
@@ -132,8 +125,6 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const rows = db.prepare("SELECT item_id, used_at FROM consumable_cooldowns WHERE char_id = ? AND item_id LIKE 'crime_%'").all(ch.id);
   const cdMap = Object.fromEntries(rows.map(r => [r.item_id.replace(/^crime_/, ''), r.used_at]));
-  // Turf perk: gangs holding the city give their members -20% crime cooldown
-  // while operating in that city. Multiplier applies to the published cooldown.
   const turfPerk = holdsTurfPerk(ch.id, ch.city);
   const localBucket = hourBucket(ch.city);
   const localBucketLabel = BUCKET_LABEL[localBucket];
@@ -159,7 +150,6 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
         requires,
         requirementsMet,
         hourMul,
-        // Round to a friendly +/-N% string for the client to render.
         hourBonusPct: Math.round((hourMul - 1) * 100),
       };
     }),
@@ -168,6 +158,27 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
 
 router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
+
+  // Lazy-resolve any chase the player ignored — applies jail if past
+  // its 12s window. Frees the slot for the next chase.
+  const expired = resolveExpiredChase(ch);
+  if (expired) {
+    return res.status(409).json({
+      error: 'A chase you ignored timed out — caught and jailed.',
+      chaseExpired: true,
+      jailMin: expired.jailMin,
+      character: publicCharacter(ch),
+    });
+  }
+  // Block new crimes while a live chase is on the table.
+  const activeChase = db.prepare('SELECT char_id FROM active_chases WHERE char_id = ?').get(ch.id);
+  if (activeChase) {
+    return res.status(409).json({
+      error: 'You\'re mid-chase — resolve it before pulling another job.',
+      chaseActive: true,
+    });
+  }
+
   const crime = crimeById(req.body?.crime_id);
   if (!crime) return res.status(400).json({ error: 'Unknown crime' });
   if (ch.level < crime.level) return res.status(403).json({ error: `Requires level ${crime.level}` });
@@ -204,8 +215,6 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   const heatPenalty = heatNow * HEAT_SUCCESS_PENALTY;
 
   const intelBonus = (crime.intelBonus || 0) * (ch.intelligence * 0.3);
-  // Time-of-day multiplier — see services/clock.js. Cover-of-darkness
-  // crimes pull >1 at night, public-foot-traffic crimes the opposite.
   const hourMul = crimeHourMul(crime.id, ch.city, now);
   const success = Math.max(5, Math.min(95, (crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus - heatPenalty) * hourMul));
   const roll = Math.random() * 100;
@@ -311,10 +320,20 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     const consequence = Math.random();
     if (consequence < adjustedJail) {
       const mins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
-      const msg = failMessage(crime.tier, 'jail', crime.name, mins);
-      applyJailSentence(ch, mins * 60 * 1000, msg);
-      writeLog(ch.id, 'crime', msg, { crime: crime.id, jail_min: mins }, true);
-      result = { ok: true, success: false, jailed: true, jail_min: mins };
+      // GTA twist: hand the player a chase mini-game before applying
+      // the sentence. Server holds the intended jail in active_chases;
+      // resolve / give-up / timeout decides the final outcome.
+      if (crime.tier === 'gta') {
+        const payload = startChase(ch, { crimeId: crime.id, crimeName: crime.name, jailMin: mins });
+        const msg = `🚨 Sirens behind you mid-getaway from "${crime.name}". Outrun them or it's ${mins}m inside.`;
+        writeLog(ch.id, 'crime', msg, { crime: crime.id, chase: true, jail_min: mins }, true);
+        result = { ok: true, success: false, chase: payload.chase };
+      } else {
+        const msg = failMessage(crime.tier, 'jail', crime.name, mins);
+        applyJailSentence(ch, mins * 60 * 1000, msg);
+        writeLog(ch.id, 'crime', msg, { crime: crime.id, jail_min: mins }, true);
+        result = { ok: true, success: false, jailed: true, jail_min: mins };
+      }
     } else if (consequence < adjustedJail + risk.hosp) {
       const mins = Math.floor(risk.hospMin * (1 + Math.random() * 0.7));
       ch.hospital_until = Date.now() + mins * 60 * 1000;
