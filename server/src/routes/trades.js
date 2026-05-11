@@ -5,7 +5,7 @@ import {
   TRADE_TAX_PCT, TRADE_IDLE_TTL_MS, TRADE_MAX_ITEMS_PER_SIDE, TRADE_CHAT_MAX,
   miscItemById, weaponById, armourById, ammoById, drugById, cityById,
 } from '../data.js';
-import { saveCharacter, publicCharacter, loadCharacterById } from '../services/character.js';
+import { saveCharacter, publicCharacter, loadCharacterById, isNewCharProtected, newCharProtectionHoursLeft } from '../services/character.js';
 import { sendEvent } from '../services/events.js';
 import { writeLog } from '../services/log.js';
 
@@ -266,6 +266,13 @@ router.get('/:id', requireAuth, requireCharacter, (req, res) => {
 // POST /api/trades — initiate a trade (creates 'pending' row).
 router.post('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
+  // Outbound cash gate: a freshly rolled alt would otherwise wash cash
+  // through trades to its main while being PvP-untouchable for 3 days.
+  // The block lifts the moment new-char protection does.
+  if (isNewCharProtected(ch)) {
+    const hrs = newCharProtectionHoursLeft(ch);
+    return res.status(403).json({ error: `New characters can't trade for the first 3 days (${hrs}h to go).` });
+  }
   const targetId = parseInt(req.body?.target_id, 10);
   if (!Number.isFinite(targetId) || targetId === ch.id) {
     return res.status(400).json({ error: 'Pick a player to trade with.' });
@@ -311,6 +318,13 @@ router.post('/', requireAuth, requireCharacter, (req, res) => {
 // POST /api/trades/:id/accept — recipient accepts.
 router.post('/:id/accept', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
+  // Same outbound-cash gate as trade creation — a protected new char
+  // can't be the recipient either since accepting opens the cash
+  // transfer surface.
+  if (isNewCharProtected(ch)) {
+    const hrs = newCharProtectionHoursLeft(ch);
+    return res.status(403).json({ error: `New characters can't trade for the first 3 days (${hrs}h to go).` });
+  }
   const id = parseInt(req.params.id, 10);
   const trade = loadTradeById(id);
   if (!trade) return res.status(404).json({ error: 'Trade not found.' });
