@@ -29,6 +29,7 @@ import Fence from './pages/Fence.jsx';
 import Inventory from './pages/Inventory.jsx';
 import Missions from './pages/Missions.jsx';
 import GeneralStore from './pages/GeneralStore.jsx';
+import Newspaper from './pages/Newspaper.jsx';
 import Players from './pages/Players.jsx';
 import Player from './pages/Player.jsx';
 import Messages from './pages/Messages.jsx';
@@ -89,8 +90,6 @@ function Protected({ children }) {
 }
 
 function Footer() {
-  // Sign Out lives at the bottom of every authenticated screen so it's
-  // out of the top bar's way but still one tap from anywhere.
   const { token, character, logout } = useGame();
   const nav = useNavigate();
   if (!token || !character) return null;
@@ -118,15 +117,9 @@ function Footer() {
   );
 }
 
-// Reset the scroll position on every navigation so a long page on
-// /crimes doesn't leave the next page also scrolled halfway down.
-// Uses an effect on the location key so it fires whether the path or
-// the search string changed.
 function ScrollToTop() {
   const { pathname, search } = useLocation();
   useEffect(() => {
-    // Bypass smooth-scroll behaviour the browser may have set globally
-    // — we want an instant reset, not a leisurely glide.
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname, search]);
   return null;
@@ -145,9 +138,6 @@ function BootSpinner() {
 
 export default function App() {
   const { token, character, bootstrapped } = useGame();
-  // Hold the UI on a spinner until the initial /character fetch settles —
-  // otherwise a logged-in refresh briefly flashes /create while character
-  // is still null before the API responds.
   if (token && !bootstrapped) return <BootSpinner />;
   return (
     <div className="min-h-screen flex flex-col">
@@ -191,6 +181,7 @@ export default function App() {
           <Route path="/inventory" element={<Protected><Inventory /></Protected>} />
           <Route path="/missions" element={<Protected><Missions /></Protected>} />
           <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />
+          <Route path="/newspaper" element={<Protected><Newspaper /></Protected>} />
           <Route path="/players" element={<Protected><Players /></Protected>} />
           <Route path="/players/:id" element={<Protected><Player /></Protected>} />
           <Route path="/messages" element={<Protected><Messages /></Protected>} />
