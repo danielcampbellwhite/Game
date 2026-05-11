@@ -58,6 +58,7 @@ import incarcerationRoutes from './routes/incarceration.js';
 import adminRoutes from './routes/admin.js';
 import areaRoutes from './routes/areas.js';
 import newspaperRoutes from './routes/newspaper.js';
+import chasesRoutes from './routes/chases.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -65,9 +66,6 @@ initDb();
 
 const app = express();
 app.use(cors());
-// 256KB cap so player-uploaded profile pictures (data-URL POSTs to
-// /api/character/avatar, ~50-100KB after client-side resizing) fit
-// without bumping headroom for everything else by much.
 app.use(express.json({ limit: '256kb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
@@ -124,13 +122,8 @@ app.use('/api/incarceration', incarcerationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/areas', areaRoutes);
 app.use('/api/newspaper', newspaperRoutes);
+app.use('/api/chases', chasesRoutes);
 
-//  Static SPA serving (production / deploy) 
-//
-// In dev the Vite dev server runs separately on :5173 and proxies /api
-// calls here. In a deployed build (Railway / Fly / etc.) we want a
-// single origin: serve the built client from /, and let any non-/api
-// path fall through to index.html so React Router can take over.
 const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
 if (fs.existsSync(CLIENT_DIST)) {
   app.use(express.static(CLIENT_DIST));
