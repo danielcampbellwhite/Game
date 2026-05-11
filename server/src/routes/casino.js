@@ -6,6 +6,7 @@ import { drawCard, cardLabel, handTotal, isBlackjack, dealerPlay, settle } from 
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { factionBonusMul } from '../services/areas.js';
+import { isVenueOpen, venueOpensAt, cityLocalHour } from '../services/clock.js';
 
 const router = Router();
 
@@ -27,12 +28,32 @@ function gateHighStakes(ch, stake) {
   return stake < HIGH_STAKES_THRESHOLD || (ch.level || 1) >= CASINO_GATES.high_stakes;
 }
 
+// City-locked closed-doors check. Casinos open 14:00 → 04:00 local
+// (see services/clock.js). When the door is locked, every game call
+// is refused with a 409 so the client can show a "Closed until HH:00"
+// overlay instead of a generic error.
+function requireOpen(ch, res) {
+  if (isVenueOpen('casino', ch.city)) return true;
+  const hours = venueOpensAt('casino');
+  res.status(409).json({
+    error: `The casino is closed. Doors open at ${String(hours.open).padStart(2, '0')}:00 local time.`,
+    venue_closed: true,
+    opensAtHour: hours.open,
+  });
+  return false;
+}
+
 router.get('/state', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
+  const hours = venueOpensAt('casino');
+  const open = isVenueOpen('casino', ch.city);
   res.json({
     gates: CASINO_GATES,
     highStakesThreshold: HIGH_STAKES_THRESHOLD,
     yourLevel: ch.level || 1,
+    open,
+    hours,
+    localHour: cityLocalHour(ch.city),
   });
 });
 
@@ -43,6 +64,7 @@ router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacte
   const { betType, betValue, amount } = req.body || {};
   const stake = Math.max(1, parseInt(amount || 0, 10));
   if (!gate(ch, 'roulette')) return res.status(403).json({ error: `Roulette unlocks at level ${CASINO_GATES.roulette}.` });
+  if (!requireOpen(ch, res)) return;
   if (!gateHighStakes(ch, stake)) return res.status(403).json({ error: `High-stakes (£${HIGH_STAKES_THRESHOLD.toLocaleString()}+) bets unlock at level ${CASINO_GATES.high_stakes}.` });
   if (!ROULETTE_PAYOUTS[betType]) return res.status(400).json({ error: 'Bad bet type' });
   if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
@@ -78,6 +100,7 @@ router.post('/roulette/spin', requireAuth, requireCharacter, requireFreeCharacte
 router.post('/slots/spin', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   const stake = Math.max(1, parseInt(req.body?.amount || 0, 10));
+  if (!requireOpen(ch, res)) return;
   if (!gateHighStakes(ch, stake)) return res.status(403).json({ error: `High-stakes (£${HIGH_STAKES_THRESHOLD.toLocaleString()}+) bets unlock at level ${CASINO_GATES.high_stakes}.` });
   if (ch.cash < stake) return res.status(400).json({ error: `Need £${stake.toLocaleString()}` });
   ch.cash -= stake;
@@ -131,7 +154,6 @@ function saveHand(charId, hand) {
     Date.now());
 }
 
-// Outgoing format: dealer first card hidden until status != 'playing'.
 function publicHand(hand) {
   if (!hand) return null;
   const dealerVisible = hand.status === 'playing'
@@ -156,6 +178,7 @@ router.get('/blackjack', requireAuth, requireCharacter, (req, res) => {
 router.post('/blackjack/deal', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
   if (!gate(ch, 'blackjack')) return res.status(403).json({ error: `Blackjack unlocks at level ${CASINO_GATES.blackjack}.` });
+  if (!requireOpen(ch, res)) return;
   const stake = Math.max(1, parseInt(req.body?.bet || 0, 10));
   if (!gateHighStakes(ch, stake)) return res.status(403).json({ error: `High-stakes (£${HIGH_STAKES_THRESHOLD.toLocaleString()}+) bets unlock at level ${CASINO_GATES.high_stakes}.` });
   const existing = loadHand(ch.id);
@@ -169,7 +192,6 @@ router.post('/blackjack/deal', requireAuth, requireCharacter, requireFreeCharact
   const dealerCards = [drawCard(), drawCard()];
   let hand = { bet: stake, playerCards, dealerCards, status: 'playing' };
 
-  // Auto-resolve if either side has natural blackjack
   if (isBlackjack(playerCards) || isBlackjack(dealerCards)) {
     const result = settle(playerCards, dealerCards, stake);
     ch.cash += result.payout;
