@@ -31,6 +31,7 @@ import Missions from './pages/Missions.jsx';
 import GeneralStore from './pages/GeneralStore.jsx';
 import Newspaper from './pages/Newspaper.jsx';
 import Burglary from './pages/Burglary.jsx';
+import Trial from './pages/Trial.jsx';
 import Players from './pages/Players.jsx';
 import Player from './pages/Player.jsx';
 import Messages from './pages/Messages.jsx';
@@ -80,6 +81,15 @@ function Protected({ children }) {
   const inJail = character.jail_until && character.jail_until > now;
   if (inJail && location.pathname !== '/jail') {
     return <Navigate to="/jail" replace />;
+  }
+
+  // Trial lockout — if the character has a pending trial, the only
+  // page they can navigate to is /trial. Resolving the trial there
+  // (plead / court) clears the flag and unblocks the rest of the
+  // game. The flag lives on character.pending_trial (server tags it
+  // on publicCharacter).
+  if (character.pending_trial && location.pathname !== '/trial') {
+    return <Navigate to="/trial" replace />;
   }
 
   return children;
@@ -179,6 +189,7 @@ export default function App() {
           <Route path="/general-store" element={<Protected><GeneralStore /></Protected>} />
           <Route path="/newspaper" element={<Protected><Newspaper /></Protected>} />
           <Route path="/burglary" element={<Protected><Burglary /></Protected>} />
+          <Route path="/trial" element={<Protected><Trial /></Protected>} />
           <Route path="/players" element={<Protected><Players /></Protected>} />
           <Route path="/players/:id" element={<Protected><Player /></Protected>} />
           <Route path="/messages" element={<Protected><Messages /></Protected>} />
