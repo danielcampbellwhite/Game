@@ -10,8 +10,10 @@ import { PREMIUM_CATALOGUE, GOLD_BAR_PACKS } from '../data-premium.js';
 import {
   getGoldBars, getUserPremiumInventory, buyPremiumItem,
   grantGoldBars, isAdminUser,
+  equipPremiumWeapon, equipPremiumVehicle, unequipPremiumVehicle,
 } from '../services/premium.js';
 import { writeLog } from '../services/log.js';
+import { saveCharacter, publicCharacter, loadCharacter } from '../services/character.js';
 
 const router = Router();
 
@@ -39,6 +41,42 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
     ` Bought premium item: ${result.item.name} — ${result.item.premiumPrice} Gold Bars.`,
     { premium_id: result.item.id, kind: result.item.kind, price: result.item.premiumPrice });
   res.json({ ok: true, balance: result.balance, item: result.item });
+});
+
+// POST /api/premium/equip-weapon — set the player's equipped_weapon
+// to a premium weapon they own. Combat / weapon-resolution falls back
+// to the premium catalogue via services/customize.js.
+router.post('/equip-weapon', requireAuth, requireCharacter, (req, res) => {
+  const itemId = (req.body?.item_id || '').toString();
+  const r = equipPremiumWeapon(req.user.id, req.character.id, itemId);
+  if (r.error) return res.status(400).json({ error: r.error });
+  writeLog(req.character.id, 'system', ` Equipped premium weapon: ${itemId}.`, { premium_id: itemId });
+  // Reload the character so publicCharacter picks up the new equipped_weapon.
+  const fresh = loadCharacter(req.user.id);
+  res.json({ ok: true, character: publicCharacter(fresh) });
+});
+
+// POST /api/premium/equip-vehicle — set the player's active premium
+// car. Mutually exclusive with active_vehicle_id; equipping a premium
+// car parks the normal active car (it stays in the garage row, just
+// not the active reference).
+router.post('/equip-vehicle', requireAuth, requireCharacter, (req, res) => {
+  const itemId = (req.body?.item_id || '').toString();
+  const r = equipPremiumVehicle(req.user.id, req.character.id, itemId);
+  if (r.error) return res.status(400).json({ error: r.error });
+  writeLog(req.character.id, 'system', ` Driving premium vehicle: ${itemId}.`, { premium_id: itemId });
+  const fresh = loadCharacter(req.user.id);
+  res.json({ ok: true, character: publicCharacter(fresh) });
+});
+
+// POST /api/premium/unequip-vehicle — stop driving the premium car.
+// Doesn't auto-restore the previously active normal car (the player
+// would re-pick it from the dealership / inventory).
+router.post('/unequip-vehicle', requireAuth, requireCharacter, (req, res) => {
+  unequipPremiumVehicle(req.character.id);
+  writeLog(req.character.id, 'system', ' Parked premium vehicle.');
+  const fresh = loadCharacter(req.user.id);
+  res.json({ ok: true, character: publicCharacter(fresh) });
 });
 
 // POST /api/premium/admin-grant — admin-only Gold Bar issuance for

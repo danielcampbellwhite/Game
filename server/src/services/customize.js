@@ -1,5 +1,6 @@
 import { db } from '../db.js';
 import { weaponById, applyMods, vehicleById, applyVehicleMods, isVehicleModified } from '../data.js';
+import { premiumItemById } from '../data-premium.js';
 
 //  Weapon instance helpers 
 
@@ -30,8 +31,22 @@ export function effectiveEquippedWeapon(ch) {
       }
     }
   }
+  // Premium weapon equipped — equipped_weapon stores a `premium_*` id
+  // that the stock catalogue doesn't know about. Resolve it via the
+  // premium catalogue and shape the response to match weaponById's
+  // contract so the rest of combat just works.
   const w = weaponById(ch.equipped_weapon);
-  if (!w) return null;
+  if (!w) {
+    const p = premiumItemById(ch.equipped_weapon);
+    if (p && p.kind === 'weapon') {
+      return {
+        id: p.id, name: p.name, maker: p.maker, category: p.category,
+        dmg: p.dmg, ammoType: p.ammoType, accuracy: 0,
+        is_modified: false, is_premium: true, mods: [],
+      };
+    }
+    return null;
+  }
   return { ...w, accuracy: 0, is_modified: false, mods: [] };
 }
 

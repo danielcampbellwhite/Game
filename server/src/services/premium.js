@@ -15,6 +15,12 @@ import { premiumItemById } from '../data-premium.js';
 
 try { db.exec('ALTER TABLE users ADD COLUMN premium_points INTEGER NOT NULL DEFAULT 0'); } catch {}
 
+// Premium driving — points at a row in user_premium_inventory's
+// premium_id (e.g. 'premium_koenigsegg_jesko'). Mutually exclusive
+// with active_vehicle_id at the UI layer; clearing one clears the
+// other on equip. Inline migration so we don't touch db.js.
+try { db.exec('ALTER TABLE characters ADD COLUMN active_premium_vehicle_id TEXT'); } catch {}
+
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_premium_inventory (
@@ -96,4 +102,44 @@ export function buyPremiumItem(userId, premiumId) {
 export function isAdminUser(userId) {
   const r = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(userId);
   return !!r?.is_admin;
+}
+
+// ── Equip / drive helpers ─────────────────────────────────────────
+//
+// Premium items "follow" whichever character a user is currently
+// running. To use one, the active character has to point AT the
+// premium item — equipped_weapon for weapons, active_premium_vehicle_id
+// for cars. These helpers do the verification (you own it AND it's
+// the right kind) plus the column update in one place.
+
+export function equipPremiumWeapon(userId, charId, premiumId) {
+  const item = premiumItemById(premiumId);
+  if (!item || item.kind !== 'weapon') return { error: 'Not a premium weapon.' };
+  if (!ownsPremiumItem(userId, premiumId)) return { error: 'You don\'t own this premium item.' };
+  db.prepare(`
+    UPDATE characters
+       SET equipped_weapon = ?, equipped_weapon_instance = NULL
+     WHERE id = ?
+  `).run(premiumId, charId);
+  return { ok: true, equipped_weapon: premiumId };
+}
+
+export function equipPremiumVehicle(userId, charId, premiumId) {
+  const item = premiumItemById(premiumId);
+  if (!item || item.kind !== 'vehicle') return { error: 'Not a premium vehicle.' };
+  if (!ownsPremiumItem(userId, premiumId)) return { error: 'You don\'t own this premium item.' };
+  // Clear any normal active vehicle so the player can't be "driving
+  // two cars at once". The normal car stays parked (vehicles_owned
+  // row is untouched, just no longer the active reference).
+  db.prepare(`
+    UPDATE characters
+       SET active_premium_vehicle_id = ?, active_vehicle_id = NULL
+     WHERE id = ?
+  `).run(premiumId, charId);
+  return { ok: true, active_premium_vehicle_id: premiumId };
+}
+
+export function unequipPremiumVehicle(charId) {
+  db.prepare('UPDATE characters SET active_premium_vehicle_id = NULL WHERE id = ?').run(charId);
+  return { ok: true };
 }
