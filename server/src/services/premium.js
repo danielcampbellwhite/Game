@@ -143,3 +143,35 @@ export function unequipPremiumVehicle(charId) {
   db.prepare('UPDATE characters SET active_premium_vehicle_id = NULL WHERE id = ?').run(charId);
   return { ok: true };
 }
+
+// Premium properties materialise as passive bonuses: their stat lift
+// applies whenever the player is in the matching city, and their
+// `garage` slot count adds to the city's capacity. Returns zeros if
+// the user owns no matching premium property — safe to call from any
+// city-bonus path.
+export function getPremiumPropertyBonusesForUser(userId, city) {
+  const totals = { max_energy: 0, max_nerve: 0, happiness: 0, garage: 0 };
+  if (!userId || !city) return totals;
+  const rows = db.prepare(
+    `SELECT premium_id FROM user_premium_inventory WHERE user_id = ? AND kind = 'property'`
+  ).all(userId);
+  for (const r of rows) {
+    const item = premiumItemById(r.premium_id);
+    if (!item || item.city !== city) continue;
+    totals.max_energy += item.bonuses?.max_energy || 0;
+    totals.max_nerve  += item.bonuses?.max_nerve  || 0;
+    totals.happiness  += item.bonuses?.happiness  || 0;
+    totals.garage     += item.garage || 0;
+  }
+  return totals;
+}
+
+// Resolve a character's owning user — needed by callers that have a
+// charId but want premium (user-scoped) bonuses. Cached lightly via
+// the prepared statement; if the char doesn't exist we return null
+// and the premium helpers gracefully no-op.
+export function userIdForChar(charId) {
+  if (!charId) return null;
+  const r = db.prepare('SELECT user_id FROM characters WHERE id = ?').get(charId);
+  return r?.user_id || null;
+}

@@ -2,9 +2,15 @@
 // character owns in that city. Vehicles live in a city until shipped
 // elsewhere, so each city has its own cap. Used to gate dealer
 // purchases and inter-city shipping.
+//
+// Premium properties (account-bound) also contribute slots when their
+// matching city is active — e.g. owning the Burj Khalifa Penthouse
+// adds 15 garage slots in Dubai, on top of any normal property held
+// in the same city.
 
 import { db } from '../db.js';
 import { propertyById } from '../data.js';
+import { getPremiumPropertyBonusesForUser, userIdForChar } from './premium.js';
 
 export function garageCapacity(charId, city) {
   if (!city) return 0;
@@ -16,6 +22,7 @@ export function garageCapacity(charId, city) {
     const p = propertyById(r.property_id);
     cap += p?.garage || 0;
   }
+  cap += getPremiumPropertyBonusesForUser(userIdForChar(charId), city).garage;
   return cap;
 }
 

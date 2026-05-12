@@ -4,6 +4,7 @@ import { getStockPrice } from './market.js';
 import { buffSnapshot } from './buffs.js';
 import { effectiveHeat } from './heat.js';
 import { writeLog } from './log.js';
+import { getPremiumPropertyBonusesForUser, userIdForChar } from './premium.js';
 
 // Pending-trial flag is surfaced on publicCharacter so App.jsx's
 // Protected wrapper can redirect into /trial the moment charges
@@ -47,6 +48,9 @@ export function loadCharacterById(id) {
 
 // Property bonuses are city-locked — you only enjoy the perks of properties
 // you own in the city you're currently in. Fly elsewhere and they go quiet.
+// Premium properties (account-bound) layer in here too: their stat lift
+// applies whenever the active character is in the matching city, even if
+// the previous character was the one who unlocked them.
 export function getPropertyBonuses(charId, city) {
   const totals = { max_energy: 0, max_nerve: 0, happiness: 0 };
   if (!city) return totals;
@@ -60,6 +64,11 @@ export function getPropertyBonuses(charId, city) {
     totals.max_nerve  += p.bonuses.max_nerve  || 0;
     totals.happiness  += p.bonuses.happiness  || 0;
   }
+  const userId = userIdForChar(charId);
+  const premium = getPremiumPropertyBonusesForUser(userId, city);
+  totals.max_energy += premium.max_energy;
+  totals.max_nerve  += premium.max_nerve;
+  totals.happiness  += premium.happiness;
   return totals;
 }
 

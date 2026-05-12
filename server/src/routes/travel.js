@@ -118,6 +118,9 @@ router.post('/ticket', requireAuth, requireCharacter, requireFreeCharacter, (req
   if (ch.active_vehicle_id) {
     return res.status(400).json({ error: 'Stash your car in a garage before booking a flight.' });
   }
+  if (ch.active_premium_vehicle_id) {
+    return res.status(400).json({ error: 'Park your premium car (from the Premium page) before booking a flight.' });
+  }
   const now = Date.now();
   expireLapsedTickets(ch.id, now);
   const existing = db.prepare(
@@ -167,6 +170,9 @@ router.post('/board/:ticketId', requireAuth, requireCharacter, requireFreeCharac
   }
   if (ch.active_vehicle_id) {
     return res.status(400).json({ error: 'Stash your car in a garage before flying.' });
+  }
+  if (ch.active_premium_vehicle_id) {
+    return res.status(400).json({ error: 'Park your premium car before flying.' });
   }
   const target = cityById(t.to_city);
   if (!target) return res.status(400).json({ error: 'Destination missing.' });
@@ -228,6 +234,9 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
   // garage (or sell it) before you can board.
   if (ch.active_vehicle_id) {
     return res.status(400).json({ error: 'Stash your car in a garage before flying out.' });
+  }
+  if (ch.active_premium_vehicle_id) {
+    return res.status(400).json({ error: 'Park your premium car before flying out.' });
   }
   const from = cityById(ch.city);
   const baseFare = Math.floor((from.flightBase + target.flightBase) / 2);

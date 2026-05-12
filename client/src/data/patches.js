@@ -9,6 +9,28 @@
 
 export const PATCHES = [
   {
+    version: '0.9.5',
+    date: '2026-05-12',
+    title: 'Premium properties materialise · single-active-vehicle invariant',
+    sections: [
+      {
+        heading: 'Premium properties pull their weight',
+        notes: [
+          'Owning the Burj Khalifa Penthouse now actually does something. Stat bonuses (+25 max energy, +5 max nerve, +30 happiness ceiling) light up automatically the moment you land in Dubai — and the 15-car garage adds straight to your Dubai garage capacity, on top of any normal property you hold there.',
+          'Bonuses are city-locked just like normal properties — fly out of Dubai and the perks go quiet until you fly back. Account-bound: the penthouse follows you into every new character you ever roll.',
+        ],
+      },
+      {
+        heading: 'One car at a time',
+        notes: [
+          'Driving a premium car now blocks normal-car auto-equip paths from silently displacing it. Buy a Civic at the dealership while you\'re in the Jesko? The Civic parks in the garage — your premium ride stays out. Steal a car on a GTA crime while driving premium? Same deal: the stolen car parks (or chops, if no garage space).',
+          'Take a normal car out of the garage and your premium ride parks automatically (the explicit "drive this one" action is a clear switch intent).',
+          'Premium cars now block flights too — same rule as normal cars, you have to park before boarding. Use the Park button on the Premium page.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.4',
     date: '2026-05-12',
     title: 'Premium items become usable — Equip / Drive',

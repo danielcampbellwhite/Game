@@ -256,7 +256,10 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
         stolenCondition = Math.round(75 + Math.random() * 25);
         const drivingGate = VEHICLE_TIER_DRIVING_GATE[v.tier] || 0;
         const canDrive = (ch.driving || 1) >= drivingGate;
-        if (canDrive) {
+        // If the player is already driving a premium car, don't silently
+        // displace it with a stolen one — fall through to the garage /
+        // chop-shop branches like a tier-locked car.
+        if (canDrive && !ch.active_premium_vehicle_id) {
           const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
             .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
           ch.active_vehicle_id = info.lastInsertRowid;

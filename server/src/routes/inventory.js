@@ -146,6 +146,14 @@ router.post('/equip-vehicle', requireAuth, requireCharacter, (req, res) => {
   if (ch.active_vehicle_id) {
     return res.status(400).json({ error: 'You\'re already driving a car. Store or sell it first.' });
   }
+  // If a premium car is currently being driven, park it silently — the
+  // explicit "take this out of the garage" action is a clear switch
+  // intent. The premium item itself isn't lost (it lives on the user
+  // account); only the active reference flips.
+  if (ch.active_premium_vehicle_id) {
+    db.prepare('UPDATE characters SET active_premium_vehicle_id = NULL WHERE id = ?').run(ch.id);
+    ch.active_premium_vehicle_id = null;
+  }
   const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
   if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
   if (row.shipping_until && row.shipping_until > Date.now()) {

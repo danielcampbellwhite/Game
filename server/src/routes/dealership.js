@@ -91,11 +91,13 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
     return res.status(403).json({ error: `Tier ${v.tier} cars unlock at level ${levelGate}.` });
   }
   // The car will only auto-equip as the active ride if (a) the player
-  // isn't currently driving something AND (b) their driving licence
-  // covers the tier. Otherwise it goes straight to the garage.
+  // isn't currently driving something (normal OR premium) AND (b) their
+  // driving licence covers the tier. Otherwise it goes straight to the
+  // garage. We treat the premium slot as "currently driving" so a fresh
+  // dealership purchase doesn't silently displace a premium ride.
   const drivingGate = VEHICLE_TIER_DRIVING_GATE[v.tier] || 0;
   const hasLicence = (ch.driving || 1) >= drivingGate;
-  const willBeActive = !ch.active_vehicle_id && hasLicence;
+  const willBeActive = !ch.active_vehicle_id && !ch.active_premium_vehicle_id && hasLicence;
   if (!willBeActive && freeGarageSpace(ch.id, ch.city) <= 0) {
     const cap = garageCapacity(ch.id, ch.city);
     return res.status(400).json({
