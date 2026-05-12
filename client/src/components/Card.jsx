@@ -7,6 +7,10 @@ import React, { useState } from 'react';
 //
 // `right` is rendered outside the toggle so right-slot buttons
 // remain independently clickable.
+//
+// Collapsible cards start CLOSED by default so a long list of sections
+// (Crimes tiers, etc.) doesn't dump a wall of options on the player —
+// they pick what they care about. Pass `defaultOpen` to override.
 export default function Card({
   title,
   subtitle,
@@ -14,7 +18,7 @@ export default function Card({
   children,
   className = '',
   collapsible = false,
-  defaultOpen = true,
+  defaultOpen = false,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const showHeader = title || right;
