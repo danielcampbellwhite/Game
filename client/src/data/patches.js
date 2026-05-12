@@ -9,6 +9,37 @@
 
 export const PATCHES = [
   {
+    version: '0.9.3',
+    date: '2026-05-12',
+    title: 'Gold Bars — premium currency + first three premium items',
+    sections: [
+      {
+        heading: 'New currency · account-bound',
+        notes: [
+          'Gold Bars are a premium currency that lives on your USER account — not your character. They survive death, retirement, and prestige. Buy them once, never lose them.',
+          'Top-up packs: 10 Bars for £1, 20 for £2, 50 for £5, 100 for £10. Real-money checkout via Stripe is wired up next; until then an admin can seed your balance so the rest of the system can be tested.',
+          'Balance chip is in the top nav next to the mute button so you always know your stack.',
+        ],
+      },
+      {
+        heading: 'First three premium items',
+        notes: [
+          'Koenigsegg Jesko Absolut — 40 Bars · top-tier hyper, no level requirement, no wear and tear, follows you across every character.',
+          'Burj Khalifa Penthouse — 50 Bars · T5 property in Dubai with a 15-car garage, max-tier bonuses, the most flex address in the game.',
+          'Solid Gold M1911 — 15 Bars · gold-engraved pistol with top-tier handgun damage, pure cosmetic prestige.',
+        ],
+      },
+      {
+        heading: 'Design rules',
+        notes: [
+          'Stats match the existing top free tiers — premium = prestige flex, not pay-to-win.',
+          'Premium items can\'t be sold, chopped, or traded — they always belong to you.',
+          'Item display + materialisation onto the active character ships in the next iteration; this entry establishes the foundation (currency, store, ownership ledger).',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.2',
     date: '2026-05-12',
     title: 'Jail escape · investigator overhaul · crime sounds',
