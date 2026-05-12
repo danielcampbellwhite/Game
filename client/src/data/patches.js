@@ -9,6 +9,29 @@
 
 export const PATCHES = [
   {
+    version: '0.9.4',
+    date: '2026-05-12',
+    title: 'Premium items become usable — Equip / Drive',
+    sections: [
+      {
+        heading: 'Your premium items',
+        notes: [
+          'New "Your premium items" section on the Premium page lists everything you own with action buttons. Premium weapon? Equip button — combat resolves it through the same path as a stock weapon. Premium car? Drive button — replaces your active vehicle so you can flex it everywhere the active ride shows up. Park it to switch back.',
+          'Equipping a premium car parks (but doesn\'t sell) any normal active car you had — the vehicles_owned row stays in the garage, just no longer the active one. Switch back any time from the dealership / inventory.',
+          'Premium properties don\'t need an action — their bonuses light up automatically when you\'re in the matching city (full integration in a follow-up).',
+        ],
+      },
+      {
+        heading: 'Server',
+        notes: [
+          'New POST /api/premium/equip-weapon, /equip-vehicle, /unequip-vehicle. Each one verifies you actually own the item before flipping the active reference.',
+          'New characters.active_premium_vehicle_id column (inline migration) tracks which premium car is in use. Surfaced on publicCharacter so the UI updates live.',
+          'services/customize.js effectiveEquippedWeapon resolves premium weapon ids through the premium catalogue when the stock catalogue misses, so the rest of combat just works.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.3',
     date: '2026-05-12',
     title: 'Gold Bars — premium currency + first three premium items',
