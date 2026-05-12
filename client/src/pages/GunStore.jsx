@@ -142,7 +142,7 @@ export default function GunStore() {
         const items = grouped[cat].filter(w => makerFilter === 'all' || w.maker === makerFilter);
         if (!items.length) return null;
         return (
-          <Card key={cat} title={`${cinfo.emoji} ${cinfo.name}`}>
+          <Card key={cat} collapsible title={`${cinfo.emoji} ${cinfo.name}`} subtitle={`${items.length} weapon${items.length === 1 ? '' : 's'}`}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {items.map(w => (
                 <div key={w.id} className={`rounded-lg p-3 border bg-ink-950/40 ${w.locked ? 'opacity-50 grayscale border-ink-100/5' : 'border-ink-100/10'}`}>
