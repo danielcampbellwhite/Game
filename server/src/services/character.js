@@ -29,8 +29,11 @@ export function loadCharacter(userId) {
   // Stamp the owning user's is_admin flag onto the row so callers can
   // expose it in publicCharacter without a second query. The flag never
   // belongs in the characters table itself — it's a per-user attribute.
+  // premium_points (Gold Bars) is also user-level; loaded here so the
+  // top-bar widget can show it without a separate /api/premium fetch
+  // on every page render.
   const row = db.prepare(`
-    SELECT c.*, u.is_admin AS is_admin
+    SELECT c.*, u.is_admin AS is_admin, u.premium_points AS premium_points
     FROM characters c
     JOIN users u ON u.id = c.user_id
     WHERE c.user_id = ?
@@ -425,6 +428,10 @@ export function publicCharacter(ch) {
     // case is filed against them. Cleared automatically when the trial
     // resolves (plead / acquitted / convicted).
     pending_trial: hasPendingTrial(ch.id),
+    // Gold Bars — premium currency, lives on the user account. Surfaced
+    // here so the Nav top-bar widget reads it from the same refresh
+    // cycle as cash / energy / etc.
+    premium_points: ch.premium_points || 0,
     is_admin: !!ch.is_admin,
   };
 }
