@@ -212,12 +212,20 @@ const SAVE_STMT = `
 
 // Apply a fresh jail sentence — sets jail_until, jail_reason and
 // jail_sentence_ms together. Always go through this so the failed-
-// escape penalty has the original sentence to double.
+// escape penalty has the original sentence to double. Also resets the
+// per-sentence escape-attempted gate so the player gets one fresh
+// run-for-it chance on every new sentence.
 export function applyJailSentence(ch, durationMs, reason) {
   const dur = Math.max(0, Math.floor(durationMs));
   ch.jail_until = Date.now() + dur;
   ch.jail_sentence_ms = dur;
   if (reason !== undefined) ch.jail_reason = reason;
+  // Direct UPDATE — jail_escape_attempted isn't in SAVE_STMT so this
+  // persists separately. Guarded for the brief window after deploy
+  // before the inline migration in routes/jail.js has run.
+  try {
+    db.prepare('UPDATE characters SET jail_escape_attempted = 0 WHERE id = ?').run(ch.id);
+  } catch { /* column may not exist yet on first deploy */ }
 }
 
 export function saveCharacter(ch) {
