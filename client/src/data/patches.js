@@ -9,6 +9,21 @@
 
 export const PATCHES = [
   {
+    version: '0.9.7',
+    date: '2026-05-12',
+    title: 'Premium cars race — no wear, no mod edge',
+    sections: [
+      {
+        heading: 'Bring the Jesko to the line',
+        notes: [
+          'Premium vehicles are now first-class race entrants — challenge from /races while driving one, accept a challenge while driving one, all the same flow. Tier matters as before (the Jesko is tier 7, so it has to race other tier 7s).',
+          'No wear and tear: a premium car comes out of every race at 100% condition no matter how it finishes. Stock cars still take 5–20% condition damage on each race.',
+          'No mod edge: premium cars race as STOCK-equivalent at their tier — they don\'t carry any car-stat bonus into the dice. A fully-modded normal tier-7 can still out-edge a Jesko. Premium stays a prestige flex, not a pay-to-win lever.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.6',
     date: '2026-05-12',
     title: 'Stripe Checkout — real-money Gold Bar top-ups',

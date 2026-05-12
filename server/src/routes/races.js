@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { vehicleById, applyVehicleMods, cityById, specPerk } from '../data.js';
+import { premiumItemById } from '../data-premium.js';
 import { saveCharacter, loadCharacterById, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { sendEvent } from '../services/events.js';
@@ -41,13 +42,29 @@ function expireStale() {
 
 function resolveActiveCar(charId) {
   const ch = loadCharacterById(charId);
-  if (!ch?.active_vehicle_id) return null;
+  if (!ch) return null;
+  // Premium car: race as a STOCK-equivalent at its tier — no mod
+  // bonuses, so a fully-modded normal tier-7 can still out-race it.
+  // Keeps the premium tier a prestige flex rather than pay-to-win.
+  // Marked isPremium so settlement skips the wear-and-tear write.
+  if (ch.active_premium_vehicle_id) {
+    const item = premiumItemById(ch.active_premium_vehicle_id);
+    if (!item || item.kind !== 'vehicle') return null;
+    return {
+      ch,
+      row: { id: null, condition: 100 },
+      base: { id: item.id, name: item.name, maker: item.maker, tier: item.tier },
+      mods: { power: 0, handling: 0, mods: [] },
+      isPremium: true,
+    };
+  }
+  if (!ch.active_vehicle_id) return null;
   const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(ch.active_vehicle_id, ch.id);
   if (!row) return null;
   const base = vehicleById(row.vehicle_id);
   if (!base) return null;
   const mods = applyVehicleMods(base, row.mods_json);
-  return { ch, row, base, mods };
+  return { ch, row, base, mods, isPremium: false };
 }
 
 function publicRace(race, viewerId) {
@@ -99,11 +116,12 @@ function resolveRace(challenger, opponent, race) {
   const challengerWon = Math.random() < chance;
 
   // Condition damage 5–20%, halved by driving skill: skill 1 keeps
-  // damage at ~99% of base; skill 80 (cap) keeps it at 60%.
+  // damage at ~99% of base; skill 80 (cap) keeps it at 60%. Premium
+  // cars don't wear at all — sit out the roll, condition stays at 100.
   const baseRoll = () => RACE_DAMAGE_MIN + Math.random() * (RACE_DAMAGE_MAX - RACE_DAMAGE_MIN);
   const dampener = (drv) => Math.max(0.4, 1 - (drv || 1) * 0.005);
-  const cDmg = baseRoll() * dampener(challenger.driving);
-  const oDmg = baseRoll() * dampener(opponent.driving);
+  const cDmg = cInfo.isPremium ? 0 : baseRoll() * dampener(challenger.driving);
+  const oDmg = oInfo.isPremium ? 0 : baseRoll() * dampener(opponent.driving);
   const cAfter = Math.max(0, cInfo.row.condition - cDmg);
   const oAfter = Math.max(0, oInfo.row.condition - oDmg);
 
@@ -118,8 +136,13 @@ function resolveRace(challenger, opponent, race) {
     challenger.cash -= race.stake;
   }
 
-  db.prepare('UPDATE vehicles_owned SET condition = ? WHERE id = ?').run(cAfter, cInfo.row.id);
-  db.prepare('UPDATE vehicles_owned SET condition = ? WHERE id = ?').run(oAfter, oInfo.row.id);
+  // Premium cars have no vehicles_owned row to update (and don't wear).
+  if (!cInfo.isPremium) {
+    db.prepare('UPDATE vehicles_owned SET condition = ? WHERE id = ?').run(cAfter, cInfo.row.id);
+  }
+  if (!oInfo.isPremium) {
+    db.prepare('UPDATE vehicles_owned SET condition = ? WHERE id = ?').run(oAfter, oInfo.row.id);
+  }
   saveCharacter(challenger);
   saveCharacter(opponent);
 
