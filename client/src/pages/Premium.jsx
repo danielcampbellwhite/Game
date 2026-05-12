@@ -78,7 +78,7 @@ function ItemCard({ item, ownedIds, balance, busy, onBuy }) {
 }
 
 export default function Premium() {
-  const { refresh } = useGame();
+  const { refresh, character } = useGame();
   const [data, setData] = useState(null);
   const [busyItemId, setBusyItemId] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -101,10 +101,28 @@ export default function Premium() {
     finally { setBusyItemId(null); }
   }
 
+  // Equip / unequip / drive helpers — POST to the matching endpoint
+  // and refresh both this page (for the "Active" badge) and the
+  // global character (for everything else that reads from it).
+  async function action(endpoint, item, label) {
+    setBusyItemId(item?.id || endpoint); setMsg(null);
+    try {
+      const body = item ? { item_id: item.id } : undefined;
+      await api.post(`/premium/${endpoint}`, body);
+      if (label) setMsg(label);
+      await load();
+      await refresh();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusyItemId(null); }
+  }
+
   if (!data) return null;
 
   const ownedIds = new Set((data.inventory || []).map(r => r.premium_id));
   const byKind = (kind) => data.catalogue.filter(i => i.kind === kind);
+  // Per-character equip state — comes from publicCharacter via useGame.
+  const equippedWeapon  = character?.equipped_weapon;
+  const activePremiumId = character?.active_premium_vehicle_id;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -124,6 +142,48 @@ export default function Premium() {
           </div>
         </div>
       </Card>
+
+      {data.inventory.length > 0 && (
+        <Card title="Your premium items" subtitle="Equip / drive / activate. These don't decay, can't be sold, and follow you across every character.">
+          <ul className="space-y-2">
+            {data.inventory.map(row => {
+              const item = data.catalogue.find(i => i.id === row.premium_id);
+              if (!item) return null;
+              const isWeaponEquipped = item.kind === 'weapon'   && equippedWeapon  === item.id;
+              const isVehicleActive  = item.kind === 'vehicle'  && activePremiumId === item.id;
+              const busy = busyItemId === item.id;
+              return (
+                <li key={row.id} className="flex items-center justify-between gap-3 rounded-md border border-gold-500/20 bg-ink-950/40 px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-ink-50 truncate">{item.name}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-ink-100/45">
+                      {KIND_META[item.kind]?.label || item.kind}
+                      {(isWeaponEquipped || isVehicleActive) && (
+                        <span className="ml-2 text-money-300">· In use</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {item.kind === 'weapon' && (
+                      isWeaponEquipped
+                        ? <span className="text-[12px] text-money-300">Equipped</span>
+                        : <button disabled={busy} onClick={() => action('equip-weapon', item, ` Equipped ${item.name}.`)} className="btn btn-primary text-xs">{busy ? '…' : 'Equip'}</button>
+                    )}
+                    {item.kind === 'vehicle' && (
+                      isVehicleActive
+                        ? <button disabled={busy} onClick={() => action('unequip-vehicle', null, 'Parked your premium ride.')} className="btn btn-ghost text-xs">{busy ? '…' : 'Park'}</button>
+                        : <button disabled={busy} onClick={() => action('equip-vehicle', item, ` Now driving ${item.name}.`)} className="btn btn-primary text-xs">{busy ? '…' : 'Drive'}</button>
+                    )}
+                    {item.kind === 'property' && (
+                      <span className="text-[12px] text-ink-100/55">Active in {item.city.replace(/_/g, ' ')}</span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       <Card title="Top up" subtitle="Each Gold Bar is 10p. Stripe-powered checkout coming soon — for now an admin can seed your account for testing.">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

@@ -411,6 +411,10 @@ export function publicCharacter(ch) {
     equipped_weapon: ch.equipped_weapon, equipped_armour: ch.equipped_armour,
     equipped_weapon_instance: ch.equipped_weapon_instance ?? null,
     active_vehicle_id: ch.active_vehicle_id ?? null,
+    // Premium car the character is currently driving (premium catalogue
+    // id, e.g. 'premium_koenigsegg_jesko'). Mutually exclusive with
+    // active_vehicle_id at the equip layer; both can be NULL when on foot.
+    active_premium_vehicle_id: ch.active_premium_vehicle_id ?? null,
     status: ch.status || 'alive',
     login_streak: ch.login_streak, last_daily: ch.last_daily,
     prestige: ch.prestige,
