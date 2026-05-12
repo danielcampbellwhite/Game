@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
 import { useEventStream } from '../hooks/useEventStream.js';
 import { fmt } from './Money.jsx';
+import MuteToggle from './MuteToggle.jsx';
 
 const links = [
   { to: '/inventory',  label: 'Inventory' },
@@ -290,6 +291,7 @@ export default function Nav() {
               </span>
             )}
           </Link>
+          <MuteToggle />
           <NotificationBell />
           {/* Mobile-only hamburger — toggles the nav-links drawer below.
               Desktop (md+) renders the nav links inline so this is hidden. */}

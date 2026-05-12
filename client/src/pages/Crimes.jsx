@@ -7,6 +7,7 @@ import Timer from '../components/Timer.jsx';
 import LockBadge from '../components/LockBadge.jsx';
 import PoliceChase from '../components/PoliceChase.jsx';
 import { fmt } from '../components/Money.jsx';
+import { playCrimeSound } from '../services/sounds.js';
 
 function cooldownLabel(sec) {
   if (sec < 60) return `${sec}s`;
@@ -245,6 +246,11 @@ export default function Crimes() {
     setBusyId(crime.id);
     try {
       const r = await api.post('/crimes/commit', { crime_id: crime.id });
+      // Audio first so the moment lands before the page re-renders.
+      // Failure → siren/ko/fail; success → crime-specific family
+      // (getaway / cyber / gunshot / panic). PoliceChase mini-game
+      // suppresses its own sound by passing through r.chase.
+      playCrimeSound(crime.id, crime.tier, r);
       updateFromResponse(r);
       setLast({ crime, result: r });
       if (r.chase) setChase(r.chase);
