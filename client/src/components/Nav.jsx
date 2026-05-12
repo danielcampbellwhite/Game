@@ -291,6 +291,15 @@ export default function Nav() {
               </span>
             )}
           </Link>
+          <Link
+            to="/premium"
+            onClick={onClickGuard}
+            aria-label="Gold Bars store"
+            title={`Gold Bars: ${character?.premium_points || 0}`}
+            className={`px-2 py-1 rounded-md transition flex items-center gap-1 text-gold-300 ${lockedOut ? 'opacity-30 cursor-not-allowed' : 'hover:bg-ink-800/60'}`}>
+            <span aria-hidden></span>
+            <span className="text-[13px] tabular-nums font-medium">{character?.premium_points || 0}</span>
+          </Link>
           <MuteToggle />
           <NotificationBell />
           {/* Mobile-only hamburger — toggles the nav-links drawer below.
