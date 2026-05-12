@@ -1,10 +1,12 @@
-// Detective → evidence bar → trial → criminal record. The slow-burn
-// counterpart to instant jail. Every crime drips evidence into an
-// open investigation; once the bar fills, charges are filed and the
-// player faces a trial they must resolve (plead, lawyer up, bribe,
-// or take their chances in court). Convictions stack into a permanent
-// criminal record that softens or hardens over time and shapes how
-// the cops treat you on subsequent jail rolls.
+// Detective → trial → criminal record. The slow-burn counterpart to
+// instant jail. A case opens when heat crosses HEAT_TO_TRIGGER (50%);
+// every subsequent FAILED crime rolls a heat-scaled chance of being
+// hauled straight to court. Formula: chance = (heat - 50) × 1.5%.
+// So heat 60 = 15%, heat 75 = 37.5%, heat 100 = 75%. Successful
+// crimes don't tip the inspector's hand — the case stays open but
+// no charges roll. Convictions stack into a permanent criminal
+// record that softens or hardens over time and shapes how the cops
+// treat you on subsequent jail rolls.
 //
 // Inline migrations — three new tables, all idempotent.
 
@@ -45,8 +47,8 @@ try {
   `);
 } catch {}
 
-export const EVIDENCE_TO_FILE   = 100;
 export const HEAT_TO_TRIGGER    = 50;
+export const HEAT_MAX           = 100;
 export const LAWYER_MAX         = 3;
 export const LAWYER_BASE_COST   = 5_000;
 export const LAWYER_PER_EV      = 100;       // cost scales with evidence
@@ -55,15 +57,18 @@ export const BRIBE_COST         = 50_000;
 export const BRIBE_REDUCTION    = 0.30;      // flat -30% conviction chance
 export const RECORD_TTL_MS      = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-// Per-tier evidence weight — successful crimes drip a little, failed
-// ones drip more (witnesses, fingerprints, etc.).
-const TIER_EVIDENCE = {
-  street: 2,
-  cyber:  3,
-  gta:    5,
-  major:  10,
-};
-const FAILURE_MULTIPLIER = 1.6;
+// Per-failed-crime probability of charges being filed, based on the
+// player's current heat. Formula: 1.5% per point of heat over the
+// HEAT_TO_TRIGGER threshold, capped at 100%. So heat 60 = 15%, heat
+// 75 = 37.5%, heat 100 = 75%. The case has to already be open (heat
+// has hit 50 at some point) AND the crime has to have failed for the
+// roll to apply.
+export const CHANCE_PER_HEAT = 0.015;
+export function courtChanceFor(heatNow) {
+  const over = heatNow - HEAT_TO_TRIGGER;
+  if (over <= 0) return 0;
+  return Math.max(0, Math.min(1, over * CHANCE_PER_HEAT));
+}
 
 const DETECTIVE_NAMES = [
   'Det. Robert Murphy',
@@ -121,52 +126,57 @@ export function ensureInvestigation(ch, now = Date.now()) {
     VALUES (?, ?, 0, ?, ?)
   `).run(ch.id, name, now, now);
   writeLog(ch.id, 'investigation',
-    ` ${name} has opened a case on you. They'll build a file every time you slip up.`,
+    ` ${name} has opened a case on you. Every crime you pull at this heat could end in charges.`,
     { detective: name }, true);
   sendEvent(ch.id, 'investigation.opened', { detective: name });
-  return { detective_name: name, evidence: 0 };
+  return { detective_name: name };
 }
 
-// Drip evidence after a crime. Successful crimes drip the base value;
-// failed ones drip 1.6× (more witnesses, more mistakes). When evidence
-// hits EVIDENCE_TO_FILE the case is wrapped, a trial is filed, and
-// the investigation slot is closed (the trial slot now holds the
-// player's attention until resolved).
-export function bumpEvidence(ch, crimeTier, succeeded, opts = {}) {
+// Per-crime court-charge roll. Replaces the old evidence-bar drip with
+// a heat-scaled chance: at heat 50 the case just opened and the roll
+// is 0%; at heat 100 it's 100%. On a hit, charges are filed immediately
+// and the investigation slot is closed; the trial now holds the
+// player's attention until they plead / lawyer up / bribe / take it to
+// court. Effective evidence is seeded with the heat at filing time so
+// the trial's conviction math (and lawyer-cost scaling) still has a
+// number to lean on.
+export function rollForTrial(ch, heatNow) {
   const inv = getActiveInvestigation(ch.id);
   if (!inv) return null;
-  const base = TIER_EVIDENCE[crimeTier] ?? 1;
-  const points = base * (succeeded ? 1 : FAILURE_MULTIPLIER);
-  const now = Date.now();
-  const newEv = (inv.evidence || 0) + points;
-  if (newEv >= EVIDENCE_TO_FILE) {
-    // Charges filed. Base sentence scales with the evidence pile;
-    // cap at a sensible maximum so a thousand small priors don't
-    // mean life in prison.
-    const baseJailMin = Math.min(240, 30 + Math.floor(newEv / 4));
-    db.prepare(`
-      INSERT INTO pending_trials (char_id, base_jail_min, detective_name, effective_evidence, lawyer_count, bribed, filed_at)
-      VALUES (?, ?, ?, ?, 0, 0, ?)
-    `).run(ch.id, baseJailMin, inv.detective_name, newEv, now);
-    clearInvestigation(ch.id);
-    writeLog(ch.id, 'investigation',
-      ` ${inv.detective_name} filed charges. You're due in court. Resolve it before doing anything else.`,
-      { detective: inv.detective_name, evidence: newEv, baseJailMin }, true);
-    sendEvent(ch.id, 'trial.filed', { detective: inv.detective_name, baseJailMin });
-    return { filed: true, baseJailMin };
+  const chance = courtChanceFor(heatNow);
+  if (chance <= 0 || Math.random() >= chance) {
+    return { filed: false, chance };
   }
-  db.prepare('UPDATE active_investigations SET evidence = ?, last_evidence_at = ? WHERE char_id = ?')
-    .run(newEv, now, ch.id);
-  return { evidence: newEv };
+  const effectiveEvidence = Math.max(HEAT_TO_TRIGGER, Math.round(heatNow));
+  // Heat-at-filing curves the sentence — low heat = light slap, high
+  // heat = heavy time, because heat is a stand-in for how much evidence
+  // the detective has stacked up. Quadratic (heat²/100) ramps the
+  // punishment fast as you push your luck. Clamped [15, 180] min so
+  // neither end is degenerate.
+  const baseJailMin = Math.min(180,
+    Math.max(15, Math.floor(effectiveEvidence * effectiveEvidence / 100)));
+  const now = Date.now();
+  db.prepare(`
+    INSERT INTO pending_trials (char_id, base_jail_min, detective_name, effective_evidence, lawyer_count, bribed, filed_at)
+    VALUES (?, ?, ?, ?, 0, 0, ?)
+  `).run(ch.id, baseJailMin, inv.detective_name, effectiveEvidence, now);
+  clearInvestigation(ch.id);
+  writeLog(ch.id, 'investigation',
+    ` ${inv.detective_name} filed charges — heat ${Math.round(heatNow)} (${Math.round(chance * 100)}% odds). You're due in court.`,
+    { detective: inv.detective_name, heat: heatNow, chance, baseJailMin }, true);
+  sendEvent(ch.id, 'trial.filed', { detective: inv.detective_name, baseJailMin });
+  return { filed: true, chance, baseJailMin };
 }
 
-// Per-crime hook used by routes/crimes.js — also opens an
-// investigation when heat just crossed the threshold.
+// Per-crime hook used by routes/crimes.js — opens an investigation
+// when heat just crossed the threshold; only rolls for charges on a
+// failed crime (clean wins don't give the inspector their break).
 export function recordCrimeForInvestigation(ch, crimeTier, succeeded, heatNow) {
   if (!getActiveInvestigation(ch.id) && heatNow >= HEAT_TO_TRIGGER) {
     ensureInvestigation(ch);
   }
-  return bumpEvidence(ch, crimeTier, succeeded);
+  if (succeeded) return null;
+  return rollForTrial(ch, heatNow);
 }
 
 // Trial actions — each returns { ok, ... } or { error }. They all

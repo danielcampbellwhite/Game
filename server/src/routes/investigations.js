@@ -5,8 +5,10 @@ import {
   getPendingTrial,
   recordWeight,
   listConvictions,
-  EVIDENCE_TO_FILE,
+  courtChanceFor,
+  HEAT_TO_TRIGGER,
 } from '../services/investigations.js';
+import { effectiveHeat } from '../services/heat.js';
 
 const router = Router();
 
@@ -17,12 +19,16 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const trial = getPendingTrial(ch.id);
   const convictions = listConvictions(ch.id);
   const weight = recordWeight(ch.id);
+  const heat = effectiveHeat(ch);
   res.json({
     investigation: inv ? {
       detective: inv.detective_name,
-      evidence: inv.evidence,
-      threshold: EVIDENCE_TO_FILE,
-      progress: Math.min(1, inv.evidence / EVIDENCE_TO_FILE),
+      // courtChance = probability that the next FAILED crime files
+      // charges. 0 when heat <= HEAT_TO_TRIGGER, ramps at 1.5%/heat
+      // point, caps at 1.0. The banner shows this directly.
+      courtChance: courtChanceFor(heat),
+      heat: Math.round(heat),
+      heatThreshold: HEAT_TO_TRIGGER,
       startedAt: inv.started_at,
     } : null,
     pendingTrial: trial ? {
