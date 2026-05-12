@@ -10,7 +10,7 @@ import LogFeed from '../components/LogFeed.jsx';
 import { fmt } from '../components/Money.jsx';
 import Timer from '../components/Timer.jsx';
 
-// ── Evidence Board ─────────────────────────────────────────────────
+// ── Evidence Board ────────────────────────────────────────────
 //
 // Detective-style "person of interest" board. The player's silhouette
 // sits at the centre as a stylised gangster bust; red strings fan out
@@ -184,7 +184,7 @@ function EvidenceBoard({ character, lockedOut }) {
     };
   });
 
-  // ── Proximity focus ────────────────────────────────────────────
+  // ── Proximity focus ─────────────────────────────────────
   // Track the pointer in container-percent coords; the closest node
   // within FOCUS_THRESHOLD lights up + scales. Works on both touch
   // (drag your finger across the board to scrub through nodes) and
@@ -353,8 +353,8 @@ function InvestigationBanner() {
       </Card>
     );
   }
-  const pct = Math.round(inv.progress * 100);
-  const colour = pct < 40 ? 'bg-gold-400' : pct < 75 ? 'bg-blood-500' : 'bg-blood-400';
+  const pct = Math.round((inv.courtChance || 0) * 100);
+  const colour = pct < 25 ? 'bg-gold-400' : pct < 60 ? 'bg-blood-500' : 'bg-blood-400';
   return (
     <Card>
       <div className="flex items-start gap-3">
@@ -362,12 +362,13 @@ function InvestigationBanner() {
           <div className="text-[11px] uppercase tracking-wider text-blood-400">Active investigation</div>
           <div className="font-display text-base text-ink-50 mt-0.5">{inv.detective}</div>
           <p className="text-[12px] text-ink-100/55 leading-snug mt-1">
-            Building a case on you. Every crime — successful or not — drips evidence into their file.
-            When the file fills, charges get filed and you're in court.
+            Building a case on you. Each <span className="text-blood-300">failed</span> crime now rolls a
+            heat-scaled chance of going straight to court (1.5% per heat point above 50).
+            Cool off or live with the odds.
           </p>
         </div>
         <div className="text-right shrink-0 tabular-nums">
-          <div className="text-[12px] uppercase text-ink-100/45">File</div>
+          <div className="text-[12px] uppercase text-ink-100/45">Court risk</div>
           <div className="text-lg text-ink-50">{pct}%</div>
         </div>
       </div>

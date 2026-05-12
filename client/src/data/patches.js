@@ -9,6 +9,35 @@
 
 export const PATCHES = [
   {
+    version: '0.9.2',
+    date: '2026-05-12',
+    title: 'Jail escape · investigator overhaul · crime sounds',
+    sections: [
+      {
+        heading: 'Jail',
+        notes: [
+          'Run-for-it is now ONE attempt per sentence. Win and you walk; lose and your sentence doubles AND you sit it out — no more spam-clicking the door. A fresh conviction (new jail term) resets the counter, so you always get one shot at every stretch.',
+        ],
+      },
+      {
+        heading: 'Detective → trial (overhauled)',
+        notes: [
+          'The evidence-drip bar is gone. The case still opens when heat hits 50%, but charges now roll on every FAILED crime: chance = 1.5% × (heat - 50). So heat 60 = 15%, heat 75 = 37.5%, heat 100 = 75%. Successful crimes don\'t tip the inspector\'s hand.',
+          'Heat-at-filing now curves the sentence — higher heat = more "evidence", so a heavier base sentence. Quadratic: heat 50 = 25m, heat 75 = 56m, heat 100 = 100m. Lawyers and bribes still apply.',
+          'Dashboard banner shows your live "Court risk" percentage instead of a slow file-filling bar — it ticks up and down with your heat in real time.',
+        ],
+      },
+      {
+        heading: 'Crime sound effects + mute toggle',
+        notes: [
+          'Every crime commit now plays a short audio cue keyed to the outcome — tyre-screech for a clean GTA, keystroke clicks for cyber, gunshot for major heists, street panic for muggings, siren for caught/jailed, low thud for hospital, sad trombone for clean escapes.',
+          'Mute toggle (speaker icon) in the top nav next to the bell. Preference persists across reloads.',
+          'Synthesised placeholders ship today — drop real MP3s into client/public/sounds/<family>.mp3 (8 family names) and they auto-take over with no code change.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.1',
     date: '2026-05-11',
     title: 'Economy hardening · twelve exploit fixes',
