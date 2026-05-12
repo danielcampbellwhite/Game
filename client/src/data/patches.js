@@ -9,6 +9,37 @@
 
 export const PATCHES = [
   {
+    version: '0.9.6',
+    date: '2026-05-12',
+    title: 'Stripe Checkout — real-money Gold Bar top-ups',
+    sections: [
+      {
+        heading: 'Buy Bars with a card',
+        notes: [
+          'Click a pack on the Premium page → Stripe\'s Embedded Checkout opens inline (no redirect away). Pay with any card; the moment Stripe confirms, our webhook credits your Gold Bar balance and the page shows "+N Bars".',
+          'Four packs ship today: 10 Bars/£1, 20 Bars/£2, 50 Bars/£5, 100 Bars/£10. Prices are server-defined — the client can\'t request a tampered amount.',
+          'Card data never touches our server — Stripe handles PCI compliance. We only ever see the session ID and the fact that it was paid.',
+        ],
+      },
+      {
+        heading: 'Reliability',
+        notes: [
+          'Every top-up is recorded in a new gold_bar_purchases ledger with the Stripe session ID as a UNIQUE key. Stripe\'s webhook retries (which happen if delivery fails) can\'t double-credit — re-deliveries detect the existing fulfilled row and no-op.',
+          'Fulfilment happens inside a SQLite BEGIN IMMEDIATE transaction: status flip and balance grant commit together, so a crash mid-credit can\'t leave Bars without a paid record or vice versa.',
+          'Webhook signature is verified against STRIPE_WEBHOOK_SECRET — anything that didn\'t come from Stripe gets a 400.',
+        ],
+      },
+      {
+        heading: 'Deployment',
+        notes: [
+          'Server env: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET. Add them on Railway and the "Coming soon" buttons flip to live "Buy" buttons automatically — no code change needed.',
+          'Client env: VITE_STRIPE_PUBLISHABLE_KEY (build-time, safe to expose). Bake it into the Railway build env.',
+          'Webhook URL: POST https://<host>/api/premium/webhook — register it in your Stripe dashboard, subscribe to checkout.session.completed.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.5',
     date: '2026-05-12',
     title: 'Premium properties materialise · single-active-vehicle invariant',

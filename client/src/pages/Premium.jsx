@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { loadStripe } from '@stripe/stripe-js';
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
+
+// Lazy-load Stripe.js exactly once per app session. Reading the pk at
+// module evaluation means a missing key shows the "Top-ups not
+// configured" hint instead of throwing inside the provider.
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
 
 // Premium store — Gold Bars (account-bound currency) buy premium-only
 // vehicles, properties, weapons. Items follow whichever character the
@@ -79,9 +88,17 @@ function ItemCard({ item, ownedIds, balance, busy, onBuy }) {
 
 export default function Premium() {
   const { refresh, character } = useGame();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [busyItemId, setBusyItemId] = useState(null);
   const [msg, setMsg] = useState(null);
+  // Stripe Embedded Checkout state. clientSecret toggles the in-page
+  // overlay; sessionId lets us poll /checkout-status after completion
+  // so we can show "+N Bars credited" once the webhook lands.
+  const [clientSecret, setClientSecret] = useState(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState(null);
+  const [packBusy, setPackBusy] = useState(null);
 
   async function load() {
     try {
@@ -89,6 +106,60 @@ export default function Premium() {
     } catch (e) { setMsg(e.message); }
   }
   useEffect(() => { load(); }, []);
+
+  // After Stripe returns the user to /premium?stripe_session_id=...
+  // we poll the status endpoint a handful of times. Webhook delivery
+  // is usually sub-second but can lag a beat — short retry covers it
+  // without making the page hang forever.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sid = params.get('stripe_session_id');
+    if (!sid) return;
+    let cancelled = false;
+    let attempts = 0;
+    async function poll() {
+      try {
+        const s = await api.get(`/premium/checkout-status?session_id=${encodeURIComponent(sid)}`);
+        if (cancelled) return;
+        if (s.status === 'fulfilled') {
+          setMsg(`+${s.bars} Gold Bars added to your stack. Thanks for backing the project.`);
+          await load();
+          await refresh();
+          navigate('/premium', { replace: true });
+          return;
+        }
+        if (attempts++ < 10) setTimeout(poll, 1500);
+        else {
+          setMsg('Payment is processing. Bars will land in a moment — refresh in a few seconds.');
+          navigate('/premium', { replace: true });
+        }
+      } catch (e) {
+        if (!cancelled) setMsg(e.message);
+      }
+    }
+    poll();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  async function startCheckout(pack) {
+    if (!stripePromise) {
+      setMsg('Card payments not configured on this server yet.');
+      return;
+    }
+    setPackBusy(pack.id); setMsg(null);
+    try {
+      const r = await api.post('/premium/checkout', { pack_id: pack.id });
+      setClientSecret(r.client_secret);
+      setCheckoutSessionId(r.session_id);
+    } catch (e) { setMsg(e.message); }
+    finally { setPackBusy(null); }
+  }
+
+  function closeCheckout() {
+    setClientSecret(null);
+    setCheckoutSessionId(null);
+  }
 
   async function buy(item) {
     setBusyItemId(item.id); setMsg(null);
@@ -185,20 +256,44 @@ export default function Premium() {
         </Card>
       )}
 
-      <Card title="Top up" subtitle="Each Gold Bar is 10p. Stripe-powered checkout coming soon — for now an admin can seed your account for testing.">
+      <Card
+        title="Top up"
+        subtitle={data.stripe_configured && stripePromise
+          ? 'Each Gold Bar is 10p. Card payment via Stripe — your details never touch our server.'
+          : 'Each Gold Bar is 10p. Card checkout will go live once the server keys are configured — for now an admin can seed your balance for testing.'}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {(data.packs || []).map(p => (
-            <div key={p.id} className="rounded-lg border border-ink-100/15 bg-ink-900/40 p-2 text-center">
-              <div className="text-[11px] uppercase tracking-wide text-ink-100/45">{p.label}</div>
-              <div className="font-display text-xl text-gold-300 tabular-nums"> {p.bars}</div>
-              <div className="text-[12px] text-ink-100/70 tabular-nums">£{p.priceGBP.toFixed(2)}</div>
-              <button disabled className="btn btn-ghost text-[11px] mt-1 w-full opacity-60 cursor-not-allowed">
-                Coming soon
-              </button>
-            </div>
-          ))}
+          {(data.packs || []).map(p => {
+            const liveCheckout = !!(data.stripe_configured && stripePromise);
+            const busy = packBusy === p.id;
+            return (
+              <div key={p.id} className="rounded-lg border border-ink-100/15 bg-ink-900/40 p-2 text-center">
+                <div className="text-[11px] uppercase tracking-wide text-ink-100/45">{p.label}</div>
+                <div className="font-display text-xl text-gold-300 tabular-nums"> {p.bars}</div>
+                <div className="text-[12px] text-ink-100/70 tabular-nums">£{p.priceGBP.toFixed(2)}</div>
+                <button
+                  disabled={!liveCheckout || busy || !!clientSecret}
+                  onClick={() => startCheckout(p)}
+                  className={`btn text-[11px] mt-1 w-full ${liveCheckout ? 'btn-primary' : 'btn-ghost opacity-60 cursor-not-allowed'}`}>
+                  {liveCheckout ? (busy ? '…' : `Buy £${p.priceGBP.toFixed(2)}`) : 'Coming soon'}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </Card>
+
+      {clientSecret && stripePromise && (
+        <Card title="Pay with card" subtitle="Powered by Stripe. Cancel anytime.">
+          <div className="rounded-lg overflow-hidden border border-gold-500/25 bg-white">
+            <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
+              <EmbeddedCheckout />
+            </EmbeddedCheckoutProvider>
+          </div>
+          <button onClick={closeCheckout} className="btn btn-ghost text-xs mt-2">
+            Cancel
+          </button>
+        </Card>
+      )}
 
       {['vehicle', 'property', 'weapon'].map(kind => {
         const items = byKind(kind);

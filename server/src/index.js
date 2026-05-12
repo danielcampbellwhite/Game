@@ -63,6 +63,7 @@ import burglaryRoutes from './routes/burglary.js';
 import investigationsRoutes from './routes/investigations.js';
 import trialsRoutes from './routes/trials.js';
 import premiumRoutes from './routes/premium.js';
+import { handleStripeWebhook } from './services/stripe.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -70,6 +71,18 @@ initDb();
 
 const app = express();
 app.use(cors());
+
+// Stripe webhook — MUST mount before express.json() because Stripe's
+// signature verification requires the raw request body bytes (any
+// reformatting changes the HMAC). The handler returns { status, body }
+// from the service so this layer stays a thin adapter.
+app.post('/api/premium/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const { status, body } = handleStripeWebhook(req.body, req.headers['stripe-signature']);
+    res.status(status).json(body);
+  });
+
 app.use(express.json({ limit: '256kb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));

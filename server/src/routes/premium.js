@@ -12,6 +12,9 @@ import {
   grantGoldBars, isAdminUser,
   equipPremiumWeapon, equipPremiumVehicle, unequipPremiumVehicle,
 } from '../services/premium.js';
+import {
+  isStripeConfigured, createCheckoutSession, getCheckoutStatus,
+} from '../services/stripe.js';
 import { writeLog } from '../services/log.js';
 import { saveCharacter, publicCharacter, loadCharacter } from '../services/character.js';
 
@@ -19,6 +22,8 @@ const router = Router();
 
 // GET /api/premium — balance, owned items, catalogue.
 // Auth-only (not character-gated) since the balance belongs to the user.
+// `stripe_configured` flips the UI from "Coming soon" to live Buy buttons
+// without a separate config endpoint.
 router.get('/', requireAuth, (req, res) => {
   const userId = req.user.id;
   res.json({
@@ -26,7 +31,47 @@ router.get('/', requireAuth, (req, res) => {
     inventory: getUserPremiumInventory(userId),
     catalogue: PREMIUM_CATALOGUE,
     packs: GOLD_BAR_PACKS,
+    stripe_configured: isStripeConfigured(),
   });
+});
+
+// POST /api/premium/checkout — kick off Embedded Stripe Checkout.
+// Returns { client_secret } so the React side can mount
+// <EmbeddedCheckout /> in-page. Returns 503 if Stripe isn't configured
+// — keeps deployment safe before keys are added.
+router.post('/checkout', requireAuth, async (req, res) => {
+  const packId = (req.body?.pack_id || '').toString();
+  if (!packId) return res.status(400).json({ error: 'pack_id required.' });
+  // Build the return URL from the request's origin / referer so the
+  // embedded flow lands back on the right host regardless of where
+  // the app is deployed (Railway preview vs prod).
+  const origin = req.headers.origin
+    || (req.headers.referer ? new URL(req.headers.referer).origin : null)
+    || `${req.protocol}://${req.get('host')}`;
+  try {
+    const result = await createCheckoutSession(req.user.id, packId, origin);
+    if (result.error) return res.status(503).json({ error: result.error });
+    res.json({ client_secret: result.client_secret, session_id: result.session_id });
+  } catch (e) {
+    console.error('[premium] checkout failed:', e);
+    res.status(500).json({ error: 'Checkout failed — please try again.' });
+  }
+});
+
+// GET /api/premium/checkout-status?session_id=cs_... — poll endpoint
+// the client hits after embedded checkout returns. Becomes 'fulfilled'
+// as soon as the Stripe webhook has credited the balance.
+router.get('/checkout-status', requireAuth, async (req, res) => {
+  const sessionId = (req.query?.session_id || '').toString();
+  if (!sessionId) return res.status(400).json({ error: 'session_id required.' });
+  try {
+    const status = await getCheckoutStatus(sessionId, req.user.id);
+    if (status.error) return res.status(404).json({ error: status.error });
+    res.json(status);
+  } catch (e) {
+    console.error('[premium] checkout-status failed:', e);
+    res.status(500).json({ error: 'Could not read checkout status.' });
+  }
 });
 
 // POST /api/premium/buy — purchase a catalogue item.
