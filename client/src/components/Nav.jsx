@@ -178,11 +178,14 @@ function NotificationBell() {
 // glance without taking the full row of bars StatsBar used.
 function MiniStat({ label, value, max, color, money }) {
   const pct = max ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  // For money mode, `color` is an optional Tailwind text class that
+  // overrides the default money-green (e.g. blood-red for illegal cash).
+  const moneyClass = money ? (color || 'text-money-400') : null;
   return (
     <div className="min-w-0 leading-tight">
       <div className={`flex items-baseline gap-2 text-[12px] uppercase text-ink-100/55 ${money ? 'justify-end' : 'justify-between'}`}>
         <span>{label}</span>
-        <span className={`tabular-nums ${money ? 'text-money-400 font-medium' : 'text-ink-100/85'}`}>
+        <span className={`tabular-nums ${money ? `${moneyClass} font-medium` : 'text-ink-100/85'}`}>
           {money ? fmt(value) : `${value}/${max}`}
         </span>
       </div>
@@ -304,7 +307,7 @@ export default function Nav() {
       {/*  Condensed stats strip  */}
       {character && (
         <div className="border-t border-ink-100/10 bg-ink-900/40">
-          <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-1 text-xs">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-1 text-xs">
             <MiniStat label="Energy"  value={character.energy}    max={character.max_energy} color="bg-yellow-400" />
             <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
             <MiniStat label="Happy"   value={character.happiness} max={100}                  color="bg-pink-400"   />
@@ -321,7 +324,8 @@ export default function Nav() {
                 </div>
               )}
             </div>
-            <MiniStat label="Cash"    value={character.cash}      money />
+            <MiniStat label="Cash"    value={character.cash}        money />
+            <MiniStat label="Illegal" value={character.dirty_cash}  money color="text-blood-300" />
           </div>
         </div>
       )}
