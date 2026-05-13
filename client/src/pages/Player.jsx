@@ -41,6 +41,25 @@ export default function Player() {
     } finally { setBusy(null); }
   }
 
+  const [friendStatus, setFriendStatus] = useState(null);
+  useEffect(() => {
+    if (!id) return;
+    api.get(`/friends/status/${id}`).then(r => setFriendStatus(r.status)).catch(() => {});
+  }, [id]);
+  async function friendAction(endpoint, method = 'post') {
+    setBusy('friend'); setMsg(null);
+    try {
+      if (method === 'delete') {
+        await api.delete('/friends', { char_id: parseInt(id, 10) });
+      } else {
+        await api.post(`/friends/${endpoint}`, { char_id: parseInt(id, 10) });
+      }
+      const r = await api.get(`/friends/status/${id}`);
+      setFriendStatus(r.status);
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   async function challenge(mode = 'knockout') {
     setBusy('challenge-' + mode); setMsg(null);
     try {
@@ -173,6 +192,31 @@ export default function Player() {
               className="btn btn-primary text-xs">
               {busy === 'start' ? '…' : 'Message'}
             </button>
+            {friendStatus === 'none' && (
+              <button disabled={busy === 'friend'} onClick={() => friendAction('request')} className="btn btn-ghost text-xs">
+                {busy === 'friend' ? '…' : '+ Add friend'}
+              </button>
+            )}
+            {friendStatus === 'pending_out' && (
+              <button disabled={busy === 'friend'} onClick={() => friendAction('reject')} className="btn btn-ghost text-xs">
+                {busy === 'friend' ? '…' : 'Cancel request'}
+              </button>
+            )}
+            {friendStatus === 'pending_in' && (
+              <>
+                <button disabled={busy === 'friend'} onClick={() => friendAction('accept')} className="btn btn-primary text-xs">
+                  {busy === 'friend' ? '…' : 'Accept friend'}
+                </button>
+                <button disabled={busy === 'friend'} onClick={() => friendAction('reject')} className="btn btn-ghost text-xs">
+                  Reject
+                </button>
+              </>
+            )}
+            {friendStatus === 'accepted' && (
+              <button disabled={busy === 'friend'} onClick={() => friendAction('', 'delete')} className="btn btn-ghost text-xs">
+                {busy === 'friend' ? '…' : 'Unfriend'}
+              </button>
+            )}
             <button
               disabled={busy === 'challenge-knockout'}
               onClick={() => challenge('knockout')}

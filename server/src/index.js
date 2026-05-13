@@ -63,6 +63,8 @@ import burglaryRoutes from './routes/burglary.js';
 import investigationsRoutes from './routes/investigations.js';
 import trialsRoutes from './routes/trials.js';
 import premiumRoutes from './routes/premium.js';
+import friendsRoutes from './routes/friends.js';
+import chatRoutes from './routes/chat.js';
 import { handleStripeWebhook } from './services/stripe.js';
 
 const PORT = process.env.PORT || 4000;
@@ -144,6 +146,8 @@ app.use('/api/burglary', burglaryRoutes);
 app.use('/api/investigations', investigationsRoutes);
 app.use('/api/trials', trialsRoutes);
 app.use('/api/premium', premiumRoutes);
+app.use('/api/friends', friendsRoutes);
+app.use('/api/chat', chatRoutes);
 
 const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
 if (fs.existsSync(CLIENT_DIST)) {

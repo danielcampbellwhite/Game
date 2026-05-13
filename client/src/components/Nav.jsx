@@ -18,6 +18,7 @@ const links = [
   { to: '/gangs',      label: 'Gangs'     },
   { to: '/wars',       label: 'Turf Wars' },
   { to: '/players',    label: 'Players'   },
+  { to: '/friends',    label: 'Friends'   },
   { to: '/trades',     label: 'Trades'    },
 ];
 

@@ -42,6 +42,24 @@ export function sendEvent(charId, type, payload = {}) {
   }
 }
 
+// Push to every connected character — for world-wide announcements
+// like world chat. Iterates the streams registry directly to avoid
+// a thousand DB lookups; the per-char sendEvent does the actual fan-out.
+export function broadcastAll(type, payload = {}) {
+  for (const charId of streams.keys()) sendEvent(charId, type, payload);
+}
+
+// Push to a specific list of character ids — for scoped channels like
+// faction or gang chat. Filters out duplicates.
+export function broadcastTo(charIds, type, payload = {}) {
+  const seen = new Set();
+  for (const id of charIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    sendEvent(id, type, payload);
+  }
+}
+
 // Snapshot of who currently has an open stream — useful for "is this
 // player connected right now" queries when last_active_at is too coarse.
 export function isStreamingTo(charId) {

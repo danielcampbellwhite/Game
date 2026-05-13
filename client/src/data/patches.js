@@ -9,6 +9,39 @@
 
 export const PATCHES = [
   {
+    version: '0.9.9',
+    date: '2026-05-13',
+    title: 'Friends list · live chat (World / Faction / Gang)',
+    sections: [
+      {
+        heading: 'Friends',
+        notes: [
+          'New "+ Add friend" button on every player profile. Send a request, they get a live notification and an Accept / Reject prompt. Once accepted, both sides see each other under /friends.',
+          'Friend requests are reciprocal — if you both happen to request each other, the second request auto-accepts.',
+          'Friends are CHARACTER-scoped — if either character dies or retires, the friendship goes with it. Build your social ties as you build your character.',
+          'New /friends page lists pending requests (in + out) and your accepted friends, with a one-tap DM shortcut on each row.',
+        ],
+      },
+      {
+        heading: 'Live chat — bottom-right widget',
+        notes: [
+          'Floating chat button now sits in the bottom-right corner on every page. Click to expand a three-tab panel: World (everyone), Faction (just your faction), Gang (just your gang).',
+          'Messages persist server-side — the last 200 per channel are retained, so you can scroll up to catch what was said while you were away.',
+          'Real-time delivery over SSE. Unread bubbles on the floating button + on each tab so you can see at a glance where the chatter is.',
+          'DMs tab on the widget deep-links to /messages — you still get the existing private-message UI for one-on-one conversations.',
+          'Rate-limited at 10 messages / 30s per channel — keeps spam off the wires. Max 500 chars per message.',
+        ],
+      },
+      {
+        heading: 'Under the hood',
+        notes: [
+          'New tables: friendships (symmetric pair, status pending/accepted) and chat_messages (per-channel ledger with lazy 200-row prune on every insert). Both inline-migrated so no schema-file edits.',
+          'New SSE helpers: broadcastAll (everyone connected) and broadcastTo (specific char-ids) — power World and Faction/Gang chat respectively.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.8',
     date: '2026-05-13',
     title: 'Murder cooldown halved · accordion sweep · faster police chase',

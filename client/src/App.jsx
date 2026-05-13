@@ -62,6 +62,8 @@ import CustomizeVehicles from './pages/CustomizeVehicles.jsx';
 import NewCharacter from './pages/NewCharacter.jsx';
 import Admin from './pages/Admin.jsx';
 import Premium from './pages/Premium.jsx';
+import Friends from './pages/Friends.jsx';
+import ChatWidget from './components/ChatWidget.jsx';
 
 function Protected({ children }) {
   const { token, character } = useGame();
@@ -157,6 +159,7 @@ export default function App() {
           <PvpChallengeModal />
           <RaceChallengeModal />
           <OcInviteModal />
+          <ChatWidget />
         </>
       ) : null}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6">
@@ -220,6 +223,7 @@ export default function App() {
           <Route path="/new-character" element={<Protected><NewCharacter /></Protected>} />
           <Route path="/admin" element={<Protected><Admin /></Protected>} />
           <Route path="/premium" element={<Protected><Premium /></Protected>} />
+          <Route path="/friends" element={<Protected><Friends /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
