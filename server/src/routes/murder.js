@@ -17,10 +17,10 @@ import { debitTargetCash, hospitaliseTarget } from '../services/pvp-cash.js';
 
 const router = Router();
 
-//  Tunables 
+//  Tunables
 const ATTEMPT_ENERGY_COST = 25;
-const ATTACKER_COOLDOWN_MS = 24 * 60 * 60 * 1000;   // 24h between attempts
-const TARGET_COOLDOWN_MS   = 24 * 60 * 60 * 1000;   // 24h immunity per target
+const ATTACKER_COOLDOWN_MS = 12 * 60 * 60 * 1000;   // 12h between attempts
+const TARGET_COOLDOWN_MS   = 12 * 60 * 60 * 1000;   // 12h immunity per target
 const MAX_BULLETS_PER_ATTEMPT = 60;
 
 // Cash transfer rates by outcome.
@@ -73,15 +73,25 @@ function eligibility(attacker, target, now) {
   if (attacker.energy < ATTEMPT_ENERGY_COST) return `Need ${ATTEMPT_ENERGY_COST} energy.`;
   const myCd = attackerCooldowns.get(attacker.id) || 0;
   if (now - myCd < ATTACKER_COOLDOWN_MS) {
-    const wait = Math.ceil((ATTACKER_COOLDOWN_MS - (now - myCd)) / 60000);
-    return `You're laying low — try again in ${wait} min.`;
+    const wait = formatHM(ATTACKER_COOLDOWN_MS - (now - myCd));
+    return `You're laying low — try again in ${wait}.`;
   }
   const tgtCd = targetCooldowns.get(target.id) || 0;
   if (now - tgtCd < TARGET_COOLDOWN_MS) {
-    const wait = Math.ceil((TARGET_COOLDOWN_MS - (now - tgtCd)) / 60000);
-    return `${target.name} is hyper-vigilant after a recent attempt — try again in ${wait} min.`;
+    const wait = formatHM(TARGET_COOLDOWN_MS - (now - tgtCd));
+    return `${target.name} is hyper-vigilant after a recent attempt — try again in ${wait}.`;
   }
   return null;
+}
+
+// "2h 13m" / "47m" — minutes round up so the message never shows 0m.
+function formatHM(ms) {
+  const totalMin = Math.max(1, Math.ceil(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 //  GET /api/murder/info?target_id=X 

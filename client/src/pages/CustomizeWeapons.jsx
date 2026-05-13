@@ -162,7 +162,7 @@ function DetailPane({ pickRef, character, onChanged }) {
       </Card>
 
       {(data.slots || []).map(slot => (
-        <Card key={slot} title={`${SLOT_LABEL[slot]} slot`}>
+        <Card key={slot} collapsible title={`${SLOT_LABEL[slot]} slot`}>
           {installedMap[slot] && data.kind === 'instance' && (
             <div className="mb-3 rounded-md border border-money-500/40 bg-money-700/10 p-2 flex items-center justify-between">
               <span className="text-sm">{data.compatible_mods.find(m => m.id === installedMap[slot])?.name}</span>

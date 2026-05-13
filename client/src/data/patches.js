@@ -9,6 +9,34 @@
 
 export const PATCHES = [
   {
+    version: '0.9.8',
+    date: '2026-05-13',
+    title: 'Murder cooldown halved · accordion sweep · faster police chase',
+    sections: [
+      {
+        heading: 'Murder attempts now twice as frequent',
+        notes: [
+          'Attacker cooldown after a murder attempt: 24h → 12h. Per-target immunity after a recent attempt: 24h → 12h. New characters are still protected for the full 3 days.',
+          'Wait-time messages now read "Xh Ym" (e.g. "11h 13m") instead of just minutes, so it\'s easier to plan a window.',
+        ],
+      },
+      {
+        heading: 'More accordions',
+        notes: [
+          'Mod-slot sections on the Vehicle Customization and Weapon Customization pages are now collapsible — start closed, expand the slot you actually want to fit.',
+          'Estate Agent and Player-listings sections on the Property page are now collapsible too. "Your portfolio" stays open since that\'s your own stuff.',
+          'Pattern: wherever there\'s a long browse-and-pick list grouped into sections (like the gun store\'s weapon categories), it now folds out of the way until you click into it.',
+        ],
+      },
+      {
+        heading: 'Faster police chase',
+        notes: [
+          'GTA-failure mini-game (the 5-arrow sequence) now gives you 5 seconds to nail the run, down from 12. Same scoring, same outcome rolls — just no more leisurely panic.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.7',
     date: '2026-05-12',
     title: 'Premium cars race — no wear, no mod edge',

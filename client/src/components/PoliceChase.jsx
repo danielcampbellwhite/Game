@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../api.js';
 
 // Modal mini-game shown when a GTA crime rolls into the 'jail'
-// failure outcome. Players have 12s to tap a 5-arrow sequence; the
+// failure outcome. Players have 5s to tap a 5-arrow sequence; the
 // server scores in-order matches + a driving-stat bonus and decides
 // whether the chase ends in an escape or jail. See routes/chases.js.
 

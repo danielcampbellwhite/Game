@@ -87,7 +87,7 @@ export default function Murder() {
         <p className="text-xs text-ink-100/55">
           Asynchronous — works whether they're online or offline. They get notified the
           moment it's over. <b>No jail time</b> on any outcome — your only friction is
-          ammo, energy, and a 24h cooldown.
+          ammo, energy, and a 12h cooldown.
         </p>
       </Card>
 
@@ -146,7 +146,7 @@ export default function Murder() {
           <li><b>Miss</b> — they get notified, ammo + energy spent, you walk away.</li>
         </ul>
         <p className="text-[13px] text-ink-100/45 mt-2">
-          24h cooldown on you afterwards; 24h immunity for them. New characters are protected for the first <b>3 days</b> after creation.
+          12h cooldown on you afterwards; 12h immunity for them. New characters are protected for the first <b>3 days</b> after creation.
         </p>
       </Card>
 

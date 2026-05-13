@@ -27,7 +27,7 @@ try {
 
 const router = Router();
 
-export const CHASE_DURATION_MS = 12_000;
+export const CHASE_DURATION_MS = 5_000;
 export const CHASE_SEQUENCE_LEN = 5;
 const ARROW_POOL = ['up', 'down', 'left', 'right'];
 

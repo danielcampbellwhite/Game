@@ -228,7 +228,7 @@ export default function Property() {
       </Card>
 
       {data.market.length > 0 && (
-        <Card title={`Player listings in ${data.currentCityName}`}
+        <Card collapsible title={`Player listings in ${data.currentCityName}`}
           subtitle={`${data.market.length} propert${data.market.length === 1 ? 'y' : 'ies'} listed by other players in this city. Mods transfer with the sale.`}>
           <div className="grid sm:grid-cols-2 gap-3">
             {data.market.map(l => {
@@ -266,7 +266,7 @@ export default function Property() {
         </Card>
       )}
 
-      <Card title={`For sale at the estate agent — ${data.currentCityName}`}>
+      <Card collapsible title={`For sale at the estate agent — ${data.currentCityName}`}>
         {!data.forSale.length ? <p className="text-sm text-ink-100/60">All bought up — or you've got a place at every tier here. Travel to see other markets.</p> : (
           <div className="grid sm:grid-cols-2 gap-3">
             {data.forSale.sort((a, b) => a.cost - b.cost).map(p => (
