@@ -215,9 +215,6 @@ router.post('/ship-vehicle', requireAuth, requireCharacter, (req, res) => {
   const id = parseInt(req.body?.id, 10);
   const to = req.body?.to;
   if (!cityById(to)) return res.status(400).json({ error: 'Unknown destination city.' });
-  if (id === Number(ch.active_vehicle_id)) {
-    return res.status(400).json({ error: 'Your active car can\'t be shipped — store it in a garage first, then ship from there.' });
-  }
   const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
   if (!row) return res.status(404).json({ error: 'Vehicle not found.' });
   if (row.city === to) return res.status(400).json({ error: 'That vehicle is already in that city.' });
@@ -236,13 +233,20 @@ router.post('/ship-vehicle', requireAuth, requireCharacter, (req, res) => {
   // would spend in the air themselves.
   const dur = flightDurationMs(row.city, to, FLIGHT_CLASSES.business.durationMul);
   const arrivesAt = Date.now() + dur;
+  // If the car being shipped is the active ride, park it first — the
+  // player can't drive a car that's literally on a transporter. The
+  // active reference is cleared in the same save so a refresh shows
+  // the right state immediately.
+  const wasActive = Number(ch.active_vehicle_id) === id;
+  if (wasActive) ch.active_vehicle_id = null;
   ch.cash -= cost;
   db.prepare('UPDATE vehicles_owned SET city = ?, shipping_until = ? WHERE id = ?')
     .run(to, dur > 0 ? arrivesAt : null, id);
   saveCharacter(ch);
-  writeLog(ch.id, 'shop', `Shipped ${v.maker} ${v.name} to ${cityById(to).name} for £${cost.toLocaleString()} — arriving in ${Math.max(1, Math.round(dur / 60000))} min.`,
-    { vehicle: v.id, from: row.city, to, cost, durationMs: dur });
-  res.json({ ok: true, cost, durationMs: dur, arrivesAt, character: publicCharacter(ch) });
+  writeLog(ch.id, 'shop',
+    `${wasActive ? 'Parked and shipped' : 'Shipped'} ${v.maker} ${v.name} to ${cityById(to).name} for £${cost.toLocaleString()} — arriving in ${Math.max(1, Math.round(dur / 60000))} min.`,
+    { vehicle: v.id, from: row.city, to, cost, durationMs: dur, fromActive: wasActive });
+  res.json({ ok: true, cost, durationMs: dur, arrivesAt, fromActive: wasActive, character: publicCharacter(ch) });
 });
 
 router.post('/buy', requireAuth, requireCharacter, (req, res) => {

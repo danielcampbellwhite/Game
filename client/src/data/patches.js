@@ -9,6 +9,20 @@
 
 export const PATCHES = [
   {
+    version: '0.9.10',
+    date: '2026-05-14',
+    title: 'Ship your active car straight from the driver\'s seat',
+    sections: [
+      {
+        notes: [
+          'You can now ship your CURRENTLY ACTIVE car to another city — no more "store it in a garage first" two-step. The Ship button is now visible on the active car too; tapping it parks the car and starts the transit in a single action, leaving you on foot until it arrives.',
+          'Same rules as before for everything else: destination must have free garage space in one of your properties there, cost still scales with vehicle tier and route, and the trip takes the same time a business-class flight would.',
+          'Log entry says "Parked and shipped …" so it\'s clear in your activity feed that the car was your active ride at the time.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.9',
     date: '2026-05-13',
     title: 'Friends list · live chat (World / Faction / Gang)',

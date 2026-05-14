@@ -83,8 +83,17 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
       )}
       <div className="mt-2 flex flex-col sm:flex-row sm:justify-end sm:flex-wrap gap-2">
         {inTransit ? null : v.is_active ? (
-          <button onClick={() => call('store-vehicle')} disabled={busy}
-            className="btn btn-ghost text-[13px] w-full sm:w-auto">{busy ? '…' : 'Store'}</button>
+          <>
+            <button onClick={() => call('store-vehicle')} disabled={busy}
+              className="btn btn-ghost text-[13px] w-full sm:w-auto">{busy ? '…' : 'Store'}</button>
+            <button
+              onClick={() => setShipping(s => !s)}
+              className="btn btn-ghost text-[13px] w-full sm:w-auto"
+              disabled={destinations.length === 0 || busy}
+              title={destinations.length === 0 ? 'No other city has free garage space' : 'Park and ship to another city'}>
+              {shipping ? 'Cancel' : 'Ship'}
+            </button>
+          </>
         ) : (
           <>
             {inCurrentCity && !hasActive && (
@@ -102,8 +111,13 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
         )}
       </div>
       {err && <p className="text-[13px] text-blood-400 mt-1">{err}</p>}
-      {shipping && !v.is_active && (
+      {shipping && (
         <div className="mt-2 pt-2 border-t border-ink-100/10 text-xs space-y-2">
+          {v.is_active && (
+            <p className="text-[12px] text-yellow-300/85">
+              Shipping your active car parks it first — you’ll be on foot until it arrives.
+            </p>
+          )}
           <select className="w-full" value={to} onChange={e => setTo(e.target.value)}>
             <option value="">— Destination —</option>
             {destinations.map(g => (
