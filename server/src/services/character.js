@@ -477,5 +477,13 @@ export function publicCharacter(ch) {
     // cycle as cash / energy / etc.
     premium_points: ch.premium_points || 0,
     is_admin: !!ch.is_admin,
+    // Equipped clothing — parsed JSON map of slot → item_id. The
+    // wardrobe page / dashboard / player profile uses this to render
+    // the cosmetic outfit. Empty {} when nothing is on.
+    equipped_clothing: (() => {
+      if (!ch.equipped_clothing) return {};
+      try { return JSON.parse(ch.equipped_clothing) || {}; }
+      catch { return {}; }
+    })(),
   };
 }

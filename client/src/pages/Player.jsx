@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar.jsx';
 import Card from '../components/Card.jsx';
 import { fmt } from '../components/Money.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
+import ClothingSvg from '../components/ClothingSvg.jsx';
 
 function timeAgo(ts) {
   if (!ts) return 'never';
@@ -323,6 +324,28 @@ export default function Player() {
           <p className="text-[13px] text-yellow-400 mt-3">You've blocked this player.</p>
         )}
       </Card>
+
+      {/*  Outfit — cosmetic clothing  */}
+      {data.outfit && Object.values(data.outfit).some(Boolean) && (
+        <Card title="Outfit" subtitle="What they're wearing. Purely cosmetic.">
+          <div className="grid grid-cols-5 gap-2">
+            {['hat','top','bottom','shoes','accessory'].map(slot => {
+              const it = data.outfit[slot];
+              return (
+                <div key={slot} className="rounded-lg p-2 border border-ink-100/10 bg-ink-950/40 flex flex-col items-center">
+                  <div className="text-[10px] uppercase tracking-wide text-ink-100/50">
+                    {slot === 'accessory' ? 'Accessory' : slot.charAt(0).toUpperCase() + slot.slice(1)}
+                  </div>
+                  <div className="w-14 h-14 mt-1 rounded bg-ink-900/60 flex items-center justify-center">
+                    {it ? <ClothingSvg id={it.id} size={56} /> : <span className="text-ink-100/25 text-xl">·</span>}
+                  </div>
+                  <div className="text-[10px] text-ink-100/55 mt-1 line-clamp-2 min-h-[24px] text-center">{it?.name || '—'}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/*  Loadout  */}
       <Card title=" Loadout" subtitle="What this player is carrying right now.">

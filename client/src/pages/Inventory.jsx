@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import Timer from '../components/Timer.jsx';
+import ClothingSvg from '../components/ClothingSvg.jsx';
 import { fmt } from '../components/Money.jsx';
 
 // Per-card vehicle row. Surfaces the active-car state ("driving"
@@ -151,7 +152,126 @@ const TABS = [
   { id: 'drugs',    label: 'Drugs'    },
   { id: 'items',    label: 'Items'    },
   { id: 'vehicles', label: 'Vehicles' },
+  { id: 'wardrobe', label: 'Wardrobe' },
 ];
+
+const SLOT_ORDER = ['hat', 'top', 'bottom', 'shoes', 'accessory'];
+const SLOT_LABELS = { hat: 'Hat', top: 'Top', bottom: 'Bottom', shoes: 'Shoes', accessory: 'Accessory' };
+
+// Wardrobe tab — cosmetic clothing closet. Browse what you own,
+// equip/unequip per slot. Buy at the matching store (Streetwear
+// Outlet / Atelier) on the City map.
+function WardrobeTab() {
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  async function load() {
+    try { setData(await api.get('/clothing/wardrobe')); }
+    catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function equip(slot, itemId) {
+    setBusy(`${slot}:${itemId ?? 'unequip'}`); setMsg(null);
+    try {
+      await api.post('/clothing/equip', { slot, item_id: itemId });
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!data) return <Card><p className="text-xs text-ink-100/55">Loading…</p></Card>;
+  const ownedBySlot = {};
+  for (const it of data.owned) {
+    (ownedBySlot[it.slot] = ownedBySlot[it.slot] || []).push(it);
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card title="Currently wearing"
+        subtitle="Five cosmetic slots. None of it changes stats — just style. Buy more at the Streetwear Outlet or the Atelier."
+        right={
+          <div className="flex gap-2">
+            <Link to="/clothing/low"  className="btn btn-ghost text-xs">→ Streetwear</Link>
+            <Link to="/clothing/high" className="btn btn-ghost text-xs">→ Atelier</Link>
+          </div>
+        }>
+        <div className="grid grid-cols-5 gap-2">
+          {SLOT_ORDER.map(slot => {
+            const eq = data.equipped[slot];
+            return (
+              <div key={slot} className="rounded-lg p-2 border border-ink-100/10 bg-ink-950/40 flex flex-col items-center text-center">
+                <div className="text-[11px] uppercase tracking-wide text-ink-100/55 mb-1">{SLOT_LABELS[slot]}</div>
+                <div className="w-14 h-14 rounded bg-ink-900/60 flex items-center justify-center">
+                  {eq ? <ClothingSvg id={eq.id} size={56} /> : <span className="text-ink-100/30 text-2xl">·</span>}
+                </div>
+                <div className="text-[11px] text-ink-100/70 mt-1 line-clamp-2 min-h-[28px]">
+                  {eq?.name || 'Empty'}
+                </div>
+                {eq && (
+                  <button
+                    onClick={() => equip(slot, null)}
+                    disabled={busy === `${slot}:unequip`}
+                    className="text-[10px] text-ink-100/55 hover:text-blood-300 mt-1 disabled:opacity-50">
+                    Remove
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {msg && <p className="text-xs text-blood-300 mt-3">{msg}</p>}
+      </Card>
+
+      <Card title="Your closet" subtitle={`${data.owned.length} item${data.owned.length === 1 ? '' : 's'} owned across both stores.`}>
+        {data.owned.length === 0 ? (
+          <p className="text-xs text-ink-100/45">Nothing in the closet yet — visit a clothing store to pick something up.</p>
+        ) : (
+          <div className="space-y-4">
+            {SLOT_ORDER.map(slot => {
+              const items = ownedBySlot[slot] || [];
+              if (items.length === 0) return null;
+              const equippedId = data.equipped[slot]?.id;
+              return (
+                <div key={slot}>
+                  <div className="text-[11px] uppercase tracking-wide text-ink-100/55 mb-1.5">{SLOT_LABELS[slot]}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {items.map(it => {
+                      const isEquipped = equippedId === it.id;
+                      return (
+                        <div key={it.id}
+                          className={`rounded-lg p-2 border bg-ink-950/40 flex gap-2 items-center ${isEquipped ? 'border-money-500/50 bg-money-700/10' : 'border-ink-100/10'}`}>
+                          <div className="shrink-0 rounded bg-ink-900/60 border border-ink-100/10 p-1">
+                            <ClothingSvg id={it.id} size={44} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[13px] font-medium truncate">{it.name}</div>
+                            <div className="text-[11px] text-ink-100/55">{it.store === 'high' ? 'Atelier' : 'Streetwear'}</div>
+                            {isEquipped ? (
+                              <div className="text-[11px] uppercase tracking-wide text-money-300 mt-0.5">Equipped</div>
+                            ) : (
+                              <button
+                                onClick={() => equip(slot, it.id)}
+                                disabled={busy === `${slot}:${it.id}`}
+                                className="text-[11px] text-ink-100/70 hover:text-blood-300 mt-0.5">
+                                {busy === `${slot}:${it.id}` ? '…' : 'Wear'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
 
 // Loadout view — a read-only round-up of the character's current
 // state: equipped weapon, equipped armour, active vehicle, and a
@@ -446,7 +566,11 @@ export default function Inventory() {
   const [inv, setInv] = useState(null);
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
-  const [tab, setTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState(() => {
+    const t = searchParams.get('tab');
+    return TABS.some(x => x.id === t) ? t : 'overview';
+  });
   useScrollOnMessage(msg);
 
   async function load() {
@@ -786,6 +910,11 @@ export default function Inventory() {
       {/*  Loadout — single, read-only summary  */}
       {tab === 'loadout' && (
         <LoadoutTab inv={inv} />
+      )}
+
+      {/*  Wardrobe — cosmetic clothing  */}
+      {tab === 'wardrobe' && (
+        <WardrobeTab />
       )}
     </div>
   );

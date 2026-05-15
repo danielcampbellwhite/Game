@@ -7,8 +7,45 @@ import Avatar from '../components/Avatar.jsx';
 import Card from '../components/Card.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
 import LogFeed from '../components/LogFeed.jsx';
+import ClothingSvg from '../components/ClothingSvg.jsx';
 import { fmt } from '../components/Money.jsx';
 import Timer from '../components/Timer.jsx';
+
+const OUTFIT_SLOTS = ['hat', 'top', 'bottom', 'shoes', 'accessory'];
+const OUTFIT_LABELS = { hat: 'Hat', top: 'Top', bottom: 'Bottom', shoes: 'Shoes', accessory: 'Accessory' };
+
+// Small five-slot outfit strip on the dashboard. Reads
+// equipped_clothing from publicCharacter — no extra fetch. Empty
+// slots render as muted placeholders so it's clear at a glance
+// what's still missing.
+function OutfitPanel({ c }) {
+  const outfit = c?.equipped_clothing || {};
+  const total = OUTFIT_SLOTS.reduce((n, s) => n + (outfit[s] ? 1 : 0), 0);
+  return (
+    <Card title="Outfit" subtitle={total === 0
+      ? 'Nothing on. Visit a clothing store to kit yourself out.'
+      : `${total}/5 slots filled. Manage from Inventory → Wardrobe.`}
+      right={
+        <div className="flex gap-2">
+          <Link to="/inventory?tab=wardrobe" className="btn btn-ghost text-xs">Manage</Link>
+        </div>
+      }>
+      <div className="grid grid-cols-5 gap-2">
+        {OUTFIT_SLOTS.map(slot => {
+          const id = outfit[slot];
+          return (
+            <div key={slot} className="rounded-lg p-2 border border-ink-100/10 bg-ink-950/40 flex flex-col items-center">
+              <div className="text-[10px] uppercase tracking-wide text-ink-100/50">{OUTFIT_LABELS[slot]}</div>
+              <div className="w-14 h-14 mt-1 rounded bg-ink-900/60 flex items-center justify-center">
+                {id ? <ClothingSvg id={id} size={56} /> : <span className="text-ink-100/25 text-xl">·</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 // ── Evidence Board ────────────────────────────────────────────
 //
@@ -633,6 +670,7 @@ export default function Dashboard() {
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 
       <CharacterSheet c={c} onAvatarChange={refresh} />
+      <OutfitPanel c={c} />
 
       {c.at_max_level && (c.prestige || 0) < 5 && (
         <RetirementCard c={c} onDone={refresh} />

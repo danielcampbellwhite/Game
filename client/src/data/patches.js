@@ -9,6 +9,36 @@
 
 export const PATCHES = [
   {
+    version: '0.9.15',
+    date: '2026-05-15',
+    title: 'Clothing — Streetwear Outlet & Atelier (cosmetic)',
+    sections: [
+      {
+        heading: 'Two new stores',
+        notes: [
+          'Streetwear Outlet (low-end) and Atelier (high-end) are now on the City map as physical locations — walk or drive over to shop. Cheap & flashy vs. tailored & subtle.',
+          'Five cosmetic slots: hat, top, bottom, shoes, accessory. Purely visual — no stat effects, just style. 20 items spread across the two stores.',
+          'Stock includes: snapbacks, tracksuits, hoodies, baggy jeans, white sneakers, gold chains and a chunky diver watch (Streetwear); fedoras, bespoke suit, silk shirt, tailored trousers, Italian loafers, Rolex Submariner and a Patek Philippe Nautilus (Atelier).',
+        ],
+      },
+      {
+        heading: 'Hand-coded SVG illustrations',
+        notes: [
+          'Every item ships with a richly shaded vector illustration — gradients, fabric folds, stitching, buttons, brand details. Not photo-real, but distinctly hand-crafted and consistent across the catalogue.',
+          'The catalogue supports an optional `image` field — drop a real WebP/PNG into the project later and it can supersede the SVG per item.',
+        ],
+      },
+      {
+        heading: 'Visibility',
+        notes: [
+          'New Wardrobe tab on the Inventory page — five equipped-slot panel up top, your closet underneath. Click an owned item to wear it; tap Remove on a slot to clear.',
+          'New Outfit card on the Dashboard — see what you\'re wearing at a glance.',
+          'Other players\' /players/:id pages now show their outfit when they have any clothing on. Cosmetic peacocking is a feature.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.14',
     date: '2026-05-15',
     title: 'Loadout — a single round-up of what you\'re carrying',

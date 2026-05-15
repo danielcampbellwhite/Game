@@ -624,6 +624,24 @@ export function initDb() {
   // this character (see services/weight.js). NULL means "needs migrate"
   // and applyTick will run it lazily.
   addColumnIfMissing('characters', 'weight_migrated_at', 'INTEGER');
+  // Equipped clothing — JSON map of slot → item_id, e.g.
+  // {"hat":"snapback_red","top":"hoodie_blood","accessory":"rolex_submariner"}.
+  // Catalog + slot list live in data-clothing.js. NULL = nothing
+  // equipped, treated as {} by services/clothing.js.
+  addColumnIfMissing('characters', 'equipped_clothing', 'TEXT');
+
+  // Clothing owned — one row per (character, clothing item). Items are
+  // non-stackable cosmetics, so qty is implicit at 1.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS clothing_owned (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      char_id     INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      item_id     TEXT    NOT NULL,
+      acquired_at INTEGER NOT NULL,
+      UNIQUE(char_id, item_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_clothing_char ON clothing_owned(char_id);
+  `);
 
   // Stash table — extra inventory held outside the player's pocket.
   // Personal items continue to live in the existing `inventory` table.

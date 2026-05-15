@@ -37,6 +37,8 @@ export const LOCATIONS = {
   fence:          { name: 'The Fence',          emoji: '',  route: '/fence',          travelable: true,  gated: true  },
   general_store:  { name: 'General Store',      emoji: '',  route: '/general-store',  travelable: true,  gated: true  },
   job_board:      { name: 'Job Board',          emoji: '',  route: '/job-board',      travelable: true,  gated: true  },
+  clothing_low:   { name: 'Streetwear Outlet',  emoji: '',  route: '/clothing/low',   travelable: true,  gated: true  },
+  clothing_high:  { name: 'Atelier',            emoji: '',  route: '/clothing/high',  travelable: true,  gated: true  },
   // Forced-state locations — you don't travel to them, you arrive
   // because something happened. Listed so the slug is recognised by
   // the lookup and the UI can render a name/emoji.

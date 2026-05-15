@@ -5,6 +5,7 @@ import { publicProfileFor, loadCharacterById } from '../services/character.js';
 import { gangBadgeFor } from '../services/gangs.js';
 import { murderEligibility } from '../services/pvp.js';
 import { weaponById, armourById, vehicleById, cityById, propertyById, businessById, computeBusiness } from '../data.js';
+import { publicOutfitForChar } from '../services/clothing.js';
 
 const router = Router();
 
@@ -123,6 +124,9 @@ router.get('/:id', requireAuth, requireCharacter, (req, res) => {
     profile: publicProfileFor(target, req.character.id, gangBadgeFor, req.character.city),
     blocks_you: !!blocked,
     you_block: !!youBlocked,
+    // Cosmetic outfit — what they're wearing. JSON {slot: {id, name}}
+    // or null per slot. Rendered as a strip on the profile page.
+    outfit: publicOutfitForChar(target.id),
     // Murder is gated to opposing-gang members during an active war in the
     // contested city. Surface the result here so the client can hide the
     // Murder button when it would always fail.
