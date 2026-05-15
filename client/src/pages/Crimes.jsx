@@ -50,7 +50,7 @@ function PlayerCrimes({ character }) {
 
   return (
     <Card title="Player Crimes" subtitle="Felonies against another player. Every outcome lands you in jail — no exceptions." collapsible>
-      <div className="grid sm:grid-cols-2 gap-3 mb-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
         <button onClick={() => toggle('rob')}
           className={`text-left rounded-lg p-3 border transition ${open === 'rob' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
           <div className="font-medium">Rob a Player</div>
@@ -66,6 +66,14 @@ function PlayerCrimes({ character }) {
             Async hit. Pick bullets if you've got a gun. Permadeath on success — but jail either way.
           </div>
           <div className="text-[12px] text-ink-100/40 mt-1">25 energy · 24h cooldown · per-bullet hit rolls</div>
+        </button>
+        <button onClick={() => nav('/burglary')}
+          className="text-left rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 transition">
+          <div className="font-medium">Break and Enter</div>
+          <div className="text-[13px] text-ink-100/55 mt-1">
+            Crack another player's home in this city. Stealth roll against their installed defences — clean wins skim cash from their wallet.
+          </div>
+          <div className="text-[12px] text-ink-100/40 mt-1">Energy + 1h cooldown · INT/SPD vs property defence</div>
         </button>
       </div>
 

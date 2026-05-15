@@ -184,7 +184,6 @@ function AroundTown() {
 
 const UNDERWORLD = [
   { to: '/drugs',      slug: null,        name: 'The Drug Market',          blurb: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the size of the flip.' },
-  { to: '/burglary',   slug: null,        name: 'Break and Enter',          blurb: 'Crack another player\'s home in this city. Roll your stealth against their installed defences — clean wins skim cash from their wallet.' },
   { to: '/chop-shop',  slug: 'chop_shop', name: 'Chop Shop & Black Market', blurb: 'Move stolen vehicles fast (cheap) or via the dealer (risky).' },
   { to: '/fence',      slug: 'fence',     name: 'The Fence',                blurb: 'Wash illegal cash into legal at 70% — your relationship with the local fence buys you a few extra points.' },
   { to: '/casino',     slug: 'casino',    name: 'The Lucky Crown Casino',   blurb: 'Roulette, blackjack, slots — try your luck against the house. Open afternoons through to early morning.' },
