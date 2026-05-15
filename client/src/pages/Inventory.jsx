@@ -150,7 +150,123 @@ const TABS = [
   { id: 'drugs',    label: 'Drugs'    },
   { id: 'items',    label: 'Items'    },
   { id: 'vehicles', label: 'Vehicles' },
+  { id: 'loadouts', label: 'Loadouts' },
 ];
+
+// Loadouts — named gear snapshots. Save current equipped weapon /
+// armour / active vehicle and a memo of personal inventory, then
+// Apply to swap back later. Inventory list is informational only;
+// equip/equip/activate is the auto-restored part.
+function LoadoutsTab({ onChange, refresh }) {
+  const [loadouts, setLoadouts] = useState(null);
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState(null);
+
+  async function load() {
+    try { setLoadouts((await api.get('/loadouts')).loadouts); }
+    catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function save() {
+    const n = name.trim();
+    if (!n) return;
+    setBusy('save'); setMsg(null);
+    try {
+      const r = await api.post('/loadouts', { name: n });
+      setMsg(`Saved: ${r.loadout.name}`);
+      setName('');
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function apply(id) {
+    setBusy(`a-${id}`); setMsg(null);
+    try {
+      const r = await api.post(`/loadouts/${id}/apply`, {});
+      const a = (r.applied || []).map(x => x.name).join(', ') || 'nothing to change';
+      const s = (r.skipped || []).map(x => `${x.kind}: ${x.reason}`).join(' · ');
+      setMsg(`Applied — ${a}${s ? ` · Skipped: ${s}` : ''}`);
+      await refresh?.();
+      await onChange?.();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function remove(id) {
+    if (!window.confirm('Delete this loadout?')) return;
+    setBusy(`d-${id}`); setMsg(null);
+    try {
+      await api.delete(`/loadouts/${id}`);
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!loadouts) return <Card><p className="text-xs text-ink-100/55">Loading…</p></Card>;
+
+  return (
+    <div className="space-y-4">
+      <Card title="Save current gear as a loadout"
+        subtitle="A named snapshot of your equipped weapon, armour, active vehicle, and personal inventory. Apply later to swap back in one tap.">
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value.slice(0, 32))}
+            placeholder="e.g. Bank Heist, Street Run"
+            className="flex-1 px-2 py-1.5 text-sm rounded-md bg-ink-950/60 border border-ink-100/15 focus:border-blood-500/50 outline-none" />
+          <button onClick={save} disabled={!name.trim() || busy === 'save'}
+            className="btn btn-primary text-xs">{busy === 'save' ? '…' : 'Save'}</button>
+        </div>
+        {msg && <p className="text-[12px] text-money-300 mt-2">{msg}</p>}
+      </Card>
+
+      <Card title={`Saved loadouts (${loadouts.length})`}
+        subtitle="Apply equips the saved weapon / armour and activates the saved car when possible. Items list is a memo — move them in or out manually.">
+        {loadouts.length === 0 ? (
+          <p className="text-xs text-ink-100/45">Nothing saved yet. Set up your gear, then save it above.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {loadouts.map(l => (
+              <div key={l.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 flex flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="font-medium truncate">{l.name}</div>
+                  <span className="text-[11px] text-ink-100/45">{new Date(l.created_at).toLocaleDateString()}</span>
+                </div>
+                <div className="text-[13px] text-ink-100/70 space-y-0.5">
+                  <div>Weapon: <span className="text-ink-100/90">{l.weapon_name}</span></div>
+                  <div>Armour: <span className="text-ink-100/90">{l.armour_name}</span></div>
+                  <div>Car: <span className="text-ink-100/90">{l.vehicle?.name || 'none / sold'}</span></div>
+                  <div className="text-ink-100/55">{l.item_count} item type{l.item_count === 1 ? '' : 's'} in saved pocket</div>
+                </div>
+                {l.items && l.items.length > 0 && (
+                  <details className="text-[12px] text-ink-100/55">
+                    <summary className="cursor-pointer hover:text-ink-100/85">Show saved items</summary>
+                    <ul className="mt-1 ml-3 space-y-0.5">
+                      {l.items.map(it => (
+                        <li key={`${it.kind}:${it.item_id}`}>{it.name} ×{it.qty} <span className="text-ink-100/35">({it.kind})</span></li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                <div className="flex gap-2 mt-1">
+                  <button onClick={() => apply(l.id)} disabled={busy === `a-${l.id}`}
+                    className="btn btn-primary text-xs flex-1">{busy === `a-${l.id}` ? '…' : 'Apply'}</button>
+                  <button onClick={() => remove(l.id)} disabled={busy === `d-${l.id}`}
+                    className="btn btn-ghost text-xs">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
 
 // Carry-weight bar — Personal (always shown) and House stash (when the
 // character owns a property in the current city). Hard cap on Personal
@@ -691,6 +807,11 @@ export default function Inventory() {
             </div>
           )}
         </Card>
+      )}
+
+      {/*  Loadouts  */}
+      {tab === 'loadouts' && (
+        <LoadoutsTab onChange={load} refresh={refresh} />
       )}
     </div>
   );
