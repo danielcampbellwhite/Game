@@ -119,19 +119,26 @@ export function applyTick(ch) {
     }
   }
 
-  // Hospital expired? full heal.
+  // Hospital expired? full heal + step out onto the street. The
+  // discharge transition is the only time we forcibly relocate
+  // out of 'hospital' — players can voluntarily travel to the
+  // building (to pay for early discharge for a friend, etc.) and
+  // we don't want a passing tick to nuke that.
   if (ch.hospital_until && ch.hospital_until <= now) {
     ch.health = ch.max_health;
     ch.hospital_until = null;
     ch.hospital_reason = null;
     ch.last_health_tick = now;
+    if (ch.current_location === 'hospital') forceLocation(ch, 'streets');
     writeLog(ch.id, 'hospital', ' Discharged from hospital — full health.', null, true);
   }
-  // Jail expired
+  // Jail expired — same: step out onto the street as part of the
+  // release transition, but don't snap voluntary visits.
   if (ch.jail_until && ch.jail_until <= now) {
     ch.jail_until = null;
     ch.jail_reason = null;
     ch.jail_sentence_ms = null;
+    if (ch.current_location === 'jail') forceLocation(ch, 'streets');
     writeLog(ch.id, 'jail', ' Released from jail — sentence served.', null, true);
   }
   // Travel arrival
@@ -152,12 +159,12 @@ export function applyTick(ch) {
 
   // Sync the location slug with forced states so admitted/jailed
   // characters aren't locked out of /api/hospital or /api/jail.
+  // The transition OUT of either state is handled inside the
+  // hospital/jail-expired blocks above (snap to streets only when
+  // we're actually discharging). Voluntarily standing at either
+  // building is fine and gets left alone.
   if (ch.hospital_until && ch.hospital_until > now) forceLocation(ch, 'hospital');
   else if (ch.jail_until && ch.jail_until > now)    forceLocation(ch, 'jail');
-  else if (ch.current_location === 'hospital' || ch.current_location === 'jail') {
-    // Released or discharged — step back out onto the street.
-    forceLocation(ch, 'streets');
-  }
   if (!ch.current_location) ch.current_location = 'streets';
 
   // One-time weight migration — snaps personal carry down to the cap
