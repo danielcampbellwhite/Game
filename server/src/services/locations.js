@@ -47,10 +47,12 @@ export const LOCATIONS = {
   airport:        { name: 'Airport',            route: '/travel',         travelable: true,  gated: true,  desc: 'Flights to other cities. Set your destination, pay your fare, wheels up.' },
   drug_market:    { name: 'The Block',          route: '/drugs',          travelable: true,  gated: true,  desc: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the flip size.' },
   high_street:    { name: 'High Street',        route: '/high-street',    travelable: true,  gated: true,  desc: 'Coffee shop, pharmacy, off-licence, deli, gift shop — all on one block.' },
-  // Forced-state locations — you don't travel to them, you arrive
-  // because something happened. Listed so the slug is recognised by
-  // the lookup and the UI can render a name/emoji.
-  jail:           { name: 'Jail',               route: '/jail',           travelable: false, gated: false, desc: 'You don\'t pick this destination. It picks you.' },
+  // Jail used to be forced-only — you arrived because you got booked.
+  // Now it's also a travel destination so you can voluntarily walk
+  // in to bail a friend out or attempt a jailbreak. effectiveLocation
+  // still snaps to 'jail' for active sentences (forced state takes
+  // precedence over current_location).
+  jail:           { name: 'Jail',               route: '/jail',           travelable: true,  gated: true,  desc: 'Holding cells and the bail desk. Drop in to spring a friend or break someone out.' },
 };
 
 export function locationMeta(slug) {
