@@ -11,30 +11,13 @@ export const PATCHES = [
   {
     version: '0.9.14',
     date: '2026-05-15',
-    title: 'Loadouts — save your gear, swap in one tap',
+    title: 'Loadout — a single round-up of what you\'re carrying',
     sections: [
       {
-        heading: 'What it does',
+        heading: 'New Loadout tab on Inventory',
         notes: [
-          'New Loadouts tab on the Inventory page. Save your current equipped weapon, armour, active vehicle, and a snapshot of your personal inventory under a name.',
-          'Apply a saved loadout to re-equip the weapon + armour and re-activate the car in one click. Skipped items get a reason — "not owned", "in transit", "in Tokyo" — so it\'s obvious what didn\'t restore.',
-          'Up to 10 named loadouts per character. Saving with an existing name overwrites it.',
-        ],
-      },
-      {
-        heading: 'What gets saved',
-        notes: [
-          'Equipped weapon (e.g. Glock 17). Re-equips on apply if still owned.',
-          'Equipped armour (e.g. Kevlar Vest). Re-equips on apply if still owned.',
-          'Active vehicle (specific car, by row id). Re-activates on apply if still owned, in your current city, and not mid-shipping.',
-          'Personal inventory (every kind/item/qty in your pocket at save time). Stored as a memo — apply doesn\'t auto-gather, you still need to transfer manually if you want it back exactly. Phase 2 will add auto-gather from house and vehicle stash.',
-        ],
-      },
-      {
-        heading: 'Under the hood',
-        notes: [
-          'New loadouts table — (char_id, name) unique, ON DELETE CASCADE. Vehicle FK is ON DELETE SET NULL so a sold/chopped car gracefully shows "none / sold" in the UI.',
-          'New endpoints: GET /api/loadouts, POST /api/loadouts (save), POST /:id/apply, DELETE /:id. All work from anywhere — same as /inventory/equip.',
+          'A live, read-only summary screen showing your equipped weapon (with ammo count), equipped armour, active vehicle, all three weight bars, and a grouped snapshot of personal inventory.',
+          'No save / apply — this IS your loadout, always reflecting the current state. To change it, equip something elsewhere on the page and come back; the panel auto-updates.',
         ],
       },
     ],

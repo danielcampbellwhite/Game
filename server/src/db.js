@@ -680,24 +680,6 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_stash_char    ON stash(char_id);
     CREATE INDEX IF NOT EXISTS idx_stash_house   ON stash(char_id, container, city);
     CREATE INDEX IF NOT EXISTS idx_stash_vehicle ON stash(char_id, container, vehicle_id);
-
-    --  Loadouts — named gear snapshots that a player can roll back to.
-    -- Stores the equipped weapon/armour, the active vehicle row id,
-    -- and a JSON snapshot of personal inventory at save time. Apply
-    -- equips/activates what's still owned; the items list is for
-    -- visibility (player can transfer in/out manually).
-    CREATE TABLE IF NOT EXISTS loadouts (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      char_id     INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-      name        TEXT    NOT NULL,
-      weapon      TEXT,
-      armour      TEXT,
-      vehicle_id  INTEGER REFERENCES vehicles_owned(id) ON DELETE SET NULL,
-      items_json  TEXT    NOT NULL DEFAULT '[]',
-      created_at  INTEGER NOT NULL,
-      UNIQUE(char_id, name)
-    );
-    CREATE INDEX IF NOT EXISTS idx_loadouts_char ON loadouts(char_id);
   `);
   // Admin/god flag. The very first user to call /api/admin/promote-self
   // (gated by ADMIN_TOKEN) is granted admin; thereafter the flag is the

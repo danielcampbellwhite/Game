@@ -144,121 +144,95 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
 // and make it easier to find a specific category.
 const TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'loadout',  label: 'Loadout'  },
   { id: 'weapons',  label: 'Weapons'  },
   { id: 'armour',   label: 'Armour'   },
   { id: 'ammo',     label: 'Ammo'     },
   { id: 'drugs',    label: 'Drugs'    },
   { id: 'items',    label: 'Items'    },
   { id: 'vehicles', label: 'Vehicles' },
-  { id: 'loadouts', label: 'Loadouts' },
 ];
 
-// Loadouts — named gear snapshots. Save current equipped weapon /
-// armour / active vehicle and a memo of personal inventory, then
-// Apply to swap back later. Inventory list is informational only;
-// equip/equip/activate is the auto-restored part.
-function LoadoutsTab({ onChange, refresh }) {
-  const [loadouts, setLoadouts] = useState(null);
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(null);
-  const [msg, setMsg] = useState(null);
-
-  async function load() {
-    try { setLoadouts((await api.get('/loadouts')).loadouts); }
-    catch (e) { setMsg(e.message); }
-  }
-  useEffect(() => { load(); }, []);
-
-  async function save() {
-    const n = name.trim();
-    if (!n) return;
-    setBusy('save'); setMsg(null);
-    try {
-      const r = await api.post('/loadouts', { name: n });
-      setMsg(`Saved: ${r.loadout.name}`);
-      setName('');
-      await load();
-    } catch (e) { setMsg(e.message); }
-    finally { setBusy(null); }
-  }
-
-  async function apply(id) {
-    setBusy(`a-${id}`); setMsg(null);
-    try {
-      const r = await api.post(`/loadouts/${id}/apply`, {});
-      const a = (r.applied || []).map(x => x.name).join(', ') || 'nothing to change';
-      const s = (r.skipped || []).map(x => `${x.kind}: ${x.reason}`).join(' · ');
-      setMsg(`Applied — ${a}${s ? ` · Skipped: ${s}` : ''}`);
-      await refresh?.();
-      await onChange?.();
-      await load();
-    } catch (e) { setMsg(e.message); }
-    finally { setBusy(null); }
-  }
-
-  async function remove(id) {
-    if (!window.confirm('Delete this loadout?')) return;
-    setBusy(`d-${id}`); setMsg(null);
-    try {
-      await api.delete(`/loadouts/${id}`);
-      await load();
-    } catch (e) { setMsg(e.message); }
-    finally { setBusy(null); }
-  }
-
-  if (!loadouts) return <Card><p className="text-xs text-ink-100/55">Loading…</p></Card>;
+// Loadout view — a read-only round-up of the character's current
+// state: equipped weapon, equipped armour, active vehicle, and a
+// snapshot of personal inventory. Single panel, no save/apply — this
+// IS the loadout, always reflecting the live state.
+function LoadoutTab({ inv }) {
+  if (!inv) return <Card><p className="text-xs text-ink-100/55">Loading…</p></Card>;
+  const eq = inv.equipped;
+  const activeVeh = inv.vehicles.find(v => v.is_active) || null;
+  const ammoForEq = eq.weapon_detail?.ammoType
+    ? (inv.ammo.find(a => a.id === eq.weapon_detail.ammoType)?.qty || 0)
+    : null;
+  // Group the personal inventory for a tidy at-a-glance summary.
+  const groups = [
+    { key: 'weapons', title: 'Weapons', items: inv.weapons.filter(w => w.id !== 'fists') },
+    { key: 'armour',  title: 'Armour',  items: inv.armours },
+    { key: 'ammo',    title: 'Ammo',    items: inv.ammo },
+    { key: 'drugs',   title: 'Drugs',   items: inv.drugs },
+    { key: 'items',   title: 'Items',   items: inv.misc },
+  ];
 
   return (
     <div className="space-y-4">
-      <Card title="Save current gear as a loadout"
-        subtitle="A named snapshot of your equipped weapon, armour, active vehicle, and personal inventory. Apply later to swap back in one tap.">
-        <div className="flex gap-2 items-center">
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value.slice(0, 32))}
-            placeholder="e.g. Bank Heist, Street Run"
-            className="flex-1 px-2 py-1.5 text-sm rounded-md bg-ink-950/60 border border-ink-100/15 focus:border-blood-500/50 outline-none" />
-          <button onClick={save} disabled={!name.trim() || busy === 'save'}
-            className="btn btn-primary text-xs">{busy === 'save' ? '…' : 'Save'}</button>
+      <Card title="Loadout" subtitle="Everything you're currently carrying / driving — at a glance.">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Weapon */}
+          <div className="rounded-lg p-3 border border-blood-500/40 bg-blood-700/10">
+            <div className="text-[12px] uppercase tracking-wide text-ink-100/55">Weapon</div>
+            <div className="font-medium mt-0.5">{eq.weapon_detail?.name || 'Fists'}</div>
+            <div className="text-[13px] text-ink-100/65">
+              DMG {eq.weapon_detail?.dmg ?? 4}
+              {eq.weapon_detail?.ammoType
+                ? ` · ${eq.weapon_detail.ammoType} (${ammoForEq} rounds)`
+                : ' · melee'}
+            </div>
+          </div>
+
+          {/* Armour */}
+          <div className="rounded-lg p-3 border border-ink-100/15 bg-ink-950/40">
+            <div className="text-[12px] uppercase tracking-wide text-ink-100/55">Armour</div>
+            <div className="font-medium mt-0.5">{eq.armour_detail?.name || 'No Armour'}</div>
+            <div className="text-[13px] text-ink-100/65">DEF {eq.armour_detail?.def ?? 0}</div>
+          </div>
+
+          {/* Active vehicle */}
+          <div className="rounded-lg p-3 border border-money-500/40 bg-money-700/10">
+            <div className="text-[12px] uppercase tracking-wide text-ink-100/55">Vehicle</div>
+            {activeVeh ? (
+              <>
+                <div className="font-medium mt-0.5 truncate">{activeVeh.maker} {activeVeh.name}</div>
+                <div className="text-[13px] text-ink-100/65">
+                  Tier {activeVeh.tier}
+                  {typeof activeVeh.condition === 'number' && ` · ${Math.round(activeVeh.condition)}% cond.`}
+                </div>
+              </>
+            ) : (
+              <div className="text-[13px] text-ink-100/55 italic mt-0.5">On foot</div>
+            )}
+          </div>
         </div>
-        {msg && <p className="text-[12px] text-money-300 mt-2">{msg}</p>}
       </Card>
 
-      <Card title={`Saved loadouts (${loadouts.length})`}
-        subtitle="Apply equips the saved weapon / armour and activates the saved car when possible. Items list is a memo — move them in or out manually.">
-        {loadouts.length === 0 ? (
-          <p className="text-xs text-ink-100/45">Nothing saved yet. Set up your gear, then save it above.</p>
+      <WeightCard weight={inv.weight} />
+
+      <Card title="What's on you"
+        subtitle="A live snapshot of your personal inventory. Use the per-category tabs above to manage individual items.">
+        {groups.every(g => g.items.length === 0) ? (
+          <p className="text-xs text-ink-100/45">Pockets are empty.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {loadouts.map(l => (
-              <div key={l.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 flex flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="font-medium truncate">{l.name}</div>
-                  <span className="text-[11px] text-ink-100/45">{new Date(l.created_at).toLocaleDateString()}</span>
-                </div>
-                <div className="text-[13px] text-ink-100/70 space-y-0.5">
-                  <div>Weapon: <span className="text-ink-100/90">{l.weapon_name}</span></div>
-                  <div>Armour: <span className="text-ink-100/90">{l.armour_name}</span></div>
-                  <div>Car: <span className="text-ink-100/90">{l.vehicle?.name || 'none / sold'}</span></div>
-                  <div className="text-ink-100/55">{l.item_count} item type{l.item_count === 1 ? '' : 's'} in saved pocket</div>
-                </div>
-                {l.items && l.items.length > 0 && (
-                  <details className="text-[12px] text-ink-100/55">
-                    <summary className="cursor-pointer hover:text-ink-100/85">Show saved items</summary>
-                    <ul className="mt-1 ml-3 space-y-0.5">
-                      {l.items.map(it => (
-                        <li key={`${it.kind}:${it.item_id}`}>{it.name} ×{it.qty} <span className="text-ink-100/35">({it.kind})</span></li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-                <div className="flex gap-2 mt-1">
-                  <button onClick={() => apply(l.id)} disabled={busy === `a-${l.id}`}
-                    className="btn btn-primary text-xs flex-1">{busy === `a-${l.id}` ? '…' : 'Apply'}</button>
-                  <button onClick={() => remove(l.id)} disabled={busy === `d-${l.id}`}
-                    className="btn btn-ghost text-xs">Delete</button>
-                </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {groups.map(g => g.items.length === 0 ? null : (
+              <div key={g.key} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
+                <div className="text-[12px] uppercase tracking-wide text-ink-100/55 mb-1">{g.title}</div>
+                <ul className="text-[13px] space-y-0.5">
+                  {g.items.map(it => (
+                    <li key={it.id} className="flex items-baseline justify-between gap-2">
+                      <span className="truncate">{it.name}</span>
+                      <span className="text-ink-100/55 tabular-nums shrink-0">×{it.qty}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
@@ -809,9 +783,9 @@ export default function Inventory() {
         </Card>
       )}
 
-      {/*  Loadouts  */}
-      {tab === 'loadouts' && (
-        <LoadoutsTab onChange={load} refresh={refresh} />
+      {/*  Loadout — single, read-only summary  */}
+      {tab === 'loadout' && (
+        <LoadoutTab inv={inv} />
       )}
     </div>
   );
