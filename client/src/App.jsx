@@ -134,6 +134,24 @@ function ScrollToTop() {
   return null;
 }
 
+// Bounces the player back to the City map when a gated page hits a
+// "you're not at this location" 409. The api wrapper fires the event;
+// we own navigation up here so api.js doesn't need router awareness.
+function LocationGateRouter() {
+  const nav = useNavigate();
+  const location = useLocation();
+  const pathRef = React.useRef(location.pathname);
+  React.useEffect(() => { pathRef.current = location.pathname; }, [location.pathname]);
+  useEffect(() => {
+    const handler = () => {
+      if (pathRef.current !== '/city') nav('/city', { replace: true });
+    };
+    window.addEventListener('mafia:not-at-location', handler);
+    return () => window.removeEventListener('mafia:not-at-location', handler);
+  }, [nav]);
+  return null;
+}
+
 function BootSpinner() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-ink-1000">
@@ -151,6 +169,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
+      {token && character ? <LocationGateRouter /> : null}
       {token && character ? (
         <>
           <div className="sticky top-0 z-30">

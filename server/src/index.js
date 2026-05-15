@@ -65,6 +65,9 @@ import trialsRoutes from './routes/trials.js';
 import premiumRoutes from './routes/premium.js';
 import friendsRoutes from './routes/friends.js';
 import chatRoutes from './routes/chat.js';
+import locationsRoutes from './routes/locations.js';
+import { requireAuth, requireCharacter } from './middleware/auth.js';
+import { requireAtLocation } from './middleware/location.js';
 import { handleStripeWebhook } from './services/stripe.js';
 
 const PORT = process.env.PORT || 4000;
@@ -89,13 +92,34 @@ app.use(express.json({ limit: '256kb' }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+// Physical-location gates. Each of these services now requires the
+// player to be standing at the matching building — see services/
+// locations.js. Mount-level middleware fires before each route's own
+// requireAuth/requireCharacter; the duplicate downstream calls are a
+// no-op on a per-tick basis.
+const atBank          = [requireAuth, requireCharacter, requireAtLocation('bank')];
+const atGunStore      = [requireAuth, requireCharacter, requireAtLocation('gun_store')];
+const atDealership    = [requireAuth, requireCharacter, requireAtLocation('dealership')];
+const atChopShop      = [requireAuth, requireCharacter, requireAtLocation('chop_shop')];
+const atRepair        = [requireAuth, requireCharacter, requireAtLocation('repair')];
+const atGym           = [requireAuth, requireCharacter, requireAtLocation('gym')];
+const atRange         = [requireAuth, requireCharacter, requireAtLocation('range')];
+const atUniversity    = [requireAuth, requireCharacter, requireAtLocation('university')];
+const atDrivingSchool = [requireAuth, requireCharacter, requireAtLocation('driving_school')];
+const atHospital      = [requireAuth, requireCharacter, requireAtLocation('hospital')];
+const atCasino        = [requireAuth, requireCharacter, requireAtLocation('casino')];
+const atBookmaker     = [requireAuth, requireCharacter, requireAtLocation('bookmaker')];
+const atFence         = [requireAuth, requireCharacter, requireAtLocation('fence')];
+const atGeneralStore  = [requireAuth, requireCharacter, requireAtLocation('general_store')];
+const atJobBoard      = [requireAuth, requireCharacter, requireAtLocation('job_board')];
+
 app.use('/api/auth', authRoutes);
 app.use('/api/character', characterRoutes);
 app.use('/api/world', worldRoutes);
 app.use('/api/crimes', crimeRoutes);
 app.use('/api/jail', jailRoutes);
-app.use('/api/hospital', hospitalRoutes);
-app.use('/api/job-board', jobBoardRoutes);
+app.use('/api/hospital', atHospital, hospitalRoutes);
+app.use('/api/job-board', atJobBoard, jobBoardRoutes);
 app.use('/api/player-shops', playerShopsRoutes);
 app.use('/api/trades', tradesRoutes);
 app.use('/api/murder', murderRoutes);
@@ -105,31 +129,32 @@ app.use('/api/travel', travelRoutes);
 app.use('/api/drugs', drugRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/combat', combatRoutes);
-app.use('/api/bank', bankRoutes);
+app.use('/api/locations', locationsRoutes);
+app.use('/api/bank', atBank, bankRoutes);
 app.use('/api/stocks', stockRoutes);
 app.use('/api/properties', propertyRoutes);
-app.use('/api/gym', gymRoutes);
-app.use('/api/range', rangeRoutes);
-app.use('/api/university', universityRoutes);
+app.use('/api/gym', atGym, gymRoutes);
+app.use('/api/range', atRange, rangeRoutes);
+app.use('/api/university', atUniversity, universityRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/daily', dailyRoutes);
-app.use('/api/dealership', dealershipRoutes);
-app.use('/api/chopshop', chopshopRoutes);
-app.use('/api/gunstore', gunstoreRoutes);
-app.use('/api/repair', repairRoutes);
-app.use('/api/driving-school', drivingSchoolRoutes);
+app.use('/api/dealership', atDealership, dealershipRoutes);
+app.use('/api/chopshop', atChopShop, chopshopRoutes);
+app.use('/api/gunstore', atGunStore, gunstoreRoutes);
+app.use('/api/repair', atRepair, repairRoutes);
+app.use('/api/driving-school', atDrivingSchool, drivingSchoolRoutes);
 app.use('/api/races', racesRoutes);
 app.use('/api/factions', factionsRoutes);
 app.use('/api/bounties', bountiesRoutes);
 app.use('/api/contracts', contractsRoutes);
 app.use('/api/shops', shopsRoutes);
 app.use('/api/specialisations', specialisationsRoutes);
-app.use('/api/fence', fenceRoutes);
-app.use('/api/casino', casinoRoutes);
-app.use('/api/bookmaker', bookmakerRoutes);
+app.use('/api/fence', atFence, fenceRoutes);
+app.use('/api/casino', atCasino, casinoRoutes);
+app.use('/api/bookmaker', atBookmaker, bookmakerRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/missions', missionRoutes);
-app.use('/api/general-store', generalStoreRoutes);
+app.use('/api/general-store', atGeneralStore, generalStoreRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/players', playersRoutes);
 app.use('/api/messages', messagesRoutes);

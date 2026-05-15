@@ -22,6 +22,13 @@ async function request(method, path, body) {
     const err = new Error(data.error || `HTTP ${res.status}`);
     err.status = res.status;
     err.payload = data;
+    // Surface intra-city location/travel lockouts as a window event so
+    // App.jsx can route the player to /city without every page having
+    // to special-case the 409. See middleware/location.js.
+    if (typeof window !== 'undefined' && res.status === 409 &&
+        (data?.not_at_location || data?.intra_travel_until)) {
+      try { window.dispatchEvent(new CustomEvent('mafia:not-at-location', { detail: data })); } catch {}
+    }
     throw err;
   }
   return data;

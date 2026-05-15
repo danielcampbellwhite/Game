@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
@@ -201,10 +201,29 @@ function MiniStat({ label, value, max, color, money }) {
 }
 
 export default function Nav() {
-  const { logout, character } = useGame();
+  const { logout, character, refresh } = useGame();
   const nav = useNavigate();
   const [dmUnread, setDmUnread] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Local tick clock so the intra-city travel countdown updates every
+  // 500ms without waiting for the 30s character refresh.
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    if (!character?.intra_travel_until) return;
+    const i = setInterval(() => setClock(Date.now()), 500);
+    return () => clearInterval(i);
+  }, [character?.intra_travel_until]);
+  // When the countdown finishes, force a character refresh so the
+  // banner flips off and the player can navigate again.
+  const arrivedRef = useRef(false);
+  useEffect(() => {
+    if (!character?.intra_travel_until) { arrivedRef.current = false; return; }
+    if (arrivedRef.current) return;
+    if (clock >= character.intra_travel_until) {
+      arrivedRef.current = true;
+      refresh?.();
+    }
+  }, [clock, character?.intra_travel_until, refresh]);
   // Prev DM count for chiming on increases. null on mount so the initial
   // fetch doesn't ring; SSE deltas after that *should* ring.
   const prevDmRef = useRef(null);
@@ -230,7 +249,8 @@ export default function Nav() {
   const now = Date.now();
   const inHospital = character?.hospital_until && character.hospital_until > now;
   const inJail     = character?.jail_until     && character.jail_until     > now;
-  const lockedOut  = inHospital || inJail;
+  const inIntraTravel = character?.intra_travel_until && character.intra_travel_until > now;
+  const lockedOut  = inHospital || inJail || inIntraTravel;
 
   const linkClass = (isActive) => {
     // No `shrink-0` — on mobile (flex column) we want each link to fill
@@ -355,6 +375,18 @@ export default function Nav() {
               {inHospital ? 'Hospital — locked' : 'Jail — locked'}
             </NavLink>
           )}
+          {inIntraTravel && !inHospital && !inJail && (() => {
+            const secs = Math.max(0, Math.ceil((character.intra_travel_until - clock) / 1000));
+            const dest = (character.intra_travel_to || '').replace(/_/g, ' ');
+            const verb = character.intra_travel_mode === 'drive' ? 'Driving' : 'Walking';
+            return (
+              <NavLink to="/city"
+                onClick={() => setMenuOpen(false)}
+                className="shrink-0 px-3 py-1.5 text-xs rounded-md text-white animate-pulse whitespace-nowrap bg-cyan-700">
+                {verb} to {dest} — {secs}s
+              </NavLink>
+            );
+          })()}
           {links.map(l => (
             <NavLink key={l.to} to={l.to}
               onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}

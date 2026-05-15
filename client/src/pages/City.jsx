@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
 import Card from '../components/Card.jsx';
@@ -7,28 +7,180 @@ import WorldMap from '../components/WorldMap.jsx';
 import CityMap from '../components/CityMap.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
 
-const AROUND_TOWN = [
-  { to: '/bank',       icon: '', name: 'Bank',                     blurb: 'Deposits, withdrawals, loans, hourly interest.' },
-  { to: '/dealership', icon: '', name: 'Car Dealership',           blurb: 'Showroom — buy any of 105 vehicles, titled and clean.' },
-  { to: '/repair',     icon: '', name: 'Repair Shop',               blurb: 'Patch up your active car — cost scales with damage and book value.' },
-  { to: '/property',   icon: '', name: 'Estate Agent',             blurb: 'Flats, houses, mansions, compounds — passive bonuses. Browse player listings too.' },
-  { to: '/gun-store',  icon: '', name: 'Weapon Dealer',            blurb: 'Pistols, rifles, shotguns, snipers + ammo.' },
-  { to: '/stocks',     icon: '', name: 'Stock Broker',             blurb: 'Live tickers — MetroBank, Titan Arms, SkyJet, Nova.' },
-  { to: '/gym',        icon: '', name: 'Gym',                      blurb: '10 machines for strength, defence, speed — temporary buffs that decay.' },
-  { to: '/range',      icon: '', name: 'Shooting Range',           blurb: 'Burn ammo to train accuracy. Boosts ranged hit chance, decays over time.' },
-  { to: '/university', icon: '', name: 'University',               blurb: 'Programmes that permanently raise intelligence.', hideWhen: c => c.intelligence >= (c.stat_caps?.intelligence || Infinity) },
-  { to: '/driving-school', icon: '', name: 'Driving School',       blurb: 'Train your driving skill — boosts race odds and lessens car wear.', hideWhen: c => (c.driving || 1) >= (c.stat_caps?.driving || Infinity) },
-  { to: '/general-store', icon: '', name: 'General Store',         blurb: 'Odds, ends, and props. Most are mission gear; a few lift your mood.' },
-  { to: '/newspaper',  icon: '', name: 'The City Gazette',         blurb: 'Today\'s front page — headlines, top earners, turf footprint, police blotter.' },
-  { to: '/shop/coffee',     icon: '', name: 'Coffee Shop',           blurb: 'Espresso, energy drinks, pre-workout — quick energy refuels.' },
-  { to: '/shop/pharmacy',   icon: '', name: 'Pharmacy',              blurb: 'First aid, painkillers, vitamins — patch up between runs.' },
-  { to: '/shop/off_licence',icon: '', name: 'Off-Licence',           blurb: 'Booze and cigars — nerve, happiness, sometimes a health hit.' },
-  { to: '/shop/deli',       icon: '', name: 'Late-Night Deli',       blurb: 'Sandwiches, pizza, sushi — energy and a side of happiness.' },
-  { to: '/shop/gift_shop',  icon: '', name: 'Gift Shop',             blurb: 'Flowers, chocolates, tickets. For when somebody needs cheering up.' },
-  { to: '/travel',     icon: '', name: 'Airport',                  blurb: 'Flights to 11 other cities — economy, business, first class.' },
-  { to: '/hospital',   icon: '', name: 'Hospital',                 blurb: 'Top up health on demand, or cover the bill for another patient.' },
-  { to: '/jail',       icon: '', name: 'Jail',                     blurb: 'Visit the cells — bail a friend out, or risk a bust.' },
+// Quick links to "anywhere" services — pages you don't need to
+// physically be in a specific building to use. Kept separate from
+// the location tiles so the travel UX stays focused on real
+// destinations.
+const ANYWHERE_LINKS = [
+  { to: '/stocks',     name: 'Stock Broker',    blurb: 'Live tickers. Trade from anywhere.' },
+  { to: '/property',   name: 'Estate Agent',    blurb: 'Buy / browse / sell — all online.' },
+  { to: '/newspaper',  name: 'The City Gazette', blurb: 'Today\'s front page and the police blotter.' },
+  { to: '/travel',     name: 'Airport',         blurb: 'Flights to other cities.' },
+  { to: '/shop/coffee',     name: 'Coffee Shop',     blurb: 'Espresso, energy drinks — quick energy.' },
+  { to: '/shop/pharmacy',   name: 'Pharmacy',        blurb: 'First aid, painkillers, vitamins.' },
+  { to: '/shop/off_licence',name: 'Off-Licence',     blurb: 'Booze and cigars.' },
+  { to: '/shop/deli',       name: 'Late-Night Deli', blurb: 'Energy + a side of happiness.' },
+  { to: '/shop/gift_shop',  name: 'Gift Shop',       blurb: 'Flowers, chocolates, tickets.' },
 ];
+
+function fmtSecs(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${s}s`;
+}
+
+function LocationTile({ loc, hasVehicle, walkMs, driveMs, busy, onTravel, onEnter }) {
+  if (loc.here) {
+    return (
+      <div className="p-3 rounded-lg border border-money-500/40 bg-money-700/10 flex flex-col">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="font-medium text-sm text-money-300">{loc.name}</span>
+          <span className="text-[11px] uppercase tracking-wide text-money-400">You're here</span>
+        </div>
+        {loc.gated && (
+          <button onClick={() => onEnter(loc)} className="btn btn-primary text-xs mt-2 w-full">
+            Enter {loc.name}
+          </button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 flex flex-col">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-medium text-sm">{loc.name}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5 mt-2">
+        <button
+          disabled={busy}
+          onClick={() => onTravel(loc, 'walk')}
+          className="btn btn-ghost text-[11px] py-1">
+          Walk · {fmtSecs(walkMs)}
+        </button>
+        <button
+          disabled={busy || !hasVehicle}
+          onClick={() => onTravel(loc, 'drive')}
+          title={hasVehicle ? '' : 'Park an active vehicle first'}
+          className="btn btn-primary text-[11px] py-1 disabled:opacity-40 disabled:cursor-not-allowed">
+          Drive · {fmtSecs(driveMs)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AroundTown() {
+  const { refresh } = useGame();
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg]   = useState(null);
+  const [clock, setClock] = useState(() => Date.now());
+
+  async function load() {
+    try { setData(await api.get('/locations')); }
+    catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  // While travelling, poll fast so the countdown looks live and we
+  // catch arrival immediately. Otherwise idle.
+  useEffect(() => {
+    const i = setInterval(() => setClock(Date.now()), 500);
+    return () => clearInterval(i);
+  }, []);
+  const travellingUntil = data?.intra_travel_until;
+  useEffect(() => {
+    if (!travellingUntil) return;
+    const i = setInterval(load, 1000);
+    return () => clearInterval(i);
+  }, [travellingUntil]);
+  // On arrival flip-over, pull fresh character + locations.
+  const arrivedRef = React.useRef(false);
+  useEffect(() => {
+    if (!travellingUntil) { arrivedRef.current = false; return; }
+    if (clock >= travellingUntil && !arrivedRef.current) {
+      arrivedRef.current = true;
+      refresh?.();
+      load();
+    }
+  }, [clock, travellingUntil, refresh]);
+
+  async function startTravel(loc, mode) {
+    setBusy(true); setMsg(null);
+    try {
+      await api.post('/locations/travel', { to: loc.slug, mode });
+      await refresh?.();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(false); }
+  }
+  function enter(loc) { navigate(loc.route); }
+
+  if (!data) return <p className="text-xs text-ink-100/55">Loading…</p>;
+
+  const travelling = travellingUntil && travellingUntil > clock;
+  const here = data.locations.find(l => l.here);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border border-ink-100/10 bg-ink-900/40 p-3">
+        {travelling ? (
+          <div>
+            <div className="text-xs uppercase tracking-wide text-cyan-300">
+              {data.intra_travel_mode === 'drive' ? 'Driving' : 'Walking'} to {data.intra_travel_to?.replace(/_/g, ' ')}
+            </div>
+            <div className="text-2xl font-display mt-1 text-cyan-200 tabular-nums">
+              {fmtSecs(travellingUntil - clock)}
+            </div>
+            <p className="text-[12px] text-ink-100/55 mt-1">Locked except for chat until you arrive.</p>
+          </div>
+        ) : (
+          <div>
+            <div className="text-xs uppercase tracking-wide text-ink-100/55">You are at</div>
+            <div className="text-2xl font-display mt-0.5">{here?.name || 'On the streets'}</div>
+            <p className="text-[12px] text-ink-100/55 mt-1">
+              {data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {msg && <p className="text-xs text-blood-300">{msg}</p>}
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {data.locations
+          .filter(l => l.slug !== 'streets')
+          .map(loc => (
+            <LocationTile
+              key={loc.slug}
+              loc={loc}
+              hasVehicle={data.has_vehicle}
+              walkMs={data.walk_ms}
+              driveMs={data.drive_ms}
+              busy={busy || !!travelling}
+              onTravel={startTravel}
+              onEnter={enter}
+            />
+          ))}
+      </div>
+
+      <div className="pt-2">
+        <div className="text-[12px] uppercase tracking-wide text-ink-100/45 mb-2">Available from anywhere</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {ANYWHERE_LINKS.map(l => (
+            <Link key={l.to} to={l.to}
+              className="group flex p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
+              <div className="min-w-0">
+                <div className="font-medium text-sm group-hover:text-blood-400 transition">{l.name}</div>
+                <div className="text-[13px] text-ink-100/55 leading-snug mt-0.5">{l.blurb}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const UNDERWORLD = [
   { to: '/drugs',      icon: '', name: 'The Drug Market',          blurb: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the size of the flip.' },
@@ -210,10 +362,8 @@ export default function City() {
       )}
 
       {tab === 'town' && (
-        <Card title="Around Town" subtitle="Legitimate businesses you can walk into.">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {AROUND_TOWN.filter(l => !l.hideWhen?.(character)).map(l => <Tile key={l.to} {...l} />)}
-          </div>
+        <Card title="Around Town" subtitle="Pick a destination — every building is a real place now. Walking is slow; drive if you've got a vehicle.">
+          <AroundTown />
         </Card>
       )}
 

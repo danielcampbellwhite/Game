@@ -611,6 +611,15 @@ export function initDb() {
     if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
   };
   addColumnIfMissing('users', 'email', 'TEXT');
+  // Intra-city location + active journey. `current_location` is the
+  // slug from services/locations.js LOCATIONS; NULL is treated as
+  // 'streets' (the default hub). The three intra_travel_* fields
+  // mirror travel_until / travel_to for intercity flights but are a
+  // separate axis so a flight and a walk can't be active at once.
+  addColumnIfMissing('characters', 'current_location',   'TEXT');
+  addColumnIfMissing('characters', 'intra_travel_until', 'INTEGER');
+  addColumnIfMissing('characters', 'intra_travel_to',    'TEXT');
+  addColumnIfMissing('characters', 'intra_travel_mode',  'TEXT');
   // Admin/god flag. The very first user to call /api/admin/promote-self
   // (gated by ADMIN_TOKEN) is granted admin; thereafter the flag is the
   // source of truth and ADMIN_TOKEN is only needed for re-bootstrap.

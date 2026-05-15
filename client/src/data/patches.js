@@ -9,6 +9,51 @@
 
 export const PATCHES = [
   {
+    version: '0.9.11',
+    date: '2026-05-15',
+    title: 'In-city travel — every building is now a real place',
+    sections: [
+      {
+        heading: 'Where you are matters',
+        notes: [
+          'Buildings inside your city are now physical locations you have to be standing in to use. Bank, Gun Store, Dealership, Chop Shop, Repair Shop, Gym, Shooting Range, University, Driving School, Hospital, Casino, Bookmaker, The Fence, General Store, Job Board — all gated.',
+          'Land in a new city and you start ON THE STREETS. Pick a destination on the City map and walk or drive there. From any building you can travel directly to any other — no need to "leave" first.',
+          'The City page is now your home base for movement: a big banner shows where you are right now (or where you\'re headed, with a ticking countdown), and every gated building has a tile with Walk and Drive buttons.',
+        ],
+      },
+      {
+        heading: 'Walk or drive',
+        notes: [
+          'Walk: 45 seconds, available to everyone, always.',
+          'Drive: 10 seconds — but only if you have an ACTIVE vehicle. No active car, no Drive button.',
+          'Both modes lock the character completely except for chat. You can still World/Faction/Gang chat while in transit; everything else returns 409 until you arrive.',
+        ],
+      },
+      {
+        heading: 'Lockout + UX',
+        notes: [
+          'A cyan "Walking/Driving to X — Ns" badge shows in the nav bar during travel, the same way Hospital and Jail badges already work.',
+          'Try to hit a gated service from outside? The page bounces you back to the City map automatically. No 404, no confusing error.',
+          'Hospitalised or jailed characters are automatically counted as "at the hospital / at the jail" so the existing admit/release flows keep working without anyone having to walk anywhere.',
+        ],
+      },
+      {
+        heading: 'Under the hood',
+        notes: [
+          'New columns on characters: current_location, intra_travel_until, intra_travel_to, intra_travel_mode. NULL is treated as "streets" so legacy rows are safe.',
+          'New mount-level middleware requireAtLocation(slug) gates each in-city service — 14 routes wired in /api/index.js. Returns 409 with { not_at_location, at, need } so the client can route the player home.',
+          'requireFreeCharacter now also blocks intra-city travel (parallel to flights / jail / hospital).',
+        ],
+      },
+      {
+        heading: 'Coming next',
+        notes: [
+          'Phase 2 of this rework: weighted inventory + containers. Every item gets a per-item weight in kg; what you can carry on your person is capped, with overflow living in your house and active car. The Inventory page becomes a hauler/loadout view.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.10',
     date: '2026-05-14',
     title: 'Ship your active car straight from the driver\'s seat',

@@ -44,5 +44,16 @@ export function requireFreeCharacter(req, res, next) {
   if (ch.travel_until && ch.travel_until > now) {
     return res.status(409).json({ error: 'You are travelling', travel_until: ch.travel_until });
   }
+  // Intra-city travel — locks the character out of everything except
+  // chat (which uses requireCharacter, not requireFreeCharacter) and
+  // the per-tick maintenance reads. See services/locations.js.
+  if (ch.intra_travel_until && ch.intra_travel_until > now) {
+    return res.status(409).json({
+      error: 'You are travelling across the city',
+      intra_travel_until: ch.intra_travel_until,
+      intra_travel_to:    ch.intra_travel_to,
+      intra_travel_mode:  ch.intra_travel_mode,
+    });
+  }
   next();
 }
