@@ -58,7 +58,7 @@ function recentEventsInCity(city, since, kinds, limit = 80) {
 // the "Top Earners" section.
 function topEarners(city, since, n = 5) {
   const rows = db.prepare(`
-    SELECT l.char_id, c.name, c.reputation, c.rank,
+    SELECT l.char_id, c.name, c.reputation,
            SUM(
              CASE
                WHEN json_extract(l.meta_json, '$.payout') IS NOT NULL

@@ -44,7 +44,6 @@ export const LOCATIONS = {
   // to real locations so the City page is fully place-based.
   brokerage:      { name: 'Stock Brokerage',    route: '/stocks',         travelable: true,  gated: true,  desc: 'Live tickers and traders in suits. Buy and sell listed stocks.' },
   estate_agent:   { name: 'Estate Agent',       route: '/property',       travelable: true,  gated: true,  desc: 'Property listings and the keys to your next house. Buy, browse, sell.' },
-  newsstand:      { name: 'Newsstand',          route: '/newspaper',      travelable: true,  gated: true,  desc: 'Today\'s Gazette: front page, police blotter, social pages.' },
   airport:        { name: 'Airport',            route: '/travel',         travelable: true,  gated: true,  desc: 'Flights to other cities. Set your destination, pay your fare, wheels up.' },
   drug_market:    { name: 'The Block',          route: '/drugs',          travelable: true,  gated: true,  desc: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the flip size.' },
   high_street:    { name: 'High Street',        route: '/high-street',    travelable: true,  gated: true,  desc: 'Coffee shop, pharmacy, off-licence, deli, gift shop — all on one block.' },

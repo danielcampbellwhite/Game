@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
+import { requireAtLocation } from '../middleware/location.js';
 import { MISC_ITEMS, miscItemById, cityById } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { itemWeight, personalWeight, PERSONAL_CAP_KG } from '../services/weight.js';
@@ -44,7 +45,11 @@ function ownedQty(charId, itemId) {
   return r?.qty || 0;
 }
 
-router.get('/', requireAuth, requireCharacter, (req, res) => {
+// Shop-side endpoints (browse / buy) require being at the General
+// Store. /use is intentionally NOT gated — using something you
+// already own from your kit bag should work from anywhere
+// (inventory page, etc.).
+router.get('/', requireAuth, requireCharacter, requireAtLocation('general_store'), (req, res) => {
   const ch = req.character;
   const cityMul = cityById(ch.city)?.businessMul || 1.0;
   const ownedRows = db.prepare("SELECT item_id, qty FROM inventory WHERE char_id = ? AND kind = 'misc'")
@@ -66,7 +71,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   res.json({ items, cityName: cityById(ch.city)?.name });
 });
 
-router.post('/buy', requireAuth, requireCharacter, (req, res) => {
+router.post('/buy', requireAuth, requireCharacter, requireAtLocation('general_store'), (req, res) => {
   const ch = req.character;
   const { item_id, qty = 1 } = req.body || {};
   const item = miscItemById(item_id);

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
+import { requireAtLocation } from '../middleware/location.js';
 import { DRUGS, DRUG_USE_EFFECTS, drugById, specPerk } from '../data.js';
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { applyVitalEffects, effectsToText } from '../services/vitals.js';
@@ -10,7 +11,10 @@ import { getDrugMarketForCity, getDrugPrice } from '../services/market.js';
 
 const router = Router();
 
-router.get('/', requireAuth, requireCharacter, (req, res) => {
+// Market endpoints (browse / sell) require being at The Block.
+// /use is intentionally NOT gated — using a drug you already own
+// is something you do to yourself, anywhere.
+router.get('/', requireAuth, requireCharacter, requireAtLocation('drug_market'), (req, res) => {
   const ch = req.character;
   const market = getDrugMarketForCity(ch.city);
   const inventory = db.prepare('SELECT item_id as id, qty FROM inventory WHERE char_id = ? AND kind = ?').all(ch.id, 'drug');
@@ -46,7 +50,7 @@ function drugBustChance(qty) {
   return Math.min(DRUG_SELL_BUST_CAP, DRUG_SELL_BUST_BASE + qty * DRUG_SELL_BUST_PER_UNIT);
 }
 
-router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, requireAtLocation('drug_market'), (req, res) => {
   const ch = req.character;
   const drug = drugById(req.body?.drug_id);
   const qty = Math.max(1, parseInt(req.body?.qty || 0, 10));

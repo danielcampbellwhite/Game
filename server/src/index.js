@@ -100,7 +100,6 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 // no-op on a per-tick basis.
 const atBrokerage     = [requireAuth, requireCharacter, requireAtLocation('brokerage')];
 const atEstateAgent   = [requireAuth, requireCharacter, requireAtLocation('estate_agent')];
-const atNewsstand     = [requireAuth, requireCharacter, requireAtLocation('newsstand')];
 const atAirport       = [requireAuth, requireCharacter, requireAtLocation('airport')];
 const atDrugMarket    = [requireAuth, requireCharacter, requireAtLocation('drug_market')];
 const atHighStreet    = [requireAuth, requireCharacter, requireAtLocation('high_street')];
@@ -134,7 +133,9 @@ app.use('/api/murder', murderRoutes);
 app.use('/api/rob', robRoutes);
 app.use('/api/customize', customizeRoutes);
 app.use('/api/travel', atAirport, travelRoutes);
-app.use('/api/drugs', atDrugMarket, drugRoutes);
+// /api/drugs splits gating internally: market browse/sell are gated
+// to The Block, but /use works from your kit bag anywhere.
+app.use('/api/drugs', drugRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/combat', combatRoutes);
 app.use('/api/locations', locationsRoutes);
@@ -163,7 +164,11 @@ app.use('/api/casino', atCasino, casinoRoutes);
 app.use('/api/bookmaker', atBookmaker, bookmakerRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/missions', missionRoutes);
-app.use('/api/general-store', atGeneralStore, generalStoreRoutes);
+// /api/general-store splits gating internally: browse/buy are gated
+// to the General Store, but /use works from your kit bag anywhere
+// (espresso shots, scratchcards, mission items from the Inventory
+// page).
+app.use('/api/general-store', generalStoreRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/players', playersRoutes);
 app.use('/api/messages', messagesRoutes);
@@ -174,7 +179,8 @@ app.use('/api/oc', ocRoutes);
 app.use('/api/incarceration', incarcerationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/areas', areaRoutes);
-app.use('/api/newspaper', atNewsstand, newspaperRoutes);
+// Newspaper is read from the Dashboard now — no physical location.
+app.use('/api/newspaper', newspaperRoutes);
 app.use('/api/chases', chasesRoutes);
 app.use('/api/burglary', burglaryRoutes);
 app.use('/api/investigations', investigationsRoutes);

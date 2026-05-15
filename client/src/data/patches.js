@@ -9,6 +9,33 @@
 
 export const PATCHES = [
   {
+    version: '0.9.17',
+    date: '2026-05-15',
+    title: 'Espresso fix · Newsstand → Dashboard',
+    sections: [
+      {
+        heading: 'Using items from your kit now works anywhere',
+        notes: [
+          'Espresso shots, scratchcards, energy drinks and the like were location-gated by mistake — using one from the Inventory page bounced you to City. Now /use works from anywhere; only the General Store browse/buy is still gated to the store.',
+          'Same fix on /drugs: using your stash works anywhere, only browse and selling at The Block stay gated.',
+        ],
+      },
+      {
+        heading: 'Newspaper on the home page',
+        notes: [
+          'Today\'s Gazette now lives as a card on the Dashboard — top four headlines for your city, plus a link through to the full edition.',
+          'The Newsstand location is retired. Anyone standing there at the time of release is snapped back to the streets.',
+        ],
+      },
+      {
+        heading: 'Newspaper SQL bug',
+        notes: [
+          'Front page used to 500 on cities with crime activity because of a missing c.rank column reference — fixed.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.16',
     date: '2026-05-15',
     title: 'City is fully place-based · Underworld tab gone · descriptions on every location',

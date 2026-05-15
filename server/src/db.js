@@ -649,6 +649,9 @@ export function initDb() {
   // 'job_board' gets snapped back to 'streets'. Safe to re-run on
   // every boot.
   db.prepare("UPDATE characters SET current_location = 'streets' WHERE current_location = 'job_board'").run();
+  // Same: Newsstand was retired in favour of a Dashboard newspaper
+  // card. Snap anyone stranded at the slug back to the streets.
+  db.prepare("UPDATE characters SET current_location = 'streets' WHERE current_location = 'newsstand'").run();
 
   // Stash table — extra inventory held outside the player's pocket.
   // Personal items continue to live in the existing `inventory` table.

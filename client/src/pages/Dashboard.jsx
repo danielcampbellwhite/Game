@@ -18,6 +18,59 @@ const OUTFIT_LABELS = { hat: 'Hat', top: 'Top', bottom: 'Bottom', shoes: 'Shoes'
 // equipped_clothing from publicCharacter — no extra fetch. Empty
 // slots render as muted placeholders so it's clear at a glance
 // what's still missing.
+// Compact front-page summary for the home dashboard. Pulls the top
+// few headlines from /api/newspaper for the player's current city
+// and links out to the full /newspaper page. Newspaper used to live
+// at a physical Newsstand location — surfacing it on the home page
+// removes the travel friction.
+function NewspaperPanel({ c }) {
+  const [data, setData] = useState(null);
+  const [err, setErr]   = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/newspaper').then(d => { if (!cancelled) setData(d); })
+      .catch(e => { if (!cancelled) setErr(e.message); });
+    return () => { cancelled = true; };
+  }, [c?.city]);
+
+  function relTime(ts) {
+    const dt = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+    if (dt < 60)    return `${dt}s`;
+    if (dt < 3600)  return `${Math.floor(dt / 60)}m`;
+    if (dt < 86400) return `${Math.floor(dt / 3600)}h`;
+    return `${Math.floor(dt / 86400)}d`;
+  }
+
+  const headlines = data?.headlines?.slice(0, 4) || [];
+
+  return (
+    <Card
+      title="The City Gazette"
+      subtitle={data ? `Today in ${data.cityName || ''}. Tap through for the full edition.` : 'Last 24h on the streets.'}
+      right={<Link to="/newspaper" className="btn btn-ghost text-xs">Full paper →</Link>}>
+      {err ? (
+        <p className="text-xs text-blood-300">{err}</p>
+      ) : !data ? (
+        <p className="text-xs text-ink-100/55">Loading…</p>
+      ) : headlines.length === 0 ? (
+        <p className="text-xs text-ink-100/55">A quiet day on the streets.</p>
+      ) : (
+        <div className="space-y-2">
+          {headlines.map((h, i) => (
+            <div key={i} className="border-l-2 border-blood-500/40 pl-3 py-0.5">
+              <div className="text-[10px] uppercase tracking-wider text-ink-100/45">
+                {h.type === 'crime' ? 'Crime' : h.type === 'turf' ? 'Turf' : h.type === 'casino' ? 'Vice' : 'Wire'}
+                <span className="ml-2 text-ink-100/35">{relTime(h.when)} ago</span>
+              </div>
+              <div className="text-[13px] text-ink-100/85 mt-0.5">{h.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function OutfitPanel({ c }) {
   const outfit = c?.equipped_clothing || {};
   const total = OUTFIT_SLOTS.reduce((n, s) => n + (outfit[s] ? 1 : 0), 0);
@@ -671,6 +724,7 @@ export default function Dashboard() {
 
       <CharacterSheet c={c} onAvatarChange={refresh} />
       <OutfitPanel c={c} />
+      <NewspaperPanel c={c} />
 
       {c.at_max_level && (c.prestige || 0) < 5 && (
         <RetirementCard c={c} onDone={refresh} />
