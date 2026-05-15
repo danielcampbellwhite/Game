@@ -32,6 +32,7 @@ const TYPE_COLOR = {
   business: 'text-emerald-400',
   bookmaker: 'text-gold-400',
   bank: 'text-money-400',
+  social: 'text-pink-300',
   system: 'text-ink-100/70',
 };
 

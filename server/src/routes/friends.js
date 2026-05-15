@@ -70,10 +70,17 @@ router.post('/request', requireAuth, requireCharacter, (req, res) => {
   if (r.status === 'accepted') {
     sendEvent(otherId, 'friend.accepted', { char_id: req.character.id, name: req.character.name });
     writeLog(req.character.id, 'social', ` ${other.name} is now your friend.`);
-    writeLog(otherId, 'social', ` ${req.character.name} is now your friend.`);
+    // notify=true so the recipient sees a 🔔 alert — they didn't
+    // initiate this, the auto-accept fired because they'd already
+    // requested.
+    writeLog(otherId, 'social', ` ${req.character.name} is now your friend.`, null, true);
   } else {
     sendEvent(otherId, 'friend.requested', { char_id: req.character.id, name: req.character.name });
     writeLog(req.character.id, 'social', `Sent a friend request to ${other.name}.`);
+    // notify=true so the recipient gets a bell entry. SSE delivers
+    // the live ping when they're online; the log row is what makes
+    // the bell stay lit until they look at it.
+    writeLog(otherId, 'social', ` ${req.character.name} sent you a friend request.`, null, true);
   }
   res.json(r);
 });
@@ -86,7 +93,9 @@ router.post('/accept', requireAuth, requireCharacter, (req, res) => {
   if (r.error) return res.status(400).json({ error: r.error });
   sendEvent(otherId, 'friend.accepted', { char_id: req.character.id, name: req.character.name });
   writeLog(req.character.id, 'social', ` ${other.name} is now your friend.`);
-  writeLog(otherId, 'social', ` ${req.character.name} accepted your friend request.`);
+  // notify=true — the requester didn't trigger this acceptance, so
+  // they should see it in the bell.
+  writeLog(otherId, 'social', ` ${req.character.name} accepted your friend request.`, null, true);
   res.json(r);
 });
 
