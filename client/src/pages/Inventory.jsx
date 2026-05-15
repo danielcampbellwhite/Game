@@ -160,9 +160,12 @@ function WeightCard({ weight }) {
   if (!weight) return null;
   const pct = Math.max(0, Math.min(100, (weight.personal_kg / weight.personal_cap_kg) * 100));
   const tone = pct >= 95 ? 'bg-blood-500' : pct >= 75 ? 'bg-yellow-400' : 'bg-money-500';
+  const vehPct = weight.vehicle_active
+    ? Math.max(0, Math.min(100, (weight.vehicle_kg / Math.max(1, weight.vehicle_cap_kg)) * 100))
+    : 0;
   return (
     <Card title="Carry weight"
-      subtitle={`Personal cap is ${weight.personal_cap_kg}kg. Stash overflow at your house.`}>
+      subtitle={`Personal cap is ${weight.personal_cap_kg}kg. Stash overflow at your house or in your active car's boot.`}>
       <div className="space-y-3">
         <div>
           <div className="flex items-baseline justify-between text-[12px] mb-1">
@@ -188,10 +191,54 @@ function WeightCard({ weight }) {
             </div>
           </div>
         )}
-        {!weight.house_owned && (
-          <p className="text-[12px] text-ink-100/45">No property in this city — buy a place to unlock a house stash.</p>
+        {weight.vehicle_active && (
+          <div>
+            <div className="flex items-baseline justify-between text-[12px] mb-1">
+              <span className="uppercase tracking-wide text-ink-100/55">Boot of your {weight.vehicle_name}</span>
+              <span className="tabular-nums text-ink-100/85">
+                {weight.vehicle_kg.toFixed(1)} / {weight.vehicle_cap_kg.toFixed(0)} kg
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-ink-100/10 overflow-hidden">
+              <div className="bg-yellow-500" style={{ width: vehPct + '%', height: '100%' }} />
+            </div>
+          </div>
+        )}
+        {!weight.house_owned && !weight.vehicle_active && (
+          <p className="text-[12px] text-ink-100/45">No property here, no active vehicle. Buy a place or jump in a car to unlock overflow storage.</p>
         )}
       </div>
+    </Card>
+  );
+}
+
+function VehicleStashCard({ items, weight, onTransfer, busy }) {
+  if (!weight?.vehicle_active) return null;
+  return (
+    <Card title={`Vehicle Cargo — ${weight.vehicle_name}`}
+      subtitle={`${items.length} item types · ${weight.vehicle_kg.toFixed(1)}kg of ${weight.vehicle_cap_kg.toFixed(0)}kg.`}>
+      {items.length === 0 ? (
+        <p className="text-xs text-ink-100/45">Empty boot. Drop ammo or a backup piece in here to free up your pockets.</p>
+      ) : (
+        <div className="divide-y divide-ink-100/5">
+          {items.map(it => (
+            <div key={`${it.kind}:${it.item_id}`} className="py-2 flex items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm truncate">{it.name}</div>
+                <div className="text-[12px] text-ink-100/45">
+                  {it.kind} · {it.qty} × {it.unit_kg.toFixed(3)}kg = {(it.qty * it.unit_kg).toFixed(2)}kg
+                </div>
+              </div>
+              <button
+                disabled={busy}
+                onClick={() => onTransfer(it.kind, it.item_id, it.qty, 'vehicle', 'personal')}
+                className="btn btn-primary text-[11px] py-1 shrink-0">
+                Take {it.qty}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
@@ -230,15 +277,31 @@ function HouseStashCard({ items, weight, onTransfer, busy }) {
   );
 }
 
-function StashButton({ kind, item_id, qty, onTransfer, busy }) {
+function StashButton({ kind, item_id, qty, onTransfer, busy, weight }) {
+  const houseOK = weight?.house_owned;
+  const vehOK   = weight?.vehicle_active;
+  if (!houseOK && !vehOK) return null;
   return (
-    <button
-      disabled={busy}
-      onClick={() => onTransfer(kind, item_id, qty, 'personal', 'house')}
-      title="Move to your house stash in this city"
-      className="text-[11px] px-2 py-0.5 rounded border border-ink-100/15 hover:border-cyan-400/40 hover:text-cyan-300 disabled:opacity-40">
-      Stash all
-    </button>
+    <div className="flex gap-1">
+      {houseOK && (
+        <button
+          disabled={busy}
+          onClick={() => onTransfer(kind, item_id, qty, 'personal', 'house')}
+          title="Move to your house stash in this city"
+          className="text-[11px] px-2 py-0.5 rounded border border-ink-100/15 hover:border-cyan-400/40 hover:text-cyan-300 disabled:opacity-40">
+          → House
+        </button>
+      )}
+      {vehOK && (
+        <button
+          disabled={busy}
+          onClick={() => onTransfer(kind, item_id, qty, 'personal', 'vehicle')}
+          title="Move to the boot of your active vehicle"
+          className="text-[11px] px-2 py-0.5 rounded border border-ink-100/15 hover:border-yellow-400/40 hover:text-yellow-300 disabled:opacity-40">
+          → Car
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -401,6 +464,12 @@ export default function Inventory() {
             onTransfer={moveItem}
             busy={!!busy}
           />
+          <VehicleStashCard
+            items={inv.vehicle_stash || []}
+            weight={inv.weight}
+            onTransfer={moveItem}
+            busy={!!busy}
+          />
           <EquippedSummary inv={inv} />
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -458,7 +527,7 @@ export default function Inventory() {
                   : <button disabled={busy === `eq-weapon-${w.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('weapon', w.id)}>Equip</button>}
                 {inv.weight?.house_owned && (
                   <div className="mt-2 flex justify-end">
-                    <StashButton kind="weapon" item_id={w.id} qty={w.qty} onTransfer={moveItem} busy={busy === `mv-weapon-${w.id}`} />
+                    <StashButton kind="weapon" item_id={w.id} qty={w.qty} onTransfer={moveItem} busy={busy === `mv-weapon-${w.id}`} weight={inv.weight} />
                   </div>
                 )}
               </div>
@@ -490,7 +559,7 @@ export default function Inventory() {
                   : <button disabled={busy === `eq-armour-${a.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('armour', a.id)}>Equip</button>}
                 {inv.weight?.house_owned && (
                   <div className="mt-2 flex justify-end">
-                    <StashButton kind="armour" item_id={a.id} qty={a.qty} onTransfer={moveItem} busy={busy === `mv-armour-${a.id}`} />
+                    <StashButton kind="armour" item_id={a.id} qty={a.qty} onTransfer={moveItem} busy={busy === `mv-armour-${a.id}`} weight={inv.weight} />
                   </div>
                 )}
               </div>
@@ -518,7 +587,7 @@ export default function Inventory() {
                     )}
                     {inv.weight?.house_owned && (
                       <div className="mt-2 flex justify-end">
-                        <StashButton kind="ammo" item_id={a.id} qty={a.qty} onTransfer={moveItem} busy={busy === `mv-ammo-${a.id}`} />
+                        <StashButton kind="ammo" item_id={a.id} qty={a.qty} onTransfer={moveItem} busy={busy === `mv-ammo-${a.id}`} weight={inv.weight} />
                       </div>
                     )}
                   </div>
@@ -543,7 +612,7 @@ export default function Inventory() {
                   <div className="text-[13px] text-ink-100/60 tabular-nums">{d.qty} units{d.unit_kg ? ` · ${(d.qty * d.unit_kg).toFixed(3)}kg` : ''}</div>
                   {inv.weight?.house_owned && (
                     <div className="mt-2 flex justify-end">
-                      <StashButton kind="drug" item_id={d.id} qty={d.qty} onTransfer={moveItem} busy={busy === `mv-drug-${d.id}`} />
+                      <StashButton kind="drug" item_id={d.id} qty={d.qty} onTransfer={moveItem} busy={busy === `mv-drug-${d.id}`} weight={inv.weight} />
                     </div>
                   )}
                 </div>

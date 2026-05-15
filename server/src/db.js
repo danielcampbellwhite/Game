@@ -627,22 +627,59 @@ export function initDb() {
 
   // Stash table — extra inventory held outside the player's pocket.
   // Personal items continue to live in the existing `inventory` table.
-  // Rows here are scoped by (container, city) so a NY house stash is
-  // distinct from a Tokyo house stash.
+  // Rows here are scoped by (container, city, vehicle_id) so a NY
+  // house stash is distinct from a Tokyo house stash, and each
+  // vehicle's cargo is keyed to that specific car.
+  //
+  // Two-step setup to handle the in-place migration from 0.9.12's
+  // schema (no vehicle_id column): CREATE IF NOT EXISTS lays down
+  // the new shape for fresh DBs; the migration block below rebuilds
+  // the table when an older shape is detected.
   db.exec(`
     CREATE TABLE IF NOT EXISTS stash (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      char_id   INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-      container TEXT    NOT NULL,
-      city      TEXT,
-      kind      TEXT    NOT NULL,
-      item_id   TEXT    NOT NULL,
-      qty       INTEGER NOT NULL DEFAULT 1,
-      ammo      INTEGER NOT NULL DEFAULT 0,
-      UNIQUE(char_id, container, city, kind, item_id)
+      char_id    INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      container  TEXT    NOT NULL,
+      city       TEXT,
+      vehicle_id INTEGER REFERENCES vehicles_owned(id) ON DELETE CASCADE,
+      kind       TEXT    NOT NULL,
+      item_id    TEXT    NOT NULL,
+      qty        INTEGER NOT NULL DEFAULT 1,
+      ammo       INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(char_id, container, city, vehicle_id, kind, item_id)
     );
-    CREATE INDEX IF NOT EXISTS idx_stash_char ON stash(char_id);
-    CREATE INDEX IF NOT EXISTS idx_stash_house ON stash(char_id, container, city);
+  `);
+  // Schema migration: stash table shipped in 0.9.12 without a
+  // vehicle_id column. If the existing table predates this commit,
+  // rebuild it with the new schema. SQLite can't ALTER a UNIQUE so
+  // we copy through a temp table.
+  {
+    const cols = db.prepare('PRAGMA table_info(stash)').all().map(r => r.name);
+    if (!cols.includes('vehicle_id')) {
+      db.exec(`
+        ALTER TABLE stash RENAME TO stash_old;
+        CREATE TABLE stash (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          char_id    INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+          container  TEXT    NOT NULL,
+          city       TEXT,
+          vehicle_id INTEGER REFERENCES vehicles_owned(id) ON DELETE CASCADE,
+          kind       TEXT    NOT NULL,
+          item_id    TEXT    NOT NULL,
+          qty        INTEGER NOT NULL DEFAULT 1,
+          ammo       INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(char_id, container, city, vehicle_id, kind, item_id)
+        );
+        INSERT INTO stash (id, char_id, container, city, vehicle_id, kind, item_id, qty, ammo)
+          SELECT id, char_id, container, city, NULL, kind, item_id, qty, ammo FROM stash_old;
+        DROP TABLE stash_old;
+      `);
+    }
+  }
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_stash_char    ON stash(char_id);
+    CREATE INDEX IF NOT EXISTS idx_stash_house   ON stash(char_id, container, city);
+    CREATE INDEX IF NOT EXISTS idx_stash_vehicle ON stash(char_id, container, vehicle_id);
   `);
   // Admin/god flag. The very first user to call /api/admin/promote-self
   // (gated by ADMIN_TOKEN) is granted admin; thereafter the flag is the

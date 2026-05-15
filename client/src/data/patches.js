@@ -9,6 +9,43 @@
 
 export const PATCHES = [
   {
+    version: '0.9.13',
+    date: '2026-05-15',
+    title: 'Vehicle cargo — third stash, follows the car',
+    sections: [
+      {
+        heading: 'A boot for your active car',
+        notes: [
+          'Your active vehicle now has its own cargo container. Stash a sniper or a stack of shells in the boot and they ride with you wherever you drive.',
+          'Cargo is keyed to a SPECIFIC vehicle. Ship the car to Tokyo and the gear goes with it. Sell or chop the car and its boot empties — buyer beware.',
+        ],
+      },
+      {
+        heading: 'Capacity by tier',
+        notes: [
+          'Tier 1 beaters: 80 kg. Tier 2 sedans: 120 kg. Tier 3 hot hatches / mid SUVs: 200 kg. Tier 4 premium / performance: 150 kg. Tier 5 luxury: 250 kg. Tier 6 supercars: 80 kg. Tier 7 hypercars: 100 kg.',
+          'The trade-off is real — a Koenigsegg looks great in a chase but the gym bag won\'t fit. Pick your daily driver around what you\'re hauling.',
+        ],
+      },
+      {
+        heading: 'New UI',
+        notes: [
+          'Inventory overview shows a third weight bar (yellow) — Boot of your <Car Name>, with live capacity vs cap.',
+          'Stash buttons next to every weapon / armour / ammo / drug row now show TWO destinations when both apply: "→ House" and "→ Car". Tap, pick a quantity, done.',
+          'New Vehicle Cargo card under House Stash listing what\'s in the boot, with a Take button to bring items back to your pocket.',
+        ],
+      },
+      {
+        heading: 'Caveats',
+        notes: [
+          'Cargo locks while the car is mid-shipping — you can\'t reach into a car that\'s on a transport truck.',
+          'Premium (Gold-Bar) cars don\'t have cargo for now. Only regular owned vehicles get a boot.',
+          'Schema migration recreates the stash table to add the vehicle_id key. Existing house stashes survive untouched.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.12',
     date: '2026-05-15',
     title: 'Weighted inventory + house stash',

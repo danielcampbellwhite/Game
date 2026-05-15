@@ -25,6 +25,23 @@ import { db } from '../db.js';
 export const PERSONAL_CAP_KG = 30;
 export const HOUSE_CAP_KG    = 5000;
 
+// Vehicle cargo cap by tier. SUVs / luxury get the biggest boots;
+// supercars and hypercars are sportier and carry less. The active
+// vehicle's cap is what counts — premium / Gold-Bar cars have no
+// cargo for now (treated as no-cap when active).
+const VEHICLE_CARGO_KG_BY_TIER = {
+  1:  80,   // beater / subcompact
+  2: 120,   // compact sedan
+  3: 200,   // hot hatch / mid SUV
+  4: 150,   // premium / performance
+  5: 250,   // luxury
+  6:  80,   // exotic / supercar
+  7: 100,   // hypercar / ultra-lux
+};
+export function vehicleCargoCapKg(tier) {
+  return VEHICLE_CARGO_KG_BY_TIER[tier] || 100;
+}
+
 const WEAPON_WEIGHT_BY_CATEGORY = {
   melee:   1.0,
   pistol:  1.0,
@@ -160,6 +177,53 @@ export function listHouseStash(charId, city) {
   return rows.map(r => ({ ...r, unit_kg: itemWeight(r.kind, r.item_id) }));
 }
 
+// Manual upsert helpers — needed because SQLite treats NULL as distinct
+// in UNIQUE constraints, so `ON CONFLICT(... vehicle_id ...)` won't
+// match an existing house row that has vehicle_id IS NULL. Coalescing
+// "find vs insert" by hand sidesteps the issue cleanly.
+function upsertHouseStash(charId, city, kind, itemId, addQty) {
+  const r = db.prepare(
+    "SELECT id FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?"
+  ).get(charId, city, kind, itemId);
+  if (r) {
+    db.prepare('UPDATE stash SET qty = qty + ? WHERE id = ?').run(addQty, r.id);
+  } else {
+    db.prepare(
+      "INSERT INTO stash (char_id, container, city, vehicle_id, kind, item_id, qty, ammo) VALUES (?, 'house', ?, NULL, ?, ?, ?, 0)"
+    ).run(charId, city, kind, itemId, addQty);
+  }
+}
+function upsertVehicleStash(charId, vehicleId, kind, itemId, addQty) {
+  const r = db.prepare(
+    "SELECT id FROM stash WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? AND kind = ? AND item_id = ?"
+  ).get(charId, vehicleId, kind, itemId);
+  if (r) {
+    db.prepare('UPDATE stash SET qty = qty + ? WHERE id = ?').run(addQty, r.id);
+  } else {
+    db.prepare(
+      "INSERT INTO stash (char_id, container, city, vehicle_id, kind, item_id, qty, ammo) VALUES (?, 'vehicle', NULL, ?, ?, ?, ?, 0)"
+    ).run(charId, vehicleId, kind, itemId, addQty);
+  }
+}
+
+export function vehicleStashWeight(charId, vehicleRowId) {
+  if (!vehicleRowId) return 0;
+  const rows = db.prepare(
+    "SELECT kind, item_id, qty FROM stash WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ?"
+  ).all(charId, vehicleRowId);
+  let total = 0;
+  for (const r of rows) total += itemWeight(r.kind, r.item_id) * r.qty;
+  return total;
+}
+
+export function listVehicleStash(charId, vehicleRowId) {
+  if (!vehicleRowId) return [];
+  const rows = db.prepare(
+    "SELECT kind, item_id, qty, ammo FROM stash WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? ORDER BY kind, item_id"
+  ).all(charId, vehicleRowId);
+  return rows.map(r => ({ ...r, unit_kg: itemWeight(r.kind, r.item_id) }));
+}
+
 // Returns extra kg this purchase would add. Used by the buy gates so
 // they can reject before the row hits the DB.
 export function purchaseWeight(kind, itemId, qty) {
@@ -171,42 +235,53 @@ export function personalHasRoomFor(charId, extraKg) {
   return personalWeight(charId) + extraKg <= PERSONAL_CAP_KG + 1e-6;
 }
 
-// Move qty of (kind, item_id) between personal and house. Returns
-// { ok, error? }. Caller is responsible for the higher-level "you must
-// be in this city" check; this is the SQL-level mover.
-export function transfer(charId, kind, itemId, qty, ammo, from, to, city) {
+// Move qty of (kind, item_id) between personal / house / vehicle.
+// Caller passes `city` for house-side operations and `vehicleId` (a
+// vehicles_owned.id) for vehicle-side operations. The caller is
+// responsible for the higher-level "you must be in this city / this
+// is your active vehicle" checks; this is the SQL-level mover.
+export function transfer(charId, kind, itemId, qty, ammo, from, to, city, vehicleId, vehicleTier) {
   if (qty <= 0) return { error: 'Quantity must be positive.' };
   if (from === to) return { error: 'Source and destination are the same.' };
 
   const isPersonal = (loc) => loc === 'personal';
   const isHouse    = (loc) => loc === 'house';
+  const isVehicle  = (loc) => loc === 'vehicle';
 
   // SRC read
   let have = 0;
-  let haveAmmo = 0;
   if (isPersonal(from)) {
-    const r = db.prepare('SELECT qty, ammo FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').get(charId, kind, itemId);
-    have = r?.qty || 0; haveAmmo = r?.ammo || 0;
+    const r = db.prepare('SELECT qty FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').get(charId, kind, itemId);
+    have = r?.qty || 0;
   } else if (isHouse(from)) {
     if (!city) return { error: 'House requires a city.' };
-    const r = db.prepare("SELECT qty, ammo FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?").get(charId, city, kind, itemId);
-    have = r?.qty || 0; haveAmmo = r?.ammo || 0;
+    const r = db.prepare("SELECT qty FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?").get(charId, city, kind, itemId);
+    have = r?.qty || 0;
+  } else if (isVehicle(from)) {
+    if (!vehicleId) return { error: 'Vehicle required.' };
+    const r = db.prepare("SELECT qty FROM stash WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? AND kind = ? AND item_id = ?").get(charId, vehicleId, kind, itemId);
+    have = r?.qty || 0;
   } else {
     return { error: 'Unknown source container.' };
   }
   if (have < qty) return { error: `You only have ${have} to move.` };
 
   // DST cap check
+  const extra = itemWeight(kind, itemId) * qty;
   if (isPersonal(to)) {
-    const extra = itemWeight(kind, itemId) * qty;
     if (!personalHasRoomFor(charId, extra)) {
       return { error: 'No room in your personal carry — drop weight first.' };
     }
   } else if (isHouse(to)) {
     if (!city) return { error: 'House requires a city.' };
-    const extra = itemWeight(kind, itemId) * qty;
     if (houseStashWeight(charId, city) + extra > HOUSE_CAP_KG + 1e-6) {
       return { error: 'House storage is full.' };
+    }
+  } else if (isVehicle(to)) {
+    if (!vehicleId) return { error: 'Vehicle required.' };
+    const cap = vehicleCargoCapKg(vehicleTier);
+    if (vehicleStashWeight(charId, vehicleId) + extra > cap + 1e-6) {
+      return { error: `Vehicle cargo full (${cap}kg cap).` };
     }
   } else {
     return { error: 'Unknown destination container.' };
@@ -222,11 +297,16 @@ export function transfer(charId, kind, itemId, qty, ammo, from, to, city) {
         .run(qty, charId, kind, itemId);
       db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ? AND qty <= 0')
         .run(charId, kind, itemId);
-    } else {
+    } else if (isHouse(from)) {
       db.prepare("UPDATE stash SET qty = qty - ? WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?")
         .run(qty, charId, city, kind, itemId);
       db.prepare("DELETE FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ? AND qty <= 0")
         .run(charId, city, kind, itemId);
+    } else if (isVehicle(from)) {
+      db.prepare("UPDATE stash SET qty = qty - ? WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? AND kind = ? AND item_id = ?")
+        .run(qty, charId, vehicleId, kind, itemId);
+      db.prepare("DELETE FROM stash WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? AND kind = ? AND item_id = ? AND qty <= 0")
+        .run(charId, vehicleId, kind, itemId);
     }
     // DST insert / increment
     if (isPersonal(to)) {
@@ -234,11 +314,10 @@ export function transfer(charId, kind, itemId, qty, ammo, from, to, city) {
         INSERT INTO inventory (char_id, kind, item_id, qty, ammo) VALUES (?, ?, ?, ?, 0)
         ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
       `).run(charId, kind, itemId, qty);
-    } else {
-      db.prepare(`
-        INSERT INTO stash (char_id, container, city, kind, item_id, qty, ammo) VALUES (?, 'house', ?, ?, ?, ?, 0)
-        ON CONFLICT(char_id, container, city, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
-      `).run(charId, city, kind, itemId, qty);
+    } else if (isHouse(to)) {
+      upsertHouseStash(charId, city, kind, itemId, qty);
+    } else if (isVehicle(to)) {
+      upsertVehicleStash(charId, vehicleId, kind, itemId, qty);
     }
     db.exec('COMMIT');
   } catch (e) {
@@ -295,12 +374,7 @@ export function migrateCharacterWeights(ch) {
       db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ? AND qty <= 0')
         .run(charId, r.kind, r.item_id);
 
-      if (sendHome) {
-        db.prepare(`
-          INSERT INTO stash (char_id, container, city, kind, item_id, qty, ammo) VALUES (?, 'house', ?, ?, ?, ?, 0)
-          ON CONFLICT(char_id, container, city, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
-        `).run(charId, targetCity, r.kind, r.item_id, moveQty);
-      }
+      if (sendHome) upsertHouseStash(charId, targetCity, r.kind, r.item_id, moveQty);
       kept -= unit * moveQty;
     }
     db.exec('COMMIT');

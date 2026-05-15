@@ -6,7 +6,7 @@ import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { garageSummary, freeGarageSpace } from '../services/garage.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
-import { itemWeight, PERSONAL_CAP_KG, HOUSE_CAP_KG, personalWeight, houseStashWeight, hasHouseIn, listHouseStash, transfer } from '../services/weight.js';
+import { itemWeight, PERSONAL_CAP_KG, HOUSE_CAP_KG, personalWeight, houseStashWeight, hasHouseIn, listHouseStash, listVehicleStash, vehicleStashWeight, vehicleCargoCapKg, transfer } from '../services/weight.js';
 
 // Inter-city shipping: £500 base × tier × (destination flight cost
 // scaled to a 1500 median). Tier-1 short-hop ≈ £500, tier-7 long-haul
@@ -133,6 +133,23 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     return { ...i, name };
   });
 
+  // Active-vehicle cargo. Available only when the player has an active
+  // car that isn't mid-shipping (in-transit cars are unreachable). We
+  // resolve via `vehicles` (already loaded above) to dodge a second
+  // SELECT and to keep premium/non-owned active vehicles out of the
+  // cargo pathway — only regular owned cars have boots.
+  const activeVeh = vehicles.find(v => v.is_active && !v.shipping_until) || null;
+  const vehicleStash = activeVeh ? listVehicleStash(ch.id, activeVeh.id) : [];
+  const vehicleDecorated = vehicleStash.map(i => {
+    let name = i.item_id;
+    if (i.kind === 'weapon') name = weaponById(i.item_id)?.name || name;
+    if (i.kind === 'armour') name = armourById(i.item_id)?.name || name;
+    if (i.kind === 'ammo')   name = ammoById(i.item_id)?.name   || name;
+    if (i.kind === 'drug')   name = drugById(i.item_id)?.name   || name;
+    if (i.kind === 'misc')   name = miscItemById(i.item_id)?.name || name;
+    return { ...i, name };
+  });
+
   res.json({
     weapons: weaponsW, armours: armoursW, drugs: drugsW, ammo: ammoW, misc: miscW,
     vehicles, properties,
@@ -151,30 +168,47 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       house_cap_kg:    HOUSE_CAP_KG,
       house_owned:     houseOwned,
       house_city:      currentCity,
+      vehicle_active:  !!activeVeh,
+      vehicle_id:      activeVeh?.id || null,
+      vehicle_name:    activeVeh ? `${activeVeh.maker} ${activeVeh.name}` : null,
+      vehicle_kg:      activeVeh ? vehicleStashWeight(ch.id, activeVeh.id) : 0,
+      vehicle_cap_kg:  activeVeh ? vehicleCargoCapKg(activeVeh.tier) : 0,
     },
-    house_stash: houseDecorated,
+    house_stash:   houseDecorated,
+    vehicle_stash: vehicleDecorated,
   });
 });
 
 // POST /api/inventory/transfer { kind, item_id, qty, from, to } —
-// move items between personal and the current-city house stash. Caps
-// enforced at the destination; insufficient quantity / cap overflow
-// returns 400.
+// move items between personal, the current-city house stash, and the
+// active vehicle's cargo. Caps enforced at the destination.
 router.post('/transfer', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const { kind, item_id, qty, from, to } = req.body || {};
   const n = parseInt(qty, 10);
   if (!kind || !item_id || !n || n <= 0) return res.status(400).json({ error: 'kind, item_id, qty required.' });
-  if (!['personal', 'house'].includes(from) || !['personal', 'house'].includes(to)) {
-    return res.status(400).json({ error: 'from/to must be personal or house.' });
+  const ALLOWED = ['personal', 'house', 'vehicle'];
+  if (!ALLOWED.includes(from) || !ALLOWED.includes(to)) {
+    return res.status(400).json({ error: 'from/to must be personal, house, or vehicle.' });
   }
-  // House stash is city-locked — you can only fish through your own
-  // city's stash. (Vehicle cargo is a follow-up commit.)
   const city = ch.city;
   if ((from === 'house' || to === 'house') && !hasHouseIn(ch.id, city)) {
     return res.status(400).json({ error: 'You don\'t own a property in this city.' });
   }
-  const r = transfer(ch.id, kind, item_id, n, 0, from, to, city);
+  // Resolve active vehicle if either side touches vehicle cargo.
+  let vehicleId = null, vehicleTier = null;
+  if (from === 'vehicle' || to === 'vehicle') {
+    if (!ch.active_vehicle_id) return res.status(400).json({ error: 'No active vehicle.' });
+    const row = db.prepare('SELECT id, vehicle_id, shipping_until FROM vehicles_owned WHERE id = ? AND char_id = ?').get(ch.active_vehicle_id, ch.id);
+    if (!row) return res.status(400).json({ error: 'Active vehicle not found.' });
+    if (row.shipping_until && row.shipping_until > Date.now()) {
+      return res.status(400).json({ error: 'Your active car is mid-shipping.' });
+    }
+    const v = vehicleById(row.vehicle_id);
+    vehicleId = row.id;
+    vehicleTier = v?.tier || 1;
+  }
+  const r = transfer(ch.id, kind, item_id, n, 0, from, to, city, vehicleId, vehicleTier);
   if (r.error) return res.status(400).json({ error: r.error });
   res.json({ ok: true });
 });
