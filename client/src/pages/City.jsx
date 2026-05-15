@@ -12,7 +12,33 @@ function fmtSecs(ms) {
   return `${s}s`;
 }
 
-function LocationTile({ loc, hasVehicle, walkMs, driveMs, busy, onTravel, onEnter }) {
+function LocationTile({ loc, hasVehicle, walkMs, driveMs, busy, onTravel, onEnter, travel }) {
+  // En-route state — this tile IS the destination. Show a live
+  // countdown, the mode (walk/drive), a progress bar, and dim the
+  // travel buttons (they're no-ops while a journey is in flight).
+  if (travel?.active) {
+    const totalMs = travel.mode === 'drive' ? driveMs : walkMs;
+    const elapsed = Math.max(0, totalMs - travel.msLeft);
+    const pct = totalMs > 0 ? Math.max(0, Math.min(100, (elapsed / totalMs) * 100)) : 0;
+    const verb = travel.mode === 'drive' ? 'Driving' : 'Walking';
+    return (
+      <div className="p-3 rounded-lg border border-cyan-500/50 bg-cyan-900/15 flex flex-col">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="font-medium text-sm text-cyan-200">{loc.name}</span>
+          <span className="text-[11px] uppercase tracking-wide text-cyan-300">{verb}</span>
+        </div>
+        {loc.desc && <div className="text-[13px] text-ink-100/55 leading-snug mt-1">{loc.desc}</div>}
+        <div className="mt-2 flex items-baseline justify-between gap-2">
+          <span className="text-[12px] uppercase tracking-wide text-cyan-300">Arriving in</span>
+          <span className="text-xl font-display text-cyan-200 tabular-nums">{fmtSecs(travel.msLeft)}</span>
+        </div>
+        <div className="mt-1.5 h-[3px] rounded-full bg-cyan-900/40 overflow-hidden">
+          <div className="h-full bg-cyan-400 transition-[width] duration-500" style={{ width: pct + '%' }} />
+        </div>
+      </div>
+    );
+  }
+
   if (loc.here) {
     return (
       <div className="p-3 rounded-lg border border-money-500/40 bg-money-700/10 flex flex-col">
@@ -107,28 +133,24 @@ function AroundTown() {
   const travelling = travellingUntil && travellingUntil > clock;
   const here = data.locations.find(l => l.here);
 
+  // Live countdown to the destination, shared with the tile so it
+  // ticks every 500ms without forcing every other tile to re-render.
+  const travelMsLeft = travelling ? Math.max(0, travellingUntil - clock) : 0;
+
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-ink-100/10 bg-ink-900/40 p-3">
-        {travelling ? (
-          <div>
-            <div className="text-xs uppercase tracking-wide text-cyan-300">
-              {data.intra_travel_mode === 'drive' ? 'Driving' : 'Walking'} to {data.intra_travel_to?.replace(/_/g, ' ')}
-            </div>
-            <div className="text-2xl font-display mt-1 text-cyan-200 tabular-nums">
-              {fmtSecs(travellingUntil - clock)}
-            </div>
-            <p className="text-[12px] text-ink-100/55 mt-1">Locked except for chat until you arrive.</p>
-          </div>
-        ) : (
-          <div>
-            <div className="text-xs uppercase tracking-wide text-ink-100/55">You are at</div>
-            <div className="text-2xl font-display mt-0.5">{here?.name || 'On the streets'}</div>
-            <p className="text-[12px] text-ink-100/55 mt-1">
-              {data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
-            </p>
-          </div>
-        )}
+        <div className="text-xs uppercase tracking-wide text-ink-100/55">You are at</div>
+        <div className="text-2xl font-display mt-0.5">
+          {travelling
+            ? <span className="text-cyan-200">En route…</span>
+            : (here?.name || 'On the streets')}
+        </div>
+        <p className="text-[12px] text-ink-100/55 mt-1">
+          {travelling
+            ? 'Locked except for chat until you arrive. Countdown is on the destination tile below.'
+            : data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
+        </p>
       </div>
 
       {msg && <p className="text-xs text-blood-300">{msg}</p>}
@@ -146,6 +168,9 @@ function AroundTown() {
               busy={busy || !!travelling}
               onTravel={startTravel}
               onEnter={enter}
+              travel={travelling && data.intra_travel_to === loc.slug
+                ? { active: true, mode: data.intra_travel_mode, msLeft: travelMsLeft }
+                : null}
             />
           ))}
       </div>
