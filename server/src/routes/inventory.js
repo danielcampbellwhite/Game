@@ -6,6 +6,7 @@ import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { garageSummary, freeGarageSpace } from '../services/garage.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
+import { itemWeight, PERSONAL_CAP_KG, HOUSE_CAP_KG, personalWeight, houseStashWeight, hasHouseIn, listHouseStash, transfer } from '../services/weight.js';
 
 // Inter-city shipping: £500 base × tier × (destination flight cost
 // scaled to a 1500 median). Tier-1 short-hop ≈ £500, tier-7 long-haul
@@ -106,8 +107,35 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     cityName: cityById(g.city)?.name || g.city,
   }));
 
+  // Per-unit weights stamped onto each personal row so the UI can
+  // render the weight column without re-resolving categories.
+  const stampWeight = (kind) => (i) => ({ ...i, unit_kg: itemWeight(kind, i.id ?? i.item_id) });
+  const weaponsW = weapons.map(stampWeight('weapon'));
+  const armoursW = armours.map(stampWeight('armour'));
+  const drugsW   = drugs.map(stampWeight('drug'));
+  const ammoW    = ammo.map(stampWeight('ammo'));
+  const miscW    = misc.map(stampWeight('misc'));
+
+  // House stash for the city the character is currently in. Empty when
+  // they don't own a property in this city.
+  const currentCity = ch.city;
+  const houseOwned  = hasHouseIn(ch.id, currentCity);
+  const houseItems  = houseOwned ? listHouseStash(ch.id, currentCity) : [];
+  // Decorate with display names so the client doesn't need to look
+  // them up against the catalogues for the stash UI.
+  const houseDecorated = houseItems.map(i => {
+    let name = i.item_id;
+    if (i.kind === 'weapon') name = weaponById(i.item_id)?.name || name;
+    if (i.kind === 'armour') name = armourById(i.item_id)?.name || name;
+    if (i.kind === 'ammo')   name = ammoById(i.item_id)?.name   || name;
+    if (i.kind === 'drug')   name = drugById(i.item_id)?.name   || name;
+    if (i.kind === 'misc')   name = miscItemById(i.item_id)?.name || name;
+    return { ...i, name };
+  });
+
   res.json({
-    weapons, armours, drugs, ammo, misc, vehicles, properties,
+    weapons: weaponsW, armours: armoursW, drugs: drugsW, ammo: ammoW, misc: miscW,
+    vehicles, properties,
     garages,
     equipped: {
       weapon: ch.equipped_weapon,
@@ -116,7 +144,39 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       armour_detail: equippedArmour || null,
       weapon_ammo: ammoForEquipped,
     },
+    weight: {
+      personal_kg:     personalWeight(ch.id),
+      personal_cap_kg: PERSONAL_CAP_KG,
+      house_kg:        houseOwned ? houseStashWeight(ch.id, currentCity) : 0,
+      house_cap_kg:    HOUSE_CAP_KG,
+      house_owned:     houseOwned,
+      house_city:      currentCity,
+    },
+    house_stash: houseDecorated,
   });
+});
+
+// POST /api/inventory/transfer { kind, item_id, qty, from, to } —
+// move items between personal and the current-city house stash. Caps
+// enforced at the destination; insufficient quantity / cap overflow
+// returns 400.
+router.post('/transfer', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const { kind, item_id, qty, from, to } = req.body || {};
+  const n = parseInt(qty, 10);
+  if (!kind || !item_id || !n || n <= 0) return res.status(400).json({ error: 'kind, item_id, qty required.' });
+  if (!['personal', 'house'].includes(from) || !['personal', 'house'].includes(to)) {
+    return res.status(400).json({ error: 'from/to must be personal or house.' });
+  }
+  // House stash is city-locked — you can only fish through your own
+  // city's stash. (Vehicle cargo is a follow-up commit.)
+  const city = ch.city;
+  if ((from === 'house' || to === 'house') && !hasHouseIn(ch.id, city)) {
+    return res.status(400).json({ error: 'You don\'t own a property in this city.' });
+  }
+  const r = transfer(ch.id, kind, item_id, n, 0, from, to, city);
+  if (r.error) return res.status(400).json({ error: r.error });
+  res.json({ ok: true });
 });
 
 // Quote a shipping cost without committing — used by the client before
@@ -263,12 +323,22 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   const unitCost = kind === 'ammo' ? item.cost : Math.floor((item.cost || 0) * cityMul);
   const total = unitCost * (kind === 'ammo' ? item.packSize * qty : qty);
   if (ch.cash < total) return res.status(400).json({ error: `Need £${total.toLocaleString()}` });
+  // Carry-weight gate. Reject before deducting cash so the player
+  // doesn't get charged for stock they can't pick up.
+  const buyUnits = kind === 'ammo' ? item.packSize * qty : qty;
+  const buyKg = itemWeight(kind, item_id) * buyUnits;
+  const haveKg = personalWeight(ch.id);
+  if (haveKg + buyKg > PERSONAL_CAP_KG + 1e-6) {
+    return res.status(400).json({
+      error: `Carry too much — adds ${buyKg.toFixed(2)}kg (you have ${haveKg.toFixed(1)}/${PERSONAL_CAP_KG}kg). Stash items at your house first.`,
+    });
+  }
   ch.cash -= total;
   // For weapons/armour, store qty (you can own multiples but only equip one).
   db.prepare(`
     INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, ?, ?, ?)
     ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
-  `).run(ch.id, kind, item_id, kind === 'ammo' ? item.packSize * qty : qty);
+  `).run(ch.id, kind, item_id, buyUnits);
   writeLog(ch.id, 'shop', `Bought ${kind === 'ammo' ? `${item.packSize * qty} ${item.name}` : `${qty}× ${item.name}`} for £${total}.`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });

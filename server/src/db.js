@@ -620,6 +620,30 @@ export function initDb() {
   addColumnIfMissing('characters', 'intra_travel_until', 'INTEGER');
   addColumnIfMissing('characters', 'intra_travel_to',    'TEXT');
   addColumnIfMissing('characters', 'intra_travel_mode',  'TEXT');
+  // Stamped the first time the one-time weight migration completes for
+  // this character (see services/weight.js). NULL means "needs migrate"
+  // and applyTick will run it lazily.
+  addColumnIfMissing('characters', 'weight_migrated_at', 'INTEGER');
+
+  // Stash table — extra inventory held outside the player's pocket.
+  // Personal items continue to live in the existing `inventory` table.
+  // Rows here are scoped by (container, city) so a NY house stash is
+  // distinct from a Tokyo house stash.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS stash (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      char_id   INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      container TEXT    NOT NULL,
+      city      TEXT,
+      kind      TEXT    NOT NULL,
+      item_id   TEXT    NOT NULL,
+      qty       INTEGER NOT NULL DEFAULT 1,
+      ammo      INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(char_id, container, city, kind, item_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_stash_char ON stash(char_id);
+    CREATE INDEX IF NOT EXISTS idx_stash_house ON stash(char_id, container, city);
+  `);
   // Admin/god flag. The very first user to call /api/admin/promote-self
   // (gated by ADMIN_TOKEN) is granted admin; thereafter the flag is the
   // source of truth and ADMIN_TOKEN is only needed for re-bootstrap.

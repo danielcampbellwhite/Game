@@ -6,6 +6,7 @@ import { effectiveHeat } from './heat.js';
 import { writeLog } from './log.js';
 import { getPremiumPropertyBonusesForUser, userIdForChar } from './premium.js';
 import { maybeArrive, forceLocation } from './locations.js';
+import { migrateCharacterWeights } from './weight.js';
 
 // Pending-trial flag is surfaced on publicCharacter so App.jsx's
 // Protected wrapper can redirect into /trial the moment charges
@@ -158,6 +159,12 @@ export function applyTick(ch) {
     forceLocation(ch, 'streets');
   }
   if (!ch.current_location) ch.current_location = 'streets';
+
+  // One-time weight migration — snaps personal carry down to the cap
+  // and overflows the heaviest items into the current-city house. Safe
+  // to call every tick: it bails out as soon as weight_migrated_at is
+  // stamped on the row.
+  if (!ch.weight_migrated_at) migrateCharacterWeights(ch);
 
   // Happiness floor + ceiling shifted by property bonus
   const happinessFloor = 50 + bonuses.happiness;

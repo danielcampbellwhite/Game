@@ -9,6 +9,43 @@
 
 export const PATCHES = [
   {
+    version: '0.9.12',
+    date: '2026-05-15',
+    title: 'Weighted inventory + house stash',
+    sections: [
+      {
+        heading: 'Every item now has a weight',
+        notes: [
+          'Personal carry cap: 30 kg. Hard cap — the gun store and general store will refuse a purchase that would push you over.',
+          'Weights come from category (pistols ~1 kg, rifles ~4 kg, snipers ~7 kg) and per-id tables for armour, ammo, drugs, misc. Easy to tune from one place.',
+          'Inventory tab shows a live carry bar — green up to 75%, yellow up to 95%, red when you\'re about to spill. Each item row shows its weight contribution.',
+        ],
+      },
+      {
+        heading: 'House stash — per city',
+        notes: [
+          'If you own a property in the city you\'re in, you also get a 5,000 kg house stash. Move heavy gear off your person and onto the shelf — it stays there until you come back to pick it up.',
+          'Stash buttons sit next to every weapon, armour, ammo and drug row. Tap, type a quantity, done. The "Take" button on house rows moves items back to your pocket up to your carry cap.',
+          'House stash is city-locked — fly to Tokyo and you only see your Tokyo stash. NY stash stays in NY, waiting for you to come home.',
+        ],
+      },
+      {
+        heading: 'Existing characters — one-time migration',
+        notes: [
+          'On your next page-load the server runs a one-time migration: if you were carrying more than 30 kg, the heaviest items get pushed into your current-city house stash to free you up. If you don\'t own a property in your current city, the overflow VANISHES (you were warned by physics).',
+          'A timestamp on your character marks the migration as complete so it never runs twice.',
+        ],
+      },
+      {
+        heading: 'Caveats — vehicle cargo is next',
+        notes: [
+          'Vehicle cargo (the boot of your active car) isn\'t in this update yet. Coming in the follow-up commit — a third stash that travels with whatever you\'re driving.',
+          'Faction perks, business yields, and trade swaps don\'t check weight at insert time yet — those can still overshoot the cap. The buy gates catch 90% of the abuse for now; the rest comes in a tightening pass.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.11',
     date: '2026-05-15',
     title: 'In-city travel — every building is now a real place',

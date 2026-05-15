@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { MISC_ITEMS, miscItemById, cityById } from '../data.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
+import { itemWeight, personalWeight, PERSONAL_CAP_KG } from '../services/weight.js';
 import { applyVitalEffects, effectsToText } from '../services/vitals.js';
 import { bumpMission } from '../services/missions.js';
 import { writeLog } from '../services/log.js';
@@ -75,6 +76,14 @@ router.post('/buy', requireAuth, requireCharacter, (req, res) => {
   const unit = Math.floor(item.cost * cityMul);
   const total = unit * n;
   if (ch.cash < total) return res.status(400).json({ error: `Need £${total.toLocaleString()}` });
+  // Carry-weight gate — reject before deducting cash.
+  const buyKg = itemWeight('misc', item.id) * n;
+  const haveKg = personalWeight(ch.id);
+  if (haveKg + buyKg > PERSONAL_CAP_KG + 1e-6) {
+    return res.status(400).json({
+      error: `Carry too much — adds ${buyKg.toFixed(2)}kg (you have ${haveKg.toFixed(1)}/${PERSONAL_CAP_KG}kg). Stash items at your house first.`,
+    });
+  }
   ch.cash -= total;
   db.prepare(`
     INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, 'misc', ?, ?)

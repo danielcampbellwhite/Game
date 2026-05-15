@@ -152,6 +152,96 @@ const TABS = [
   { id: 'vehicles', label: 'Vehicles' },
 ];
 
+// Carry-weight bar — Personal (always shown) and House stash (when the
+// character owns a property in the current city). Hard cap on Personal
+// is enforced on the server at buy time; House is effectively infinite
+// at the current 5,000 kg cap.
+function WeightCard({ weight }) {
+  if (!weight) return null;
+  const pct = Math.max(0, Math.min(100, (weight.personal_kg / weight.personal_cap_kg) * 100));
+  const tone = pct >= 95 ? 'bg-blood-500' : pct >= 75 ? 'bg-yellow-400' : 'bg-money-500';
+  return (
+    <Card title="Carry weight"
+      subtitle={`Personal cap is ${weight.personal_cap_kg}kg. Stash overflow at your house.`}>
+      <div className="space-y-3">
+        <div>
+          <div className="flex items-baseline justify-between text-[12px] mb-1">
+            <span className="uppercase tracking-wide text-ink-100/55">On your person</span>
+            <span className="tabular-nums text-ink-100/85">
+              {weight.personal_kg.toFixed(2)} / {weight.personal_cap_kg.toFixed(0)} kg
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-ink-100/10 overflow-hidden">
+            <div className={tone} style={{ width: pct + '%', height: '100%' }} />
+          </div>
+        </div>
+        {weight.house_owned && (
+          <div>
+            <div className="flex items-baseline justify-between text-[12px] mb-1">
+              <span className="uppercase tracking-wide text-ink-100/55">House stash — {(weight.house_city || '').replace(/_/g, ' ')}</span>
+              <span className="tabular-nums text-ink-100/85">
+                {weight.house_kg.toFixed(1)} / {weight.house_cap_kg.toLocaleString()} kg
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-ink-100/10 overflow-hidden">
+              <div className="bg-cyan-500" style={{ width: Math.min(100, (weight.house_kg / weight.house_cap_kg) * 100) + '%', height: '100%' }} />
+            </div>
+          </div>
+        )}
+        {!weight.house_owned && (
+          <p className="text-[12px] text-ink-100/45">No property in this city — buy a place to unlock a house stash.</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// House stash panel: shows items currently parked at home in this
+// city, with a Take button per row. Personal items get a Stash button
+// in their respective sections.
+function HouseStashCard({ items, weight, onTransfer, busy }) {
+  if (!weight?.house_owned) return null;
+  return (
+    <Card title={`House Stash — ${(weight.house_city || '').replace(/_/g, ' ')}`}
+      subtitle={`${items.length} item types · ${weight.house_kg.toFixed(1)}kg of ${weight.house_cap_kg.toLocaleString()}kg.`}>
+      {items.length === 0 ? (
+        <p className="text-xs text-ink-100/45">Nothing stored here yet. Move heavy gear off your person to free up carry weight.</p>
+      ) : (
+        <div className="divide-y divide-ink-100/5">
+          {items.map(it => (
+            <div key={`${it.kind}:${it.item_id}`} className="py-2 flex items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm truncate">{it.name}</div>
+                <div className="text-[12px] text-ink-100/45">
+                  {it.kind} · {it.qty} × {it.unit_kg.toFixed(3)}kg = {(it.qty * it.unit_kg).toFixed(2)}kg
+                </div>
+              </div>
+              <button
+                disabled={busy}
+                onClick={() => onTransfer(it.kind, it.item_id, it.qty, 'house', 'personal')}
+                className="btn btn-primary text-[11px] py-1 shrink-0">
+                Take {it.qty}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function StashButton({ kind, item_id, qty, onTransfer, busy }) {
+  return (
+    <button
+      disabled={busy}
+      onClick={() => onTransfer(kind, item_id, qty, 'personal', 'house')}
+      title="Move to your house stash in this city"
+      className="text-[11px] px-2 py-0.5 rounded border border-ink-100/15 hover:border-cyan-400/40 hover:text-cyan-300 disabled:opacity-40">
+      Stash all
+    </button>
+  );
+}
+
 function CountBadge({ n, tone = 'ink' }) {
   const cls = tone === 'blood'
     ? 'bg-blood-700/30 text-blood-200'
@@ -225,6 +315,20 @@ export default function Inventory() {
   // Use a misc / general-store item from the inventory directly. Reuses
   // the General Store's /use endpoint (it just decrements qty and applies
   // the item's effect — vitals, oneShotCash, or pure mission consumption).
+  async function moveItem(kind, item_id, qty, from, to) {
+    const askQty = window.prompt(`How many to move?  (max ${qty})`, String(qty));
+    const n = parseInt(askQty || '', 10);
+    if (!Number.isFinite(n) || n <= 0) return;
+    const clamped = Math.min(qty, n);
+    setBusy(`mv-${kind}-${item_id}`); setMsg(null);
+    try {
+      await api.post('/inventory/transfer', { kind, item_id, qty: clamped, from, to });
+      await refresh();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   async function useMisc(item) {
     setBusy(`use-${item.id}`); setMsg(null);
     try {
@@ -290,6 +394,13 @@ export default function Inventory() {
       {/*  Overview  */}
       {tab === 'overview' && (
         <>
+          <WeightCard weight={inv.weight} />
+          <HouseStashCard
+            items={inv.house_stash || []}
+            weight={inv.weight}
+            onTransfer={moveItem}
+            busy={!!busy}
+          />
           <EquippedSummary inv={inv} />
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -341,10 +452,15 @@ export default function Inventory() {
                   {w.qty > 1 && <span className="text-[12px] text-ink-100/50">×{w.qty}</span>}
                 </div>
                 {w.maker && <div className="text-[12px] text-ink-100/50">{w.maker}</div>}
-                <div className="text-[13px] text-ink-100/60">DMG {w.dmg}{w.ammoType ? ` · ${w.ammoType}` : ' · melee'}</div>
+                <div className="text-[13px] text-ink-100/60">DMG {w.dmg}{w.ammoType ? ` · ${w.ammoType}` : ' · melee'}{w.unit_kg ? ` · ${w.unit_kg.toFixed(1)}kg` : ''}</div>
                 {eq.weapon === w.id
                   ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                   : <button disabled={busy === `eq-weapon-${w.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('weapon', w.id)}>Equip</button>}
+                {inv.weight?.house_owned && (
+                  <div className="mt-2 flex justify-end">
+                    <StashButton kind="weapon" item_id={w.id} qty={w.qty} onTransfer={moveItem} busy={busy === `mv-weapon-${w.id}`} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -368,10 +484,15 @@ export default function Inventory() {
                   <div className="font-medium">{a.name}</div>
                   {a.qty > 1 && <span className="text-[12px] text-ink-100/50">×{a.qty}</span>}
                 </div>
-                <div className="text-[13px] text-ink-100/60">DEF {a.def}</div>
+                <div className="text-[13px] text-ink-100/60">DEF {a.def}{a.unit_kg ? ` · ${a.unit_kg.toFixed(0)}kg` : ''}</div>
                 {eq.armour === a.id
                   ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                   : <button disabled={busy === `eq-armour-${a.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('armour', a.id)}>Equip</button>}
+                {inv.weight?.house_owned && (
+                  <div className="mt-2 flex justify-end">
+                    <StashButton kind="armour" item_id={a.id} qty={a.qty} onTransfer={moveItem} busy={busy === `mv-armour-${a.id}`} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -391,9 +512,14 @@ export default function Inventory() {
                 return (
                   <div key={a.id} className={`rounded-lg p-3 border ${isEquippedType ? 'border-yellow-600/60 bg-yellow-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
                     <div className="font-medium">{a.name}</div>
-                    <div className="text-[13px] text-ink-100/60 tabular-nums">{a.qty} rounds</div>
+                    <div className="text-[13px] text-ink-100/60 tabular-nums">{a.qty} rounds{a.unit_kg ? ` · ${(a.qty * a.unit_kg).toFixed(2)}kg` : ''}</div>
                     {isEquippedType && (
                       <div className="text-[12px] uppercase mt-1 text-yellow-300">for equipped weapon</div>
+                    )}
+                    {inv.weight?.house_owned && (
+                      <div className="mt-2 flex justify-end">
+                        <StashButton kind="ammo" item_id={a.id} qty={a.qty} onTransfer={moveItem} busy={busy === `mv-ammo-${a.id}`} />
+                      </div>
                     )}
                   </div>
                 );
@@ -414,7 +540,12 @@ export default function Inventory() {
               {inv.drugs.map(d => (
                 <div key={d.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40">
                   <div className="font-medium">{d.name}</div>
-                  <div className="text-[13px] text-ink-100/60 tabular-nums">{d.qty} units</div>
+                  <div className="text-[13px] text-ink-100/60 tabular-nums">{d.qty} units{d.unit_kg ? ` · ${(d.qty * d.unit_kg).toFixed(3)}kg` : ''}</div>
+                  {inv.weight?.house_owned && (
+                    <div className="mt-2 flex justify-end">
+                      <StashButton kind="drug" item_id={d.id} qty={d.qty} onTransfer={moveItem} busy={busy === `mv-drug-${d.id}`} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
