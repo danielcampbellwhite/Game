@@ -197,23 +197,29 @@ function WardrobeTab() {
             <Link to="/clothing/high" className="btn btn-ghost text-xs">→ Atelier</Link>
           </div>
         }>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-5">
           {SLOT_ORDER.map(slot => {
             const eq = data.equipped[slot];
             return (
-              <div key={slot} className="rounded-lg p-2 border border-ink-100/10 bg-ink-950/40 flex flex-col items-center text-center">
-                <div className="text-[11px] uppercase tracking-wide text-ink-100/55 mb-1">{SLOT_LABELS[slot]}</div>
-                <div className="w-14 h-14 rounded bg-ink-900/60 flex items-center justify-center">
+              <div key={slot}
+                className="rounded-lg p-2 border border-ink-100/10 bg-ink-950/40
+                           flex flex-row items-center gap-3 text-left
+                           sm:flex-col sm:items-center sm:text-center sm:gap-0">
+                <div className="w-14 h-14 rounded bg-ink-900/60 flex items-center justify-center shrink-0 sm:order-2 sm:mt-1">
                   {eq ? <ClothingSvg id={eq.id} size={56} /> : <span className="text-ink-100/30 text-2xl">·</span>}
                 </div>
-                <div className="text-[11px] text-ink-100/70 mt-1 line-clamp-2 min-h-[28px]">
-                  {eq?.name || 'Empty'}
+                <div className="min-w-0 flex-1 sm:order-1 sm:flex-none sm:w-full">
+                  <div className="text-[11px] uppercase tracking-wide text-ink-100/55">{SLOT_LABELS[slot]}</div>
+                  <div className="text-[12px] text-ink-100/80 truncate sm:line-clamp-2 sm:min-h-[28px] sm:mt-1">
+                    {eq?.name || 'Empty'}
+                  </div>
                 </div>
                 {eq && (
                   <button
                     onClick={() => equip(slot, null)}
                     disabled={busy === `${slot}:unequip`}
-                    className="text-[10px] text-ink-100/55 hover:text-blood-300 mt-1 disabled:opacity-50">
+                    className="text-[11px] text-ink-100/55 hover:text-blood-300 disabled:opacity-50 shrink-0
+                               sm:order-3 sm:text-[10px] sm:mt-1">
                     Remove
                   </button>
                 )}
