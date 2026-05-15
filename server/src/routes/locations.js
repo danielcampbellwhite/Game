@@ -22,6 +22,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       emoji:  m.emoji || null,
       route:  m.route,
       gated:  !!m.gated,
+      desc:   m.desc || null,
       here:   slug === here,
     }));
 

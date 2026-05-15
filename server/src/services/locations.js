@@ -20,29 +20,38 @@ export const DRIVE_MS = 10 * 1000;
 // Catalog of physical locations. `slug` is the persisted value of
 // characters.current_location and the value sent to /travel.
 // `route` is the client URL the player goes to once they arrive.
+// `desc` is rendered on the City > Around Town tile so each
+// location gets a one-line "what is this place" blurb.
 export const LOCATIONS = {
-  streets:        { name: 'On the streets',     emoji: '',  route: '/city',           travelable: true,  gated: false },
-  bank:           { name: 'Bank',               emoji: '',  route: '/bank',           travelable: true,  gated: true  },
-  gun_store:      { name: 'Gun Store',          emoji: '',  route: '/gun-store',      travelable: true,  gated: true  },
-  dealership:     { name: 'Car Dealership',     emoji: '',  route: '/dealership',     travelable: true,  gated: true  },
-  chop_shop:      { name: 'Chop Shop',          emoji: '',  route: '/chop-shop',      travelable: true,  gated: true  },
-  repair:         { name: 'Repair Shop',        emoji: '',  route: '/repair',         travelable: true,  gated: true  },
-  gym:            { name: 'Gym',                emoji: '',  route: '/gym',            travelable: true,  gated: true  },
-  range:          { name: 'Shooting Range',     emoji: '',  route: '/range',          travelable: true,  gated: true  },
-  university:     { name: 'University',         emoji: '',  route: '/university',     travelable: true,  gated: true  },
-  driving_school: { name: 'Driving School',     emoji: '',  route: '/driving-school', travelable: true,  gated: true  },
-  hospital:       { name: 'Hospital',           emoji: '',  route: '/hospital',       travelable: true,  gated: true  },
-  casino:         { name: 'Casino',             emoji: '',  route: '/casino',         travelable: true,  gated: true  },
-  bookmaker:      { name: 'Bookmaker',          emoji: '',  route: '/bookmaker',      travelable: true,  gated: true  },
-  fence:          { name: 'The Fence',          emoji: '',  route: '/fence',          travelable: true,  gated: true  },
-  general_store:  { name: 'General Store',      emoji: '',  route: '/general-store',  travelable: true,  gated: true  },
-  job_board:      { name: 'Job Board',          emoji: '',  route: '/job-board',      travelable: true,  gated: true  },
-  clothing_low:   { name: 'Streetwear Outlet',  emoji: '',  route: '/clothing/low',   travelable: true,  gated: true  },
-  clothing_high:  { name: 'Atelier',            emoji: '',  route: '/clothing/high',  travelable: true,  gated: true  },
+  streets:        { name: 'On the streets',     route: '/city',           travelable: true,  gated: false, desc: 'Default spot when you arrive in a city or step out of a building.' },
+  bank:           { name: 'Bank',               route: '/bank',           travelable: true,  gated: true,  desc: 'Vault, deposits, transfers. Cash kept here doesn\'t count toward what robbers can take.' },
+  gun_store:      { name: 'Gun Store',          route: '/gun-store',      travelable: true,  gated: true,  desc: 'Pistols to assault rifles, plus the ammo to feed them. Required to swap loadouts.' },
+  dealership:     { name: 'Car Dealership',     route: '/dealership',     travelable: true,  gated: true,  desc: 'Legal cars and trucks. Buy outright or trade in. Licence-gated by tier.' },
+  chop_shop:      { name: 'Chop Shop',          route: '/chop-shop',      travelable: true,  gated: true,  desc: 'Move stolen vehicles fast (cheap) or via the dealer (risky).' },
+  repair:         { name: 'Repair Shop',        route: '/repair',         travelable: true,  gated: true,  desc: 'Fix dings, dents and bullet holes. Pricier the worse the damage.' },
+  gym:            { name: 'Gym',                route: '/gym',            travelable: true,  gated: true,  desc: 'Train STR, DEF, SPD and DEX. Energy in, stat points out.' },
+  range:          { name: 'Shooting Range',     route: '/range',          travelable: true,  gated: true,  desc: 'Practice your aim. Better accuracy means fewer missed shots when it matters.' },
+  university:     { name: 'University',         route: '/university',     travelable: true,  gated: true,  desc: 'Long courses for INT. Slow gains but they stick.' },
+  driving_school: { name: 'Driving School',     route: '/driving-school', travelable: true,  gated: true,  desc: 'Earn the next driving licence tier. Higher tier unlocks better cars at the dealership.' },
+  hospital:       { name: 'Hospital',           route: '/hospital',       travelable: true,  gated: true,  desc: 'Pay to skip the rest of your bed-rest timer.' },
+  casino:         { name: 'Lucky Crown Casino', route: '/casino',         travelable: true,  gated: true,  desc: 'Roulette, blackjack, slots — try your luck against the house. Open afternoons to early morning.' },
+  bookmaker:      { name: 'Bookmaker',          route: '/bookmaker',      travelable: true,  gated: true,  desc: 'Wager on football, boxing, horses and F1. ~8% house margin.' },
+  fence:          { name: 'The Fence',          route: '/fence',          travelable: true,  gated: true,  desc: 'Wash illegal cash into legal at 70% — your relationship buys you a few extra points.' },
+  general_store:  { name: 'General Store',      route: '/general-store',  travelable: true,  gated: true,  desc: 'Snacks, tools, lockpicks — the bits and bobs of the trade.' },
+  clothing_low:   { name: 'Streetwear Outlet',  route: '/clothing/low',   travelable: true,  gated: true,  desc: 'Tracksuits, snapbacks, gold chains. Cheap, flashy, all cosmetic.' },
+  clothing_high:  { name: 'Atelier',            route: '/clothing/high',  travelable: true,  gated: true,  desc: 'Bespoke suits, Italian leather, watches that take a year to ship. Cosmetic, by appointment only.' },
+  // New: services that used to be accessible from anywhere. Promoted
+  // to real locations so the City page is fully place-based.
+  brokerage:      { name: 'Stock Brokerage',    route: '/stocks',         travelable: true,  gated: true,  desc: 'Live tickers and traders in suits. Buy and sell listed stocks.' },
+  estate_agent:   { name: 'Estate Agent',       route: '/property',       travelable: true,  gated: true,  desc: 'Property listings and the keys to your next house. Buy, browse, sell.' },
+  newsstand:      { name: 'Newsstand',          route: '/newspaper',      travelable: true,  gated: true,  desc: 'Today\'s Gazette: front page, police blotter, social pages.' },
+  airport:        { name: 'Airport',            route: '/travel',         travelable: true,  gated: true,  desc: 'Flights to other cities. Set your destination, pay your fare, wheels up.' },
+  drug_market:    { name: 'The Block',          route: '/drugs',          travelable: true,  gated: true,  desc: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the flip size.' },
+  high_street:    { name: 'High Street',        route: '/high-street',    travelable: true,  gated: true,  desc: 'Coffee shop, pharmacy, off-licence, deli, gift shop — all on one block.' },
   // Forced-state locations — you don't travel to them, you arrive
   // because something happened. Listed so the slug is recognised by
   // the lookup and the UI can render a name/emoji.
-  jail:           { name: 'Jail',               emoji: '',  route: '/jail',           travelable: false, gated: false },
+  jail:           { name: 'Jail',               route: '/jail',           travelable: false, gated: false, desc: 'You don\'t pick this destination. It picks you.' },
 };
 
 export function locationMeta(slug) {

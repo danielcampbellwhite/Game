@@ -64,6 +64,7 @@ import Admin from './pages/Admin.jsx';
 import Premium from './pages/Premium.jsx';
 import Friends from './pages/Friends.jsx';
 import ClothingStore from './pages/ClothingStore.jsx';
+import HighStreet from './pages/HighStreet.jsx';
 import ChatWidget from './components/ChatWidget.jsx';
 
 function Protected({ children }) {
@@ -245,6 +246,7 @@ export default function App() {
           <Route path="/premium" element={<Protected><Premium /></Protected>} />
           <Route path="/friends" element={<Protected><Friends /></Protected>} />
           <Route path="/clothing/:tier" element={<Protected><ClothingStore /></Protected>} />
+          <Route path="/high-street" element={<Protected><HighStreet /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

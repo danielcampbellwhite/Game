@@ -1,27 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
 import Card from '../components/Card.jsx';
 import WorldMap from '../components/WorldMap.jsx';
 import CityMap from '../components/CityMap.jsx';
 import FactionBadge from '../components/FactionBadge.jsx';
-
-// Quick links to "anywhere" services — pages you don't need to
-// physically be in a specific building to use. Kept separate from
-// the location tiles so the travel UX stays focused on real
-// destinations.
-const ANYWHERE_LINKS = [
-  { to: '/stocks',     name: 'Stock Broker',    blurb: 'Live tickers. Trade from anywhere.' },
-  { to: '/property',   name: 'Estate Agent',    blurb: 'Buy / browse / sell — all online.' },
-  { to: '/newspaper',  name: 'The City Gazette', blurb: 'Today\'s front page and the police blotter.' },
-  { to: '/travel',     name: 'Airport',         blurb: 'Flights to other cities.' },
-  { to: '/shop/coffee',     name: 'Coffee Shop',     blurb: 'Espresso, energy drinks — quick energy.' },
-  { to: '/shop/pharmacy',   name: 'Pharmacy',        blurb: 'First aid, painkillers, vitamins.' },
-  { to: '/shop/off_licence',name: 'Off-Licence',     blurb: 'Booze and cigars.' },
-  { to: '/shop/deli',       name: 'Late-Night Deli', blurb: 'Energy + a side of happiness.' },
-  { to: '/shop/gift_shop',  name: 'Gift Shop',       blurb: 'Flowers, chocolates, tickets.' },
-];
 
 function fmtSecs(ms) {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -36,6 +20,7 @@ function LocationTile({ loc, hasVehicle, walkMs, driveMs, busy, onTravel, onEnte
           <span className="font-medium text-sm text-money-300">{loc.name}</span>
           <span className="text-[11px] uppercase tracking-wide text-money-400">You're here</span>
         </div>
+        {loc.desc && <div className="text-[13px] text-ink-100/65 leading-snug mt-1">{loc.desc}</div>}
         {loc.gated && (
           <button onClick={() => onEnter(loc)} className="btn btn-primary text-xs mt-2 w-full">
             Enter {loc.name}
@@ -49,6 +34,7 @@ function LocationTile({ loc, hasVehicle, walkMs, driveMs, busy, onTravel, onEnte
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-medium text-sm">{loc.name}</span>
       </div>
+      {loc.desc && <div className="text-[13px] text-ink-100/55 leading-snug mt-1">{loc.desc}</div>}
       <div className="grid grid-cols-2 gap-1.5 mt-2">
         <button
           disabled={busy}
@@ -163,164 +149,10 @@ function AroundTown() {
             />
           ))}
       </div>
-
-      <div className="pt-2">
-        <div className="text-[12px] uppercase tracking-wide text-ink-100/45 mb-2">Available from anywhere</div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {ANYWHERE_LINKS.map(l => (
-            <Link key={l.to} to={l.to}
-              className="group flex p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
-              <div className="min-w-0">
-                <div className="font-medium text-sm group-hover:text-blood-400 transition">{l.name}</div>
-                <div className="text-[13px] text-ink-100/55 leading-snug mt-0.5">{l.blurb}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
 
-const UNDERWORLD = [
-  { to: '/drugs',      slug: null,        name: 'The Drug Market',          blurb: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the size of the flip.' },
-  { to: '/chop-shop',  slug: 'chop_shop', name: 'Chop Shop & Black Market', blurb: 'Move stolen vehicles fast (cheap) or via the dealer (risky).' },
-  { to: '/fence',      slug: 'fence',     name: 'The Fence',                blurb: 'Wash illegal cash into legal at 70% — your relationship with the local fence buys you a few extra points.' },
-  { to: '/casino',     slug: 'casino',    name: 'The Lucky Crown Casino',   blurb: 'Roulette, blackjack, slots — try your luck against the house. Open afternoons through to early morning.' },
-  { to: '/bookmaker',  slug: 'bookmaker', name: 'The Bookmaker',            blurb: 'Wager on football, boxing, horses and F1. ~8% house margin.' },
-];
-
-// Plain navigation tile — used for underworld features that aren't
-// gated to a specific in-city building (Drug Market, Break and Enter).
-function Tile({ to, name, blurb }) {
-  return (
-    <Link to={to}
-      className="group flex p-3 rounded-lg border border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40 hover:bg-ink-900/60 transition">
-      <div className="min-w-0">
-        <div className="font-medium text-sm group-hover:text-blood-400 transition">{name}</div>
-        <div className="text-[13px] text-ink-100/55 leading-snug mt-0.5">{blurb}</div>
-      </div>
-    </Link>
-  );
-}
-
-// Wraps the Underworld tile grid with a single /api/locations fetch
-// so all the gated tiles share one travel state. Mirrors the
-// Around Town pattern — tiles whose `slug` matches an in-city
-// building behave like LocationTile (Walk/Drive/Enter); tiles with
-// no slug are plain Link navigations.
-function UnderworldTiles({ entries }) {
-  const { refresh } = useGame();
-  const [data, setData] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg]   = useState(null);
-  const [clock, setClock] = useState(() => Date.now());
-
-  async function load() {
-    try { setData(await api.get('/locations')); }
-    catch (e) { setMsg(e.message); }
-  }
-  useEffect(() => { load(); }, []);
-
-  const travellingUntil = data?.intra_travel_until;
-  useEffect(() => {
-    const i = setInterval(() => setClock(Date.now()), 500);
-    return () => clearInterval(i);
-  }, []);
-  useEffect(() => {
-    if (!travellingUntil) return;
-    const i = setInterval(load, 1000);
-    return () => clearInterval(i);
-  }, [travellingUntil]);
-  const arrivedRef = React.useRef(false);
-  useEffect(() => {
-    if (!travellingUntil) { arrivedRef.current = false; return; }
-    if (clock >= travellingUntil && !arrivedRef.current) {
-      arrivedRef.current = true;
-      refresh?.();
-      load();
-    }
-  }, [clock, travellingUntil, refresh]);
-
-  async function startTravel(slug, mode) {
-    setBusy(true); setMsg(null);
-    try {
-      await api.post('/locations/travel', { to: slug, mode });
-      await refresh?.();
-      await load();
-    } catch (e) { setMsg(e.message); }
-    finally { setBusy(false); }
-  }
-
-  const travelling = !!(travellingUntil && travellingUntil > clock);
-  const hasVehicle = !!data?.has_vehicle;
-
-  return (
-    <>
-      {msg && <p className="text-xs text-blood-300 mb-2">{msg}</p>}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {entries.map(e => e.slug
-          ? <UnderworldLocationTile
-              key={e.to}
-              entry={e}
-              data={data}
-              busy={busy}
-              travelling={travelling}
-              hasVehicle={hasVehicle}
-              clock={clock}
-              onTravel={startTravel} />
-          : <Tile key={e.to} {...e} />
-        )}
-      </div>
-    </>
-  );
-}
-
-function UnderworldLocationTile({ entry, data, busy, travelling, hasVehicle, clock, onTravel }) {
-  const navigate = useNavigate();
-  const here = data?.locations?.find(l => l.slug === entry.slug);
-  const youAreHere = !!here?.here;
-  const travellingHere = travelling && data?.intra_travel_to === entry.slug;
-  const travellingUntil = data?.intra_travel_until;
-
-  return (
-    <div className={`p-3 rounded-lg border flex flex-col gap-2 transition ${
-      youAreHere
-        ? 'border-money-500/40 bg-money-700/10'
-        : 'border-ink-100/10 bg-ink-950/40'
-    }`}>
-      <div className="min-w-0">
-        <div className={`font-medium text-sm ${youAreHere ? 'text-money-300' : ''}`}>{entry.name}</div>
-        <div className="text-[13px] text-ink-100/55 leading-snug mt-0.5">{entry.blurb}</div>
-      </div>
-      {youAreHere ? (
-        <button onClick={() => navigate(entry.to)} className="btn btn-primary text-xs">
-          Enter
-        </button>
-      ) : travellingHere ? (
-        <div className="text-[12px] text-cyan-300 tabular-nums">
-          {data?.intra_travel_mode === 'drive' ? 'Driving' : 'Walking'} over · {fmtSecs(travellingUntil - clock)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-1.5">
-          <button
-            disabled={busy || travelling}
-            onClick={() => onTravel(entry.slug, 'walk')}
-            className="btn btn-ghost text-[11px] py-1 disabled:opacity-40">
-            Walk · {fmtSecs(data?.walk_ms ?? 45000)}
-          </button>
-          <button
-            disabled={busy || travelling || !hasVehicle}
-            onClick={() => onTravel(entry.slug, 'drive')}
-            title={hasVehicle ? '' : 'Park an active vehicle first'}
-            className="btn btn-primary text-[11px] py-1 disabled:opacity-40 disabled:cursor-not-allowed">
-            Drive · {fmtSecs(data?.drive_ms ?? 10000)}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 const CITY_DATA = {
   new_york:    { emoji: '', vibe: 'Concrete jungle. Big banks, big rents, bigger appetites.' },
@@ -408,7 +240,6 @@ const TABS = [
   { id: 'map',        label: 'City Map' },
   { id: 'territory',  label: 'Territories' },
   { id: 'town',       label: 'Around Town' },
-  { id: 'underworld', label: 'Underworld' },
 ];
 function readTabPref() {
   if (typeof window === 'undefined') return 'map';
@@ -475,7 +306,7 @@ export default function City() {
       </div>
 
       {tab === 'map' && (
-        <Card title="City Map" subtitle="Tap a marker to walk in. Gold pins are legitimate businesses; red are the underworld.">
+        <Card title="City Map" subtitle="Faction control of city areas. Switch to Around Town to walk into the buildings themselves.">
           <CityMap city={character.city} />
         </Card>
       )}
@@ -483,12 +314,6 @@ export default function City() {
       {tab === 'town' && (
         <Card title="Around Town" subtitle="Pick a destination — every building is a real place now. Walking is slow; drive if you've got a vehicle.">
           <AroundTown />
-        </Card>
-      )}
-
-      {tab === 'underworld' && (
-        <Card title="The Underworld" subtitle="Quieter places. Don't bring your accountant. Most spots are real buildings — walk or drive over before you can do business.">
-          <UnderworldTiles entries={UNDERWORLD.filter(l => !l.hideWhen?.(character))} />
         </Card>
       )}
 

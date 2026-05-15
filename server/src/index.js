@@ -98,6 +98,12 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 // locations.js. Mount-level middleware fires before each route's own
 // requireAuth/requireCharacter; the duplicate downstream calls are a
 // no-op on a per-tick basis.
+const atBrokerage     = [requireAuth, requireCharacter, requireAtLocation('brokerage')];
+const atEstateAgent   = [requireAuth, requireCharacter, requireAtLocation('estate_agent')];
+const atNewsstand     = [requireAuth, requireCharacter, requireAtLocation('newsstand')];
+const atAirport       = [requireAuth, requireCharacter, requireAtLocation('airport')];
+const atDrugMarket    = [requireAuth, requireCharacter, requireAtLocation('drug_market')];
+const atHighStreet    = [requireAuth, requireCharacter, requireAtLocation('high_street')];
 const atBank          = [requireAuth, requireCharacter, requireAtLocation('bank')];
 const atGunStore      = [requireAuth, requireCharacter, requireAtLocation('gun_store')];
 const atDealership    = [requireAuth, requireCharacter, requireAtLocation('dealership')];
@@ -112,29 +118,30 @@ const atCasino        = [requireAuth, requireCharacter, requireAtLocation('casin
 const atBookmaker     = [requireAuth, requireCharacter, requireAtLocation('bookmaker')];
 const atFence         = [requireAuth, requireCharacter, requireAtLocation('fence')];
 const atGeneralStore  = [requireAuth, requireCharacter, requireAtLocation('general_store')];
-const atJobBoard      = [requireAuth, requireCharacter, requireAtLocation('job_board')];
-
 app.use('/api/auth', authRoutes);
 app.use('/api/character', characterRoutes);
 app.use('/api/world', worldRoutes);
 app.use('/api/crimes', crimeRoutes);
 app.use('/api/jail', jailRoutes);
 app.use('/api/hospital', atHospital, hospitalRoutes);
-app.use('/api/job-board', atJobBoard, jobBoardRoutes);
+// Job Board is a regular nav page — no longer a physical city
+// location. Accessible from anywhere; per-route auth/character
+// middleware lives inside jobBoardRoutes.
+app.use('/api/job-board', jobBoardRoutes);
 app.use('/api/player-shops', playerShopsRoutes);
 app.use('/api/trades', tradesRoutes);
 app.use('/api/murder', murderRoutes);
 app.use('/api/rob', robRoutes);
 app.use('/api/customize', customizeRoutes);
-app.use('/api/travel', travelRoutes);
-app.use('/api/drugs', drugRoutes);
+app.use('/api/travel', atAirport, travelRoutes);
+app.use('/api/drugs', atDrugMarket, drugRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/combat', combatRoutes);
 app.use('/api/locations', locationsRoutes);
 app.use('/api/clothing',  clothingRoutes);
 app.use('/api/bank', atBank, bankRoutes);
-app.use('/api/stocks', stockRoutes);
-app.use('/api/properties', propertyRoutes);
+app.use('/api/stocks', atBrokerage, stockRoutes);
+app.use('/api/properties', atEstateAgent, propertyRoutes);
 app.use('/api/gym', atGym, gymRoutes);
 app.use('/api/range', atRange, rangeRoutes);
 app.use('/api/university', atUniversity, universityRoutes);
@@ -149,7 +156,7 @@ app.use('/api/races', racesRoutes);
 app.use('/api/factions', factionsRoutes);
 app.use('/api/bounties', bountiesRoutes);
 app.use('/api/contracts', contractsRoutes);
-app.use('/api/shops', shopsRoutes);
+app.use('/api/shops', atHighStreet, shopsRoutes);
 app.use('/api/specialisations', specialisationsRoutes);
 app.use('/api/fence', atFence, fenceRoutes);
 app.use('/api/casino', atCasino, casinoRoutes);
@@ -167,7 +174,7 @@ app.use('/api/oc', ocRoutes);
 app.use('/api/incarceration', incarcerationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/areas', areaRoutes);
-app.use('/api/newspaper', newspaperRoutes);
+app.use('/api/newspaper', atNewsstand, newspaperRoutes);
 app.use('/api/chases', chasesRoutes);
 app.use('/api/burglary', burglaryRoutes);
 app.use('/api/investigations', investigationsRoutes);

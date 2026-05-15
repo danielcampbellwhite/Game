@@ -643,6 +643,13 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_clothing_char ON clothing_owned(char_id);
   `);
 
+  // One-off cleanup: the Job Board used to be a physical in-city
+  // location (job_board). It's now a regular nav item accessible
+  // from anywhere, so anyone whose persisted current_location is
+  // 'job_board' gets snapped back to 'streets'. Safe to re-run on
+  // every boot.
+  db.prepare("UPDATE characters SET current_location = 'streets' WHERE current_location = 'job_board'").run();
+
   // Stash table — extra inventory held outside the player's pocket.
   // Personal items continue to live in the existing `inventory` table.
   // Rows here are scoped by (container, city, vehicle_id) so a NY

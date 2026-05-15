@@ -9,6 +9,40 @@
 
 export const PATCHES = [
   {
+    version: '0.9.16',
+    date: '2026-05-15',
+    title: 'City is fully place-based · Underworld tab gone · descriptions on every location',
+    sections: [
+      {
+        heading: 'Every service is a real building now',
+        notes: [
+          'Stock Broker, Estate Agent, Newsstand, Airport, The Block (drug market) and the High Street are all proper in-city locations you have to walk or drive to.',
+          'High Street is a new hub that houses the five small shops (Coffee, Pharmacy, Off-Licence, Deli, Gift Shop) — one travel, five shops.',
+          'The "Available from anywhere" panel at the bottom of Around Town is gone — every place on the city page is a real destination.',
+        ],
+      },
+      {
+        heading: 'Underworld tab removed',
+        notes: [
+          'Chop Shop, Casino, Bookmaker and The Fence are already in Around Town — no point in a separate tab. Drug Market moves there too as "The Block".',
+          'Break and Enter moved to Crimes → Player Crimes (sits alongside Rob and Murder where it belongs).',
+        ],
+      },
+      {
+        heading: 'Job Board → main nav, no travel needed',
+        notes: [
+          'Job Board is no longer a physical location. Click it in the nav and it just works from anywhere.',
+        ],
+      },
+      {
+        heading: 'Descriptions on every location tile',
+        notes: [
+          'Every building in Around Town now ships with a one-line description so you know what\'s inside before you walk over.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.15',
     date: '2026-05-15',
     title: 'Clothing — Streetwear Outlet & Atelier (cosmetic)',
