@@ -636,6 +636,10 @@ export function initDb() {
   // Mirrors chase_tutorial_seen — first time the player triggers a
   // jailbreak, they see an explainer with the timer paused.
   addColumnIfMissing('characters', 'jailbreak_tutorial_seen', 'INTEGER');
+  // Shared tutorial flag across the cyber + major crime QTEs —
+  // they use the same arrow-sequence mechanic, so a single flag
+  // suffices.
+  addColumnIfMissing('characters', 'crime_qte_tutorial_seen', 'INTEGER');
 
   // Clothing owned — one row per (character, clothing item). Items are
   // non-stackable cosmetics, so qty is implicit at 1.

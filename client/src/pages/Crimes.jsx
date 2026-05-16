@@ -6,6 +6,7 @@ import Card from '../components/Card.jsx';
 import Timer from '../components/Timer.jsx';
 import LockBadge from '../components/LockBadge.jsx';
 import PoliceChase from '../components/PoliceChase.jsx';
+import QteSequence from '../components/QteSequence.jsx';
 import { fmt } from '../components/Money.jsx';
 import { playCrimeSound } from '../services/sounds.js';
 
@@ -240,6 +241,11 @@ export default function Crimes() {
   // response that returned a `chase`, or by a GET /chases on mount
   // (covers refresh-during-chase).
   const [chase, setChase] = useState(null);
+  // Payout-scaler QTE for cyber and major crime successes. Populated
+  // by /crimes/commit when the success-path returns a `qte` payload
+  // instead of the cash, or by GET /crimes/qte on mount (covers
+  // refresh-during-QTE).
+  const [crimeQte, setCrimeQte] = useState(null);
 
   async function load() { const d = await api.get('/crimes'); setList(d.crimes); }
   async function loadChase() {
@@ -248,7 +254,13 @@ export default function Crimes() {
       if (r.chase) setChase(r.chase);
     } catch { /* no active chase */ }
   }
-  useEffect(() => { load(); loadChase(); }, []);
+  async function loadCrimeQte() {
+    try {
+      const r = await api.get('/crimes/qte');
+      if (r.qte) setCrimeQte(r.qte);
+    } catch { /* none */ }
+  }
+  useEffect(() => { load(); loadChase(); loadCrimeQte(); }, []);
 
   async function commit(crime) {
     setBusyId(crime.id);
@@ -262,6 +274,7 @@ export default function Crimes() {
       updateFromResponse(r);
       setLast({ crime, result: r });
       if (r.chase) setChase(r.chase);
+      if (r.qte) setCrimeQte(r.qte);
       await refresh();
       await load();
     } catch (e) { setLast({ crime, error: e.message }); }
@@ -284,6 +297,50 @@ export default function Crimes() {
           chase={chase}
           onResolved={async () => { await refresh(); await load(); }}
           onClose={() => setChase(null)}
+        />
+      )}
+      {crimeQte && (
+        <QteSequence
+          data={crimeQte}
+          endpoints={{ begin: '/crimes/qte/begin', resolve: '/crimes/qte/resolve' }}
+          title={crimeQte.type === 'major' ? 'Major Score' : 'Cybercrime'}
+          subtitle={crimeQte.type === 'major' ? 'Execute the plan.' : 'Bypass the system.'}
+          tagline={crimeQte.type === 'major'
+            ? `Match the sequence to walk out with the full take. Up to £${(crimeQte.basePayout || 0).toLocaleString()}.`
+            : `Time the breach. Up to £${(crimeQte.basePayout || 0).toLocaleString()} on the line.`}
+          accent={crimeQte.type === 'major' ? 'gold' : 'cyan'}
+          tutorialNodes={(
+            <ul className="text-[13px] text-ink-100/75 space-y-1.5 list-disc pl-5">
+              <li>You're already in — the heist worked. This mini-game decides <b>how much you walk away with</b>.</li>
+              <li>Read the {crimeQte.sequence?.length || 5} arrows and tap them <b>in order</b> before the timer runs out.</li>
+              <li>Perfect run = full payout. Every miss costs you — minimum take is <b>25%</b>.</li>
+              <li>XP and rep are already in the bag — this is purely cash.</li>
+              <li>Tip: <b>arrow keys</b> work on desktop.</li>
+            </ul>
+          )}
+          renderResult={r => {
+            const pct = Math.round((r.multiplier || 0) * 100);
+            if (r.expired) return (
+              <>
+                <div className="font-display text-2xl text-yellow-300">Snatched and ran.</div>
+                <p className="text-[13px] text-ink-100/75">Out of time — clean 25%: +£{(r.payout || 0).toLocaleString()} of £{(r.basePayout || 0).toLocaleString()}.</p>
+              </>
+            );
+            if (pct >= 100) return (
+              <>
+                <div className="font-display text-3xl text-money-300">FULL HAUL.</div>
+                <p className="text-[13px] text-ink-100/75">+£{(r.payout || 0).toLocaleString()} · {r.correct}/{r.length} clean.</p>
+              </>
+            );
+            return (
+              <>
+                <div className="font-display text-2xl text-gold-300">Take: {pct}%</div>
+                <p className="text-[13px] text-ink-100/75">+£{(r.payout || 0).toLocaleString()} of £{(r.basePayout || 0).toLocaleString()} · {r.correct}/{r.length} clean.</p>
+              </>
+            );
+          }}
+          onResolved={async () => { await refresh(); await load(); }}
+          onClose={() => setCrimeQte(null)}
         />
       )}
       <DailyContractBanner character={character} onChange={async () => { await refresh(); }} />

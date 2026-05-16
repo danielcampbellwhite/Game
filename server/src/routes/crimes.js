@@ -13,6 +13,9 @@ import { sendEvent } from '../services/events.js';
 import { crimeHourMul, hourBucket, BUCKET_LABEL } from '../services/clock.js';
 import { startChase, resolveExpiredChase } from './chases.js';
 import {
+  deferCrimeQte, loadPendingCrimeQte, beginCrimeQte, scoreCrimeQte, clearPendingCrimeQte, TIER_QTE,
+} from '../services/crime-qte.js';
+import {
   recordCrimeForInvestigation,
   getPendingTrial,
   jailMultiplier,
@@ -320,6 +323,33 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
       } else {
         const skim = applyGangCrimeCut(ch, grossPayout);
         const payout = grossPayout - skim;
+        // Cyber / major crimes route into a payout-scaling QTE. The
+        // gang-skim is already deducted (the gang got its cut up
+        // front); the mini-game scales the player's net take from
+        // 0.25x to 1.0x of the post-skim figure.
+        if (crime.tier === 'cyber' || crime.tier === 'major') {
+          const qte = deferCrimeQte(ch, {
+            crime, payout, skim, dirty: !!crime.dirty, xpGain, levels: lvls,
+          });
+          if (qte) {
+            writeLog(ch.id, 'crime', `In on "${crime.name}" — now make it count. +${xpGain}xp banked.`, { crime: crime.id, qte: true, xp: xpGain });
+            // Persist energy / xp / rep / faction-stats updates
+            // already mutated above; the actual cash drop waits for
+            // the QTE resolution.
+            saveCharacter(ch);
+            // Cooldown still records here so spamming commit doesn't
+            // double-dip even if the player abandons the QTE.
+            db.prepare(`
+              INSERT INTO consumable_cooldowns (char_id, item_id, used_at) VALUES (?, ?, ?)
+              ON CONFLICT(char_id, item_id) DO UPDATE SET used_at = excluded.used_at
+            `).run(ch.id, cooldownKey(crime.id), now);
+            return res.json({
+              ok: true, success: true, qte, xp: xpGain, levels: lvls,
+              cooldownUntil: now + cdSec * 1000,
+              character: publicCharacter(ch),
+            });
+          }
+        }
         if (crime.dirty) ch.dirty_cash += payout;
         else ch.cash += payout;
         const skimNote = skim > 0 ? ` (-£${skim.toLocaleString()} gang)` : '';
@@ -389,6 +419,84 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
     hourMul,
     hourBonusPct: Math.round((hourMul - 1) * 100),
     investigation,
+    character: publicCharacter(ch),
+  });
+});
+
+// ─── Cyber / Major QTE — payout scaler ──────────────────────────
+// The crime succeeded at /commit; the player banked XP and rep
+// already. These endpoints resolve the deferred payout via the
+// mini-game.
+
+router.get('/qte', requireAuth, requireCharacter, (req, res) => {
+  const p = loadPendingCrimeQte(req.character.id);
+  if (!p) return res.json({ qte: null });
+  res.json({
+    qte: {
+      type: p.crimeTier,
+      crimeName: p.crimeName,
+      sequence: p.sequence,
+      expiresAt: p.expiresAt,
+      durationMs: TIER_QTE[p.crimeTier].durationMs,
+      tutorial: p.isTutorial,
+      basePayout: p.basePayout,
+    },
+  });
+});
+
+router.post('/qte/begin', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const next = beginCrimeQte(ch);
+  if (!next) return res.status(404).json({ error: 'No pending crime QTE.' });
+  res.json({
+    ok: true,
+    qte: {
+      type: next.crimeTier,
+      crimeName: next.crimeName,
+      sequence: next.sequence,
+      expiresAt: next.expiresAt,
+      durationMs: TIER_QTE[next.crimeTier].durationMs,
+      tutorial: next.isTutorial,
+      basePayout: next.basePayout,
+    },
+  });
+});
+
+router.post('/qte/resolve', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const p = loadPendingCrimeQte(ch.id);
+  if (!p) return res.status(404).json({ error: 'No pending crime QTE.' });
+  if (p.isTutorial) return res.status(409).json({ error: 'Hit Continue first.' });
+
+  const now = Date.now();
+  const inputs = Array.isArray(req.body?.inputs) ? req.body.inputs.slice(0, p.sequence.length) : [];
+  const expired = now > p.expiresAt;
+  const { correct, length, multiplier } = expired
+    ? { correct: 0, length: p.sequence.length, multiplier: 0.25 }
+    : scoreCrimeQte(p, inputs);
+
+  const finalPayout = Math.floor(p.basePayout * multiplier);
+  if (p.dirty) ch.dirty_cash += finalPayout;
+  else         ch.cash       += finalPayout;
+
+  const tag = p.crimeTier === 'cyber' ? 'Cyber take' : 'Major Score';
+  const pctText = Math.round(multiplier * 100);
+  const skimNote = p.gangSkim > 0 ? ` (-£${p.gangSkim.toLocaleString()} gang)` : '';
+  writeLog(
+    ch.id, 'crime',
+    `${tag} on "${p.crimeName}" — +£${finalPayout.toLocaleString()}${skimNote}${p.dirty ? ' (illegal)' : ''} · ${correct}/${length} (${pctText}% of £${p.basePayout.toLocaleString()}).`,
+    { crime: p.crimeId, payout: finalPayout, base: p.basePayout, correct, length, multiplier },
+  );
+  clearPendingCrimeQte(ch.id);
+  saveCharacter(ch);
+  res.json({
+    ok: true,
+    correct, length, multiplier,
+    basePayout: p.basePayout,
+    payout: finalPayout,
+    crimeName: p.crimeName,
+    crimeTier: p.crimeTier,
+    expired,
     character: publicCharacter(ch),
   });
 });
