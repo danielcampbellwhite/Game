@@ -242,25 +242,25 @@ function WardrobeTab() {
               return (
                 <div key={slot}>
                   <div className="text-[11px] uppercase tracking-wide text-ink-100/55 mb-1.5">{SLOT_LABELS[slot]}</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {items.map(it => {
                       const isEquipped = equippedId === it.id;
                       return (
                         <div key={it.id}
-                          className={`rounded-lg p-2 border bg-ink-950/40 flex gap-2 items-center ${isEquipped ? 'border-money-500/50 bg-money-700/10' : 'border-ink-100/10'}`}>
+                          className={`rounded-lg p-3 border bg-ink-950/40 flex gap-3 items-center ${isEquipped ? 'border-money-500/50 bg-money-700/10' : 'border-ink-100/10'}`}>
                           <div className="shrink-0 rounded bg-ink-900/60 border border-ink-100/10 p-1">
-                            <ClothingSvg id={it.id} size={44} />
+                            <ClothingSvg id={it.id} size={48} />
                           </div>
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0 flex-1 flex flex-col gap-1">
                             <div className="text-[13px] font-medium truncate">{it.name}</div>
                             <div className="text-[11px] text-ink-100/55">{it.store === 'high' ? 'Atelier' : 'Streetwear'}</div>
                             {isEquipped ? (
-                              <div className="text-[11px] uppercase tracking-wide text-money-300 mt-0.5">Equipped</div>
+                              <span className="text-[11px] uppercase tracking-wide text-money-300">Equipped</span>
                             ) : (
                               <button
                                 onClick={() => equip(slot, it.id)}
                                 disabled={busy === `${slot}:${it.id}`}
-                                className="text-[11px] text-ink-100/70 hover:text-blood-300 mt-0.5">
+                                className="btn btn-ghost text-[11px] py-1 self-start disabled:opacity-50">
                                 {busy === `${slot}:${it.id}` ? '…' : 'Wear'}
                               </button>
                             )}

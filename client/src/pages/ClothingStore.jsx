@@ -82,22 +82,20 @@ export default function ClothingStore() {
                   <div className="shrink-0 rounded-md bg-ink-900/50 border border-ink-100/10 p-1">
                     <ClothingSvg id={it.id} size={64} />
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 flex flex-col gap-1">
                     <div className="font-medium truncate">{it.name}</div>
                     <div className="text-[12px] text-ink-100/55 leading-snug">{it.desc}</div>
-                    <div className="text-[13px] mt-1 text-money-300 tabular-nums">{fmt(it.cost)}</div>
-                    <div className="mt-2">
-                      {it.owned ? (
-                        <span className="text-[11px] uppercase tracking-wide text-money-400">Owned</span>
-                      ) : (
-                        <button
-                          onClick={() => buy(it)}
-                          disabled={busy === it.id || (character?.cash || 0) < it.cost}
-                          className="btn btn-primary text-xs py-1 disabled:opacity-40">
-                          {busy === it.id ? '…' : (character?.cash || 0) < it.cost ? 'Can\'t afford' : 'Buy'}
-                        </button>
-                      )}
-                    </div>
+                    <div className="text-[13px] text-money-300 tabular-nums">{fmt(it.cost)}</div>
+                    {it.owned ? (
+                      <span className="text-[11px] uppercase tracking-wide text-money-400 mt-1">Owned</span>
+                    ) : (
+                      <button
+                        onClick={() => buy(it)}
+                        disabled={busy === it.id || (character?.cash || 0) < it.cost}
+                        className="btn btn-primary text-xs py-1.5 mt-1 w-full sm:w-auto sm:self-start disabled:opacity-40">
+                        {busy === it.id ? '…' : (character?.cash || 0) < it.cost ? 'Can\'t afford' : 'Buy'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
