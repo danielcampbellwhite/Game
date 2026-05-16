@@ -6,20 +6,72 @@ import { useEventStream } from '../hooks/useEventStream.js';
 import { fmt } from './Money.jsx';
 import MuteToggle from './MuteToggle.jsx';
 
-const links = [
-  { to: '/inventory',  label: 'Inventory' },
-  { to: '/car',        label: 'My Car'    },
-  { to: '/city',       label: 'City'      },
-  { to: '/online',     label: 'Online'    },
-  { to: '/crimes',     label: 'Crimes'    },
+// Nav tree — each top-level item has an optional `children` array that
+// becomes a click-to-open dropdown. Children also render as flat items
+// in the mobile drawer (indented). City fans out to every gated
+// location in town; Crimes, Gangs, Players etc. group their related
+// pages so everything in the app is reachable from the main nav.
+const NAV_TREE = [
+  { to: '/inventory', label: 'Inventory', children: [
+    { to: '/inventory',          label: 'Loadout & stash' },
+    { to: '/customize/weapons',  label: 'Customise weapons' },
+    { to: '/customize/vehicles', label: 'Customise vehicles' },
+  ]},
+  { to: '/car',   label: 'My Car' },
+  { to: '/house', label: 'House' },
+  { to: '/city',  label: 'City', children: [
+    { to: '/city',            label: 'City map' },
+    { to: '/bank',            label: 'Bank' },
+    { to: '/electronics',     label: 'Electronics Store' },
+    { to: '/general-store',   label: 'General Store' },
+    { to: '/high-street',     label: 'High Street' },
+    { to: '/clothing/low',    label: 'Streetwear Outlet' },
+    { to: '/clothing/high',   label: 'Atelier' },
+    { to: '/dealership',      label: 'Car Dealership' },
+    { to: '/aircraft-dealer', label: 'Aircraft Broker' },
+    { to: '/chop-shop',       label: 'Chop Shop' },
+    { to: '/repair',          label: 'Repair Shop' },
+    { to: '/gun-store',       label: 'Gun Store' },
+    { to: '/drugs',           label: 'The Block (drugs)' },
+    { to: '/fence',           label: 'The Fence' },
+    { to: '/property',        label: 'Estate Agent' },
+    { to: '/stocks',          label: 'Stock Brokerage' },
+    { to: '/travel',          label: 'Airport' },
+    { to: '/casino',          label: 'Casino' },
+    { to: '/bookmaker',       label: 'Bookmaker' },
+    { to: '/gym',             label: 'Gym' },
+    { to: '/range',           label: 'Shooting Range' },
+    { to: '/university',      label: 'University' },
+    { to: '/driving-school',  label: 'Driving School' },
+    { to: '/hospital',        label: 'Hospital' },
+    { to: '/jail',            label: 'Jail' },
+  ]},
+  { to: '/online',     label: 'Online' },
+  { to: '/crimes',     label: 'Crimes', children: [
+    { to: '/crimes',    label: 'Solo crimes' },
+    { to: '/burglary',  label: 'Burglary' },
+    { to: '/oc',        label: 'Organised crime' },
+  ]},
   { to: '/jobs',       label: 'Job Board' },
-  { to: '/businesses', label: 'My Businesses'},
-  { to: '/combat',     label: 'Fight Club'},
-  { to: '/bounties',   label: 'Bounties'  },
-  { to: '/gangs',      label: 'Gangs'     },
-  { to: '/players',    label: 'Players'   },
-  { to: '/friends',    label: 'Friends'   },
-  { to: '/trades',     label: 'Trades'    },
+  { to: '/businesses', label: 'My Businesses' },
+  { to: '/combat',     label: 'Fight Club', children: [
+    { to: '/combat', label: 'Fight Club' },
+    { to: '/races',  label: 'Street Races' },
+  ]},
+  { to: '/bounties',   label: 'Bounties' },
+  { to: '/gangs',      label: 'Gangs', children: [
+    { to: '/gangs', label: 'Gangs directory' },
+    { to: '/gang',  label: 'My Gang' },
+    { to: '/wars',  label: 'Wars' },
+  ]},
+  { to: '/players',    label: 'Players', children: [
+    { to: '/players',   label: 'Player directory' },
+    { to: '/newspaper', label: 'Daily Gazette' },
+    { to: '/shops',     label: 'Player Shops' },
+    { to: '/missions',  label: 'Missions' },
+  ]},
+  { to: '/friends',    label: 'Friends' },
+  { to: '/trades',     label: 'Trades' },
 ];
 
 const TYPE_COLOR = {
@@ -197,6 +249,157 @@ function MiniStat({ label, value, max, color, money }) {
           <div className={color} style={{ width: pct + '%', height: '100%' }} />
         </div>
       )}
+    </div>
+  );
+}
+
+// One nav item. Without `children` it's a plain NavLink; with
+// `children` it's a click-to-open dropdown that closes on outside
+// click or when a child link is picked. Active styling kicks in when
+// the route equals the parent OR any child.
+function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard }) {
+  const [open, setOpen] = useState(false);
+  // Bounding rect of the trigger button — used to position the
+  // dropdown with `position: fixed` so it escapes the scrolling
+  // SubNavStrip container (overflow-x:auto clips absolute children).
+  const [rect, setRect] = useState(null);
+  const triggerRef = useRef();
+  const dropdownRef = useRef();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (triggerRef.current?.contains(e.target)) return;
+      if (dropdownRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener('mousedown', onDocDown);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [open]);
+
+  function toggle(e) {
+    if (lockedOut) { e.preventDefault(); return; }
+    e.preventDefault();
+    if (!open && triggerRef.current) {
+      setRect(triggerRef.current.getBoundingClientRect());
+    }
+    setOpen(o => !o);
+  }
+
+  if (!item.children) {
+    return (
+      <NavLink to={item.to}
+        onClick={(e) => { onClickGuard(e); onPick?.(); }}
+        className={({ isActive }) => linkClass(isActive)}>
+        {item.label}
+      </NavLink>
+    );
+  }
+
+  // Parent dropdown — highlight when the active path matches a child.
+  const isActiveParent = (currentPath) =>
+    item.children.some(c => currentPath === c.to) || currentPath === item.to;
+
+  // Position the dropdown in viewport space, just below the trigger,
+  // and nudge it left to keep it inside the viewport on mobile.
+  let style = null;
+  if (open && rect) {
+    const GUTTER = 8;
+    const W = 220;
+    let left = rect.left;
+    if (left + W + GUTTER > window.innerWidth) left = Math.max(GUTTER, window.innerWidth - W - GUTTER);
+    style = { position: 'fixed', top: rect.bottom + 4, left, width: W, zIndex: 50 };
+  }
+
+  return (
+    <>
+      <NavLink to={item.to}
+        ref={triggerRef}
+        end={false}
+        onClick={toggle}
+        className={({ isActive }) => `${linkClass(isActive || isActiveParent(window.location.pathname))} flex items-center gap-1 shrink-0`}>
+        {item.label}
+        <span aria-hidden className={`text-[10px] transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </NavLink>
+      {open && style && (
+        <div
+          ref={dropdownRef}
+          style={style}
+          className="rounded-md border border-ink-100/15 bg-ink-950/95 backdrop-blur shadow-2xl shadow-black/60 overflow-hidden">
+          <ul className="py-1 text-xs max-h-[60vh] overflow-y-auto scrollbar">
+            {item.children.map(c => (
+              <li key={c.to}>
+                <NavLink
+                  to={c.to}
+                  onClick={(e) => { onClickGuard(e); setOpen(false); onPick?.(); }}
+                  className={({ isActive }) =>
+                    `block px-3 py-1.5 ${isActive ? 'bg-blood-700/60 text-white' : 'text-ink-100/85 hover:bg-ink-800/70'}`}>
+                  {c.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Horizontally-scrollable quick-access strip that mirrors the main
+// nav. Collapsible via the toggle handle on the right; preference is
+// persisted to localStorage so we don't reset on every render.
+const SUBNAV_KEY = 'mafia.subnav.collapsed';
+function SubNavStrip({ items, lockedOut, onClickGuard, linkClass }) {
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(SUBNAV_KEY) === '1'; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(SUBNAV_KEY, collapsed ? '1' : '0'); }
+    catch {}
+  }, [collapsed]);
+
+  return (
+    <div className="border-t border-ink-100/10 bg-ink-900/30">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 flex items-stretch">
+        {/* The scroll lane itself. Hidden via max-h transition when
+            collapsed so the toggle handle smoothly slides up. */}
+        <div
+          className={`min-w-0 flex-1 transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16'}`}
+          aria-hidden={collapsed}>
+          <div className="flex items-center gap-1 overflow-x-auto py-1.5 scrollbar"
+            style={{ WebkitOverflowScrolling: 'touch' }}>
+            {items.map(item => (
+              <NavMenuItem key={item.to}
+                item={item}
+                lockedOut={lockedOut}
+                linkClass={linkClass}
+                onClickGuard={onClickGuard} />
+            ))}
+          </div>
+        </div>
+        {/* Toggle handle. Down arrow when collapsed (i.e. "expand me"),
+            up arrow when expanded ("collapse me"). aria-expanded
+            mirrors the visual state. */}
+        <button
+          type="button"
+          aria-label={collapsed ? 'Show quick-access nav' : 'Hide quick-access nav'}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed(c => !c)}
+          className="shrink-0 self-center ml-1 px-2 py-1 rounded-md text-ink-100/55 hover:bg-ink-800/60 hover:text-ink-100/85 transition">
+          <span aria-hidden className="text-base leading-none inline-block transition-transform"
+            style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+            ▾
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -400,6 +603,18 @@ export default function Nav() {
         </div>
       )}
 
+      {/*  Secondary quick-access nav — horizontally scrolling copy
+           of the main nav, sits directly under the stats strip and
+           can be collapsed/expanded by the down/up arrow on the right.
+           Hidden when the player has no character loaded.  */}
+      {character && (
+        <SubNavStrip
+          items={NAV_TREE}
+          lockedOut={lockedOut}
+          linkClass={linkClass}
+          onClickGuard={onClickGuard} />
+      )}
+
       {/*  Nav links
           Desktop (md+): horizontal row, always visible.
           Mobile (<md): hidden by default, opens as a vertical drawer
@@ -439,13 +654,41 @@ export default function Nav() {
               {character.current_location_meta.name} →
             </NavLink>
           )}
-          {links.map(l => (
-            <NavLink key={l.to} to={l.to}
-              onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
-              className={({isActive}) => linkClass(isActive)}>
-              {l.label}
-            </NavLink>
-          ))}
+          {/* Main nav items. Top-level items with children open a
+              dropdown on desktop and inline expand on mobile (see the
+              drawer rendering below in the mobile-only block). */}
+          <div className="hidden md:flex md:flex-wrap items-center gap-1">
+            {NAV_TREE.map(item => (
+              <NavMenuItem key={item.to}
+                item={item}
+                lockedOut={lockedOut}
+                linkClass={linkClass}
+                onClickGuard={onClickGuard}
+                onPick={() => setMenuOpen(false)} />
+            ))}
+          </div>
+          {/* Mobile drawer: flatten parents + indented children so the
+              user can reach every page from one scrollable drawer. */}
+          <div className="md:hidden flex flex-col gap-0.5">
+            {NAV_TREE.map(item => (
+              <React.Fragment key={item.to}>
+                <NavLink
+                  to={item.to}
+                  onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
+                  className={({ isActive }) => linkClass(isActive)}>
+                  {item.label}
+                </NavLink>
+                {item.children?.map(c => (
+                  <NavLink key={c.to} to={c.to}
+                    onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
+                    className={({ isActive }) =>
+                      `${linkClass(isActive)} pl-7 text-[11px] text-ink-100/70`}>
+                    {c.label}
+                  </NavLink>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </nav>
     </header>
