@@ -22,6 +22,45 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // bender, while well-known names get printed.
 const NAMED_REPUTATION_FLOOR = 800;
 
+// Strip game-stats grammar from a log message so it reads as
+// print copy. Catches:
+//   "Atk 24 vs Def 18 (60%)"   → ''
+//   "+18xp" / "+£500 +8xp"     → drops the xp tail
+//   "(turf +15%)"              → ''
+//   "(60% odds)" / "(60% chance)" → ''
+//   trailing emoji prefixes    → trimmed
+//   numeric stat brackets like "(STR 25)" — left alone, gangsters
+//     still talk about each other in tabloid-speak
+// Tidies up the spacing + punctuation left behind.
+function sanitizeForPrint(text) {
+  if (!text) return text;
+  let out = String(text);
+  // "Atk N vs Def N" + an optional trailing "(NN%)" parenthetical.
+  out = out.replace(/\bAtk\s+\d+\s+vs\s+Def\s+\d+(?:\s*\(\d+%(?:\s*(?:odds|chance))?\))?\s*\.?/gi, '');
+  // Standalone "(NN%)" / "(NN% odds)" / "(NN% chance)" parentheticals.
+  out = out.replace(/\s*\(\d+%\s*(?:odds|chance)?\)/gi, '');
+  // "+18xp" — strip xp gain mentions.
+  out = out.replace(/\s*\+\d+xp\b/gi, '');
+  // "(turf +15%)" — territorial multiplier callouts.
+  out = out.replace(/\s*\(turf\s*\+\d+%\)/gi, '');
+  // "(intel +5%)" / similar generic bracketed % bonuses.
+  out = out.replace(/\s*\([^()]*\+\d+%[^()]*\)/g, '');
+  // Any parenthetical containing a "N/M" ratio (QTE hits / sequence
+  // lengths) — strip the whole bracket.
+  out = out.replace(/\s*\([^()]*\d+\/\d+[^()]*\)/g, '');
+  // Any parenthetical containing "% odds" / "% chance" alongside
+  // other prose (e.g. "5/5 clean, 95% odds" already caught above,
+  // but "(95% odds)" left over after other strips lands here).
+  out = out.replace(/\s*\([^()]*\d+%\s*(?:odds|chance)[^()]*\)/gi, '');
+  // Collapse "  " and stray " ." / " ," left behind.
+  out = out.replace(/\s+([.,])/g, '$1');
+  out = out.replace(/\s{2,}/g, ' ').trim();
+  // If we stripped everything off a sentence, leave a no-op rather
+  // than an empty headline.
+  if (!out) return text.trim();
+  return out;
+}
+
 // Anonymous-name pool for the low-rep crowd. Same-shape strings so
 // the page looks like a real paper rather than a debug dump.
 const ALIASES = [
@@ -342,11 +381,15 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   // Travel arrivals ("Arrived at Bank") are noise on a front page —
   // they aren't news. Drop the 'travel' kind entirely.
   const rawEvents = recentEventsInCity(targetCity, since, ['crime', 'turf', 'casino'], 40);
-  // Anonymise / shape each row before sending.
+  // Anonymise + scrub game-stat grammar before sending. Two-pass:
+  // first swap the actor handle for a low-rep alias, then strip
+  // any "Atk/Def/xp/turf%" stat tokens leaked from the raw log.
   const headlines = rawEvents.map(r => ({
     type: r.type,
     when: r.created_at,
-    text: r.message.replace(r.name, display(r.name, r.reputation, r.char_id)),
+    text: sanitizeForPrint(
+      r.message.replace(r.name, display(r.name, r.reputation, r.char_id))
+    ),
   })).slice(0, 12);
 
   const turf = turfSnapshot(targetCity);
