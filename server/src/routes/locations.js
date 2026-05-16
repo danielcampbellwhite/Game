@@ -16,22 +16,12 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
 
   const has_vehicle = !!(ch.active_vehicle_id || ch.active_premium_vehicle_id);
 
-  const items = Object.entries(LOCATIONS)
-    .filter(([, m]) => m.travelable)
-    .map(([slug, m]) => ({
-      slug,
-      name:   m.name,
-      emoji:  m.emoji || null,
-      route:  m.route,
-      gated:  !!m.gated,
-      desc:   m.desc || null,
-      here:   slug === here,
-    }));
+  const items = [];
 
-  // Player-owned properties in this city become travelable
-  // destinations too. Slug = "home_<row_id>"; the route lands the
-  // player on /property where the in-city stash UI shows up only
-  // when current_location starts with 'home_'.
+  // Player-owned properties in this city take priority — listed
+  // first so the player sees their homes before the public
+  // buildings. Slug = "home_<row_id>"; storage gating elsewhere
+  // checks current_location is a home_* slug.
   const homeRows = db.prepare('SELECT id, property_id FROM properties_owned WHERE char_id = ? AND city = ?')
     .all(ch.id, ch.city);
   for (const row of homeRows) {
@@ -46,6 +36,20 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       desc:   p?.address ? `Home · ${p.address}` : 'Your private property — storage and downtime.',
       here:   slug === here,
       isHome: true,
+    });
+  }
+
+  // Public buildings come after the player's own places.
+  for (const [slug, m] of Object.entries(LOCATIONS)) {
+    if (!m.travelable) continue;
+    items.push({
+      slug,
+      name:   m.name,
+      emoji:  m.emoji || null,
+      route:  m.route,
+      gated:  !!m.gated,
+      desc:   m.desc || null,
+      here:   slug === here,
     });
   }
 

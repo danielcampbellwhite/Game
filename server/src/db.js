@@ -822,6 +822,21 @@ export function initDb() {
   // requires storing your active car in a local garage first; selling
   // (any outlet) targets the active car.
   addColumnIfMissing('characters', 'active_vehicle_id', 'INTEGER REFERENCES vehicles_owned(id) ON DELETE SET NULL');
+  // Stash rows belonging to a specific property — each owned house
+  // has its own pool now, scoped by property_owned_id rather than
+  // a shared city-wide bucket. Existing rows get backfilled to the
+  // player's first property in that city.
+  addColumnIfMissing('stash', 'property_owned_id', 'INTEGER REFERENCES properties_owned(id) ON DELETE CASCADE');
+  try {
+    db.exec(`
+      UPDATE stash SET property_owned_id = (
+        SELECT id FROM properties_owned
+        WHERE char_id = stash.char_id AND city = stash.city
+        ORDER BY id ASC LIMIT 1
+      )
+      WHERE container = 'house' AND property_owned_id IS NULL AND city IS NOT NULL;
+    `);
+  } catch {}
   // Permanent driving skill — trained at the Driving School. Affects
   // street-race win odds and reduces the condition penalty when
   // driving between cities. Capped via STAT_CAPS.driving.

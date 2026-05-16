@@ -49,6 +49,43 @@ function RefillButton({ onDone, className = '' }) {
   );
 }
 
+// AircraftCard — read-only display for planes / helicopters in
+// the Inventory > Vehicles tab. All real management (refuel, fly,
+// upgrade hangar) lives at the airport hangar UI, so this card
+// just shows the row + a quick link there.
+function AircraftCard({ v }) {
+  return (
+    <div className="min-w-0 rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 overflow-hidden">
+      <div className="flex items-baseline justify-between gap-2 min-w-0">
+        <div className="font-medium truncate min-w-0">{v.maker} {v.name}</div>
+        <span className="text-[11px] uppercase tracking-wide text-ink-100/55 shrink-0">{v.class}</span>
+      </div>
+      <div className="text-[13px] text-ink-100/60 truncate">
+        Tier {v.tier} · hangar in {v.cityName}
+      </div>
+      <div className="mt-1 flex items-center gap-2 min-w-0">
+        <span className="text-[10px] uppercase tracking-wider text-ink-100/40 w-10 shrink-0">Cond</span>
+        <div className="flex-1 min-w-0 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+          <div className={v.condition >= 75 ? 'bg-money-500' : v.condition >= 40 ? 'bg-yellow-400' : 'bg-blood-500'}
+            style={{ width: `${Math.max(0, Math.min(100, v.condition))}%`, height: '100%' }} />
+        </div>
+        <span className="text-[12px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.condition)}%</span>
+      </div>
+      <div className="mt-1 flex items-center gap-2 min-w-0">
+        <span className="text-[10px] uppercase tracking-wider text-ink-100/40 w-10 shrink-0">Fuel</span>
+        <div className="flex-1 min-w-0 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+          <div className={v.fuel >= 50 ? 'bg-cyan-400' : v.fuel >= 20 ? 'bg-yellow-400' : 'bg-blood-500'}
+            style={{ width: `${Math.max(0, Math.min(100, v.fuel))}%`, height: '100%' }} />
+        </div>
+        <span className="text-[12px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.fuel)}%</span>
+      </div>
+      <Link to="/travel" className="btn btn-ghost text-[11px] w-full mt-2">
+        Manage at hangar →
+      </Link>
+    </div>
+  );
+}
+
 function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
   const [shipping, setShipping] = useState(false);
   const [to, setTo] = useState('');
@@ -969,14 +1006,36 @@ export default function Inventory() {
           {!inv.vehicles.length ? (
             <p className="text-sm text-ink-100/60">No vehicles yet. Steal one or buy from the dealership.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-w-0">
-              {inv.vehicles.map(v => (
-                <VehicleCard key={v.id} v={v} garages={inv.garages || []}
-                  currentCity={character?.city}
-                  hasActive={!!character?.active_vehicle_id}
-                  onChange={async () => { await load(); await refresh(); }} />
-              ))}
-            </div>
+            <>
+              {/* Cars — the existing card with equip / ship / chop
+                  actions. Class === 'car' or unset (legacy rows). */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-w-0">
+                {inv.vehicles.filter(v => (v.class || 'car') === 'car').map(v => (
+                  <VehicleCard key={v.id} v={v} garages={inv.garages || []}
+                    currentCity={character?.city}
+                    hasActive={!!character?.active_vehicle_id}
+                    onChange={async () => { await load(); await refresh(); }} />
+                ))}
+              </div>
+
+              {/* Aircraft — read-only stub in this view; full
+                  management lives at the airport hangar. We surface
+                  them here so the player can see everything they own
+                  in one place. */}
+              {inv.vehicles.some(v => v.class === 'plane' || v.class === 'helicopter') && (
+                <>
+                  <div className="mt-6 mb-2 flex items-baseline justify-between">
+                    <h4 className="font-display text-lg text-ink-50">Aircraft</h4>
+                    <p className="text-[12px] text-ink-100/55">Stored in your hangars — fly + refuel at the airport.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-w-0">
+                    {inv.vehicles.filter(v => v.class === 'plane' || v.class === 'helicopter').map(v => (
+                      <AircraftCard key={v.id} v={v} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
           )}
         </Card>
       )}

@@ -55,17 +55,22 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const vehicles = vehicleRows.map(r => {
     const v = vehicleById(r.vehicle_id);
     if (!v) return null;
-    const stats = applyVehicleMods(v, r.mods_json);
+    const klass = r.class || 'car';
+    // Modding + book-price stats only meaningful for cars. Aircraft
+    // pass the catalogue book price through and skip the rest.
+    const isCar = klass === 'car';
+    const stats = isCar ? applyVehicleMods(v, r.mods_json) : null;
     return {
       id: r.id, vehicle_id: v.id, name: v.name, maker: v.maker, tier: v.tier,
+      class: klass,
       image: v.image,
-      bookPrice: stats.bookPrice,
-      base_book_price: stats.base_book_price,
-      value_delta: stats.value_delta,
-      power: stats.power,
-      handling: stats.handling,
-      is_modified: stats.is_modified,
-      mods: stats.mods,
+      bookPrice: stats?.bookPrice ?? v.bookPrice,
+      base_book_price: stats?.base_book_price ?? v.bookPrice,
+      value_delta: stats?.value_delta ?? 0,
+      power: stats?.power ?? null,
+      handling: stats?.handling ?? null,
+      is_modified: !!stats?.is_modified,
+      mods: stats?.mods || [],
       acquired_via: r.acquired_via, city: r.city,
       cityName: cityById(r.city)?.name, acquired_at: r.acquired_at,
       is_active: r.id === ch.active_vehicle_id,
@@ -117,11 +122,14 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ammoW    = ammo.map(stampWeight('ammo'));
   const miscW    = misc.map(stampWeight('misc'));
 
-  // House stash for the city the character is currently in. Empty when
-  // they don't own a property in this city.
+  // House stash for the property the character is CURRENTLY at —
+  // each owned property has its own pool. Empty array when they're
+  // not standing inside one of their homes.
   const currentCity = ch.city;
   const houseOwned  = hasHouseIn(ch.id, currentCity);
-  const houseItems  = houseOwned ? listHouseStash(ch.id, currentCity) : [];
+  const atHomeMatch = /^home_(\d+)$/.exec(ch.current_location || '');
+  const atHomePropertyId = atHomeMatch ? parseInt(atHomeMatch[1], 10) : null;
+  const houseItems  = atHomePropertyId ? listHouseStash(ch.id, atHomePropertyId) : [];
   // Decorate with display names so the client doesn't need to look
   // them up against the catalogues for the stash UI.
   const houseDecorated = houseItems.map(i => {
@@ -165,10 +173,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     weight: {
       personal_kg:     personalWeight(ch.id),
       personal_cap_kg: PERSONAL_CAP_KG,
-      house_kg:        houseOwned ? houseStashWeight(ch.id, currentCity) : 0,
+      house_kg:        atHomePropertyId ? houseStashWeight(ch.id, atHomePropertyId) : 0,
       house_cap_kg:    HOUSE_CAP_KG,
       house_owned:     houseOwned,
       house_city:      currentCity,
+      house_at:        atHomePropertyId,
       vehicle_active:  !!activeVeh,
       vehicle_id:      activeVeh?.id || null,
       vehicle_name:    activeVeh ? `${activeVeh.maker} ${activeVeh.name}` : null,
@@ -222,7 +231,12 @@ router.post('/transfer', requireAuth, requireCharacter, (req, res) => {
     vehicleId = row.id;
     vehicleTier = v?.tier || 1;
   }
-  const r = transfer(ch.id, kind, item_id, n, 0, from, to, city, vehicleId, vehicleTier);
+  // Resolve which property the player is standing inside (if any).
+  // The house gate above already rejected if they aren't at one, so
+  // when house is involved this will be set.
+  const atHomeMatch  = /^home_(\d+)$/.exec(ch.current_location || '');
+  const atHomePropId = atHomeMatch ? parseInt(atHomeMatch[1], 10) : null;
+  const r = transfer(ch.id, kind, item_id, n, 0, from, to, city, vehicleId, vehicleTier, atHomePropId);
   if (r.error) return res.status(400).json({ error: r.error });
   res.json({ ok: true });
 });

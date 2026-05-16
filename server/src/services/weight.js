@@ -143,10 +143,13 @@ export function personalWeight(charId) {
 }
 
 // Sum of weights of every row in a specific house stash (city-scoped).
-export function houseStashWeight(charId, city) {
+// Total weight in a specific property's stash. Each property gets
+// its own cap; callers pass the property_owned_id, not the city.
+export function houseStashWeight(charId, propertyOwnedId) {
+  if (!propertyOwnedId) return 0;
   const rows = db.prepare(
-    "SELECT kind, item_id, qty FROM stash WHERE char_id = ? AND container = 'house' AND city = ?"
-  ).all(charId, city);
+    "SELECT kind, item_id, qty FROM stash WHERE char_id = ? AND container = 'house' AND property_owned_id = ?"
+  ).all(charId, propertyOwnedId);
   let total = 0;
   for (const r of rows) total += itemWeight(r.kind, r.item_id) * r.qty;
   return total;
@@ -170,27 +173,29 @@ export function listPersonal(charId) {
   return rows.map(r => ({ ...r, unit_kg: itemWeight(r.kind, r.item_id) }));
 }
 
-export function listHouseStash(charId, city) {
+// Lists the stash held INSIDE a specific property (not a city-wide
+// pool). Caller resolves which property to query from
+// current_location ('home_<row_id>') when the player is at home.
+export function listHouseStash(charId, propertyOwnedId) {
+  if (!propertyOwnedId) return [];
   const rows = db.prepare(
-    "SELECT kind, item_id, qty, ammo FROM stash WHERE char_id = ? AND container = 'house' AND city = ? ORDER BY kind, item_id"
-  ).all(charId, city);
+    "SELECT kind, item_id, qty, ammo FROM stash WHERE char_id = ? AND container = 'house' AND property_owned_id = ? ORDER BY kind, item_id"
+  ).all(charId, propertyOwnedId);
   return rows.map(r => ({ ...r, unit_kg: itemWeight(r.kind, r.item_id) }));
 }
 
-// Manual upsert helpers — needed because SQLite treats NULL as distinct
-// in UNIQUE constraints, so `ON CONFLICT(... vehicle_id ...)` won't
-// match an existing house row that has vehicle_id IS NULL. Coalescing
-// "find vs insert" by hand sidesteps the issue cleanly.
-function upsertHouseStash(charId, city, kind, itemId, addQty) {
+// Manual upsert — see comment on upsertVehicleStash for the
+// NULL-aware reasoning.
+function upsertHouseStash(charId, propertyOwnedId, city, kind, itemId, addQty) {
   const r = db.prepare(
-    "SELECT id FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?"
-  ).get(charId, city, kind, itemId);
+    "SELECT id FROM stash WHERE char_id = ? AND container = 'house' AND property_owned_id = ? AND kind = ? AND item_id = ?"
+  ).get(charId, propertyOwnedId, kind, itemId);
   if (r) {
     db.prepare('UPDATE stash SET qty = qty + ? WHERE id = ?').run(addQty, r.id);
   } else {
     db.prepare(
-      "INSERT INTO stash (char_id, container, city, vehicle_id, kind, item_id, qty, ammo) VALUES (?, 'house', ?, NULL, ?, ?, ?, 0)"
-    ).run(charId, city, kind, itemId, addQty);
+      "INSERT INTO stash (char_id, container, city, property_owned_id, vehicle_id, kind, item_id, qty, ammo) VALUES (?, 'house', ?, ?, NULL, ?, ?, ?, 0)"
+    ).run(charId, city, propertyOwnedId, kind, itemId, addQty);
   }
 }
 function upsertVehicleStash(charId, vehicleId, kind, itemId, addQty) {
@@ -240,7 +245,11 @@ export function personalHasRoomFor(charId, extraKg) {
 // vehicles_owned.id) for vehicle-side operations. The caller is
 // responsible for the higher-level "you must be in this city / this
 // is your active vehicle" checks; this is the SQL-level mover.
-export function transfer(charId, kind, itemId, qty, ammo, from, to, city, vehicleId, vehicleTier) {
+// Move items between containers. House stash is scoped per property
+// (propertyOwnedId) rather than city — multiple homes in the same
+// city no longer share one bucket. `city` is still passed through so
+// the stash row carries the city tag for indexing / display.
+export function transfer(charId, kind, itemId, qty, ammo, from, to, city, vehicleId, vehicleTier, propertyOwnedId) {
   if (qty <= 0) return { error: 'Quantity must be positive.' };
   if (from === to) return { error: 'Source and destination are the same.' };
 
@@ -254,8 +263,8 @@ export function transfer(charId, kind, itemId, qty, ammo, from, to, city, vehicl
     const r = db.prepare('SELECT qty FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').get(charId, kind, itemId);
     have = r?.qty || 0;
   } else if (isHouse(from)) {
-    if (!city) return { error: 'House requires a city.' };
-    const r = db.prepare("SELECT qty FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?").get(charId, city, kind, itemId);
+    if (!propertyOwnedId) return { error: 'House requires a specific property.' };
+    const r = db.prepare("SELECT qty FROM stash WHERE char_id = ? AND container = 'house' AND property_owned_id = ? AND kind = ? AND item_id = ?").get(charId, propertyOwnedId, kind, itemId);
     have = r?.qty || 0;
   } else if (isVehicle(from)) {
     if (!vehicleId) return { error: 'Vehicle required.' };
@@ -273,9 +282,9 @@ export function transfer(charId, kind, itemId, qty, ammo, from, to, city, vehicl
       return { error: 'No room in your personal carry — drop weight first.' };
     }
   } else if (isHouse(to)) {
-    if (!city) return { error: 'House requires a city.' };
-    if (houseStashWeight(charId, city) + extra > HOUSE_CAP_KG + 1e-6) {
-      return { error: 'House storage is full.' };
+    if (!propertyOwnedId) return { error: 'House requires a specific property.' };
+    if (houseStashWeight(charId, propertyOwnedId) + extra > HOUSE_CAP_KG + 1e-6) {
+      return { error: 'This property\'s storage is full.' };
     }
   } else if (isVehicle(to)) {
     if (!vehicleId) return { error: 'Vehicle required.' };
@@ -287,35 +296,31 @@ export function transfer(charId, kind, itemId, qty, ammo, from, to, city, vehicl
     return { error: 'Unknown destination container.' };
   }
 
-  // node:sqlite doesn't expose better-sqlite3's `db.transaction(fn)`
-  // helper, so a manual BEGIN/COMMIT/ROLLBACK pair gives us atomicity.
   db.exec('BEGIN');
   try {
-    // SRC decrement
     if (isPersonal(from)) {
       db.prepare('UPDATE inventory SET qty = qty - ? WHERE char_id = ? AND kind = ? AND item_id = ?')
         .run(qty, charId, kind, itemId);
       db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ? AND qty <= 0')
         .run(charId, kind, itemId);
     } else if (isHouse(from)) {
-      db.prepare("UPDATE stash SET qty = qty - ? WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ?")
-        .run(qty, charId, city, kind, itemId);
-      db.prepare("DELETE FROM stash WHERE char_id = ? AND container = 'house' AND city = ? AND kind = ? AND item_id = ? AND qty <= 0")
-        .run(charId, city, kind, itemId);
+      db.prepare("UPDATE stash SET qty = qty - ? WHERE char_id = ? AND container = 'house' AND property_owned_id = ? AND kind = ? AND item_id = ?")
+        .run(qty, charId, propertyOwnedId, kind, itemId);
+      db.prepare("DELETE FROM stash WHERE char_id = ? AND container = 'house' AND property_owned_id = ? AND kind = ? AND item_id = ? AND qty <= 0")
+        .run(charId, propertyOwnedId, kind, itemId);
     } else if (isVehicle(from)) {
       db.prepare("UPDATE stash SET qty = qty - ? WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? AND kind = ? AND item_id = ?")
         .run(qty, charId, vehicleId, kind, itemId);
       db.prepare("DELETE FROM stash WHERE char_id = ? AND container = 'vehicle' AND vehicle_id = ? AND kind = ? AND item_id = ? AND qty <= 0")
         .run(charId, vehicleId, kind, itemId);
     }
-    // DST insert / increment
     if (isPersonal(to)) {
       db.prepare(`
         INSERT INTO inventory (char_id, kind, item_id, qty, ammo) VALUES (?, ?, ?, ?, 0)
         ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + excluded.qty
       `).run(charId, kind, itemId, qty);
     } else if (isHouse(to)) {
-      upsertHouseStash(charId, city, kind, itemId, qty);
+      upsertHouseStash(charId, propertyOwnedId, city, kind, itemId, qty);
     } else if (isVehicle(to)) {
       upsertVehicleStash(charId, vehicleId, kind, itemId, qty);
     }
@@ -353,7 +358,14 @@ export function migrateCharacterWeights(ch) {
   rows.sort((a, b) => itemWeight(b.kind, b.item_id) - itemWeight(a.kind, a.item_id));
 
   const targetCity = ch.city;
-  const sendHome = hasHouseIn(charId, targetCity);
+  // Pick the first property in the target city as the dump
+  // destination — house stash is per-property now, so we have to
+  // commit to a specific row rather than the city pool.
+  const firstHome = db.prepare(
+    'SELECT id FROM properties_owned WHERE char_id = ? AND city = ? ORDER BY id ASC LIMIT 1'
+  ).get(charId, targetCity);
+  const sendHome = !!firstHome;
+  const homePropertyId = firstHome?.id || null;
 
   let kept = total;
   db.exec('BEGIN');
@@ -363,8 +375,6 @@ export function migrateCharacterWeights(ch) {
       const unit = itemWeight(r.kind, r.item_id);
       if (unit <= 0) continue;
 
-      // Move as many units as needed to fall under the cap, capped at
-      // qty in this row. Then either deposit to house or void.
       const excessKg = kept - PERSONAL_CAP_KG;
       const moveQty  = Math.min(r.qty, Math.ceil(excessKg / unit));
       if (moveQty <= 0) continue;
@@ -374,7 +384,7 @@ export function migrateCharacterWeights(ch) {
       db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ? AND qty <= 0')
         .run(charId, r.kind, r.item_id);
 
-      if (sendHome) upsertHouseStash(charId, targetCity, r.kind, r.item_id, moveQty);
+      if (sendHome) upsertHouseStash(charId, homePropertyId, targetCity, r.kind, r.item_id, moveQty);
       kept -= unit * moveQty;
     }
     db.exec('COMMIT');
