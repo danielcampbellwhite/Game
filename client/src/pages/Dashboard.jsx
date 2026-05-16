@@ -206,13 +206,15 @@ const NODES = [
 // Rectangle-perimeter positions in container-% coordinates. Each
 // node lives on the rim of the corkboard, not on a polar circle.
 // 6 nodes = two on top, one on each side, two on the bottom.
+// Tightened in from the outer edges so the cards cluster nearer
+// the centre photo rather than hugging the container border.
 const RECT_POSITIONS = [
-  { x: 28, y:  6 },  // top-left
-  { x: 72, y:  6 },  // top-right
-  { x: 94, y: 50 },  // right
-  { x: 72, y: 94 },  // bottom-right
-  { x: 28, y: 94 },  // bottom-left
-  { x:  6, y: 50 },  // left
+  { x: 35, y: 18 },  // top-left
+  { x: 65, y: 18 },  // top-right
+  { x: 84, y: 50 },  // right
+  { x: 65, y: 82 },  // bottom-right
+  { x: 35, y: 82 },  // bottom-left
+  { x: 16, y: 50 },  // left
 ];
 
 // Stylised fedora-and-suit silhouette for the centre. Sized via parent
