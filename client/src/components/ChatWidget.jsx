@@ -94,6 +94,15 @@ export default function ChatWidget() {
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState(null);
 
+  // Cross-component opener: the phone overlay fires `mafia:open-chat`
+  // when the Live Chat app tile is tapped, so the widget pops itself
+  // open instead of forcing the player to find the floating bubble.
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener('mafia:open-chat', handler);
+    return () => window.removeEventListener('mafia:open-chat', handler);
+  }, []);
+
   // Draggable bubble position. `pos` is the resting state (side
   // 'left'|'right' + a clamped y in viewport px, null = bottom).
   // `drag` is non-null only while the user is actively dragging,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
@@ -11,10 +11,20 @@ import { fmt } from '../components/Money.jsx';
 // character.internet.online comes from the server on every refresh.
 // Online services charge a small markup over in-store prices and
 // debit from the player's bank balance (not pocket cash).
+//
+// Accepts ?tab=flights|vehicles|weapons|bank so the phone overlay's
+// app tiles can deep-link straight to the right section.
+
+const VALID_TABS = new Set(['flights', 'vehicles', 'weapons', 'bank']);
 
 export default function Online() {
   const { character } = useGame();
-  const [tab, setTab] = useState('flights');
+  const [search] = useSearchParams();
+  const wantTab = search.get('tab');
+  const [tab, setTab] = useState(VALID_TABS.has(wantTab) ? wantTab : 'flights');
+  useEffect(() => {
+    if (VALID_TABS.has(wantTab)) setTab(wantTab);
+  }, [wantTab]);
 
   if (!character) return null;
   const i = character.internet;
