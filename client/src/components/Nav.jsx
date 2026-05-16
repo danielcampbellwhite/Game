@@ -54,10 +54,8 @@ const NAV_TREE = [
   ]},
   { to: '/jobs',       label: 'Job Board' },
   { to: '/businesses', label: 'My Businesses' },
-  { to: '/combat',     label: 'Fight Club', children: [
-    { to: '/combat', label: 'Fight Club' },
-    { to: '/races',  label: 'Street Races' },
-  ]},
+  { to: '/combat',     label: 'Fight Club' },
+  { to: '/races',      label: 'Street Races' },
   { to: '/bounties',   label: 'Bounties' },
   { to: '/gangs',      label: 'Gangs', children: [
     { to: '/gangs', label: 'Gangs directory' },
