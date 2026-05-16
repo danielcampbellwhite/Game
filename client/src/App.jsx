@@ -70,7 +70,6 @@ import Premium from './pages/Premium.jsx';
 import Friends from './pages/Friends.jsx';
 import ClothingStore from './pages/ClothingStore.jsx';
 import HighStreet from './pages/HighStreet.jsx';
-import ChatWidget from './components/ChatWidget.jsx';
 import PhoneFab from './components/PhoneFab.jsx';
 import PhoneOverlay from './components/PhoneOverlay.jsx';
 
@@ -154,18 +153,16 @@ function LocationGateRouter() {
   return null;
 }
 
-// Phone widget + overlay + chat gating. Lives here so PhoneOverlay can
-// trigger the ChatWidget via the `mafia:open-chat` window event, and so
-// the live-chat bubble disappears entirely when the player is offline.
+// Phone widget + overlay. The phone is the only chat surface — the
+// old floating ChatWidget bubble is retired in favour of opening Live
+// Chat as an app inside the phone, so there's only one icon in the
+// bottom-right corner.
 function Phone() {
-  const { character } = useGame();
   const [open, setOpen] = React.useState(false);
-  const online = !!character?.internet?.online;
   return (
     <>
       <PhoneFab onOpen={() => setOpen(true)} />
       <PhoneOverlay open={open} onClose={() => setOpen(false)} />
-      {online && <ChatWidget />}
     </>
   );
 }

@@ -1,53 +1,181 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
+import ChatPanel from './ChatPanel.jsx';
 
 // iPhone-styled overlay that opens when the player taps the floating
-// phone in the bottom-right. App tiles route to the same online
-// services the /online page exposes, plus DMs and the live chat.
-// Closes on outside tap, Escape, or the close button on the lock bar.
+// phone button. Has its own internal "screen" state so apps can open
+// inside the phone frame (Live Chat, in particular) without leaving
+// the modal. Apps that lead to a full website page (Bank, Flights,
+// Cars, Gear, Gazette) navigate to the route and close the phone.
+
+const APP_ICONS = {
+  bank:     { gradient: ['#16a34a', '#065f46'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <rect x="6" y="13" width="20" height="11" rx="1.2" />
+      <polygon points="4,13 16,5 28,13" fill="white" />
+      <rect x="3.5" y="24" width="25" height="2.5" rx="0.6" />
+      <rect x="9"  y="15.5" width="2.5" height="6" fill="#065f46" />
+      <rect x="14.7" y="15.5" width="2.5" height="6" fill="#065f46" />
+      <rect x="20.5" y="15.5" width="2.5" height="6" fill="#065f46" />
+    </svg>
+  )},
+  flights:  { gradient: ['#22d3ee', '#0e7490'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <path d="M2 19 L22 9 L28 5 L30 7 L25 11 L21 24 L18 24 L19 14 L13 17 L11 22 L9 22 L10 18 L7 18 L2 19 Z" />
+    </svg>
+  )},
+  cars:     { gradient: ['#facc15', '#a16207'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <path d="M5 21 C5 18 6 17 8 16 L11 12 C11.5 11 12.5 10.5 14 10.5 L20 10.5 C21.5 10.5 22.5 11 23 12 L26 16 C28 17 29 18 29 21 L29 23 L5 23 Z" />
+      <circle cx="10.5" cy="23.5" r="2.7" fill="#1a1815" />
+      <circle cx="10.5" cy="23.5" r="1.2" fill="white" />
+      <circle cx="23.5" cy="23.5" r="2.7" fill="#1a1815" />
+      <circle cx="23.5" cy="23.5" r="1.2" fill="white" />
+    </svg>
+  )},
+  weapons:  { gradient: ['#dc2626', '#7f1d1d'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <rect x="4"  y="13" width="18" height="6" rx="0.6" />
+      <rect x="20" y="13" width="6"  height="3" />
+      <rect x="7"  y="19" width="5"  height="4" rx="0.5" />
+      <rect x="14" y="11" width="2"  height="3" />
+    </svg>
+  )},
+  messages: { gradient: ['#3b82f6', '#1e40af'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" stroke="white" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" aria-hidden>
+      <rect x="5" y="8" width="22" height="16" rx="3" />
+      <path d="M6 10 L16 18 L26 10" />
+    </svg>
+  )},
+  chat:     { gradient: ['#10b981', '#065f46'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <path d="M6 7 L26 7 C28 7 29 8 29 10 L29 19 C29 21 28 22 26 22 L18 22 L12 27 L12 22 L6 22 C4 22 3 21 3 19 L3 10 C3 8 4 7 6 7 Z" />
+      <circle cx="11" cy="14.5" r="1.3" fill="#065f46" />
+      <circle cx="16" cy="14.5" r="1.3" fill="#065f46" />
+      <circle cx="21" cy="14.5" r="1.3" fill="#065f46" />
+    </svg>
+  )},
+  news:     { gradient: ['#a8a29e', '#44403c'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <rect x="4" y="7" width="24" height="18" rx="1.5" />
+      <rect x="7"  y="11" width="13" height="2" fill="#44403c" />
+      <rect x="7"  y="14" width="18" height="1.4" fill="#44403c" />
+      <rect x="7"  y="16.4" width="18" height="1.4" fill="#44403c" />
+      <rect x="7"  y="18.8" width="11" height="1.4" fill="#44403c" />
+      <rect x="22" y="11" width="3" height="2.8" fill="#44403c" />
+    </svg>
+  )},
+  markets:  { gradient: ['#059669', '#064e3b'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="white" aria-hidden>
+      <rect x="5"  y="18" width="4" height="9" />
+      <rect x="12" y="13" width="4" height="14" />
+      <rect x="19" y="9"  width="4" height="18" />
+      <rect x="26" y="15" width="4" height="12" />
+      <polyline points="5,17 12,12 19,8 26,14" fill="none" stroke="white" strokeWidth="1.5" />
+    </svg>
+  )},
+};
 
 const APPS = [
-  // Each app: { id, label, glyph (React node), to (route) or action }.
-  { id: 'bank',     label: 'Bank',     to: '/online?tab=bank',     hint: 'Balance + loans',          color: 'bg-money-500',  initial: '£'  },
-  { id: 'flights',  label: 'Flights',  to: '/online?tab=flights',  hint: 'Book a seat',              color: 'bg-cyan-500',   initial: ''   },
-  { id: 'cars',     label: 'Cars',     to: '/online?tab=vehicles', hint: 'Ship to a garage',         color: 'bg-yellow-500', initial: ''   },
-  { id: 'weapons',  label: 'Gear',     to: '/online?tab=weapons',  hint: 'Ship to a property',       color: 'bg-blood-600',  initial: ''   },
-  { id: 'messages', label: 'Messages', to: '/messages',            hint: 'DMs with players',         color: 'bg-blue-500',   initial: '@'  },
-  { id: 'chat',     label: 'Live Chat',action: 'open-chat',        hint: 'World / faction / gang',   color: 'bg-emerald-500',initial: '*'  },
-  { id: 'news',     label: 'Gazette',  to: '/newspaper',           hint: 'Today\'s headlines',       color: 'bg-stone-500',  initial: '|'  },
-  { id: 'stocks',   label: 'Markets',  to: '/online?tab=bank',     hint: 'Wallet status',            color: 'bg-emerald-700',initial: '$'  },
+  { id: 'chat',     label: 'Chat',     screen: 'chat'                                            },
+  { id: 'messages', label: 'Messages', to:     '/messages',           hint: 'DMs'                },
+  { id: 'bank',     label: 'Bank',     to:     '/online?tab=bank'                                },
+  { id: 'flights',  label: 'Flights',  to:     '/online?tab=flights'                             },
+  { id: 'cars',     label: 'Cars',     to:     '/online?tab=vehicles', hint: 'Ship to a garage'  },
+  { id: 'weapons',  label: 'Gear',     to:     '/online?tab=weapons',  hint: 'Ship to property'  },
+  { id: 'news',     label: 'Gazette',  to:     '/newspaper'                                      },
+  { id: 'markets',  label: 'Markets',  to:     '/stocks'                                         },
 ];
+
+function AppTile({ app, disabled, onPick }) {
+  const def = APP_ICONS[app.id] || APP_ICONS.bank;
+  const bg = `linear-gradient(160deg, ${def.gradient[0]}, ${def.gradient[1]})`;
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => onPick(app)}
+      className={`group flex flex-col items-center gap-1 ${disabled ? 'opacity-40' : ''}`}>
+      <span
+        style={{ background: bg, boxShadow: '0 6px 14px -6px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.15)' }}
+        className="w-14 h-14 rounded-[16px] flex items-center justify-center transition-transform group-hover:scale-105 group-active:scale-95">
+        {def.glyph}
+      </span>
+      <span className="text-[10px] text-white/95 leading-tight text-center px-1 line-clamp-2 drop-shadow">
+        {app.label}
+      </span>
+    </button>
+  );
+}
+
+// Animated wallpaper for the phone. Uses CSS gradients only so the
+// bundle stays asset-free. The two overlapping radial gradients add
+// faint colour pops without imitating a real photo.
+const WALLPAPER = {
+  background:
+    'radial-gradient(circle at 18% 12%, rgba(220, 38, 38, 0.35), transparent 55%), ' +
+    'radial-gradient(circle at 82% 88%, rgba(250, 204, 21, 0.28), transparent 55%), ' +
+    'linear-gradient(160deg, #1f1b18 0%, #0a0908 100%)',
+};
 
 export default function PhoneOverlay({ open, onClose }) {
   const { character } = useGame();
   const nav = useNavigate();
+  const [screen, setScreen] = useState('home');
+
+  // Reset to home each time the phone opens — feels right when the
+  // player taps the icon: phone wakes to the home screen.
+  useEffect(() => { if (open) setScreen('home'); }, [open]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (screen !== 'home') setScreen('home');
+      else onClose?.();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, screen, onClose]);
 
   if (!open) return null;
 
   const online = !!character?.internet?.online;
   const reasonLabel = {
-    phone:        'iPhone · Mobile data',
-    laptop_home:  'iPhone · Home Wi-Fi',
-    laptop_car:   'iPhone · Car hotspot',
-  }[character?.internet?.reason] || 'iPhone';
+    phone:       'LTE',
+    laptop_home: 'Wi-Fi',
+    laptop_car:  'Hotspot',
+  }[character?.internet?.reason] || '';
   const now = new Date();
   const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   function launch(app) {
-    if (app.action === 'open-chat') {
-      try { window.dispatchEvent(new CustomEvent('mafia:open-chat')); } catch {}
-    } else if (app.to) {
-      nav(app.to);
+    if (app.screen) {
+      setScreen(app.screen);
+      return;
     }
-    onClose?.();
+    if (app.to) {
+      nav(app.to);
+      onClose?.();
+    }
+  }
+
+  // Header shown above the active app screen (chat etc.) — a back
+  // arrow returns to the home grid.
+  function AppHeader({ title }) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-ink-950/85 border-b border-ink-100/10 shrink-0">
+        <button
+          type="button"
+          onClick={() => setScreen('home')}
+          aria-label="Back to home screen"
+          className="text-ink-100/85 hover:text-white text-base leading-none px-1">
+          ‹
+        </button>
+        <span className="text-xs uppercase tracking-wider text-ink-100/85 font-medium">{title}</span>
+      </div>
+    );
   }
 
   return (
@@ -60,69 +188,80 @@ export default function PhoneOverlay({ open, onClose }) {
       {/* Phone frame */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[320px] h-[640px] max-h-[90vh] rounded-[40px] bg-ink-1000 border-4 border-ink-950 shadow-2xl shadow-black/80 overflow-hidden relative flex flex-col">
+        className="w-full max-w-[330px] h-[660px] max-h-[92vh] rounded-[44px] bg-ink-1000 border-[6px] border-ink-1000 shadow-2xl shadow-black/80 overflow-hidden relative flex flex-col"
+        style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 20px 60px -10px rgba(0,0,0,0.85)' }}>
+        {/* Wallpaper layer */}
+        <div style={WALLPAPER} className="absolute inset-0 z-0" aria-hidden />
+
         {/* Notch */}
-        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-black rounded-full z-10" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-20" />
 
         {/* Status bar */}
-        <div className="pt-6 px-5 pb-2 flex items-baseline justify-between text-[11px] text-ink-100/90 tabular-nums shrink-0">
+        <div className="pt-6 px-5 pb-1 flex items-baseline justify-between text-[11px] text-white tabular-nums shrink-0 relative z-10">
           <span className="font-medium">{clock}</span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             {online ? (
               <>
-                <span className="text-money-300">●</span>
-                <span className="text-ink-100/70">{reasonLabel}</span>
+                {reasonLabel && <span className="text-white/85">{reasonLabel}</span>}
+                <span className="inline-flex items-center gap-0.5" aria-hidden>
+                  <span className="block w-0.5 h-1 bg-white rounded-sm" />
+                  <span className="block w-0.5 h-1.5 bg-white rounded-sm" />
+                  <span className="block w-0.5 h-2 bg-white rounded-sm" />
+                  <span className="block w-0.5 h-2.5 bg-white rounded-sm" />
+                </span>
               </>
             ) : (
-              <span className="text-blood-300">● Offline</span>
+              <span className="text-blood-300">No service</span>
             )}
           </span>
         </div>
 
-        {/* Home screen */}
-        <div className="flex-1 px-4 py-3 overflow-y-auto scrollbar">
-          <div className="grid grid-cols-3 gap-3 mt-2">
-            {APPS.map(app => {
-              const disabled = !online;
-              return (
-                <button
-                  key={app.id}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => launch(app)}
-                  className={`group flex flex-col items-center gap-1 ${disabled ? 'opacity-40' : ''}`}>
-                  <span
-                    className={`w-14 h-14 rounded-2xl ${app.color} shadow-md shadow-black/40 flex items-center justify-center text-white text-2xl font-display group-hover:scale-105 transition-transform`}
-                    aria-hidden>
-                    {app.initial}
-                  </span>
-                  <span className="text-[10px] text-ink-100/85 leading-tight text-center px-1 line-clamp-2">{app.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        {/* Screen body */}
+        <div className="flex-1 relative z-10 flex flex-col min-h-0">
+          {screen === 'home' && (
+            <div className="flex-1 overflow-y-auto scrollbar px-5 pt-4 pb-4">
+              <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+                {APPS.map(app => (
+                  <AppTile
+                    key={app.id}
+                    app={app}
+                    disabled={!online}
+                    onPick={launch} />
+                ))}
+              </div>
 
-          {!online && (
-            <div className="mt-6 mx-2 px-3 py-3 rounded-lg border border-blood-500/40 bg-blood-700/15 text-[12px] text-ink-100/90 text-center">
-              <div className="font-medium text-blood-300 mb-1">No signal</div>
-              Carry a smartphone in your pocket, or be at the property / in the car
-              where you've stashed a laptop, to use the apps.
+              {!online && (
+                <div className="mt-6 mx-1 px-3 py-3 rounded-lg border border-blood-500/40 bg-blood-700/15 text-[12px] text-white/90 text-center">
+                  <div className="font-medium text-blood-300 mb-1">No signal</div>
+                  Carry a smartphone, or be at the property / in the car where you've stashed
+                  a laptop, to use the apps.
+                </div>
+              )}
             </div>
+          )}
+
+          {screen === 'chat' && (
+            <>
+              <AppHeader title="Live Chat" />
+              <div className="flex-1 min-h-0">
+                <ChatPanel onPickDms={() => { nav('/messages'); onClose?.(); }} />
+              </div>
+            </>
           )}
         </div>
 
-        {/* Home indicator + close */}
-        <div className="px-4 py-3 flex items-center justify-between shrink-0 border-t border-ink-100/5">
-          <span className="text-[10px] uppercase tracking-wider text-ink-100/45">{character?.name || 'Mafia Life'}</span>
+        {/* Dock bar with the home indicator + power-style lock */}
+        <div className="relative z-10 px-4 py-2 flex items-center justify-between shrink-0 border-t border-white/5 bg-black/40 backdrop-blur">
+          <span className="text-[10px] uppercase tracking-wider text-white/55 truncate">{character?.name || 'Mafia Life'}</span>
           <button
             type="button"
             onClick={onClose}
-            className="text-[11px] uppercase tracking-wider text-ink-100/70 hover:text-ink-100 px-3 py-1 rounded-md hover:bg-ink-900/60">
+            className="text-[11px] uppercase tracking-wider text-white/80 hover:text-white px-3 py-1 rounded-md hover:bg-white/10">
             Lock
           </button>
         </div>
         {/* Home bar */}
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-24 h-1 bg-ink-100/40 rounded-full" />
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-28 h-1 bg-white/45 rounded-full z-20" />
       </div>
     </div>
   );

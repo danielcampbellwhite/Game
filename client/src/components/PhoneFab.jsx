@@ -8,8 +8,7 @@ import { useGame } from '../context/GameContext.jsx';
 // online to open the iPhone-style PhoneOverlay; tap when offline to
 // see a short "no signal" hint that explains how to get connected.
 
-// Sized + positioned to stack neatly above the ChatWidget (which sits
-// at bottom-3/right-3, ~56px tall). 76px up keeps a comfortable gap.
+// Comfortable thumb-sized FAB.
 const BUBBLE_PX = 56;
 
 export default function PhoneFab({ onOpen }) {
@@ -36,7 +35,7 @@ export default function PhoneFab({ onOpen }) {
     <>
       {showOfflineHint && (
         <div
-          style={{ position: 'fixed', right: 12, bottom: 12 + BUBBLE_PX + 56 + 8 }}
+          style={{ position: 'fixed', right: 12, bottom: 12 + BUBBLE_PX + 8 }}
           className="z-50 max-w-[220px] px-3 py-2 rounded-md bg-ink-950/95 border border-blood-500/40 text-[11px] text-ink-100/90 shadow-2xl shadow-black/60">
           <div className="font-medium text-blood-300 mb-0.5">No signal</div>
           <div>Carry a smartphone, or be where you've stashed a laptop, to come online.</div>
@@ -47,7 +46,7 @@ export default function PhoneFab({ onOpen }) {
         onClick={handleTap}
         aria-label={online ? 'Open phone' : 'Phone — offline'}
         title={online ? 'Open phone' : 'Phone — offline'}
-        style={{ position: 'fixed', right: 12, bottom: 12 + BUBBLE_PX + 8, width: BUBBLE_PX, height: BUBBLE_PX, zIndex: 40 }}
+        style={{ position: 'fixed', right: 12, bottom: 12, width: BUBBLE_PX, height: BUBBLE_PX, zIndex: 40 }}
         className="rounded-2xl bg-ink-950/95 border border-ink-100/15 backdrop-blur shadow-2xl shadow-black/60 hover:bg-ink-900/95 active:scale-95 transition flex items-center justify-center">
         {/* Phone glyph — simple rounded rectangle outline so it reads
             as "mobile" without needing an icon font. */}
