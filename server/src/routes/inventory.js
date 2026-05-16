@@ -53,6 +53,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       oneShotCash: m?.oneShotCash || null,
       prizes: m?.prizes || null,
       missionOnly: !!m?.missionOnly,
+      device: m?.device || null,
+      // Mirrors isUsableMisc on the server. The client uses this to
+      // hide the "Use" button on items that have no /use behaviour
+      // (devices, crime tools, decorative misc).
+      usable: !!(m?.effects || m?.oneShotCash || m?.prizes || m?.missionOnly),
     };
   }).filter(i => i.qty > 0);
 

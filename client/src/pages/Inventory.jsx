@@ -965,12 +965,18 @@ export default function Inventory() {
                     <span className="text-[13px] text-ink-100/60 tabular-nums">×{m.qty}</span>
                   </div>
                   {m.desc && <div className="text-[13px] text-ink-100/55 mt-1 flex-1">{m.desc}</div>}
-                  <button
-                    disabled={busy === `use-${m.id}` || m.qty <= 0}
-                    onClick={() => useMisc(m)}
-                    className="btn btn-money text-xs w-full mt-3">
-                    {busy === `use-${m.id}` ? '…' : 'Use'}
-                  </button>
+                  {m.usable ? (
+                    <button
+                      disabled={busy === `use-${m.id}` || m.qty <= 0}
+                      onClick={() => useMisc(m)}
+                      className="btn btn-money text-xs w-full mt-3">
+                      {busy === `use-${m.id}` ? '…' : 'Use'}
+                    </button>
+                  ) : (
+                    <div className="text-[11px] text-ink-100/45 mt-3 text-center italic">
+                      {m.device ? `${m.device === 'phone' ? 'Carry to stay online.' : 'Stash in a property or vehicle to use.'}` : 'No direct use.'}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -39,6 +39,17 @@ function applyPrizeOverride(item) {
   return { ...item, ...o };
 }
 
+// A misc item is "usable" from /use if it has effects on vitals, a
+// random cash payout (lottery), a weighted prize table, or is a mission
+// prop (consumed once for mission tracking). Devices like smartphone
+// and laptop, decorative items, and crime tools that are consumed
+// inside a crime endpoint don't qualify — calling /use on them would
+// silently delete the item with nothing to show for it.
+export function isUsableMisc(item) {
+  if (!item) return false;
+  return !!(item.effects || item.oneShotCash || item.prizes || item.missionOnly);
+}
+
 function ownedQty(charId, itemId) {
   const r = db.prepare("SELECT qty FROM inventory WHERE char_id = ? AND kind = 'misc' AND item_id = ?")
     .get(charId, itemId);
@@ -104,6 +115,13 @@ router.post('/use', requireAuth, requireCharacter, requireFreeCharacter, (req, r
   const ch = req.character;
   const item = applyPrizeOverride(miscItemById(req.body?.item_id));
   if (!item) return res.status(400).json({ error: 'Unknown item' });
+  // Block "using" items that have no /use behaviour — devices like
+  // smartphone / laptop, crime tools that get consumed at the crime
+  // site, decorative items, etc. Otherwise we'd silently delete a
+  // £1,500 phone with nothing to show for it.
+  if (!isUsableMisc(item)) {
+    return res.status(400).json({ error: `${item.name} isn't something you can use from your inventory.` });
+  }
   const have = ownedQty(ch.id, item.id);
   if (have <= 0) return res.status(400).json({ error: "You don't have that." });
 
