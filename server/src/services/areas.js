@@ -198,7 +198,31 @@ export function captureArea(attacker, gang, areaId) {
 
   // Logs + events.
   const verb = captured ? 'TOOK' : 'failed to take';
-  writeLog(attacker.id, 'turf', `Gang ${verb} ${meta.name} in ${meta.city}. Atk ${atkPower} vs Def ${defPower} (${Math.round(winChance * 100)}%).`);
+  // Rich meta on the turf log so the newspaper can name gangs and
+  // build a proper turf-war narrative without re-querying. Attacker
+  // gang is loaded from gang_members; defender (the previous holder)
+  // is what we just displaced — if any.
+  const attackerMem = db.prepare('SELECT g.id, g.name, g.tag, g.faction FROM gang_members m JOIN gangs g ON g.id = m.gang_id WHERE m.char_id = ?').get(attacker.id);
+  const defenderRow = defGang ? db.prepare('SELECT id, name, tag, faction FROM gangs WHERE id = ?').get(defGang) : null;
+  writeLog(attacker.id, 'turf',
+    `Gang ${verb} ${meta.name} in ${meta.city}. Atk ${atkPower} vs Def ${defPower} (${Math.round(winChance * 100)}%).`,
+    {
+      area_id: areaId,
+      area_name: meta.name,
+      city: meta.city,
+      captured,
+      atk_power: atkPower,
+      def_power: defPower,
+      win_chance: winChance,
+      attacker_gang_id:   attackerMem?.id   || null,
+      attacker_gang_name: attackerMem?.name || null,
+      attacker_gang_tag:  attackerMem?.tag  || null,
+      attacker_faction:   attackerMem?.faction || null,
+      defender_gang_id:   defenderRow?.id   || null,
+      defender_gang_name: defenderRow?.name || null,
+      defender_gang_tag:  defenderRow?.tag  || null,
+      defender_faction:   defenderRow?.faction || null,
+    });
   if (captured && defGang) {
     sendEvent(null, 'area.captured', { area: areaId, attacker_gang: gang.id, defender_gang: defGang });
   }

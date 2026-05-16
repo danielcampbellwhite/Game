@@ -235,7 +235,9 @@ export default function Newspaper() {
                     <div className="text-[13px] leading-snug">
                       <div className="font-bold uppercase tracking-wide text-[12px]">{m.victim}</div>
                       <div className="text-[#1a1815]/70 italic mt-0.5">
-                        Felled by {m.attacker}{m.cashTaken > 0 ? `, wallet relieved of ${fmt(m.cashTaken)}` : ''}.
+                        {m.attackerKnown
+                          ? <>Felled by {m.attacker}{m.cashTaken > 0 ? `, wallet relieved of ${fmt(m.cashTaken)}` : ''}.</>
+                          : <>Killed by persons unknown. Cops are working it{m.cashTaken > 0 ? `; wallet was relieved of ${fmt(m.cashTaken)}` : ''}.</>}
                       </div>
                       <div className="text-[10px] uppercase tracking-wider text-[#1a1815]/50 mt-0.5">
                         {relativeTime(m.when)}
@@ -252,17 +254,28 @@ export default function Newspaper() {
             {totalTurfFlips === 0 ? (
               <p className="italic text-[#1a1815]/70 text-[13px]">No changes of hands on the streets today.</p>
             ) : (
-              <ul className="space-y-2">
-                {data.turfFlips.slice(0, 5).map((t, i) => (
-                  <li key={i} className="flex gap-2 items-start text-[13px]">
-                    <FlagSvg width={28} height={36} className="shrink-0 mt-0.5" />
-                    <div>
-                      <div className="leading-snug">{t.text}</div>
-                      <div className="text-[10px] uppercase tracking-wider text-[#1a1815]/50 mt-0.5">{relativeTime(t.when)}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <article>
+                {data.turfWar && (
+                  <p className="text-[13px] leading-relaxed mb-3 first-letter:font-display first-letter:text-4xl first-letter:float-left first-letter:mr-1.5 first-letter:mt-1 first-letter:leading-[0.85]">
+                    {data.turfWar}
+                  </p>
+                )}
+                <div className="text-[10px] uppercase tracking-[0.2em] text-[#1a1815]/55 mb-1">Sectors swapped</div>
+                <ul className="space-y-1.5">
+                  {data.turfFlips.slice(0, 5).map((t, i) => (
+                    <li key={i} className="flex gap-2 items-start text-[12px]">
+                      <FlagSvg width={20} height={26} className="shrink-0 mt-0.5" />
+                      <div className="leading-snug">
+                        <span className="font-bold">{t.attacker_gang_name || t.actor || 'A small crew'}</span>
+                        {' took '}
+                        <span className="italic">{t.area || 'a sector'}</span>
+                        {t.defender_gang_name && <> from <span className="font-bold">{t.defender_gang_name}</span></>}
+                        <span className="text-[#1a1815]/55"> · {relativeTime(t.when)}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </article>
             )}
           </aside>
         </div>
@@ -282,15 +295,16 @@ export default function Newspaper() {
             {totalScores === 0 ? (
               <p className="italic text-[#1a1815]/70 text-[13px]">No spectacular hauls. Mostly small change.</p>
             ) : (
-              <ol className="space-y-1.5 text-[13px]">
+              <ol className="space-y-3 text-[13px]">
                 {data.bigScores.map((s, i) => (
-                  <li key={i} className="flex justify-between gap-2">
-                    <span className="truncate">
-                      <span className="font-bold mr-1.5">{i + 1}.</span>
-                      <span className="italic">{s.name}</span>
-                      {s.crime && <span className="text-[#1a1815]/55 text-[12px]"> · {prettyCrime(s.crime)}</span>}
-                    </span>
-                    <span className="tabular-nums font-bold shrink-0">{fmt(s.payout)}</span>
+                  <li key={i} className="border-b border-[#1a1815]/10 pb-2 last:border-0 last:pb-0">
+                    <div className="flex justify-between gap-2 mb-0.5">
+                      <span className="font-bold uppercase tracking-wide text-[11px]">
+                        {i + 1}. {prettyCrime(s.crime || 'Unreported job')}
+                      </span>
+                      <span className="tabular-nums font-bold shrink-0">{fmt(s.payout)}</span>
+                    </div>
+                    <p className="leading-snug text-[12px]">{s.story}</p>
                   </li>
                 ))}
               </ol>
