@@ -51,7 +51,7 @@ try {
 } catch {}
 
 export const HOTWIRE_SEQUENCE_LEN = 3;
-export const HOTWIRE_DURATION_MS  = 3_000;
+export const HOTWIRE_DURATION_MS  = 4_000;
 const TUTORIAL_HOLD_MS = 60 * 60 * 1000;
 const ARROW_POOL = ['up', 'down', 'left', 'right'];
 

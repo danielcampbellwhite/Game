@@ -16,7 +16,7 @@ import {
   deferCrimeQte, loadPendingCrimeQte, beginCrimeQte, scoreCrimeQte, clearPendingCrimeQte, TIER_QTE,
 } from '../services/crime-qte.js';
 import {
-  startHotwire, loadHotwire, beginHotwire, scoreHotwire, clearHotwire,
+  startHotwire, loadHotwire, beginHotwire, scoreHotwire, clearHotwire, HOTWIRE_DURATION_MS,
 } from '../services/hotwire.js';
 import {
   recordCrimeForInvestigation,
@@ -551,7 +551,7 @@ router.get('/hotwire', requireAuth, requireCharacter, (req, res) => {
       crimeName:  h.crimeName,
       sequence:   h.sequence,
       expiresAt:  h.expiresAt,
-      durationMs: 3000,
+      durationMs: HOTWIRE_DURATION_MS,
       tutorial:   h.isTutorial,
     },
   });
@@ -565,7 +565,7 @@ router.post('/hotwire/begin', requireAuth, requireCharacter, (req, res) => {
     ok: true,
     hotwire: {
       crimeName: h.crimeName, sequence: h.sequence, expiresAt: h.expiresAt,
-      durationMs: 3000, tutorial: h.isTutorial,
+      durationMs: HOTWIRE_DURATION_MS, tutorial: h.isTutorial,
     },
   });
 });
