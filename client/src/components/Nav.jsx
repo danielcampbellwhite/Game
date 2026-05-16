@@ -274,7 +274,7 @@ export default function Nav() {
         <Link
           to="/"
           aria-label="Home — Mafia Life: Criminal Empire"
-          className="relative inline-block shrink-0 pb-2 sm:pb-3">
+          className="relative inline-block shrink-0">
           <span className="font-display text-3xl sm:text-4xl text-blood-500 leading-none tracking-wide">
             MAFIA LIFE
           </span>
