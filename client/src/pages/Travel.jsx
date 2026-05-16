@@ -20,6 +20,7 @@ export default function Travel() {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [tab, setTab] = useState('commercial'); // 'commercial' | 'hangar'
   // tickFlag drives a 1Hz re-render so the countdowns update; stored
   // value isn't read directly.
   const [, setTickFlag] = useState(0);
@@ -91,6 +92,24 @@ export default function Travel() {
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
 
+      {/* Tabs — split the airport into commercial (book a seat) and
+          private/hangar (your own aircraft + storage). */}
+      <div className="flex gap-1 text-xs">
+        {[
+          { id: 'commercial', label: 'Commercial Flights' },
+          { id: 'hangar',     label: 'Private / Hangar'   },
+        ].map(t => (
+          <button key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-md ${tab === t.id ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/60'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'hangar' && <HangarPanel onChange={async () => { await refresh(); await load(); }} />}
+
+      {tab === 'commercial' && <>
       <Card title=" Drive" subtitle="Cheaper, slower, no customs check at the border. You bring your active car with you.">
         {!grounded ? (
           <p className="text-xs text-ink-100/55">You need an active car to drive between cities. Buy or steal one first.</p>
@@ -189,6 +208,211 @@ export default function Travel() {
           })}
         </div>
       </Card>
+      </>}
+    </div>
+  );
+}
+
+// ─── Private / Hangar tab ────────────────────────────────────
+// Shows the local hangar in this city: status, slot upgrades,
+// aircraft for sale, your aircraft parked here + a "Fly to..."
+// action per aircraft. Hits /api/hangar/* — all gated to the
+// airport location server-side. Reloads on every action.
+function HangarPanel({ onChange }) {
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg]   = useState(null);
+  const [flyOpen, setFlyOpen] = useState(null); // aircraft row id
+
+  async function load() {
+    try { setData(await api.get('/hangar')); }
+    catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function call(action, body) {
+    setBusy(action); setMsg(null);
+    try {
+      await api.post(`/hangar/${action}`, body || {});
+      await onChange?.();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!data) return <Card><p className="text-xs text-ink-100/55">Loading hangar…</p></Card>;
+
+  const h = data.hangar;
+  const planes = (data.aircraft_catalog || []).filter(a => a.class === 'plane');
+  const helis  = (data.aircraft_catalog || []).filter(a => a.class === 'helicopter');
+
+  return (
+    <div className="space-y-3">
+      {msg && <Card><p className="text-xs text-blood-300">{msg}</p></Card>}
+
+      {/* Hangar status */}
+      <Card title={`Your Hangar — ${data.cityName}`}
+        subtitle={h ? 'Storage for planes, helicopters, and one car-park area for the ride you came in on.' : 'No hangar in this city yet. Buy one to keep aircraft here and fly out.'}>
+        {!h ? (
+          <button
+            disabled={busy === 'buy'}
+            onClick={() => call('buy')}
+            className="btn btn-primary text-sm">
+            Buy hangar — £{data.purchaseCost.toLocaleString()}
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {['plane', 'helicopter', 'car'].map(slot => {
+                const s = h.slots[slot];
+                const max = data.maxSlots[slot === 'helicopter' ? 'heli' : slot];
+                const nextCost = data.upgradeCosts[slot === 'helicopter' ? 'heli' : slot][s.capacity - 1];
+                const atMax = s.capacity >= max;
+                return (
+                  <div key={slot} className="rounded-md border border-ink-100/10 bg-ink-950/40 p-2">
+                    <div className="text-[11px] uppercase tracking-wide text-ink-100/55">{slot}s</div>
+                    <div className="font-display text-xl text-ink-50 tabular-nums">{s.used}/{s.capacity}</div>
+                    <div className="text-[11px] text-ink-100/45">cap {max}</div>
+                    {atMax
+                      ? <div className="text-[11px] uppercase text-money-300 mt-1">maxed</div>
+                      : <button
+                          disabled={busy === `upgrade-${slot}`}
+                          onClick={() => call('upgrade', { slot })}
+                          className="btn btn-ghost text-[11px] w-full mt-1">
+                          + £{nextCost.toLocaleString()}
+                        </button>
+                    }
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Aircraft parked here */}
+      {h && (
+        <Card title="Your aircraft here"
+          subtitle={data.my_aircraft_here.length === 0
+            ? 'Nothing parked in this hangar yet. Buy a plane or helicopter below.'
+            : `${data.my_aircraft_here.length} aircraft parked in this hangar.`}>
+          {data.my_aircraft_here.length > 0 && (
+            <div className="grid sm:grid-cols-2 gap-2">
+              {data.my_aircraft_here.map(a => (
+                <div key={a.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="font-medium truncate">{a.maker} {a.name}</div>
+                    <span className="text-[11px] uppercase tracking-wide text-ink-100/55">{a.class}</span>
+                  </div>
+                  <div className="text-[12px] text-ink-100/55 mt-0.5">Tier {a.tier}</div>
+                  <div className="mt-2 flex items-center gap-2 text-[11px]">
+                    <span className="text-ink-100/45 w-10">Fuel</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+                      <div className={a.fuel >= 50 ? 'bg-cyan-400' : a.fuel >= 20 ? 'bg-yellow-400' : 'bg-blood-500'}
+                        style={{ width: `${Math.max(0, Math.min(100, a.fuel))}%`, height: '100%' }} />
+                    </div>
+                    <span className="tabular-nums text-ink-100/55 w-10 text-right">{Math.round(a.fuel)}%</span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
+                    <button
+                      disabled={busy === `refuel-${a.id}` || a.fuel >= 100}
+                      onClick={() => call('refuel', { aircraft_row_id: a.id })}
+                      className="btn btn-ghost text-[11px]">
+                      Refuel
+                    </button>
+                    <button
+                      disabled={busy === `fly-${a.id}`}
+                      onClick={() => setFlyOpen(a.id)}
+                      className="btn btn-primary text-[11px]">
+                      Fly to…
+                    </button>
+                  </div>
+                  {flyOpen === a.id && (
+                    <FlyPicker
+                      hangars={data.my_hangars}
+                      currentCity={data.city}
+                      onCancel={() => setFlyOpen(null)}
+                      onPick={async (toCity) => {
+                        setFlyOpen(null);
+                        await call('fly', { aircraft_row_id: a.id, to_city: toCity });
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Aircraft dealership — only available with a hangar */}
+      {h && (
+        <Card title="Aircraft for sale"
+          subtitle="Drops straight into your local hangar. Free slot of the matching class required.">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...planes, ...helis].map(a => (
+              <div key={a.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="font-medium truncate">{a.maker} {a.name}</div>
+                  <span className="text-[11px] uppercase tracking-wide text-ink-100/55">{a.class}</span>
+                </div>
+                <div className="text-[12px] text-ink-100/55">Tier {a.tier}</div>
+                <div className="text-money-400 font-semibold mt-1 tabular-nums">£{a.bookPrice.toLocaleString()}</div>
+                <button
+                  disabled={busy === `buy-aircraft-${a.id}`}
+                  onClick={() => call('buy-aircraft', { aircraft_id: a.id })}
+                  className="btn btn-primary text-xs w-full mt-2">
+                  Buy
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Other hangars I own */}
+      {h && data.my_hangars.length > 1 && (
+        <Card title="Your other hangars" subtitle="Cities where you can land your aircraft.">
+          <ul className="text-sm space-y-1">
+            {data.my_hangars.filter(o => o.city !== data.city).map(o => (
+              <li key={o.id} className="flex justify-between border-b border-ink-100/5 py-1 last:border-0">
+                <span className="text-ink-100/85">{o.cityName}</span>
+                <span className="text-[12px] text-ink-100/55 tabular-nums">
+                  {o.plane_slots}p · {o.heli_slots}h · {o.car_slots}c
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Lightweight destination picker — lists cities where the player
+// owns a hangar (excluding the current city). Picking one fires the
+// fly action; server validates everything else.
+function FlyPicker({ hangars, currentCity, onCancel, onPick }) {
+  const destinations = (hangars || []).filter(h => h.city !== currentCity);
+  return (
+    <div className="mt-2 rounded-md border border-cyan-500/40 bg-cyan-900/15 p-2">
+      <div className="text-[11px] uppercase tracking-wide text-cyan-300 mb-1">Pick a destination hangar</div>
+      {destinations.length === 0 ? (
+        <p className="text-[12px] text-ink-100/65">No other hangars to land at — buy one in another city first.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1">
+          {destinations.map(d => (
+            <button key={d.id}
+              onClick={() => onPick(d.city)}
+              className="btn btn-ghost text-[11px]">
+              {d.cityName} →
+            </button>
+          ))}
+        </div>
+      )}
+      <button onClick={onCancel} className="text-[11px] text-ink-100/55 mt-2 hover:text-ink-100/80">
+        Cancel
+      </button>
     </div>
   );
 }

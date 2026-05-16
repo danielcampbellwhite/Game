@@ -915,6 +915,28 @@ export function initDb() {
   // and inter-city drives, refilled from the inventory > vehicles
   // tab (POST /api/vehicles/refill). See services/fuel.js.
   addColumnIfMissing('vehicles_owned', 'fuel', 'REAL NOT NULL DEFAULT 100');
+  // Vehicle class — 'car' (default), 'plane', or 'helicopter'.
+  // Cars live in garages, aircraft live in hangars. Branch off
+  // this when checking storage capacity, sale eligibility, etc.
+  addColumnIfMissing('vehicles_owned', 'class', "TEXT NOT NULL DEFAULT 'car'");
+
+  // Hangars — one row per (char, city). Stores aircraft plus a
+  // small dedicated car slot so a player can drive to the airport,
+  // park, and fly out. Slot caps: planes max 2, helicopters max 3,
+  // cars max 5. Base purchase = 1/1/1.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS hangars (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      char_id      INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      city         TEXT    NOT NULL,
+      plane_slots  INTEGER NOT NULL DEFAULT 1,
+      heli_slots   INTEGER NOT NULL DEFAULT 1,
+      car_slots    INTEGER NOT NULL DEFAULT 1,
+      acquired_at  INTEGER NOT NULL,
+      UNIQUE(char_id, city)
+    );
+    CREATE INDEX IF NOT EXISTS idx_hangars_char ON hangars(char_id);
+  `);
   // Set when a car is in transit between cities (paid shipping).
   // shipping_until > now ⇒ car is locked: can't be equipped, listed,
   // or re-shipped. The row's `city` already points at the destination

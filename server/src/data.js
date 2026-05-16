@@ -2,7 +2,13 @@
 
 export { VEHICLES, VEHICLE_BY_ID, VEHICLES_BY_TIER, TIER_NAMES, tierEmoji, rollVehicleFromTier, VEHICLE_TIER_LEVEL_GATE, VEHICLE_TIER_DRIVING_GATE } from './data-vehicles.js';
 import { VEHICLE_BY_ID } from './data-vehicles.js';
-export const vehicleById = id => VEHICLE_BY_ID[id];
+import { AIRCRAFT, aircraftById as _aircraftById } from './data-aircraft.js';
+export { AIRCRAFT, aircraftById, isAircraftClass, AIRCRAFT_FUEL_PER_KM, AIRCRAFT_REFILL_FULL_COST, AIRCRAFT_MS_PER_KM } from './data-aircraft.js';
+// vehicleById falls through to the aircraft catalogue so any code
+// that resolves a vehicles_owned.vehicle_id gets the right metadata
+// regardless of class. Callers that care about class should still
+// branch on the `class` column.
+export const vehicleById = id => VEHICLE_BY_ID[id] || _aircraftById(id);
 
 // Curated 14-city roster — top picks across the major regions.
 // Reduced from 34 in 2026-05; the migration in db.js remaps any data
