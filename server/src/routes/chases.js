@@ -23,7 +23,19 @@ try {
       expires_at        INTEGER NOT NULL
     );
   `);
+  // Tutorial flag — 1 means the player hasn't acknowledged the
+  // tutorial yet; expires_at is parked far in the future so the
+  // countdown can't run down while they're reading. Flipped to 0 by
+  // POST /chases/begin, which also writes the real expires_at.
+  const cols = db.prepare("PRAGMA table_info(active_chases)").all().map(c => c.name);
+  if (!cols.includes('is_tutorial')) {
+    db.exec(`ALTER TABLE active_chases ADD COLUMN is_tutorial INTEGER NOT NULL DEFAULT 0`);
+  }
 } catch {}
+
+// 1h placeholder — keeps the chase row alive while the player reads
+// the tutorial overlay. Any later chase ignores this.
+const TUTORIAL_HOLD_MS = 60 * 60 * 1000;
 
 const router = Router();
 
@@ -43,28 +55,37 @@ function randomSequence(len = CHASE_SEQUENCE_LEN) {
 // jailed the player. Creates the active chase row and returns the
 // payload the route should send back to the client (instead of the
 // usual jail outcome).
+//
+// First-chase tutorial: if the character has never resolved a chase
+// before (chase_tutorial_seen is NULL/0), the row is marked
+// is_tutorial=1 and expires_at is parked an hour out so the timer
+// can't run down while they read the explainer. The client shows a
+// pre-game overlay and POSTs /chases/begin to start the real timer.
 export function startChase(ch, { crimeId, crimeName, jailMin }) {
   const now = Date.now();
   const sequence = randomSequence();
-  const expiresAt = now + CHASE_DURATION_MS;
+  const isTutorial = !ch.chase_tutorial_seen ? 1 : 0;
+  const expiresAt = isTutorial ? now + TUTORIAL_HOLD_MS : now + CHASE_DURATION_MS;
   db.prepare(`
-    INSERT INTO active_chases (char_id, sequence_json, intended_jail_min, crime_id, crime_name, created_at, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO active_chases (char_id, sequence_json, intended_jail_min, crime_id, crime_name, created_at, expires_at, is_tutorial)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(char_id) DO UPDATE SET
       sequence_json     = excluded.sequence_json,
       intended_jail_min = excluded.intended_jail_min,
       crime_id          = excluded.crime_id,
       crime_name        = excluded.crime_name,
       created_at        = excluded.created_at,
-      expires_at        = excluded.expires_at
-  `).run(ch.id, JSON.stringify(sequence), jailMin, crimeId, crimeName, now, expiresAt);
+      expires_at        = excluded.expires_at,
+      is_tutorial       = excluded.is_tutorial
+  `).run(ch.id, JSON.stringify(sequence), jailMin, crimeId, crimeName, now, expiresAt, isTutorial);
   return {
     chase: {
       sequence,
       expiresAt,
       durationMs: CHASE_DURATION_MS,
       crimeName,
-      jailMin, // the price of giving up / failing
+      jailMin,
+      tutorial: !!isTutorial,
     },
   };
 }
@@ -79,6 +100,7 @@ function loadChase(charId) {
     crimeName:       row.crime_name,
     createdAt:       row.created_at,
     expiresAt:       row.expires_at,
+    isTutorial:      !!row.is_tutorial,
   };
 }
 function clearChase(charId) {
@@ -88,10 +110,12 @@ function clearChase(charId) {
 // Public — lazy resolver. Crimes route calls this on every commit to
 // catch any chase the player walked away from. If a chase has
 // expired, apply the jail sentence so the player can't dodge
-// indefinitely by ignoring the prompt.
+// indefinitely by ignoring the prompt. Tutorial-mode chases are
+// skipped — the player is reading the explainer, not dodging.
 export function resolveExpiredChase(ch) {
   const c = loadChase(ch.id);
   if (!c) return null;
+  if (c.isTutorial) return null;
   if (Date.now() < c.expiresAt) return null;
   applyJailSentence(
     ch,
@@ -114,6 +138,41 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       durationMs: CHASE_DURATION_MS,
       crimeName: c.crimeName,
       jailMin: c.intendedJailMin,
+      tutorial: c.isTutorial,
+    },
+  });
+});
+
+// Acknowledge the tutorial overlay. Flips the chase out of tutorial
+// mode, writes the real expires_at (now + 5s), and marks the
+// character as having seen the explainer so future chases skip
+// straight to the mini-game.
+router.post('/begin', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const c = loadChase(ch.id);
+  if (!c) return res.status(404).json({ error: 'No active chase.' });
+  if (!c.isTutorial) {
+    // Already started — idempotent, just return the current state.
+    return res.json({ ok: true, chase: {
+      sequence: c.sequence, expiresAt: c.expiresAt, durationMs: CHASE_DURATION_MS,
+      crimeName: c.crimeName, jailMin: c.intendedJailMin, tutorial: false,
+    }});
+  }
+  const now = Date.now();
+  const expiresAt = now + CHASE_DURATION_MS;
+  db.prepare('UPDATE active_chases SET is_tutorial = 0, expires_at = ?, created_at = ? WHERE char_id = ?').run(expiresAt, now, ch.id);
+  // Persist on the character so this only ever happens once.
+  ch.chase_tutorial_seen = 1;
+  db.prepare('UPDATE characters SET chase_tutorial_seen = 1 WHERE id = ?').run(ch.id);
+  res.json({
+    ok: true,
+    chase: {
+      sequence: c.sequence,
+      expiresAt,
+      durationMs: CHASE_DURATION_MS,
+      crimeName: c.crimeName,
+      jailMin: c.intendedJailMin,
+      tutorial: false,
     },
   });
 });
@@ -127,6 +186,7 @@ router.post('/resolve', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const c = loadChase(ch.id);
   if (!c) return res.status(404).json({ error: 'No active chase.' });
+  if (c.isTutorial) return res.status(409).json({ error: 'Hit Continue first to start the chase.' });
 
   const now = Date.now();
   if (now > c.expiresAt) {
@@ -182,10 +242,16 @@ router.post('/resolve', requireAuth, requireCharacter, (req, res) => {
 });
 
 // Give up — voluntarily skip the mini-game, apply the original jail.
+// Also marks the tutorial as seen if this was the player's first
+// chase, so they don't get re-prompted next time.
 router.post('/give-up', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const c = loadChase(ch.id);
   if (!c) return res.status(404).json({ error: 'No active chase.' });
+  if (!ch.chase_tutorial_seen) {
+    ch.chase_tutorial_seen = 1;
+    db.prepare('UPDATE characters SET chase_tutorial_seen = 1 WHERE id = ?').run(ch.id);
+  }
   applyJailSentence(ch, c.intendedJailMin * 60 * 1000,
     `Pulled over without a fight (${c.crimeName}). ${c.intendedJailMin}m inside.`);
   writeLog(ch.id, 'crime', `Ditched the wheel for the cuffs (${c.crimeName}). Jailed ${c.intendedJailMin}m.`,

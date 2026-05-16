@@ -629,6 +629,10 @@ export function initDb() {
   // Catalog + slot list live in data-clothing.js. NULL = nothing
   // equipped, treated as {} by services/clothing.js.
   addColumnIfMissing('characters', 'equipped_clothing', 'TEXT');
+  // Set to 1 the first time the player resolves a police chase. Used
+  // by the chase mini-game to show a one-time tutorial overlay with
+  // the countdown paused. NULL = never seen, 1 = seen.
+  addColumnIfMissing('characters', 'chase_tutorial_seen', 'INTEGER');
 
   // Clothing owned — one row per (character, clothing item). Items are
   // non-stackable cosmetics, so qty is implicit at 1.

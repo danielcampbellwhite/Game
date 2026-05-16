@@ -8,29 +8,51 @@ import { api } from '../api.js';
 
 const GLYPH = { up: '↑', down: '↓', left: '←', right: '→' };
 
-export default function PoliceChase({ chase, onResolved, onClose }) {
+export default function PoliceChase({ chase: initialChase, onResolved, onClose }) {
+  // Local copy so the tutorial-ack POST can mutate expires_at /
+  // tutorial flag without re-mounting the modal.
+  const [chase, setChase] = useState(initialChase);
   const [inputs, setInputs] = useState([]);
   const [now, setNow] = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [starting, setStarting] = useState(false);
   const submittedRef = useRef(false);
 
-  // 10× ticker drives the visible countdown bar.
+  useEffect(() => { setChase(initialChase); }, [initialChase]);
+
+  // 10× ticker drives the visible countdown bar. Skipped while the
+  // tutorial overlay is up — there's nothing to count down yet.
   useEffect(() => {
+    if (chase.tutorial) return;
     const id = setInterval(() => setNow(Date.now()), 100);
     return () => clearInterval(id);
-  }, []);
+  }, [chase.tutorial]);
 
   const remainingMs = Math.max(0, chase.expiresAt - now);
   const fracLeft = remainingMs / chase.durationMs;
 
   // Submit when the sequence is full or time expires. Guard with a
   // ref so we only POST once even if both conditions fire together.
+  // Skipped during the tutorial overlay (timer isn't running).
   useEffect(() => {
-    if (submittedRef.current || result) return;
+    if (chase.tutorial || submittedRef.current || result) return;
     if (inputs.length >= chase.sequence.length) submit();
     else if (remainingMs <= 0) submit();
-  }, [inputs, remainingMs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [inputs, remainingMs, chase.tutorial]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function startChaseTimer() {
+    if (starting) return;
+    setStarting(true);
+    try {
+      const r = await api.post('/chases/begin');
+      if (r?.chase) setChase(r.chase);
+    } catch (e) {
+      setResult({ ok: false, error: e.message });
+    } finally {
+      setStarting(false);
+    }
+  }
 
   async function submit() {
     if (submittedRef.current) return;
@@ -64,9 +86,10 @@ export default function PoliceChase({ chase, onResolved, onClose }) {
     setInputs(prev => [...prev, arrow]);
   }
 
-  // Keyboard support — arrow keys map to the four directions.
+  // Keyboard support — arrow keys map to the four directions. Off
+  // during the tutorial so a stray Enter doesn't fire press().
   useEffect(() => {
-    if (result) return;
+    if (result || chase.tutorial) return;
     function onKey(e) {
       const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
       const a = map[e.key];
@@ -76,7 +99,7 @@ export default function PoliceChase({ chase, onResolved, onClose }) {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [result, inputs.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [result, inputs.length, chase.tutorial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur flex items-center justify-center p-4">
@@ -89,7 +112,35 @@ export default function PoliceChase({ chase, onResolved, onClose }) {
           </p>
         </div>
 
-        {!result ? (
+        {chase.tutorial ? (
+          // One-time tutorial overlay. Pauses everything (no timer,
+          // no key bindings, no dpad) until the player hits Continue,
+          // which POSTs /chases/begin to write the real expires_at.
+          <div className="p-4 space-y-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-yellow-300 mb-1">First-time tutorial</div>
+              <p className="text-[13px] text-ink-100/85 leading-snug">
+                You've boosted a car and the cops are on you. This mini-game decides whether you slip them.
+              </p>
+            </div>
+            <ul className="text-[13px] text-ink-100/75 space-y-1.5 list-disc pl-5">
+              <li>Read the five arrows above the dpad — you'll have to tap them <b>in the same order</b>.</li>
+              <li>The countdown is <b>{Math.round((chase.durationMs || 5000) / 1000)} seconds</b>. Misses still let you submit, but with worse odds.</li>
+              <li>Match more arrows = better chance to escape. Your <b>driving</b> stat helps too (up to +20%).</li>
+              <li>Fail and you do <b>{chase.jailMin}m</b> behind bars. Give up at any time to skip the attempt.</li>
+              <li>Tip: <b>arrow keys</b> work on desktop.</li>
+            </ul>
+            <p className="text-[11px] text-ink-100/45">
+              This tutorial only shows once — future chases will start the timer immediately.
+            </p>
+            <button
+              onClick={startChaseTimer}
+              disabled={starting}
+              className="btn btn-primary text-sm w-full mt-1 disabled:opacity-60">
+              {starting ? 'Starting…' : 'Continue — start the chase'}
+            </button>
+          </div>
+        ) : !result ? (
           <div className="p-4 space-y-4">
             {/* Target sequence */}
             <div>
