@@ -114,7 +114,8 @@ import { weaponById, ammoById } from '../data.js';
 // inventory page.
 export function itemWeight(kind, itemId) {
   switch (kind) {
-    case 'weapon': {
+    case 'weapon':
+    case 'weapon_illegal': {
       if (itemId in WEAPON_WEIGHT_OVERRIDES) return WEAPON_WEIGHT_OVERRIDES[itemId];
       const w = weaponById(itemId);
       const cat = w?.category;

@@ -2,12 +2,23 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { requireAtLocation } from '../middleware/location.js';
-import { DRUGS, DRUG_USE_EFFECTS, drugById, specPerk } from '../data.js';
+import { DRUGS, DRUG_USE_EFFECTS, drugById, specPerk, WEAPONS, weaponById, cityById } from '../data.js';
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { applyVitalEffects, effectsToText } from '../services/vitals.js';
 import { bumpMission } from '../services/missions.js';
 import { writeLog } from '../services/log.js';
 import { getDrugMarketForCity, getDrugPrice } from '../services/market.js';
+import { itemWeight, personalWeight, PERSONAL_CAP_KG } from '../services/weight.js';
+
+// Street-corner pricing. Lower than legal shops — that's the whole
+// pitch — and the buy-back is meaningfully under what you paid so
+// it never beats the gun store as a flip route.
+const STREET_BUY_DISCOUNT  = 0.75;   // 75% of legal-shop price
+const STREET_SELL_PAYOUT   = 0.40;   // 40% of legal-shop price
+
+// The corner only carries small, concealable pieces — anything past
+// this catalogue level is too hot for an alley sale.
+const STREET_MAX_WEAPON_LEVEL = 6;
 
 const router = Router();
 
@@ -26,7 +37,42 @@ router.get('/', requireAuth, requireCharacter, requireAtLocation('drug_market'),
     const readyAt = used + def.cooldownMin * 60 * 1000;
     return [id, { ...def, readyAt, ready: Date.now() >= readyAt }];
   }));
-  res.json({ market, inventory, city: ch.city, useEffects });
+  // Illegal weapons available on the corner — lower-tier only, priced
+  // under the legal store. These come tagged kind='weapon_illegal'
+  // when bought (separate from legal weapons in the player's bag).
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const streetWeapons = WEAPONS
+    .filter(w => w.cost > 0 && w.level <= STREET_MAX_WEAPON_LEVEL)
+    .map(w => ({
+      id: w.id, name: w.name, maker: w.maker, category: w.category,
+      dmg: w.dmg, level: w.level, ammoType: w.ammoType || null,
+      legalShopPrice: Math.floor(w.cost * cityMul),
+      streetPrice:    Math.floor(w.cost * cityMul * STREET_BUY_DISCOUNT),
+      locked: ch.level < w.level,
+    }));
+  // Owned weapons (legal + illegal) the player could sell here for
+  // sub-shop cash. Show both kinds so the corner is the one-stop
+  // unload point.
+  const ownedRows = db.prepare(
+    "SELECT kind, item_id, qty FROM inventory WHERE char_id = ? AND kind IN ('weapon', 'weapon_illegal') AND qty > 0"
+  ).all(ch.id);
+  const owned = ownedRows.map(r => {
+    const w = weaponById(r.item_id);
+    if (!w) return null;
+    return {
+      kind: r.kind, item_id: r.item_id, name: w.name, maker: w.maker,
+      qty: r.qty, illegal: r.kind === 'weapon_illegal',
+      streetSell: Math.max(1, Math.floor(w.cost * cityMul * STREET_SELL_PAYOUT)),
+    };
+  }).filter(Boolean);
+  res.json({
+    market, inventory, city: ch.city, useEffects,
+    streetWeapons,
+    ownedWeapons: owned,
+    streetMaxLevel: STREET_MAX_WEAPON_LEVEL,
+    streetBuyDiscountPct: Math.round((1 - STREET_BUY_DISCOUNT) * 100),
+    streetSellPayoutPct:  Math.round(STREET_SELL_PAYOUT * 100),
+  });
 });
 
 // Drug buying was removed — drugs are now produced exclusively by
@@ -105,6 +151,80 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, requir
     },
     character: publicCharacter(ch),
   });
+});
+
+// POST /buy-weapon { weapon_id } — picks up an illegal piece from the
+// corner. Pays cash, drops into inventory as kind='weapon_illegal'.
+// Carrying these triggers the same customs roll as drugs at the
+// airport (see routes/travel.js board endpoint).
+router.post('/buy-weapon', requireAuth, requireCharacter, requireAtLocation('drug_market'), (req, res) => {
+  const ch = req.character;
+  const w = weaponById(req.body?.weapon_id);
+  if (!w) return res.status(400).json({ error: 'Unknown weapon.' });
+  if (w.cost <= 0) return res.status(400).json({ error: 'That isn\'t sold on the corner.' });
+  if (w.level > STREET_MAX_WEAPON_LEVEL) {
+    return res.status(400).json({ error: 'Too hot — the corner only carries low-tier pieces.' });
+  }
+  if (ch.level < w.level) return res.status(403).json({ error: `Requires level ${w.level}.` });
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const cost = Math.floor(w.cost * cityMul * STREET_BUY_DISCOUNT);
+  if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost.toLocaleString()}.` });
+  // Weight gate — illegal weapons weigh the same as their legal twins.
+  const buyKg = itemWeight('weapon_illegal', w.id);
+  const haveKg = personalWeight(ch.id);
+  if (haveKg + buyKg > PERSONAL_CAP_KG + 1e-6) {
+    return res.status(400).json({
+      error: `Carry too much — adds ${buyKg.toFixed(2)}kg (you have ${haveKg.toFixed(1)}/${PERSONAL_CAP_KG}kg).`,
+    });
+  }
+  ch.cash -= cost;
+  db.prepare(`
+    INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, 'weapon_illegal', ?, 1)
+    ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + 1
+  `).run(ch.id, w.id);
+  writeLog(ch.id, 'shop',
+    ` Bought an unlicensed ${w.maker || ''} ${w.name} on the corner for £${cost.toLocaleString()}.`,
+    { weapon: w.id, cost, illegal: true });
+  saveCharacter(ch);
+  res.json({ ok: true, cost, character: publicCharacter(ch) });
+});
+
+// POST /sell-weapon { kind, weapon_id } — corner buy-back. Accepts both
+// legal ('weapon') and illegal ('weapon_illegal') pieces. Pays at
+// STREET_SELL_PAYOUT of the legal-shop price; the seller leaves with
+// cleaner cash either way.
+router.post('/sell-weapon', requireAuth, requireCharacter, requireAtLocation('drug_market'), (req, res) => {
+  const ch = req.character;
+  const kind = req.body?.kind;
+  if (kind !== 'weapon' && kind !== 'weapon_illegal') {
+    return res.status(400).json({ error: 'Bad weapon kind.' });
+  }
+  const w = weaponById(req.body?.weapon_id);
+  if (!w) return res.status(400).json({ error: 'Unknown weapon.' });
+  const row = db.prepare(
+    'SELECT qty FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?'
+  ).get(ch.id, kind, w.id);
+  if (!row || row.qty <= 0) return res.status(400).json({ error: 'You don\'t own one to sell.' });
+  // Don't let the player sell the piece they're currently equipped with.
+  if (ch.equipped_weapon === w.id && kind === 'weapon') {
+    return res.status(400).json({ error: 'Equip something else first — that one is currently on your hip.' });
+  }
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const payout = Math.max(1, Math.floor(w.cost * cityMul * STREET_SELL_PAYOUT));
+  if (row.qty === 1) {
+    db.prepare('DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').run(ch.id, kind, w.id);
+  } else {
+    db.prepare('UPDATE inventory SET qty = qty - 1 WHERE char_id = ? AND kind = ? AND item_id = ?').run(ch.id, kind, w.id);
+  }
+  // Legal sales pay clean cash; corner sales of illegal pieces drop
+  // dirty money — same rule as drug sales.
+  if (kind === 'weapon_illegal') ch.dirty_cash += payout;
+  else ch.cash += payout;
+  writeLog(ch.id, 'shop',
+    `Sold ${w.maker || ''} ${w.name} on the corner for £${payout.toLocaleString()}${kind === 'weapon_illegal' ? ' (illegal cash)' : ''}.`,
+    { weapon: w.id, payout, kind });
+  saveCharacter(ch);
+  res.json({ ok: true, payout, character: publicCharacter(ch) });
 });
 
 router.post('/use', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {

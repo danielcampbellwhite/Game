@@ -184,17 +184,18 @@ router.post('/board/:ticketId', requireAuth, requireCharacter, requireFreeCharac
   // Customs check — drugs in your bag get seized at the gate, with a
   // jail sentence that scales with the variety carried. Same risk
   // model the old /fly endpoint used; just moved to the boarding
-  // gate so it lands in the dramatic moment.
-  const drugRows = db.prepare(
-    "SELECT item_id, qty FROM inventory WHERE char_id = ? AND kind = 'drug'"
+  // gate so it lands in the dramatic moment. Unlicensed weapons
+  // (bought on the corner, kind='weapon_illegal') count the same.
+  const contrabandRows = db.prepare(
+    "SELECT kind, item_id, qty FROM inventory WHERE char_id = ? AND kind IN ('drug', 'weapon_illegal')"
   ).all(ch.id);
   let busted = false; let seized = null; let bustJailMin = 0;
-  if (drugRows.length > 0) {
-    const seizureChance = Math.min(0.25, 0.08 + 0.02 * drugRows.length);
+  if (contrabandRows.length > 0) {
+    const seizureChance = Math.min(0.25, 0.08 + 0.02 * contrabandRows.length);
     if (Math.random() < seizureChance) {
-      seized = drugRows.map(r => `${r.qty}× ${r.item_id}`).join(', ');
-      db.prepare("DELETE FROM inventory WHERE char_id = ? AND kind = 'drug'").run(ch.id);
-      bustJailMin = 30 + drugRows.length * 5 + Math.floor(Math.random() * 16);
+      seized = contrabandRows.map(r => `${r.qty}× ${r.item_id}${r.kind === 'weapon_illegal' ? ' (unlicensed)' : ''}`).join(', ');
+      db.prepare("DELETE FROM inventory WHERE char_id = ? AND kind IN ('drug', 'weapon_illegal')").run(ch.id);
+      bustJailMin = 30 + contrabandRows.length * 5 + Math.floor(Math.random() * 16);
       applyJailSentence(ch, bustJailMin * 60 * 1000, `Customs caught you trying to fly out with ${seized} — sentenced to ${bustJailMin} minutes.`);
       ch.travel_until = null;
       ch.travel_to = null;
@@ -249,24 +250,23 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
   const dur = flightDurationMs(ch.city, target.id, cls.durationMul);
   ch.cash -= cost;
 
-  // Customs check — every flight rolls if you're carrying drugs. Base 8%
-  // chance + 2% per distinct drug type, capped at 25%. If caught: stash
-  // seized AND a jail sentence of 30–80 min depending on what was carried.
-  const drugRows = db.prepare(
-    "SELECT item_id, qty FROM inventory WHERE char_id = ? AND kind = 'drug'"
+  // Customs check — every flight rolls if you're carrying drugs OR
+  // unlicensed weapons (kind='weapon_illegal'). Base 8% + 2% per
+  // distinct contraband line, capped at 25%. Caught = stash seized +
+  // 30-80 min inside depending on how many lines triggered it.
+  const contrabandRows = db.prepare(
+    "SELECT kind, item_id, qty FROM inventory WHERE char_id = ? AND kind IN ('drug', 'weapon_illegal')"
   ).all(ch.id);
   let busted = false;
   let seized = null;
   let bustJailMin = 0;
-  if (drugRows.length > 0) {
-    const seizureChance = Math.min(0.25, 0.08 + 0.02 * drugRows.length);
+  if (contrabandRows.length > 0) {
+    const seizureChance = Math.min(0.25, 0.08 + 0.02 * contrabandRows.length);
     if (Math.random() < seizureChance) {
-      seized = drugRows.map(r => `${r.qty}× ${r.item_id}`).join(', ');
-      db.prepare("DELETE FROM inventory WHERE char_id = ? AND kind = 'drug'").run(ch.id);
-      // Jail time scales with how many drug types + a little randomness
-      bustJailMin = 30 + drugRows.length * 5 + Math.floor(Math.random() * 16);
+      seized = contrabandRows.map(r => `${r.qty}× ${r.item_id}${r.kind === 'weapon_illegal' ? ' (unlicensed)' : ''}`).join(', ');
+      db.prepare("DELETE FROM inventory WHERE char_id = ? AND kind IN ('drug', 'weapon_illegal')").run(ch.id);
+      bustJailMin = 30 + contrabandRows.length * 5 + Math.floor(Math.random() * 16);
       applyJailSentence(ch, bustJailMin * 60 * 1000, `Customs caught you trying to fly out with ${seized} in your bag — sentenced to ${bustJailMin} minutes.`);
-      // Cancel any in-flight travel (you're going to jail, not the airport lounge)
       ch.travel_until = null;
       ch.travel_to = null;
       busted = true;

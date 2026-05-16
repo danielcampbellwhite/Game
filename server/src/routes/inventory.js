@@ -24,7 +24,12 @@ const router = Router();
 router.get('/', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const items = db.prepare('SELECT * FROM inventory WHERE char_id = ?').all(ch.id);
-  const weapons = items.filter(i => i.kind === 'weapon').map(i => ({ ...weaponById(i.item_id), qty: i.qty }));
+  // Legal weapons and street-bought ones share the same UI row;
+  // illegal rows are flagged so the client can mark them as
+  // contraband (and warn before flying with them).
+  const weapons = items
+    .filter(i => i.kind === 'weapon' || i.kind === 'weapon_illegal')
+    .map(i => ({ ...weaponById(i.item_id), qty: i.qty, illegal: i.kind === 'weapon_illegal' }));
   const armours = items.filter(i => i.kind === 'armour').map(i => ({ ...armourById(i.item_id), qty: i.qty }));
   // Drugs carry no other static metadata beyond the catalogue, so resolve
   // name/level here so the inventory page doesn't have to know the data table.
@@ -134,7 +139,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   // them up against the catalogues for the stash UI.
   const houseDecorated = houseItems.map(i => {
     let name = i.item_id;
-    if (i.kind === 'weapon') name = weaponById(i.item_id)?.name || name;
+    if (i.kind === 'weapon' || i.kind === 'weapon_illegal') name = weaponById(i.item_id)?.name || name;
     if (i.kind === 'armour') name = armourById(i.item_id)?.name || name;
     if (i.kind === 'ammo')   name = ammoById(i.item_id)?.name   || name;
     if (i.kind === 'drug')   name = drugById(i.item_id)?.name   || name;
@@ -151,7 +156,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const vehicleStash = activeVeh ? listVehicleStash(ch.id, activeVeh.id) : [];
   const vehicleDecorated = vehicleStash.map(i => {
     let name = i.item_id;
-    if (i.kind === 'weapon') name = weaponById(i.item_id)?.name || name;
+    if (i.kind === 'weapon' || i.kind === 'weapon_illegal') name = weaponById(i.item_id)?.name || name;
     if (i.kind === 'armour') name = armourById(i.item_id)?.name || name;
     if (i.kind === 'ammo')   name = ammoById(i.item_id)?.name   || name;
     if (i.kind === 'drug')   name = drugById(i.item_id)?.name   || name;
@@ -411,7 +416,12 @@ router.post('/equip', requireAuth, requireCharacter, (req, res) => {
   const { kind, item_id } = req.body || {};
   if (kind === 'weapon') {
     if (item_id !== 'fists') {
-      const owned = db.prepare('SELECT id FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ?').get(ch.id, 'weapon', item_id);
+      // Either a legally-owned weapon or one off the street corner
+      // can be equipped — the combat layer doesn't care, but carrying
+      // an illegal one through customs will get it seized.
+      const owned = db.prepare(
+        "SELECT id FROM inventory WHERE char_id = ? AND kind IN ('weapon', 'weapon_illegal') AND item_id = ?"
+      ).get(ch.id, item_id);
       if (!owned) return res.status(400).json({ error: 'Not owned' });
     }
     ch.equipped_weapon = item_id;

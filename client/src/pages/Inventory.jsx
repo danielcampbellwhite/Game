@@ -443,8 +443,11 @@ function LoadoutTab({ inv }) {
                 <div className="text-[12px] uppercase tracking-wide text-ink-100/55 mb-1">{g.title}</div>
                 <ul className="text-[13px] space-y-0.5">
                   {g.items.map(it => (
-                    <li key={it.id} className="flex items-baseline justify-between gap-2">
-                      <span className="truncate">{it.name}</span>
+                    <li key={`${it.id}-${it.illegal ? 'i' : 'l'}`} className="flex items-baseline justify-between gap-2">
+                      <span className="truncate">
+                        {it.name}
+                        {it.illegal && <span className="ml-1 text-[10px] uppercase text-blood-300">unlicensed</span>}
+                      </span>
                       <span className="text-ink-100/55 tabular-nums shrink-0">×{it.qty}</span>
                     </li>
                   ))}
