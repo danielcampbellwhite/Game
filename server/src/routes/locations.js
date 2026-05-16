@@ -31,7 +31,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       slug,
       name:   p ? p.name : 'Your home',
       emoji:  null,
-      route:  '/property',
+      route:  '/house',
       gated:  true,
       desc:   p?.address ? `Home · ${p.address}` : 'Your private property — storage and downtime.',
       here:   slug === here,

@@ -49,6 +49,7 @@ import AircraftDealer from './pages/AircraftDealer.jsx';
 import Electronics from './pages/Electronics.jsx';
 import Online from './pages/Online.jsx';
 import Car from './pages/Car.jsx';
+import House from './pages/House.jsx';
 import GunStore from './pages/GunStore.jsx';
 import ChopShop from './pages/ChopShop.jsx';
 import Repair from './pages/Repair.jsx';
@@ -242,6 +243,7 @@ export default function App() {
           <Route path="/electronics" element={<Protected><Electronics /></Protected>} />
           <Route path="/online" element={<Protected><Online /></Protected>} />
           <Route path="/car" element={<Protected><Car /></Protected>} />
+          <Route path="/house" element={<Protected><House /></Protected>} />
           <Route path="/gun-store" element={<Protected><GunStore /></Protected>} />
           <Route path="/chop-shop" element={<Protected><ChopShop /></Protected>} />
           <Route path="/repair" element={<Protected><Repair /></Protected>} />

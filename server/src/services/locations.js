@@ -77,8 +77,9 @@ export function locationMeta(slug) {
   if (isHomeSlug(slug)) {
     // Generic synthetic — the locations route resolves the actual
     // property name. Anything that just needs a printable label
-    // (logs, error messages) gets "Your home" which is fine.
-    return { name: 'Your home', route: '/property', travelable: true, gated: true, desc: 'Inside your property.' };
+    // (logs, error messages) gets "Your home" which is fine. The
+    // /house page is the in-property hub (stash + upgrades).
+    return { name: 'Your home', route: '/house', travelable: true, gated: true, desc: 'Inside your property.' };
   }
   return null;
 }
