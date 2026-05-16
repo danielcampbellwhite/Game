@@ -6,6 +6,7 @@ import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import Timer from '../components/Timer.jsx';
 import ClothingSvg from '../components/ClothingSvg.jsx';
+import { weaponImage } from '../data/item-images.js';
 import { fmt } from '../components/Money.jsx';
 
 // Per-card vehicle row. Surfaces the active-car state ("driving"
@@ -732,24 +733,39 @@ export default function Inventory() {
                 ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
                 : <button className="btn text-xs w-full mt-2" onClick={() => equip('weapon', 'fists')}>Equip</button>}
             </div>
-            {inv.weapons.filter(w => w.id !== 'fists').map(w => (
-              <div key={w.id} className={`rounded-lg p-3 border ${eq.weapon === w.id ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="font-medium">{w.name}</div>
-                  {w.qty > 1 && <span className="text-[12px] text-ink-100/50">×{w.qty}</span>}
-                </div>
-                {w.maker && <div className="text-[12px] text-ink-100/50">{w.maker}</div>}
-                <div className="text-[13px] text-ink-100/60">DMG {w.dmg}{w.ammoType ? ` · ${w.ammoType}` : ' · melee'}{w.unit_kg ? ` · ${w.unit_kg.toFixed(1)}kg` : ''}</div>
-                {eq.weapon === w.id
-                  ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
-                  : <button disabled={busy === `eq-weapon-${w.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('weapon', w.id)}>Equip</button>}
-                {inv.weight?.house_owned && (
-                  <div className="mt-2 flex justify-end">
-                    <StashButton kind="weapon" item_id={w.id} qty={w.qty} onTransfer={moveItem} busy={busy === `mv-weapon-${w.id}`} weight={inv.weight} />
+            {inv.weapons.filter(w => w.id !== 'fists').map(w => {
+              const img = weaponImage(w.id);
+              return (
+              <div key={w.id} className={`rounded-lg overflow-hidden border ${eq.weapon === w.id ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40'}`}>
+                {img && (
+                  <div className="relative aspect-[3/2] bg-ink-1000 overflow-hidden border-b border-ink-100/10">
+                    <img
+                      src={img}
+                      alt={`${w.maker ? w.maker + ' ' : ''}${w.name}`}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                   </div>
                 )}
+                <div className="p-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="font-medium">{w.name}</div>
+                    {w.qty > 1 && <span className="text-[12px] text-ink-100/50">×{w.qty}</span>}
+                  </div>
+                  {w.maker && <div className="text-[12px] text-ink-100/50">{w.maker}</div>}
+                  <div className="text-[13px] text-ink-100/60">DMG {w.dmg}{w.ammoType ? ` · ${w.ammoType}` : ' · melee'}{w.unit_kg ? ` · ${w.unit_kg.toFixed(1)}kg` : ''}</div>
+                  {eq.weapon === w.id
+                    ? <div className="text-[12px] uppercase mt-2 text-blood-300">equipped</div>
+                    : <button disabled={busy === `eq-weapon-${w.id}`} className="btn btn-primary text-xs w-full mt-2" onClick={() => equip('weapon', w.id)}>Equip</button>}
+                  {inv.weight?.house_owned && (
+                    <div className="mt-2 flex justify-end">
+                      <StashButton kind="weapon" item_id={w.id} qty={w.qty} onTransfer={moveItem} busy={busy === `mv-weapon-${w.id}`} weight={inv.weight} />
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}

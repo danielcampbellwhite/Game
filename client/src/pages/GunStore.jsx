@@ -6,6 +6,7 @@ import Card from '../components/Card.jsx';
 import LockBadge from '../components/LockBadge.jsx';
 import { fmt } from '../components/Money.jsx';
 import { storefront } from '../lib/storefronts.js';
+import { weaponImage } from '../data/item-images.js';
 
 const CATEGORY_ORDER = ['melee', 'pistol', 'revolver', 'smg', 'shotgun', 'rifle', 'sniper'];
 
@@ -144,28 +145,43 @@ export default function GunStore() {
         return (
           <Card key={cat} collapsible title={`${cinfo.emoji} ${cinfo.name}`} subtitle={`${items.length} weapon${items.length === 1 ? '' : 's'}`}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {items.map(w => (
-                <div key={w.id} className={`rounded-lg p-3 border bg-ink-950/40 ${w.locked ? 'opacity-50 grayscale border-ink-100/5' : 'border-ink-100/10'}`}>
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{w.name}</div>
-                      {w.maker && <div className="text-[12px] text-ink-100/50 truncate">{w.maker}</div>}
+              {items.map(w => {
+                const img = weaponImage(w.id);
+                return (
+                <div key={w.id} className={`rounded-lg overflow-hidden border bg-ink-950/40 ${w.locked ? 'opacity-50 grayscale border-ink-100/5' : 'border-ink-100/10'}`}>
+                  {img && (
+                    <div className="relative aspect-[3/2] bg-ink-1000 overflow-hidden border-b border-ink-100/10">
+                      <img
+                        src={img}
+                        alt={`${w.maker ? w.maker + ' ' : ''}${w.name}`}
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
                     </div>
-                    {w.locked
-                      ? <LockBadge level={w.level} className="whitespace-nowrap" />
-                      : <div className="text-[12px] text-ink-100/50 whitespace-nowrap">Lvl {w.level}+</div>}
+                  )}
+                  <div className="p-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{w.name}</div>
+                        {w.maker && <div className="text-[12px] text-ink-100/50 truncate">{w.maker}</div>}
+                      </div>
+                      {w.locked
+                        ? <LockBadge level={w.level} className="whitespace-nowrap" />
+                        : <div className="text-[12px] text-ink-100/50 whitespace-nowrap">Lvl {w.level}+</div>}
+                    </div>
+                    <div className="text-[13px] text-ink-100/60 mt-1.5">
+                      DMG <span className="text-ink-50 font-medium">{w.dmg}</span>
+                      {w.ammoType ? <> · ammo: <span className="text-yellow-300">{AMMO_LABEL[w.ammoType] || w.ammoType}</span></> : ' · melee'}
+                    </div>
+                    <div className="text-money-400 tabular-nums mt-1.5 font-semibold">{fmt(w.cost)}</div>
+                    <button disabled={w.locked || character.cash < w.cost || busy === `weapon-${w.id}`} className="btn btn-primary w-full text-xs mt-2"
+                      onClick={() => buy('weapon', w)}>
+                      {w.locked ? `Lvl ${w.level}+ required` : 'Buy'}
+                    </button>
                   </div>
-                  <div className="text-[13px] text-ink-100/60 mt-1.5">
-                    DMG <span className="text-ink-50 font-medium">{w.dmg}</span>
-                    {w.ammoType ? <> · ammo: <span className="text-yellow-300">{AMMO_LABEL[w.ammoType] || w.ammoType}</span></> : ' · melee'}
-                  </div>
-                  <div className="text-money-400 tabular-nums mt-1.5 font-semibold">{fmt(w.cost)}</div>
-                  <button disabled={w.locked || character.cash < w.cost || busy === `weapon-${w.id}`} className="btn btn-primary w-full text-xs mt-2"
-                    onClick={() => buy('weapon', w)}>
-                    {w.locked ? `Lvl ${w.level}+ required` : 'Buy'}
-                  </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         );
