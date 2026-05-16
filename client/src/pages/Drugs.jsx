@@ -28,8 +28,19 @@ export default function Drugs() {
     const n = Math.max(1, parseInt(qty[drug_id] || 1, 10));
     setBusy(`sell-${drug_id}`); setMsg(null);
     try {
-      await api.post('/drugs/sell', { drug_id, qty: n });
-      setMsg(`Sold ${n} ${drug_id}.`);
+      const r = await api.post('/drugs/sell', { drug_id, qty: n });
+      if (r.busted) {
+        const seized = r.seized?.qty ?? n;
+        const drugName = r.seized?.drug?.name || drug_id;
+        setMsg(`BUSTED — ${seized}× ${drugName} seized, ${r.jailMin}m inside.`);
+      } else {
+        const s = r.sold || {};
+        const qtyTxt = s.qty ?? n;
+        const name = s.drug?.name || drug_id;
+        const total = s.total ?? 0;
+        const unit = s.unitPrice ?? 0;
+        setMsg(`You sold ${qtyTxt}× ${name} for ${fmt(total)} (${fmt(unit)} each).`);
+      }
       await refresh(); await load();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }

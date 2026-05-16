@@ -72,7 +72,11 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, requir
     }
     writeLog(ch.id, 'drugs', `BUSTED selling ${qty}× ${drug.name} — stash seized, ${jailMin}m inside.`, { drug: drug.id, qty }, true);
     saveCharacter(ch);
-    return res.json({ ok: true, busted: true, jailMin, character: publicCharacter(ch) });
+    return res.json({
+      ok: true, busted: true, jailMin,
+      seized: { qty, drug: { id: drug.id, name: drug.name } },
+      character: publicCharacter(ch),
+    });
   }
 
   const price = getDrugPrice(ch.city, drug.id);
@@ -84,9 +88,23 @@ router.post('/sell', requireAuth, requireCharacter, requireFreeCharacter, requir
     db.prepare('UPDATE inventory SET qty = qty - ? WHERE char_id = ? AND kind = ? AND item_id = ?').run(qty, ch.id, 'drug', drug.id);
   }
   bumpMission(ch, 'drug_sale', qty, { drug: drug.id });
-  writeLog(ch.id, 'drugs', `Sold ${qty} ${drug.name} @ £${price} (+£${earn} illegal).`);
+  // Print-style log line: "Sold 5× Weed for £1,250 (illegal cash)."
+  // The (illegal) tag matters because the cash drops into
+  // dirty_cash and the player will want to launder it.
+  writeLog(ch.id, 'drugs',
+    `Sold ${qty}× ${drug.name} for £${earn.toLocaleString()} (illegal cash).`,
+    { drug: drug.id, qty, unit_price: price, total: earn });
   saveCharacter(ch);
-  res.json({ ok: true, character: publicCharacter(ch) });
+  res.json({
+    ok: true,
+    sold: {
+      qty,
+      drug:      { id: drug.id, name: drug.name },
+      unitPrice: price,
+      total:     earn,
+    },
+    character: publicCharacter(ch),
+  });
 });
 
 router.post('/use', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
