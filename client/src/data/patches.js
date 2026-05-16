@@ -9,6 +9,198 @@
 
 export const PATCHES = [
   {
+    version: '0.10.6',
+    date: '2026-05-16',
+    title: 'Main nav dropdowns · quick-access scrolling strip',
+    sections: [
+      {
+        heading: 'Every page reachable from the top nav',
+        notes: [
+          'The main nav is now tree-structured. Top-level items with children (City, Crimes, Gangs, Players, Fight Club, Inventory) open a click-to-open dropdown on desktop and indented sub-items in the mobile drawer.',
+          'City fans out to every gated location in town — Bank, Gun Store, Dealership, Aircraft Broker, Chop Shop, Repair, Gym, Range, University, Driving School, Hospital, Casino, Bookmaker, Fence, General Store, Electronics, Streetwear, Atelier, Stocks, Estate Agent, Airport, The Block, High Street, Jail.',
+          'Dropdowns are position:fixed and viewport-clamped so they always stay on-screen, even from inside the scrolling strip.',
+        ],
+      },
+      {
+        heading: 'Quick-access strip under the stats bar',
+        notes: [
+          'A second horizontal nav strip sits directly under your stats. Same nav items, same dropdowns, but laid out as a horizontal scroller for one-tap access without opening the hamburger.',
+          'The strip has a chevron toggle on the right that slides it up/down with an animated flip from down to up.',
+          'Collapsed state is remembered between page-loads so you can pick the mode you like.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.10.5',
+    date: '2026-05-16',
+    title: 'My Car · House · TravelMap zoom',
+    sections: [
+      {
+        heading: 'Dedicated car hub at /car',
+        notes: [
+          'New "My Car" page with four tabs: Overview (condition / fuel / value / one-tap refuel), Inventory (cargo + personal stash swap), Mods (install per slot inline), and Drive (every intra-city location plus intercity drives).',
+          'Falls back to a clean "no active car" placeholder with quick links to inventory and the dealership when you\'re not driving anything.',
+        ],
+      },
+      {
+        heading: 'Dedicated house hub at /house',
+        notes: [
+          'Walking into one of your properties now takes you to a tabbed House page: Overview (name, address, garage, defence, book value, bonuses, fitted upgrades), Stash (house storage management), and Upgrades (install / replace / strip property mods on the spot).',
+          'New /api/house route lets you fit and strip mods from inside your home — no need to walk back to the estate agent for upgrade work.',
+          'Home tiles on the City map and in /api/locations now route to /house instead of the estate-agent showroom.',
+        ],
+      },
+      {
+        heading: 'TravelMap zoom',
+        notes: [
+          'Short hops like London → Liverpool used to render at the same full-world scale as a long-haul flight, with the moving icon barely a pixel across. The map now auto-fits to the route so close trips zoom right in.',
+          'Plus a +/−/fit overlay top-right so you can nudge the zoom in or out without breaking the animation.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.10.4',
+    date: '2026-05-16',
+    title: 'Drug corner — unlicensed weapons + universal weapon resale',
+    sections: [
+      {
+        heading: 'Buy unlicensed pieces on the corner',
+        notes: [
+          'The Block now stocks lower-tier weapons (catalogue level ≤ 6) at 75% of the legal-shop price. Bought rounds drop into your inventory as kind="weapon_illegal" so the rest of the code can tell them apart from licensed gear.',
+          'Carrying an unlicensed weapon through airport customs counts as contraband — same seizure roll as drugs, and the bag goes in jail with you if it gets caught.',
+        ],
+      },
+      {
+        heading: 'Sell weapons on the corner',
+        notes: [
+          'New sell-back endpoint accepts both legal and unlicensed weapons at 40% of legal-shop price. Legal sales pay clean cash; illegal sales drop into your illegal pile, same as drug sales.',
+          'Inventory pages tag illegal pieces "unlicensed" so you know what\'s hot to fly with.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.10.3',
+    date: '2026-05-16',
+    title: 'Mugging — weapon fight-back + item theft',
+    sections: [
+      {
+        heading: 'Lift items off victims',
+        notes: [
+          'A successful mug now has a 30% chance of also taking one random item off the victim — weapon, armour, or misc (ammo excluded). Both sides see the take in their PvP log.',
+        ],
+      },
+      {
+        heading: 'Victims with weapons swing back',
+        notes: [
+          'If the target has a usable weapon (melee, or a ranged with at least one round of matching ammo), they get a 60% chance to wound a failed mugger — hospitalising them for 5-18 minutes on top of whatever the cops were already doing.',
+          'The fight-off log on both sides now reflects the hit; the Rob page banner surfaces the wound and the lifted item.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.10.2',
+    date: '2026-05-16',
+    title: 'Online — bank "app" and visibility rule',
+    sections: [
+      {
+        heading: 'Bank balance is hidden unless you can see it',
+        notes: [
+          'Your bank balance is now masked in the character sheet unless you\'re physically at the bank or have internet access (phone on you, or a laptop where you are). When hidden, the dashboard shows an em-dash with a "visit the bank or get online" hint.',
+          'Cash deposits, withdrawals, and new loans still require a physical visit to the bank counter.',
+        ],
+      },
+      {
+        heading: 'Bank app on /online',
+        notes: [
+          'New Bank tab on the Online portal — read-only view of your bank balance + outstanding loans from anywhere you\'re online.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.10.1',
+    date: '2026-05-16',
+    title: 'Online — order weapons, armour, ammo to a property',
+    sections: [
+      {
+        heading: 'Online gear delivery',
+        notes: [
+          'New /api/online/weapons catalogue lists every gun-store item at the 8% online price. /weapons/buy spends bank cash and queues a row in the new weapon_deliveries table.',
+          'After ~2 hours the parcel materialises in the chosen property\'s house stash. No licence required — the online seller doesn\'t ask.',
+          'If the destination property is sold during the delivery window the order is marked "lost" rather than left hanging.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.10.0',
+    date: '2026-05-16',
+    title: 'Online — flights and vehicle delivery',
+    sections: [
+      {
+        heading: 'In-game internet portal',
+        notes: [
+          'New /online page is the portal for every internet service. Each one carries an 8% markup over the in-store price and debits your bank balance (not pocket cash) — online merchants only take bank transfers.',
+          'Online status rides along on every character refresh as { online, reason }: phone in your pocket → online anywhere; laptop at this property → online here; laptop in your active vehicle → online here.',
+        ],
+      },
+      {
+        heading: 'Flights',
+        notes: [
+          'Book a flight online from anywhere. Pays from bank with 8% markup. The ticket itself is identical to a desk-bought one: lands on the next 10-minute departure slot and the customs check still happens at the gate when you physically board.',
+        ],
+      },
+      {
+        heading: 'Vehicles — 4-hour delivery to your garage',
+        notes: [
+          '/api/online/vehicles lists the full dealership catalogue at the online price; ordering spends bank cash and queues a vehicle_deliveries row.',
+          'After ~4 hours the car materialises into your chosen city\'s garage. Destination must be a city where you own a property with garage slots; pending orders count against that city\'s capacity so you can\'t over-order.',
+          'New Vehicles tab on /online with destination picker, tier filter, ETA countdowns, and inline reasons when a buy is disabled.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.99',
+    date: '2026-05-16',
+    title: 'Internet foundation — devices and Electronics Store',
+    sections: [
+      {
+        heading: 'New device items',
+        notes: [
+          'Smartphone (£1,500) — portable, on-person. Gives you internet anywhere you go.',
+          'Laptop (£3,500) — not portable. Lives in a property\'s house stash or in your active vehicle, and gives internet only when you\'re physically with it.',
+          'Burner phones still exist for one-off SMS to a single player; the new devices unlock live chat and online shopping.',
+        ],
+      },
+      {
+        heading: 'Electronics Store',
+        notes: [
+          'New gated location stocks smartphones, laptops, and burner phones. The General Store no longer lists electronics-only items.',
+          'internetStatus() / hasInternet() / requireInternet middleware are the authoritative gating for any online feature.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.98',
+    date: '2026-05-16',
+    title: 'Aircraft Broker — sales split out from the airport',
+    sections: [
+      {
+        heading: 'Hangar at the airport, sales at the broker',
+        notes: [
+          'The airport hangar now does storage, slot upgrades, refuelling, and take-off only. Buying and selling aircraft has moved to its own physical location — the Aircraft Broker — with its own /aircraft-dealer page and /api/aircraft-dealer endpoints.',
+          'Aircraft still drop into the local hangar at purchase, so you need a hangar in that city before placing an order.',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.17',
     date: '2026-05-15',
     title: 'Espresso fix · Newsstand → Dashboard',
