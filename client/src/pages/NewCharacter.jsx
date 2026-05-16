@@ -75,7 +75,7 @@ export default function NewCharacter() {
           <div className="font-display text-3xl text-blood-500">Your character has been killed.</div>
           <p className="text-xs text-ink-100/65 mt-2">
             {character.name} is dead. Everything they owned — bank, cash, businesses, properties, vehicles, inventory, gang — is gone.
-            Roll a new character to continue. New characters start at <b>level 10</b> and have <b>3 days of protection</b> from any attack.
+            Roll a new character to continue. New characters start at <b>level {Math.max(1, Math.min(character.level || 1, 10))}</b> ({character.level <= 10 ? 'matching what you died at — no free promotion' : 'capped at 10 from your level ' + character.level + ' death'}) and get <b>3 days of protection</b> from any attack.
           </p>
         </div>
       </Card>

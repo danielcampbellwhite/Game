@@ -140,7 +140,7 @@ export default function Murder() {
 
       <Card title="Outcomes" subtitle="Roll resolves immediately on commit. There's no live combat — they don't fight back.">
         <ul className="text-xs space-y-1 text-ink-100/75">
-          <li><b className="text-blood-400">Kill</b> — total damage ≥ 100% of their max HP. Permadeath: they have to roll a new character at level 10. You take <b>100%</b> of their cash on hand.</li>
+          <li><b className="text-blood-400">Kill</b> — total damage ≥ 100% of their max HP. Permadeath: they roll a new character at min(their level, 10). You take <b>100%</b> of their cash on hand.</li>
           <li><b className="text-yellow-300">Critical wound</b> — ≥ 50% of max HP. They get hospitalised 60–180 min. You take 10% of their cash.</li>
           <li><b className="text-yellow-200">Wound</b> — ≥ 20% of max HP. Hospital 15–45 min. No cash transfer.</li>
           <li><b>Miss</b> — they get notified, ammo + energy spent, you walk away.</li>

@@ -249,19 +249,22 @@ router.post('/new-character', requireAuth, (req, res) => {
   const taken = db.prepare('SELECT id FROM characters WHERE name = ? COLLATE NOCASE AND id != ?').get(trimmed, ch.id);
   if (taken) return res.status(409).json({ error: 'That name is taken — pick another.' });
 
-  // Level-10 starting line. max_energy / max_nerve / max_health derive
-  // from level via applyTick, so we just set level + reset vitals to
-  // their level-10 caps in one shot.
+  // Restart-level rule: min(deceased level, 10). A low-level death
+  // restarts at the SAME level you died at (no free promotion). A
+  // higher-level death restarts at 10. max_energy / max_nerve /
+  // max_health derive from level via applyTick; we set vitals to
+  // their cap for the chosen start level in one shot.
+  const startLevel = Math.max(1, Math.min(ch.level || 1, 10));
   const now = Date.now();
-  const maxEnergy = 100 + (10 - 1);
-  const maxNerve  = 10 + Math.floor(10 / 9);
-  const maxHealth = 100 + 5 * (10 - 1);
+  const maxEnergy = 100 + (startLevel - 1);
+  const maxNerve  = 10 + Math.floor(startLevel / 9);
+  const maxHealth = 100 + 5 * (startLevel - 1);
 
   db.prepare(`
     UPDATE characters SET
       name = ?, avatar = ?, city = ?, faction = ?, gender = ?,
       status = 'alive',
-      level = 10, xp = 0,
+      level = ?, xp = 0,
       energy = ?, max_energy = ?,
       nerve = ?, max_nerve = ?,
       health = ?, max_health = ?,
@@ -285,6 +288,7 @@ router.post('/new-character', requireAuth, (req, res) => {
     WHERE id = ?
   `).run(
     trimmed, avatarVal, city, faction, gender,
+    startLevel,
     maxEnergy, maxEnergy,
     maxNerve, maxNerve,
     maxHealth, maxHealth,
@@ -295,7 +299,7 @@ router.post('/new-character', requireAuth, (req, res) => {
 
   applyFactionPerks(ch.id, faction);
   applyStarterPack(ch.id, city, starterCheck2.picks);
-  writeLog(ch.id, 'system', `${trimmed} starts fresh — level 10. Welcome to ${cityById(city).name}. Starter pack: ${starterCheck2.picks.car.name}, ${starterCheck2.picks.house.name}, ${starterCheck2.picks.biz.name}.`);
+  writeLog(ch.id, 'system', `${trimmed} starts fresh — level ${startLevel}. Welcome to ${cityById(city).name}. Starter pack: ${starterCheck2.picks.car.name}, ${starterCheck2.picks.house.name}, ${starterCheck2.picks.biz.name}.`);
   const fresh = loadCharacter(req.user.id);
   applyTick(fresh);
   res.json({ character: publicCharacter(fresh) });
