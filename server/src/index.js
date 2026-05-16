@@ -51,6 +51,7 @@ import bookmakerRoutes from './routes/bookmaker.js';
 import notificationRoutes from './routes/notifications.js';
 import missionRoutes from './routes/missions.js';
 import generalStoreRoutes from './routes/general-store.js';
+import electronicsRoutes from './routes/electronics.js';
 import eventsRoutes from './routes/events.js';
 import playersRoutes from './routes/players.js';
 import messagesRoutes from './routes/messages.js';
@@ -177,6 +178,7 @@ app.use('/api/missions', missionRoutes);
 // (espresso shots, scratchcards, mission items from the Inventory
 // page).
 app.use('/api/general-store', generalStoreRoutes);
+app.use('/api/electronics', electronicsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/players', playersRoutes);
 app.use('/api/messages', messagesRoutes);

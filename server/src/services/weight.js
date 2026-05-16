@@ -100,6 +100,9 @@ const MISC_WEIGHT_OVERRIDES = {
   sandwich:       0.3,
   painkillers:    0.05,
   lottery_ticket: 0.01,
+  burner_phone:   0.15,
+  smartphone:     0.2,
+  laptop:         1.6,
 };
 
 // Lookup imports — done lazily inside the function to dodge any cyclic

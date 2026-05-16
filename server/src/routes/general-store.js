@@ -59,7 +59,7 @@ router.get('/', requireAuth, requireCharacter, requireAtLocation('general_store'
   // doesn't sell them anymore, but players can still *use* any they
   // already have (and resellers buy from the wholesaler endpoint).
   const items = MISC_ITEMS
-    .filter(i => !i.wholesale_only)
+    .filter(i => !i.wholesale_only && !i.electronicsOnly)
     .map(i => {
       const o = applyPrizeOverride(i);
       return {
@@ -76,6 +76,7 @@ router.post('/buy', requireAuth, requireCharacter, requireAtLocation('general_st
   const { item_id, qty = 1 } = req.body || {};
   const item = miscItemById(item_id);
   if (!item) return res.status(400).json({ error: 'Unknown item' });
+  if (item.electronicsOnly) return res.status(400).json({ error: 'That\'s sold at the Electronics Store.' });
   const n = Math.max(1, Math.min(99, parseInt(qty, 10) || 1));
   const cityMul = cityById(ch.city)?.businessMul || 1.0;
   const unit = Math.floor(item.cost * cityMul);

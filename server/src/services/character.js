@@ -7,6 +7,7 @@ import { writeLog } from './log.js';
 import { getPremiumPropertyBonusesForUser, userIdForChar } from './premium.js';
 import { maybeArrive, forceLocation, locationMeta } from './locations.js';
 import { migrateCharacterWeights } from './weight.js';
+import { internetStatus } from './online.js';
 
 // Pending-trial flag is surfaced on publicCharacter so App.jsx's
 // Protected wrapper can redirect into /trial the moment charges
@@ -581,5 +582,9 @@ export function publicCharacter(ch) {
       try { return JSON.parse(ch.equipped_clothing) || {}; }
       catch { return {}; }
     })(),
+    // Internet status — { online, reason } where reason is 'phone' /
+    // 'laptop_home' / 'laptop_car' / null. The client uses this to
+    // unlock the Online page and gate things like the bank app.
+    internet: internetStatus(ch),
   };
 }
