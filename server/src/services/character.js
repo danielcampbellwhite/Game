@@ -5,7 +5,7 @@ import { buffSnapshot } from './buffs.js';
 import { effectiveHeat } from './heat.js';
 import { writeLog } from './log.js';
 import { getPremiumPropertyBonusesForUser, userIdForChar } from './premium.js';
-import { maybeArrive, forceLocation } from './locations.js';
+import { maybeArrive, forceLocation, locationMeta } from './locations.js';
 import { migrateCharacterWeights } from './weight.js';
 
 // Pending-trial flag is surfaced on publicCharacter so App.jsx's
@@ -452,6 +452,14 @@ export function publicCharacter(ch) {
     hospital_until: ch.hospital_until, hospital_reason: ch.hospital_reason || null,
     travel_until: ch.travel_until, travel_to: ch.travel_to,
     current_location:   ch.current_location || 'streets',
+    // Looked-up name + route + gated flag for the current slug so
+    // the nav can render a one-tap "go to where I'm standing"
+    // chip without round-tripping /api/locations.
+    current_location_meta: (() => {
+      const slug = ch.current_location || 'streets';
+      const m = locationMeta(slug);
+      return m ? { slug, name: m.name, route: m.route, gated: !!m.gated } : null;
+    })(),
     intra_travel_until: ch.intra_travel_until || null,
     intra_travel_to:    ch.intra_travel_to    || null,
     intra_travel_mode:  ch.intra_travel_mode  || null,

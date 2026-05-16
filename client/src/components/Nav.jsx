@@ -388,6 +388,20 @@ export default function Nav() {
               </NavLink>
             );
           })()}
+          {/* "You are at X" quick-jump — visible only when standing
+              inside a real building (gated location, not the streets
+              and not while travelling/jailed/hospitalised). One tap
+              jumps to the building's own page. */}
+          {!lockedOut && character?.current_location_meta?.gated && (
+            <NavLink
+              to={character.current_location_meta.route}
+              onClick={() => setMenuOpen(false)}
+              title={`Enter ${character.current_location_meta.name}`}
+              className="shrink-0 px-3 py-1.5 text-xs rounded-md whitespace-nowrap bg-money-700/20 border border-money-500/40 text-money-300 hover:bg-money-700/30 transition">
+              <span className="opacity-75 mr-1">At:</span>
+              {character.current_location_meta.name} →
+            </NavLink>
+          )}
           {links.map(l => (
             <NavLink key={l.to} to={l.to}
               onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
