@@ -633,6 +633,9 @@ export function initDb() {
   // by the chase mini-game to show a one-time tutorial overlay with
   // the countdown paused. NULL = never seen, 1 = seen.
   addColumnIfMissing('characters', 'chase_tutorial_seen', 'INTEGER');
+  // Mirrors chase_tutorial_seen — first time the player triggers a
+  // jailbreak, they see an explainer with the timer paused.
+  addColumnIfMissing('characters', 'jailbreak_tutorial_seen', 'INTEGER');
 
   // Clothing owned — one row per (character, clothing item). Items are
   // non-stackable cosmetics, so qty is implicit at 1.

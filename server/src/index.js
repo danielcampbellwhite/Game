@@ -11,6 +11,7 @@ import characterRoutes from './routes/character.js';
 import worldRoutes from './routes/world.js';
 import crimeRoutes from './routes/crimes.js';
 import jailRoutes from './routes/jail.js';
+import jailbreakRoutes from './routes/jailbreak.js';
 import hospitalRoutes from './routes/hospital.js';
 import jobBoardRoutes from './routes/job-board.js';
 import playerShopsRoutes from './routes/player-shops.js';
@@ -122,6 +123,7 @@ app.use('/api/character', characterRoutes);
 app.use('/api/world', worldRoutes);
 app.use('/api/crimes', crimeRoutes);
 app.use('/api/jail', jailRoutes);
+app.use('/api/jailbreak', jailbreakRoutes);
 app.use('/api/hospital', atHospital, hospitalRoutes);
 // Job Board is a regular nav page — no longer a physical city
 // location. Accessible from anywhere; per-route auth/character

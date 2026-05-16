@@ -96,32 +96,11 @@ router.post('/bribe', requireAuth, requireCharacter, (req, res) => {
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
-// Make a run for it — 50/50 success, but you only get ONE shot per
-// sentence. Win: walk out clean (no cash cost, just nerve). Lose:
-// timer is set to twice the original sentence, so a 5-minute lag
-// becomes a 10-minute one regardless of how close to release you were.
-// The attempted flag is reset by applyJailSentence() so a fresh
-// sentence (from a new conviction) gets a fresh chance to bolt.
+// Legacy direct-roll escape removed — the jail-escape QTE at
+// /api/jailbreak/start replaces it. Old clients that POST here get
+// a clear error pointing at the new flow.
 router.post('/escape', requireAuth, requireCharacter, (req, res) => {
-  const ch = req.character;
-  const now = Date.now();
-  if (!ch.jail_until || ch.jail_until <= now) return res.status(400).json({ error: 'Not in jail' });
-  if (escapeAttempted(ch.id)) {
-    return res.status(409).json({ error: 'You\'ve already made a run for it this sentence. Wait it out.' });
-  }
-  markEscapeAttempted(ch.id);
-  if (Math.random() < ESCAPE_SUCCESS_CHANCE) {
-    ch.jail_until = null;
-    ch.jail_reason = null;
-    ch.jail_sentence_ms = null;
-    writeLog(ch.id, 'jail', `Slipped out through the laundry — escape successful.`);
-    saveCharacter(ch);
-    return res.json({ ok: true, success: true, character: publicCharacter(ch) });
-  }
-  const newSentence = failedEscapePenalty(ch, now);
-  writeLog(ch.id, 'jail', `Escape attempt failed — sentence doubled to ${Math.round(newSentence/60000)}m. No second chance this stretch.`);
-  saveCharacter(ch);
-  res.json({ ok: true, success: false, sentenceMs: newSentence, character: publicCharacter(ch) });
+  res.status(410).json({ error: 'Jail escape is now a mini-game — refresh and try again.' });
 });
 
 export default router;

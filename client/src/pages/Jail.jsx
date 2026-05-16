@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import Timer from '../components/Timer.jsx';
+import QteSequence from '../components/QteSequence.jsx';
 import { fmt } from '../components/Money.jsx';
 
 // Mirrors the server formula in routes/jail.js so costs tick down live.
@@ -131,6 +132,7 @@ export default function Jail() {
   const { character, refresh } = useGame();
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [jailbreak, setJailbreak] = useState(null);
   useScrollOnMessage(msg);
   // 1-second tick to keep self-action costs ticking down without polling.
   const [, setNow] = useState(Date.now());
@@ -140,13 +142,35 @@ export default function Jail() {
     return () => clearInterval(id);
   }, []);
 
+  // Resume an in-flight jailbreak on mount (e.g. page refresh
+  // mid-QTE). Silent on no-active-jailbreak.
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/jailbreak').then(r => {
+      if (cancelled) return;
+      if (r?.jailbreak) setJailbreak(r.jailbreak);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   async function act(action) {
     setBusy(action); setMsg(null);
     try {
       const r = await api.post(`/jail/${action}`);
       if (action === 'lawyer') setMsg('Lawyer hired — sentence cut in half.');
       else if (action === 'bribe') setMsg(r?.character?.jail_until ? 'Bribe rejected — sentence doubled.' : 'Bribe accepted — walked free.');
-      else if (action === 'escape') setMsg(r?.success ? 'Slipped out clean.' : 'Escape failed — sentence doubled.');
+      await refresh();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  // Start the jail-escape QTE. Sets the attempted flag server-side
+  // up front so the player can't bail mid-QTE and retry.
+  async function startEscape() {
+    setBusy('escape'); setMsg(null);
+    try {
+      const r = await api.post('/jailbreak/start');
+      if (r?.jailbreak) setJailbreak(r.jailbreak);
       await refresh();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
@@ -207,9 +231,9 @@ export default function Jail() {
             <div className="text-[12px] opacity-70">90% walk · 10% sentence doubles</div>
           </button>
           <button disabled={busy} className="btn btn-ghost"
-            onClick={() => act('escape')}>
-            {busy === 'escape' ? '...' : 'Run for it'}
-            <div className="text-[12px] opacity-70">50/50 · fail → 2× original sentence</div>
+            onClick={startEscape}>
+            {busy === 'escape' ? '…' : 'Run for it'}
+            <div className="text-[12px] opacity-70">Mini-game · 8 arrows · fail = 2× sentence</div>
           </button>
         </div>
 
@@ -221,6 +245,70 @@ export default function Jail() {
 
         {msg && <p className="text-xs text-money-400 mt-2">{msg}</p>}
       </Card>
+
+      {jailbreak && (
+        <QteSequence
+          data={jailbreak}
+          endpoints={{
+            begin:   '/jailbreak/begin',
+            resolve: '/jailbreak/resolve',
+            giveUp:  '/jailbreak/give-up',
+          }}
+          title="Jailbreak"
+          subtitle="Yard shift, two minutes."
+          tagline="Match the sequence to slip the guards. Miss it and the sentence doubles."
+          accent="yellow"
+          giveUpLabel="Back out — stay put"
+          tutorialNodes={(
+            <ul className="text-[13px] text-ink-100/75 space-y-1.5 list-disc pl-5">
+              <li>Read the eight arrows above the dpad and tap them <b>in the same order</b>.</li>
+              <li>The countdown is <b>{Math.round((jailbreak.durationMs || 7000) / 1000)} seconds</b>.</li>
+              <li>More hits = bigger chance to escape. Your <b>speed + dexterity</b> add up to +15%.</li>
+              <li>Fail and the <b>sentence doubles</b>. You only get one shot per stretch.</li>
+              <li>You can back out before the timer starts to stay put.</li>
+              <li>Tip: <b>arrow keys</b> work on desktop.</li>
+            </ul>
+          )}
+          renderResult={r => {
+            if (r.escaped) return (
+              <>
+                <div className="font-display text-3xl text-money-300">CLEAR.</div>
+                <p className="text-[13px] text-ink-100/75">
+                  Through the laundry chute. {r.correct}/{r.length} clean · {Math.round((r.escapeChance || 0) * 100)}% odds.
+                </p>
+              </>
+            );
+            if (r.gaveUp) return (
+              <>
+                <div className="font-display text-2xl text-yellow-300">Stayed put.</div>
+                <p className="text-[13px] text-ink-100/75">No attempt logged. Serve out the rest.</p>
+              </>
+            );
+            if (r.expired) return (
+              <>
+                <div className="font-display text-2xl text-blood-300">Out of time.</div>
+                <p className="text-[13px] text-ink-100/75">Sentence doubled — back to your cell.</p>
+              </>
+            );
+            if (r.error) return (
+              <>
+                <div className="font-display text-2xl text-blood-300">Error</div>
+                <p className="text-[13px] text-ink-100/75">{r.error}</p>
+              </>
+            );
+            return (
+              <>
+                <div className="font-display text-3xl text-blood-300">CAUGHT.</div>
+                <p className="text-[13px] text-ink-100/75">
+                  {r.correct}/{r.length} clean · {Math.round((r.escapeChance || 0) * 100)}% odds. Sentence doubled.
+                </p>
+              </>
+            );
+          }}
+          onResolved={async () => { await refresh(); }}
+          onClose={() => setJailbreak(null)}
+        />
+      )}
     </div>
   );
 }
