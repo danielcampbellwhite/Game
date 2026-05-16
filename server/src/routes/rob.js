@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
-import { cityById } from '../data.js';
+import { cityById, weaponById, miscItemById, armourById } from '../data.js';
 import { saveCharacter, publicCharacter, loadCharacterById, awardXp, isNewCharProtected, newCharProtectionHoursLeft, NEW_CHAR_PROTECTION_DAYS, applyJailSentence } from '../services/character.js';
 import { effectiveStats } from '../services/buffs.js';
 import { sendEvent } from '../services/events.js';
@@ -24,12 +24,76 @@ const CASH_PCT_MAX = 1.00;
 // Probability the victim sees who robbed them. The attacker is never
 // told the outcome — they don't know if they got away clean.
 const REVEAL_PCT = 0.50;
+// Chance, on a successful mug, of also lifting a single item off the
+// victim. Anything on their person is up for grabs — but they don't
+// always have time to rifle through pockets, so this is a coin-flip-ish
+// roll rather than guaranteed.
+const ITEM_GRAB_CHANCE = 0.30;
+// If the victim has a usable weapon (melee, or a ranged with ammo),
+// they get a chance to wound the attacker on a fight-off. Roll inside
+// the lose branch and, on a hit, hospitalise the attacker for a few
+// minutes — they took a beating.
+const FIGHT_BACK_HOSPITAL_MIN = 5;
+const FIGHT_BACK_HOSPITAL_MAX = 18;
+const FIGHT_BACK_HIT_CHANCE   = 0.6;
 
 // In-memory cooldown tables. Wiped on restart.
 const attackerCooldowns = new Map();
 const targetCooldowns   = new Map();
 
 function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+// "Does this target have something they could swing back with?" —
+// equipped melee weapon, or an equipped ranged weapon with at least
+// one round of matching ammo in their bag. Mirrors what they could
+// realistically pull during a mugging attempt.
+function targetHasUsableWeapon(target) {
+  const equipped = target.equipped_weapon || 'fists';
+  if (!equipped || equipped === 'fists') return false;
+  const w = weaponById(equipped);
+  if (!w) return false;
+  if (w.category === 'melee') return true;
+  if (!w.ammoType) return false;
+  const ammoRow = db.prepare(
+    "SELECT qty FROM inventory WHERE char_id = ? AND kind = 'ammo' AND item_id = ?"
+  ).get(target.id, w.ammoType);
+  return !!(ammoRow && ammoRow.qty > 0);
+}
+
+// Picks one liftable item off the victim's person — single qty,
+// random row from their inventory (weapons / armour / misc). Ammo
+// is excluded; a bag of bullets isn't a satisfying steal. Returns
+// { kind, item_id, name } or null when there's nothing to grab.
+function pickStealableItem(targetId) {
+  const row = db.prepare(`
+    SELECT kind, item_id, qty FROM inventory
+    WHERE char_id = ? AND kind IN ('weapon', 'armour', 'misc') AND qty > 0
+    ORDER BY RANDOM()
+    LIMIT 1
+  `).get(targetId);
+  if (!row) return null;
+  const def = row.kind === 'weapon' ? weaponById(row.item_id)
+            : row.kind === 'armour' ? armourById(row.item_id)
+            : miscItemById(row.item_id);
+  return { kind: row.kind, item_id: row.item_id, name: def?.name || row.item_id };
+}
+
+// Move one unit of (kind, item_id) from victim to attacker — atomic
+// decrement on the victim side, ON-CONFLICT upsert on the attacker.
+function transferOneItem(attackerId, targetId, kind, itemId) {
+  // Decrement target's row, deleting it when it hits zero.
+  db.prepare(`
+    UPDATE inventory SET qty = qty - 1
+    WHERE char_id = ? AND kind = ? AND item_id = ? AND qty > 0
+  `).run(targetId, kind, itemId);
+  db.prepare(`
+    DELETE FROM inventory WHERE char_id = ? AND kind = ? AND item_id = ? AND qty <= 0
+  `).run(targetId, kind, itemId);
+  db.prepare(`
+    INSERT INTO inventory (char_id, kind, item_id, qty) VALUES (?, ?, ?, 1)
+    ON CONFLICT(char_id, kind, item_id) DO UPDATE SET qty = qty + 1
+  `).run(attackerId, kind, itemId);
+}
 
 // Win chance: each 10-stat advantage shifts by 10 percentage points
 // from the 50% baseline, clamped to [10%, 90%]. Stats include any
@@ -114,6 +178,17 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     const cashTaken = debitTargetCash(target.id, Math.floor((target.cash || 0) * robPct));
     ch.cash += cashTaken;
 
+    // Item grab — chance to also lift one thing off the victim. Decided
+    // here so the response can describe it; transfer is atomic.
+    let stolenItem = null;
+    if (Math.random() < ITEM_GRAB_CHANCE) {
+      const pick = pickStealableItem(target.id);
+      if (pick) {
+        transferOneItem(ch.id, target.id, pick.kind, pick.item_id);
+        stolenItem = pick;
+      }
+    }
+
     // Reveal coin-flip. Result is stored only in the victim's log /
     // notification — attacker is never told either way.
     const hospitalMins = rng(HOSPITAL_MIN[0], HOSPITAL_MIN[1]);
@@ -128,21 +203,24 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     bumpMission(ch, 'rob_player', 1);
 
     // Attacker log: never mentions reveal status, never mentions jail.
-    writeLog(ch.id, 'pvp', ` You robbed ${target.name} for £${cashTaken.toLocaleString()}.`,
-      { target: target.id, cashTaken }, true);
+    const itemLogSuffix = stolenItem ? ` and lifted their ${stolenItem.name}` : '';
+    const victimItemSuffix = stolenItem ? ` and your ${stolenItem.name}` : '';
+    writeLog(ch.id, 'pvp',
+      ` You robbed ${target.name} for £${cashTaken.toLocaleString()}${itemLogSuffix}.`,
+      { target: target.id, cashTaken, item: stolenItem }, true);
     writeLog(target.id, 'pvp',
-      ` You were robbed by ${robberLabel} — lost £${cashTaken.toLocaleString()}, hospitalised ${hospitalMins}m.`,
-      { attacker_id: revealed ? ch.id : null, cashTaken, revealed }, true);
+      ` You were robbed by ${robberLabel} — lost £${cashTaken.toLocaleString()}${victimItemSuffix}, hospitalised ${hospitalMins}m.`,
+      { attacker_id: revealed ? ch.id : null, cashTaken, revealed, item: stolenItem }, true);
 
     saveCharacter(ch);
     sendEvent(target.id, 'pvp.attacked', {
       by: revealed ? { id: ch.id, name: ch.name } : null,
-      outcome: 'robbed', cashTaken, hospitalMins,
+      outcome: 'robbed', cashTaken, hospitalMins, item: stolenItem,
     });
     // Attacker response: deliberately omits the `revealed` flag.
     return res.json({
       ok: true, win: true,
-      cashTaken, hospitalMins,
+      cashTaken, hospitalMins, stolenItem,
       character: publicCharacter(ch),
     });
   }
@@ -157,29 +235,50 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   const caught = Math.random() < 0.5;
   const jailMin = 15;
 
+  // Weapon fight-back. If the victim had something to swing back
+  // with — a melee piece, or a ranged weapon they had ammo for — they
+  // get a chance to wound the attacker on the way out. A connecting
+  // blow puts the mugger in hospital, on top of whatever the cops
+  // already had planned for them.
+  let wounded = false;
+  let woundedMins = 0;
+  let woundedWeapon = null;
+  if (targetHasUsableWeapon(target) && Math.random() < FIGHT_BACK_HIT_CHANCE) {
+    wounded = true;
+    woundedMins = rng(FIGHT_BACK_HOSPITAL_MIN, FIGHT_BACK_HOSPITAL_MAX);
+    woundedWeapon = weaponById(target.equipped_weapon)?.name || 'their weapon';
+    hospitaliseTarget(ch.id, now + woundedMins * 60 * 1000,
+      `Fought back during a mugging — caught a hit from ${target.name}'s ${woundedWeapon}.`);
+  }
+
   if (caught) {
     applyJailSentence(ch, jailMin * 60 * 1000, `Caught trying to rob ${target.name} — ${jailMin}m inside.`);
     writeLog(ch.id, 'pvp', ` ${target.name} fought you off and the cops bagged you — ${jailMin}m inside.`,
       { target: target.id, jail_min: jailMin }, true);
   } else {
-    writeLog(ch.id, 'pvp', ` ${target.name} fought you off — got away with nothing.`,
-      { target: target.id }, true);
+    const woundSuffix = wounded ? ` — and caught a ${woundedWeapon} for ${woundedMins}m in hospital` : '';
+    writeLog(ch.id, 'pvp', ` ${target.name} fought you off${woundSuffix}.`,
+      { target: target.id, wounded, woundedMins }, true);
   }
+  const woundedNote = wounded ? ' You drew a hit on them — they are nursing it in hospital.' : '';
   writeLog(target.id, 'pvp',
     caught
-      ? ` You fought off a robbery attempt by ${robberLabel} — the cops bagged them.`
-      : ` You fought off a robbery attempt by ${robberLabel}.`,
-    { attacker_id: revealed ? ch.id : null, revealed, attacker_jailed: caught }, true);
+      ? ` You fought off a robbery attempt by ${robberLabel} — the cops bagged them.${woundedNote}`
+      : ` You fought off a robbery attempt by ${robberLabel}.${woundedNote}`,
+    { attacker_id: revealed ? ch.id : null, revealed, attacker_jailed: caught, attacker_wounded: wounded, wound_minutes: woundedMins }, true);
 
   saveCharacter(ch);
   sendEvent(target.id, 'pvp.attacked', {
     by: revealed ? { id: ch.id, name: ch.name } : null,
     outcome: 'rob_failed',
+    attacker_wounded: wounded,
   });
   res.json({
     ok: true, win: false,
     jailed: caught,
     jail_min: caught ? jailMin : 0,
+    wounded,
+    wounded_min: woundedMins,
     character: publicCharacter(ch),
   });
 });

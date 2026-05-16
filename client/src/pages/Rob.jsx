@@ -15,6 +15,11 @@ function OutcomeBanner({ result }) {
         <div className="text-xs mt-1 tabular-nums">
           Took {fmt(result.cashTaken)} · they're in hospital {result.hospitalMins} min.
         </div>
+        {result.stolenItem && (
+          <div className="text-[13px] mt-1 text-money-100">
+            Lifted their <span className="font-medium">{result.stolenItem.name}</span> off them too.
+          </div>
+        )}
         <div className="text-[13px] mt-2 text-money-200/80 italic">
           You slipped away. There's no telling whether they got a good look at you.
         </div>
@@ -29,6 +34,11 @@ function OutcomeBanner({ result }) {
           ? `They fought you off — sirens did the rest. ${result.jail_min}m inside.`
           : 'They fought you off — got away with nothing. (You slipped the cops this time.)'}
       </div>
+      {result.wounded && (
+        <div className="text-xs mt-1 text-blood-200">
+          They got a hit in — you're hospitalised for {result.wounded_min}m.
+        </div>
+      )}
     </div>
   );
 }
