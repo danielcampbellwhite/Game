@@ -36,6 +36,29 @@ const GEO_STYLE = {
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 
+// Pick a projection scale + center so the from→to route fills most
+// of the 800×360 map with comfortable padding. Short hops (London →
+// Liverpool) zoom in close; long-hauls (NY → Tokyo) zoom most of
+// the way back out. Clamped so we never go below the original
+// full-world scale or above a useful close-up.
+//
+// We then let the player nudge the zoom up or down with a slider
+// on top of this auto-fit baseline.
+function fitProjection(from, to) {
+  const dLng = Math.abs(to.lng - from.lng);
+  const dLat = Math.abs(to.lat - from.lat);
+  // Map is wider than tall (800×360 = 2.22:1), so a degree of lat
+  // costs proportionally more screen budget than a degree of lng.
+  const spanDeg = Math.max(dLng, dLat * (800 / 360));
+  // Target ~60% of the map width for the route so labels + padding fit.
+  const targetPx = 480;
+  const pxPerDeg = Math.max(1, spanDeg) * (Math.PI / 180);
+  const idealScale = targetPx / pxPerDeg;
+  const scale = Math.max(140, Math.min(900, idealScale));
+  const center = [(from.lng + to.lng) / 2, (from.lat + to.lat) / 2];
+  return { scale, center };
+}
+
 // Mode-specific SVG icon for the moving marker. Plane is the
 // default for inter-city flights; car for drives; helicopter for
 // the hangar 'fly' endpoint when the aircraft is a heli.
@@ -86,6 +109,9 @@ function bearingDeg(from, to) {
 //   label             — copy in the header strip
 export default function TravelMap({ fromCity, toCity, startedAt, until, mode = 'plane', label }) {
   const [now, setNow] = useState(() => Date.now());
+  // User zoom on top of the auto-fit baseline: 1 = exactly the fit,
+  // <1 = zoom out toward the whole world, >1 = zoom in past the fit.
+  const [zoomMul, setZoomMul] = useState(1);
   useEffect(() => {
     if (!until) return;
     const i = setInterval(() => setNow(Date.now()), 500);
@@ -105,6 +131,13 @@ export default function TravelMap({ fromCity, toCity, startedAt, until, mode = '
 
   const angle = bearingDeg(from, to);
 
+  // Auto-fit scale + center for this specific route, then apply the
+  // player's zoom multiplier. Floor at 90 so the absolute world view
+  // is still reachable; ceiling at 2400 so really close hops don't
+  // explode off the canvas.
+  const fit = fitProjection(from, to);
+  const scale = Math.max(90, Math.min(2400, fit.scale * zoomMul));
+
   return (
     <div className="rounded-xl border border-cyan-500/40 bg-ink-950/80 overflow-hidden">
       <div className="px-3 py-2 border-b border-cyan-500/30 bg-cyan-900/20 flex items-baseline justify-between">
@@ -123,8 +156,25 @@ export default function TravelMap({ fromCity, toCity, startedAt, until, mode = '
       </div>
 
       <div className="relative" style={{ background: '#0a0908' }}>
+        {/* Zoom controls — overlay top-right. Acts on top of the
+            auto-fit so short hops are already close, and the buttons
+            just let you push further in or pull back to a wider view. */}
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
+          <button
+            onClick={() => setZoomMul(z => Math.min(8, z * 1.5))}
+            className="w-7 h-7 rounded-md bg-ink-900/80 border border-cyan-500/40 text-cyan-200 text-sm hover:bg-cyan-900/50"
+            title="Zoom in" type="button">+</button>
+          <button
+            onClick={() => setZoomMul(z => Math.max(0.2, z / 1.5))}
+            className="w-7 h-7 rounded-md bg-ink-900/80 border border-cyan-500/40 text-cyan-200 text-sm hover:bg-cyan-900/50"
+            title="Zoom out" type="button">−</button>
+          <button
+            onClick={() => setZoomMul(1)}
+            className="w-7 h-7 rounded-md bg-ink-900/80 border border-cyan-500/40 text-cyan-200 text-[10px] hover:bg-cyan-900/50"
+            title="Fit route" type="button">fit</button>
+        </div>
         <ComposableMap
-          projectionConfig={{ scale: 140 }}
+          projectionConfig={{ scale, center: fit.center }}
           width={800} height={360}
           style={{ width: '100%', height: 'auto' }}>
           <Geographies geography={worldTopology}>
