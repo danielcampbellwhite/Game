@@ -193,8 +193,21 @@ router.post('/transfer', requireAuth, requireCharacter, (req, res) => {
     return res.status(400).json({ error: 'from/to must be personal, house, or vehicle.' });
   }
   const city = ch.city;
-  if ((from === 'house' || to === 'house') && !hasHouseIn(ch.id, city)) {
-    return res.status(400).json({ error: 'You don\'t own a property in this city.' });
+  if ((from === 'house' || to === 'house')) {
+    if (!hasHouseIn(ch.id, city)) {
+      return res.status(400).json({ error: 'You don\'t own a property in this city.' });
+    }
+    // Physical-presence rule: house storage is only manageable
+    // when the player is standing inside ONE OF their properties.
+    // current_location is set to home_<id> by the locations
+    // service when they arrive at a property.
+    const cur = ch.current_location || '';
+    if (!/^home_\d+$/.test(cur)) {
+      return res.status(400).json({
+        error: 'You have to be inside the property to use its stash. Drive home first.',
+        need_home: true,
+      });
+    }
   }
   // Resolve active vehicle if either side touches vehicle cargo.
   let vehicleId = null, vehicleTier = null;

@@ -56,12 +56,33 @@ export const LOCATIONS = {
   jail:           { name: 'Jail',               route: '/jail',           travelable: true,  gated: true,  desc: 'Holding cells and the bail desk. Drop in to spring a friend or break someone out.' },
 };
 
+// Player-owned properties are addressable as dynamic destinations
+// — slugs of the form 'home_<properties_owned_id>'. They aren't in
+// the static LOCATIONS map; the /api/locations route enriches its
+// response with the player's homes in the current city, and these
+// helpers handle validation.
+export function isHomeSlug(slug) {
+  return typeof slug === 'string' && /^home_\d+$/.test(slug);
+}
+
+export function homeIdFromSlug(slug) {
+  if (!isHomeSlug(slug)) return null;
+  return parseInt(slug.slice('home_'.length), 10);
+}
+
 export function locationMeta(slug) {
-  return LOCATIONS[slug] || null;
+  if (LOCATIONS[slug]) return LOCATIONS[slug];
+  if (isHomeSlug(slug)) {
+    // Generic synthetic — the locations route resolves the actual
+    // property name. Anything that just needs a printable label
+    // (logs, error messages) gets "Your home" which is fine.
+    return { name: 'Your home', route: '/property', travelable: true, gated: true, desc: 'Inside your property.' };
+  }
+  return null;
 }
 
 export function isValidLocation(slug) {
-  return Boolean(LOCATIONS[slug]);
+  return Boolean(LOCATIONS[slug]) || isHomeSlug(slug);
 }
 
 // "Where is this character right now?" — single source of truth that
@@ -99,6 +120,16 @@ export function startTravel(ch, dest, mode) {
   const destMeta = locationMeta(dest);
   if (!destMeta.travelable)                          return { error: `You can't travel to ${destMeta.name}.` };
   if (dest === here)                                 return { error: `You're already at ${destMeta.name}.` };
+  // For home_* slugs, double-check the property belongs to the
+  // player AND is in their current city. Players can't drive to a
+  // property they own in another city — they have to fly there
+  // first.
+  if (isHomeSlug(dest)) {
+    const id = homeIdFromSlug(dest);
+    const row = db.prepare('SELECT id, city FROM properties_owned WHERE id = ? AND char_id = ?').get(id, ch.id);
+    if (!row) return { error: 'That property isn\'t yours.' };
+    if (row.city !== ch.city) return { error: 'That property is in another city — fly there first.' };
+  }
 
   let dur;
   let fuelInfo = null;
