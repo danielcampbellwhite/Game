@@ -111,30 +111,16 @@ function Protected({ children }) {
 }
 
 function Footer() {
-  const { token, character, logout } = useGame();
-  const nav = useNavigate();
+  const { token, character } = useGame();
   if (!token || !character) return null;
+  // Sign-out + admin moved into the Account dropdown in the main
+  // nav (see components/Nav.jsx). The footer is now a brand strip.
   return (
     <footer className="border-t border-ink-100/10 bg-ink-950/85 backdrop-blur">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
         <span className="text-[12px] uppercase tracking-wide text-ink-100/40">
           Mafia Life <span className="font-cursive normal-case tracking-normal text-gold-400/70 text-[14px]">Criminal Empire</span>
         </span>
-        <div className="flex items-center gap-2">
-          {character.is_admin && (
-            <Link
-              to="/admin"
-              className="px-2 py-1 rounded-md text-[13px] uppercase tracking-wide text-blood-400 hover:bg-ink-800/60 transition"
-              title="God mode">
-              Admin
-            </Link>
-          )}
-          <button
-            onClick={() => { logout(); nav('/login'); }}
-            className="btn btn-ghost text-xs">
-            Sign out
-          </button>
-        </div>
       </div>
     </footer>
   );

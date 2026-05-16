@@ -72,6 +72,15 @@ const NAV_TREE = [
   ]},
   { to: '/friends',    label: 'Friends' },
   { to: '/trades',     label: 'Trades' },
+  // Account dropdown. Children include action items (no `to`); the
+  // NavMenuItem renders those as buttons that fire `action` instead
+  // of navigating. Admin link only appears for admin characters.
+  { to: '/premium', label: 'Account', children: [
+    { to: '/premium', label: 'Gold Bars / Premium' },
+    { to: '/patches', label: 'Updates & patches' },
+    { adminOnly: true, to: '/admin', label: 'Admin' },
+    { signOut: true, label: 'Sign out' },
+  ]},
 ];
 
 const TYPE_COLOR = {
@@ -257,7 +266,7 @@ function MiniStat({ label, value, max, color, money }) {
 // `children` it's a click-to-open dropdown that closes on outside
 // click or when a child link is picked. Active styling kicks in when
 // the route equals the parent OR any child.
-function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard }) {
+function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard, isAdmin, onSignOut }) {
   const [open, setOpen] = useState(false);
   // Bounding rect of the trigger button — used to position the
   // dropdown with `position: fixed` so it escapes the scrolling
@@ -273,7 +282,13 @@ function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard }) {
       if (dropdownRef.current?.contains(e.target)) return;
       setOpen(false);
     };
-    const onScroll = () => setOpen(false);
+    // Close on scroll, but ignore scrolls that originate INSIDE the
+    // dropdown itself — those are the user scrolling through long
+    // child lists (e.g. the City menu), not the page moving under them.
+    const onScroll = (e) => {
+      if (dropdownRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', onDocDown);
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', onScroll);
@@ -334,17 +349,32 @@ function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard }) {
           style={style}
           className="rounded-md border border-ink-100/15 bg-ink-950/95 backdrop-blur shadow-2xl shadow-black/60 overflow-hidden">
           <ul className="py-1 text-xs max-h-[60vh] overflow-y-auto scrollbar">
-            {item.children.map(c => (
-              <li key={c.to}>
-                <NavLink
-                  to={c.to}
-                  onClick={(e) => { onClickGuard(e); setOpen(false); onPick?.(); }}
-                  className={({ isActive }) =>
-                    `block px-3 py-1.5 ${isActive ? 'bg-blood-700/60 text-white' : 'text-ink-100/85 hover:bg-ink-800/70'}`}>
-                  {c.label}
-                </NavLink>
-              </li>
-            ))}
+            {item.children.map(c => {
+              if (c.adminOnly && !isAdmin) return null;
+              if (c.signOut) {
+                return (
+                  <li key="signout">
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); onPick?.(); onSignOut?.(); }}
+                      className="block w-full text-left px-3 py-1.5 text-blood-300 hover:bg-blood-700/30">
+                      {c.label}
+                    </button>
+                  </li>
+                );
+              }
+              return (
+                <li key={c.to}>
+                  <NavLink
+                    to={c.to}
+                    onClick={(e) => { onClickGuard(e); setOpen(false); onPick?.(); }}
+                    className={({ isActive }) =>
+                      `block px-3 py-1.5 ${isActive ? 'bg-blood-700/60 text-white' : 'text-ink-100/85 hover:bg-ink-800/70'}`}>
+                    {c.label}
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -356,7 +386,7 @@ function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard }) {
 // nav. Collapsible via the toggle handle on the right; preference is
 // persisted to localStorage so we don't reset on every render.
 const SUBNAV_KEY = 'mafia.subnav.collapsed';
-function SubNavStrip({ items, lockedOut, onClickGuard, linkClass }) {
+function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSignOut }) {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(SUBNAV_KEY) === '1'; }
     catch { return false; }
@@ -381,7 +411,9 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass }) {
                 item={item}
                 lockedOut={lockedOut}
                 linkClass={linkClass}
-                onClickGuard={onClickGuard} />
+                onClickGuard={onClickGuard}
+                isAdmin={isAdmin}
+                onSignOut={onSignOut} />
             ))}
           </div>
         </div>
@@ -407,6 +439,20 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass }) {
 export default function Nav() {
   const { logout, character, refresh } = useGame();
   const nav = useNavigate();
+  // Bound logout — drop the auth token and bounce to /login. Wired
+  // into the Account dropdown so the sign-out button lives in the
+  // main nav rather than the footer.
+  const signOut = useCallback(() => { logout(); nav('/login'); }, [logout, nav]);
+
+  // While the mobile drawer is open, lock body scroll so the page
+  // behind the menu can't move under the user's finger. Restored on
+  // close (or unmount). No-op on desktop where the drawer never opens.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [menuOpen]);
   const [dmUnread, setDmUnread] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   // Local tick clock so the intra-city travel countdown updates every
@@ -612,7 +658,9 @@ export default function Nav() {
           items={NAV_TREE}
           lockedOut={lockedOut}
           linkClass={linkClass}
-          onClickGuard={onClickGuard} />
+          onClickGuard={onClickGuard}
+          isAdmin={!!character.is_admin}
+          onSignOut={signOut} />
       )}
 
       {/*  Nav links
@@ -620,7 +668,13 @@ export default function Nav() {
           Mobile (<md): hidden by default, opens as a vertical drawer
           when the ☰ button up top is tapped. */}
       <nav className={`border-t border-ink-100/10 ${menuOpen ? 'block' : 'hidden'} md:block`}>
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-1">
+        {/* Mobile: full-viewport scrollable drawer so the long list of
+            location sub-items reaches everything. Body scroll is locked
+            (see effect above) so the page underneath can't move. The
+            inner container holds its own overflow with momentum scroll. */}
+        <div
+          className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-1 md:max-h-none md:overflow-visible max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain scrollbar"
+          style={{ WebkitOverflowScrolling: 'touch' }}>
           {(inHospital || inJail) && (
             <NavLink to={inHospital ? '/hospital' : '/jail'}
               onClick={() => setMenuOpen(false)}
@@ -664,6 +718,8 @@ export default function Nav() {
                 lockedOut={lockedOut}
                 linkClass={linkClass}
                 onClickGuard={onClickGuard}
+                isAdmin={!!character?.is_admin}
+                onSignOut={signOut}
                 onPick={() => setMenuOpen(false)} />
             ))}
           </div>
@@ -678,14 +734,28 @@ export default function Nav() {
                   className={({ isActive }) => linkClass(isActive)}>
                   {item.label}
                 </NavLink>
-                {item.children?.map(c => (
-                  <NavLink key={c.to} to={c.to}
-                    onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
-                    className={({ isActive }) =>
-                      `${linkClass(isActive)} pl-7 text-[11px] text-ink-100/70`}>
-                    {c.label}
-                  </NavLink>
-                ))}
+                {item.children?.map(c => {
+                  if (c.adminOnly && !character?.is_admin) return null;
+                  if (c.signOut) {
+                    return (
+                      <button
+                        key="signout"
+                        type="button"
+                        onClick={() => { setMenuOpen(false); signOut(); }}
+                        className="text-left pl-7 text-[11px] px-3 py-2 md:py-1.5 rounded-md text-blood-300 hover:bg-blood-700/30">
+                        {c.label}
+                      </button>
+                    );
+                  }
+                  return (
+                    <NavLink key={c.to} to={c.to}
+                      onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
+                      className={({ isActive }) =>
+                        `${linkClass(isActive)} pl-7 text-[11px] text-ink-100/70`}>
+                      {c.label}
+                    </NavLink>
+                  );
+                })}
               </React.Fragment>
             ))}
           </div>
