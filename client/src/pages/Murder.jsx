@@ -74,10 +74,28 @@ export default function Murder() {
   }
 
   if (!info) return <Card><p className="text-xs text-ink-100/55">Loading…</p></Card>;
-  const { target, weapon, ammo, cost, eligibility_error } = info;
+  const { target, weapon, ammo, cost, eligibility_error, hit_estimate } = info;
   const isGun = !!weapon?.ammoType;
   const maxBullets = Math.min(cost.max_bullets, ammo.on_hand || 0);
   const canAttempt = !eligibility_error && (!isGun || (bullets >= 1 && bullets <= maxBullets));
+
+  // Per-shot hit chance (0..1) from the server. Floored at 5%, capped
+  // at 85% by the murder route. For melee strikes there's just one
+  // roll (strikes=1); for guns we multiply by bullets.
+  const hitPct = Math.round((hit_estimate || 0) * 100);
+  const strikesPicked = isGun ? bullets : 1;
+  const expectedHits = (hit_estimate || 0) * strikesPicked;
+  // Probability of landing AT LEAST ONE shot — useful when bullets
+  // are limited. P(>=1 hit) = 1 - (1-p)^n.
+  const atLeastOnePct = strikesPicked > 0
+    ? Math.round((1 - Math.pow(1 - (hit_estimate || 0), strikesPicked)) * 100)
+    : 0;
+  const hitTone =
+    hitPct >= 50 ? 'text-money-300'
+    : hitPct >= 25 ? 'text-yellow-300'
+    : 'text-blood-300';
+  const floored = hitPct <= 5;
+  const ceiling = hitPct >= 85;
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
@@ -110,6 +128,36 @@ export default function Murder() {
             <div className="text-yellow-300 font-semibold tabular-nums">{cost.energy}</div>
             <div className="text-[13px] text-ink-100/60">you have {character?.energy ?? 0}</div>
           </div>
+        </div>
+
+        {/* Predicted hit chance vs this target — derived server-side
+            from effective INT/SPD/DEF stats (buffs included). Floored
+            at 5%, capped at 85%. Stark UI here keeps the player from
+            burning 60 rounds on a 5% prayer without realising. */}
+        <div className="mt-4 border-t border-ink-100/10 pt-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-[12px] uppercase text-ink-100/55">Predicted hit chance</div>
+            <div className={`text-2xl font-display tabular-nums ${hitTone}`}>{hitPct}%<span className="text-[11px] text-ink-100/45 ml-1">/{isGun ? 'bullet' : 'strike'}</span></div>
+          </div>
+          {isGun && bullets > 0 && (
+            <div className="mt-1 flex items-baseline justify-between gap-3 text-[12px] text-ink-100/65 tabular-nums">
+              <span>{bullets} bullet{bullets === 1 ? '' : 's'} →</span>
+              <span>
+                expected <span className={hitTone}>{expectedHits.toFixed(1)}</span> hits ·{' '}
+                <span className={hitTone}>{atLeastOnePct}%</span> chance of <b>at least one</b>
+              </span>
+            </div>
+          )}
+          {floored && (
+            <p className="text-[11px] text-blood-400 mt-2">
+              Hit chance is at the 5% floor — this target's stats out-class yours. Train Intelligence (university) and Speed (gym) to climb out, or hunt softer targets.
+            </p>
+          )}
+          {ceiling && (
+            <p className="text-[11px] text-money-400 mt-2">
+              Hit chance is at the 85% ceiling — about as good as it gets. Damage comes down to weapon + their armour.
+            </p>
+          )}
         </div>
 
         {isGun && (

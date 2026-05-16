@@ -106,6 +106,12 @@ router.get('/info', requireAuth, requireCharacter, (req, res) => {
   const ammoType = weapon?.ammoType || null;
   const ammo = ammoOnHand(ch.id, ammoType);
 
+  // Predicted per-shot hit chance against this specific target,
+  // using effective stats (buffs included) on both sides. Surfaced
+  // to the client so the murder screen can show "X% per bullet"
+  // before the player commits a stack of ammo to a long shot.
+  const hitEst = hitChance(effectiveStats(ch), effectiveStats(target));
+
   res.json({
     target: {
       id: target.id,
@@ -129,6 +135,10 @@ router.get('/info', requireAuth, requireCharacter, (req, res) => {
     ammo: { type: ammoType, on_hand: ammo },
     cost: { energy: ATTEMPT_ENERGY_COST, max_bullets: MAX_BULLETS_PER_ATTEMPT },
     eligibility_error: eligibility(ch, target, Date.now()),
+    // Per-shot hit chance (0–1). Floored at 0.05 and ceilinged at
+    // 0.85 by hitChance(). Client multiplies by bullets selected
+    // to get expected hits.
+    hit_estimate: hitEst,
   });
 });
 
