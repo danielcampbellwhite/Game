@@ -139,18 +139,27 @@ function AroundTown() {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-ink-100/10 bg-ink-900/40 p-3">
-        <div className="text-xs uppercase tracking-wide text-ink-100/55">You are at</div>
-        <div className="text-2xl font-display mt-0.5">
-          {travelling
-            ? <span className="text-cyan-200">En route…</span>
-            : (here?.name || 'On the streets')}
+      <div className="rounded-lg border border-ink-100/10 bg-ink-900/40 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wide text-ink-100/55">You are at</div>
+          <div className="text-2xl font-display mt-0.5">
+            {travelling
+              ? <span className="text-cyan-200">En route…</span>
+              : (here?.name || 'On the streets')}
+          </div>
+          <p className="text-[12px] text-ink-100/55 mt-1">
+            {travelling
+              ? 'Locked except for chat until you arrive. Countdown is on the destination tile below.'
+              : data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
+          </p>
         </div>
-        <p className="text-[12px] text-ink-100/55 mt-1">
-          {travelling
-            ? 'Locked except for chat until you arrive. Countdown is on the destination tile below.'
-            : data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
-        </p>
+        {!travelling && here?.gated && (
+          <button
+            onClick={() => enter(here)}
+            className="btn btn-primary text-xs whitespace-nowrap shrink-0 w-full sm:w-auto">
+            Enter {here.name} →
+          </button>
+        )}
       </div>
 
       {msg && <p className="text-xs text-blood-300">{msg}</p>}
