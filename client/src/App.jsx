@@ -45,6 +45,7 @@ import OC from './pages/OC.jsx';
 import OCPlan from './pages/OCPlan.jsx';
 import OcInviteModal from './components/OcInviteModal.jsx';
 import CarDealer from './pages/CarDealer.jsx';
+import AircraftDealer from './pages/AircraftDealer.jsx';
 import GunStore from './pages/GunStore.jsx';
 import ChopShop from './pages/ChopShop.jsx';
 import Repair from './pages/Repair.jsx';
@@ -234,6 +235,7 @@ export default function App() {
           <Route path="/oc" element={<Protected><OC /></Protected>} />
           <Route path="/oc/plans/:id" element={<Protected><OCPlan /></Protected>} />
           <Route path="/dealership" element={<Protected><CarDealer /></Protected>} />
+          <Route path="/aircraft-dealer" element={<Protected><AircraftDealer /></Protected>} />
           <Route path="/gun-store" element={<Protected><GunStore /></Protected>} />
           <Route path="/chop-shop" element={<Protected><ChopShop /></Protected>} />
           <Route path="/repair" element={<Protected><Repair /></Protected>} />

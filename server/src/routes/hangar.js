@@ -1,6 +1,7 @@
-// Private hangar + aircraft endpoints. All gated to the airport
-// location — the hangar lives there, so buying / upgrading / flying
-// only happens when the player is physically at the airport.
+// Hangar storage + flight ops. Gated to the airport: this is where
+// you store your aircraft, upgrade slots, refuel, and take off.
+// Buying and selling aircraft happens at the Aircraft Broker — a
+// separate location, see routes/aircraft-dealer.js.
 
 import { Router } from 'express';
 import { db } from '../db.js';
@@ -10,12 +11,12 @@ import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import {
   HANGAR_PURCHASE_COST, HANGAR_MAX, SLOT_UPGRADE_COSTS,
-  loadHangar, loadHangars, hangarSummary, buyHangar, upgradeHangarSlot,
+  loadHangars, hangarSummary, buyHangar, upgradeHangarSlot,
   hangarHasFreeSlot,
 } from '../services/hangar.js';
 import {
-  AIRCRAFT, aircraftById, AIRCRAFT_FUEL_PER_KM, AIRCRAFT_REFILL_FULL_COST,
-  AIRCRAFT_MS_PER_KM, cityById, vehicleById, landDistanceBetween,
+  aircraftById, AIRCRAFT_FUEL_PER_KM, AIRCRAFT_REFILL_FULL_COST,
+  AIRCRAFT_MS_PER_KM, cityById, landDistanceBetween,
 } from '../data.js';
 
 const router = Router();
@@ -50,7 +51,6 @@ router.get('/', ...atAirport, (req, res) => {
     purchaseCost: HANGAR_PURCHASE_COST,
     maxSlots: HANGAR_MAX,
     upgradeCosts: SLOT_UPGRADE_COSTS,
-    aircraft_catalog: AIRCRAFT,
     my_aircraft_here: myAircraft,
     my_hangars: all,
   });
@@ -80,88 +80,6 @@ router.post('/upgrade', ...atAirport, (req, res) => {
     { city: ch.city, slot, cost: r.cost, new_capacity: r.new_capacity });
   saveCharacter(ch);
   res.json({ ok: true, cost: r.cost, hangar: hangarSummary(ch.id, ch.city), character: publicCharacter(ch) });
-});
-
-// POST /buy-aircraft { aircraft_id } — purchase from the airport
-// dealer; aircraft drops straight into your local hangar. Requires
-// a free slot of the matching class.
-router.post('/buy-aircraft', ...atAirport, (req, res) => {
-  const ch = req.character;
-  const a = aircraftById(req.body?.aircraft_id);
-  if (!a) return res.status(400).json({ error: 'Unknown aircraft.' });
-  const hangar = hangarSummary(ch.id, ch.city);
-  if (!hangar) return res.status(400).json({ error: 'You need a hangar in this city first.' });
-  const slot = hangar.slots[a.class];
-  if (!slot || slot.free <= 0) {
-    return res.status(400).json({ error: `Your local hangar is out of ${a.class} space — upgrade or sell first.` });
-  }
-  if (ch.cash < a.bookPrice) return res.status(400).json({ error: `Need £${a.bookPrice.toLocaleString()}.` });
-  ch.cash -= a.bookPrice;
-  const now = Date.now();
-  db.prepare(`
-    INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition, fuel, class)
-    VALUES (?, ?, 'bought', ?, ?, 100, 100, ?)
-  `).run(ch.id, a.id, ch.city, now, a.class);
-  writeLog(ch.id, 'aviation', ` Bought a ${a.maker} ${a.name} — £${a.bookPrice.toLocaleString()}, parked in your ${cityById(ch.city)?.name} hangar.`,
-    { aircraft: a.id, city: ch.city, cost: a.bookPrice }, true);
-  saveCharacter(ch);
-  res.json({ ok: true, cost: a.bookPrice, character: publicCharacter(ch), hangar: hangarSummary(ch.id, ch.city) });
-});
-
-// Trade-in markdown — the dealer never pays book. 60% is the base,
-// scaled by condition (a perfect 100% airframe gets the full 60%,
-// a 50%-condition wreck gets 30%). Sell-quote shows the payout
-// so the player isn't surprised at the till.
-const AIRCRAFT_SELLBACK_PCT = 0.60;
-
-function aircraftSellPayout(aircraft, condition) {
-  const conditionMul = Math.max(0.1, Math.min(1, (condition ?? 100) / 100));
-  return Math.max(1, Math.round(aircraft.bookPrice * AIRCRAFT_SELLBACK_PCT * conditionMul));
-}
-
-// GET /sell-quote?aircraft_row_id=N — preview the trade-in price
-// before committing. Returns null when the row isn't sellable
-// (not yours / not in this hangar / not an aircraft).
-router.get('/sell-quote', ...atAirport, (req, res) => {
-  const ch = req.character;
-  const rowId = parseInt(req.query.aircraft_row_id, 10);
-  if (!Number.isFinite(rowId)) return res.status(400).json({ error: 'Bad aircraft.' });
-  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(rowId, ch.id);
-  if (!row) return res.json({ sellable: false, reason: 'Not yours.' });
-  if (row.class === 'car') return res.json({ sellable: false, reason: 'Cars sell at the chop shop or dealer.' });
-  if (row.city !== ch.city) return res.json({ sellable: false, reason: 'That aircraft is at another hangar.' });
-  const a = aircraftById(row.vehicle_id);
-  if (!a) return res.json({ sellable: false, reason: 'Aircraft catalogue missing.' });
-  res.json({
-    sellable: true,
-    payout: aircraftSellPayout(a, row.condition),
-    book: a.bookPrice,
-    condition: row.condition,
-  });
-});
-
-// POST /sell-aircraft { aircraft_row_id } — sell the aircraft
-// back to the airport's broker. Pays 60% of book scaled by
-// condition. Aircraft row is deleted (frees the slot); cash
-// credited to the player.
-router.post('/sell-aircraft', ...atAirport, (req, res) => {
-  const ch = req.character;
-  const rowId = parseInt(req.body?.aircraft_row_id, 10);
-  if (!Number.isFinite(rowId)) return res.status(400).json({ error: 'Bad aircraft.' });
-  const row = db.prepare('SELECT * FROM vehicles_owned WHERE id = ? AND char_id = ?').get(rowId, ch.id);
-  if (!row) return res.status(404).json({ error: 'Aircraft not found.' });
-  if (row.class === 'car') return res.status(400).json({ error: 'Sell cars at the chop shop or dealer.' });
-  if (row.city !== ch.city) return res.status(400).json({ error: 'That aircraft is at another hangar. Fly it here first.' });
-  const a = aircraftById(row.vehicle_id);
-  if (!a) return res.status(400).json({ error: 'Aircraft catalogue missing.' });
-  const payout = aircraftSellPayout(a, row.condition);
-  ch.cash += payout;
-  db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(row.id);
-  writeLog(ch.id, 'aviation',
-    `Sold the ${a.maker} ${a.name} back to the dealer for £${payout.toLocaleString()} (${Math.round(row.condition)}% condition).`,
-    { aircraft: a.id, city: ch.city, payout, condition: row.condition }, true);
-  saveCharacter(ch);
-  res.json({ ok: true, payout, character: publicCharacter(ch), hangar: hangarSummary(ch.id, ch.city) });
 });
 
 // POST /fly { aircraft_row_id, to_city } — fly your own aircraft to

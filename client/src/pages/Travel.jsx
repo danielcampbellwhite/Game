@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
@@ -301,8 +302,6 @@ function HangarPanel({ onChange }) {
   if (!data) return <Card><p className="text-xs text-ink-100/55">Loading hangar…</p></Card>;
 
   const h = data.hangar;
-  const planes = (data.aircraft_catalog || []).filter(a => a.class === 'plane');
-  const helis  = (data.aircraft_catalog || []).filter(a => a.class === 'helicopter');
 
   return (
     <div className="space-y-3">
@@ -371,16 +370,13 @@ function HangarPanel({ onChange }) {
                     </div>
                     <span className="tabular-nums text-ink-100/55 w-10 text-right">{Math.round(a.fuel)}%</span>
                   </div>
-                  <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
                     <button
                       disabled={busy === `refuel-${a.id}` || a.fuel >= 100}
                       onClick={() => call('refuel', { aircraft_row_id: a.id })}
                       className="btn btn-ghost text-[11px]">
                       Refuel
                     </button>
-                    <SellAircraftButton
-                      aircraftRowId={a.id}
-                      onSold={async () => { await onChange?.(); await load(); }} />
                     <button
                       disabled={busy === `fly-${a.id}`}
                       onClick={() => setFlyOpen(a.id)}
@@ -406,28 +402,15 @@ function HangarPanel({ onChange }) {
         </Card>
       )}
 
-      {/* Aircraft dealership — only available with a hangar */}
+      {/* Aircraft sales moved to the Aircraft Broker — see /aircraft-dealer. */}
       {h && (
-        <Card title="Aircraft for sale"
-          subtitle="Drops straight into your local hangar. Free slot of the matching class required.">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[...planes, ...helis].map(a => (
-              <div key={a.id} className="rounded-lg border border-ink-100/10 bg-ink-950/40 p-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="font-medium truncate">{a.maker} {a.name}</div>
-                  <span className="text-[11px] uppercase tracking-wide text-ink-100/55">{a.class}</span>
-                </div>
-                <div className="text-[12px] text-ink-100/55">Tier {a.tier}</div>
-                <div className="text-money-400 font-semibold mt-1 tabular-nums">£{a.bookPrice.toLocaleString()}</div>
-                <button
-                  disabled={busy === `buy-aircraft-${a.id}`}
-                  onClick={() => call('buy-aircraft', { aircraft_id: a.id })}
-                  className="btn btn-primary text-xs w-full mt-2">
-                  Buy
-                </button>
-              </div>
-            ))}
-          </div>
+        <Card title="Buy & sell aircraft"
+          subtitle="Sales happen at the Aircraft Broker — a short walk from the airport. Your aircraft are flown in from there to land in this hangar.">
+          <Link
+            to="/city"
+            className="btn btn-ghost text-xs">
+            Open city map →
+          </Link>
         </Card>
       )}
 
@@ -453,59 +436,6 @@ function HangarPanel({ onChange }) {
 // Lightweight destination picker — lists cities where the player
 // owns a hangar (excluding the current city). Picking one fires the
 // fly action; server validates everything else.
-// Sell-back button — fetches the live trade-in quote when first
-// mounted (so the price reflects current condition) and asks for
-// a confirm before committing. Two-stage: first tap shows the
-// "Sell for £X" with a confirm/cancel; second confirms.
-function SellAircraftButton({ aircraftRowId, onSold }) {
-  const [quote, setQuote]   = useState(null);
-  const [confirm, setConfirm] = useState(false);
-  const [busy, setBusy]     = useState(false);
-  const [err, setErr]       = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    api.get(`/hangar/sell-quote?aircraft_row_id=${aircraftRowId}`)
-      .then(q => { if (!cancelled) setQuote(q); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [aircraftRowId]);
-
-  async function doSell() {
-    setBusy(true); setErr(null);
-    try {
-      await api.post('/hangar/sell-aircraft', { aircraft_row_id: aircraftRowId });
-      await onSold?.();
-    } catch (e) { setErr(e.message); setBusy(false); }
-  }
-
-  if (!quote?.sellable) {
-    return <button disabled className="btn btn-ghost text-[11px] opacity-50">Sell</button>;
-  }
-  if (!confirm) {
-    return (
-      <button
-        onClick={() => setConfirm(true)}
-        className="btn btn-ghost text-[11px]">
-        Sell £{(quote.payout || 0).toLocaleString()}
-      </button>
-    );
-  }
-  return (
-    <div className="col-span-3 mt-1 border border-blood-500/40 bg-blood-700/10 rounded-md p-2 text-[11px]">
-      <div className="mb-1">Sell for <b>£{quote.payout.toLocaleString()}</b>? <span className="text-ink-100/55">({Math.round(quote.condition)}% of £{quote.book.toLocaleString()} book)</span></div>
-      <div className="flex gap-1.5">
-        <button onClick={doSell} disabled={busy} className="btn btn-primary text-[11px] flex-1">
-          {busy ? '…' : 'Confirm sell'}
-        </button>
-        <button onClick={() => setConfirm(false)} disabled={busy} className="btn btn-ghost text-[11px]">
-          Cancel
-        </button>
-      </div>
-      {err && <p className="text-blood-300 mt-1">{err}</p>}
-    </div>
-  );
-}
-
 function FlyPicker({ hangars, currentCity, onCancel, onPick }) {
   const destinations = (hangars || []).filter(h => h.city !== currentCity);
   return (

@@ -46,6 +46,7 @@ export const LOCATIONS = {
   brokerage:      { name: 'Stock Brokerage',    route: '/stocks',         travelable: true,  gated: true,  desc: 'Live tickers and traders in suits. Buy and sell listed stocks.' },
   estate_agent:   { name: 'Estate Agent',       route: '/property',       travelable: true,  gated: true,  desc: 'Property listings and the keys to your next house. Buy, browse, sell.' },
   airport:        { name: 'Airport',            route: '/travel',         travelable: true,  gated: true,  desc: 'Flights to other cities. Set your destination, pay your fare, wheels up.' },
+  aircraft_dealer:{ name: 'Aircraft Broker',    route: '/aircraft-dealer',travelable: true,  gated: true,  desc: 'Private aviation sales floor — buy a plane or helicopter, or trade an aircraft in. Tied to your local hangar.' },
   drug_market:    { name: 'The Block',          route: '/drugs',          travelable: true,  gated: true,  desc: 'Sell drugs you produced in your labs. Prices drift hourly per city — bust risk scales with the flip size.' },
   high_street:    { name: 'High Street',        route: '/high-street',    travelable: true,  gated: true,  desc: 'Coffee shop, pharmacy, off-licence, deli, gift shop — all on one block.' },
   // Jail used to be forced-only — you arrived because you got booked.
