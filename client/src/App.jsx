@@ -112,7 +112,9 @@ function Footer() {
   return (
     <footer className="border-t border-ink-100/10 bg-ink-950/85 backdrop-blur">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
-        <span className="text-[12px] uppercase tracking-wide text-ink-100/40">Mafia Life</span>
+        <span className="text-[12px] uppercase tracking-wide text-ink-100/40">
+          Mafia Life <span className="font-cursive normal-case tracking-normal text-gold-400/70 text-[14px]">Criminal Empire</span>
+        </span>
         <div className="flex items-center gap-2">
           {character.is_admin && (
             <Link

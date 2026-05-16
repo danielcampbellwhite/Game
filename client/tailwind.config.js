@@ -30,6 +30,7 @@ export default {
       fontFamily: {
         sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         display: ['"Bebas Neue"', 'Impact', 'Oswald', 'sans-serif'],
+        cursive: ['"Pinyon Script"', '"Allura"', '"Dancing Script"', 'cursive'],
       },
     },
   },

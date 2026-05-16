@@ -109,8 +109,16 @@ export default function Login() {
       {/* Login form */}
       <div className="card max-w-sm mx-auto">
         <div className="text-center mb-4">
-          <div className="font-display text-5xl text-blood-500">MAFIA LIFE</div>
-          <p className="text-xs text-ink-100/50 mt-1">Build an empire — or rot in jail trying.</p>
+          <div className="relative inline-block pb-3">
+            <span className="font-display text-5xl text-blood-500 leading-none tracking-wide">MAFIA LIFE</span>
+            <span
+              aria-hidden
+              className="font-cursive text-gold-400/95 text-3xl leading-none absolute -bottom-2 right-0 translate-y-3 select-none pointer-events-none whitespace-nowrap"
+              style={{ textShadow: '0 1px 0 rgba(0,0,0,0.55)' }}>
+              Criminal Empire
+            </span>
+          </div>
+          <p className="text-xs text-ink-100/50 mt-3">Build an empire — or rot in jail trying.</p>
           <p className="text-[13px] text-ink-100/40 mt-1">
             <Link to="/patches" className="hover:text-blood-300 transition">Patches & updates →</Link>
           </p>

@@ -271,8 +271,19 @@ export default function Nav() {
     <header className="border-b border-ink-100/10 bg-ink-950/85 backdrop-blur">
       {/*  Top bar — branding + character chip + actions  */}
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3">
-        <Link to="/" className="font-display text-3xl sm:text-4xl text-blood-500 shrink-0" aria-label="Home">
-          MAFIA LIFE
+        <Link
+          to="/"
+          aria-label="Home — Mafia Life: Criminal Empire"
+          className="relative inline-block shrink-0 pb-2 sm:pb-3">
+          <span className="font-display text-3xl sm:text-4xl text-blood-500 leading-none tracking-wide">
+            MAFIA LIFE
+          </span>
+          <span
+            aria-hidden
+            className="font-cursive text-gold-400/95 text-xl sm:text-2xl leading-none absolute -bottom-1 right-0 sm:right-1 translate-y-2 select-none pointer-events-none whitespace-nowrap"
+            style={{ textShadow: '0 1px 0 rgba(0,0,0,0.55)' }}>
+            Criminal Empire
+          </span>
         </Link>
 
         <Link to="/" onClick={onClickGuard} className={charChipClass + ' min-w-0 hidden md:flex'} aria-label="Dashboard">
