@@ -17,18 +17,22 @@ export const HANGAR_BASE_SLOTS = { plane: 1, heli: 1, car: 1 };
 // cars max 5.
 export const HANGAR_MAX = { plane: 2, heli: 3, car: 5 };
 
-// Purchase cost for a base hangar (substantial — this is a real
-// investment, on the scale of a small property). Players unlock the
-// freedom to fly their own aircraft anywhere they own a hangar.
-export const HANGAR_PURCHASE_COST = 500_000;
+// Purchase cost for a base hangar. Sized for the real-world
+// aircraft market — a single G650 fill-up costs £18k, so a
+// £2M lease for the building itself is in the same world.
+// Multi-city aviation empire is a serious investment.
+export const HANGAR_PURCHASE_COST = 2_000_000;
 
 // Per-tier upgrade cost — each successive slot of the same kind
 // is pricier. Plane[0] is the FIRST upgrade past base (so going
-// from 1→2 planes costs PLANE_UPGRADE_COST[0]).
+// from 1→2 planes costs PLANE_UPGRADE_COST[0]). The plane
+// upgrade is steep because it doubles the player's plane capacity
+// per hangar — a full plane-pair represents tens of millions of
+// aircraft value.
 export const SLOT_UPGRADE_COSTS = {
-  plane: [400_000],                          // 1 → 2
-  heli:  [200_000, 350_000],                 // 1 → 2 → 3
-  car:   [50_000, 100_000, 200_000, 400_000],// 1 → 2 → 3 → 4 → 5
+  plane: [3_000_000],                                    // 1 → 2
+  heli:  [800_000, 1_500_000],                           // 1 → 2 → 3
+  car:   [200_000, 400_000, 700_000, 1_200_000],         // 1 → 2 → 3 → 4 → 5
 };
 
 // Load (or null) the hangar in a given city for a character.
