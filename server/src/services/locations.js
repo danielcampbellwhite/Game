@@ -13,6 +13,7 @@
 
 import { db } from '../db.js';
 import { writeLog } from './log.js';
+import { intraDriveFuelCost, consumeFuel } from './fuel.js';
 
 export const WALK_MS  = 45 * 1000;
 export const DRIVE_MS = 10 * 1000;
@@ -100,8 +101,21 @@ export function startTravel(ch, dest, mode) {
   if (dest === here)                                 return { error: `You're already at ${destMeta.name}.` };
 
   let dur;
+  let fuelInfo = null;
   if (mode === 'drive') {
     if (!hasActiveVehicle(ch)) return { error: 'You need an active vehicle to drive.' };
+    // Fuel debit up-front — drain at start so the player commits to
+    // the cost and can't undo by cancelling. If the tank can't cover
+    // the hop, reject before any travel state is written.
+    if (ch.active_vehicle_id) {
+      const veh = db.prepare('SELECT id, vehicle_id FROM vehicles_owned WHERE id = ?').get(ch.active_vehicle_id);
+      if (veh) {
+        const cost = intraDriveFuelCost(veh.vehicle_id);
+        const r = consumeFuel(veh.id, cost);
+        if (r.error) return { error: r.error + ' Walk or refill at the inventory > vehicles tab.' };
+        fuelInfo = { used: cost, remaining: r.fuel };
+      }
+    }
     dur = DRIVE_MS;
   } else if (mode === 'walk' || !mode) {
     dur = WALK_MS;
@@ -122,8 +136,9 @@ export function startTravel(ch, dest, mode) {
     WHERE id = ?
   `).run(arrives, dest, ch.intra_travel_mode, ch.id);
 
-  writeLog(ch.id, 'travel', `Set off ${ch.intra_travel_mode === 'drive' ? 'driving' : 'walking'} to ${destMeta.name}.`);
-  return { ok: true, arrives_at: arrives, mode: ch.intra_travel_mode, to: dest };
+  const fuelNote = fuelInfo ? ` Tank ${Math.round(fuelInfo.remaining)}%.` : '';
+  writeLog(ch.id, 'travel', `Set off ${ch.intra_travel_mode === 'drive' ? 'driving' : 'walking'} to ${destMeta.name}.${fuelNote}`);
+  return { ok: true, arrives_at: arrives, mode: ch.intra_travel_mode, to: dest, fuel: fuelInfo };
 }
 
 // Called from applyTick. If the journey has completed, snap the

@@ -14,6 +14,41 @@ import { fmt } from '../components/Money.jsx';
 //   - active                 → Store (back into local garage)
 //   - in player's city, idle → Equip (player must have no active car)
 //   - elsewhere              → Ship (to another city w/ free space)
+//
+// RefillButton — only shown on the ACTIVE vehicle when fuel < 100.
+// Fetches the live refill quote so the price reflects exactly how
+// empty the tank is right now, then commits with POST /vehicles/refill.
+function RefillButton({ onDone, className = '' }) {
+  const [quote, setQuote] = useState(null);
+  const [busy, setBusy]   = useState(false);
+  const [err, setErr]     = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/vehicles/refill-quote').then(q => { if (!cancelled) setQuote(q); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  async function refill() {
+    setBusy(true); setErr(null);
+    try {
+      await api.post('/vehicles/refill');
+      await onDone?.();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+  if (!quote?.active || quote.full) return null;
+  return (
+    <div className={className}>
+      <button
+        onClick={refill}
+        disabled={busy}
+        className="btn btn-ghost text-xs w-full disabled:opacity-50">
+        {busy ? '…' : `⛽ Refill — £${quote.cost.toLocaleString()}`}
+      </button>
+      {err && <p className="text-[11px] text-blood-300 mt-1">{err}</p>}
+    </div>
+  );
+}
+
 function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
   const [shipping, setShipping] = useState(false);
   const [to, setTo] = useState('');
@@ -69,6 +104,7 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
       </div>
       {typeof v.condition === 'number' && (
         <div className="mt-1 flex items-center gap-2 min-w-0">
+          <span className="text-[10px] uppercase tracking-wider text-ink-100/40 w-10 shrink-0">Cond</span>
           <div className="flex-1 min-w-0 h-1.5 rounded-full bg-ink-800 overflow-hidden">
             <div
               className={v.condition >= 75 ? 'bg-money-500' : v.condition >= 40 ? 'bg-yellow-400' : 'bg-blood-500'}
@@ -77,6 +113,24 @@ function VehicleCard({ v, garages, currentCity, hasActive, onChange }) {
           </div>
           <span className="text-[12px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.condition)}%</span>
         </div>
+      )}
+      {typeof v.fuel === 'number' && (
+        <div className="mt-1 flex items-center gap-2 min-w-0">
+          <span className="text-[10px] uppercase tracking-wider text-ink-100/40 w-10 shrink-0">Fuel</span>
+          <div className="flex-1 min-w-0 h-1.5 rounded-full bg-ink-800 overflow-hidden">
+            <div
+              className={v.fuel >= 50 ? 'bg-cyan-400' : v.fuel >= 20 ? 'bg-yellow-400' : 'bg-blood-500'}
+              style={{ width: `${Math.max(0, Math.min(100, v.fuel))}%`, height: '100%' }}
+            />
+          </div>
+          <span className="text-[12px] text-ink-100/55 tabular-nums w-10 text-right shrink-0">{Math.round(v.fuel)}%</span>
+        </div>
+      )}
+      {v.is_active && typeof v.fuel === 'number' && v.fuel < 100 && (
+        <RefillButton
+          onDone={onChange}
+          className="mt-2"
+        />
       )}
       {v.mods?.length > 0 && (
         <div className="text-[12px] text-ink-100/55 mt-1 truncate">

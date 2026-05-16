@@ -5,6 +5,7 @@ import { CITIES, cityById, landReachableFrom, landDistanceBetween, vehicleById, 
 import { saveCharacter, publicCharacter, applyJailSentence } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
+import { interDriveFuelCost, maxKmOnFullTank } from '../services/fuel.js';
 
 const router = Router();
 
@@ -322,22 +323,35 @@ router.post('/drive', requireAuth, requireCharacter, requireFreeCharacter, (req,
   }
 
   const cost = Math.max(10, Math.round(km * DRIVE_COST_PER_KM));
-  if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost.toLocaleString()} for petrol.` });
+  if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost.toLocaleString()} for tolls and route fees.` });
+
+  // Fuel check — the tank has to cover this distance. Per-km burn
+  // scales by vehicle tier; see services/fuel.js. Reject before we
+  // touch any other state if there isn't enough in the tank.
+  const fuelNeeded = interDriveFuelCost(row.vehicle_id, km);
+  if ((row.fuel ?? 100) < fuelNeeded) {
+    const tankMax = maxKmOnFullTank(row.vehicle_id);
+    return res.status(400).json({
+      error: `Tank can't cover ${km}km. Refill the ${v.maker} ${v.name} first (full tank ≈ ${tankMax}km on this engine).`,
+    });
+  }
+
   const dur = Math.round(km * DRIVE_MS_PER_KM);
 
   ch.cash -= cost;
-  // Drop condition on the active car, and pre-place it at the
+  // Drop condition + fuel on the active car, and pre-place it at the
   // destination — once travel completes, the player and the car will
   // be in the same city and the row's stored city is already correct.
   const newCondition = Math.max(0, row.condition - conditionCost);
-  db.prepare('UPDATE vehicles_owned SET condition = ?, city = ? WHERE id = ?')
-    .run(newCondition, target.id, row.id);
+  const newFuel      = Math.max(0, (row.fuel ?? 100) - fuelNeeded);
+  db.prepare('UPDATE vehicles_owned SET condition = ?, fuel = ?, city = ? WHERE id = ?')
+    .run(newCondition, newFuel, target.id, row.id);
   ch.travel_until = Date.now() + dur;
   ch.travel_to = target.id;
   saveCharacter(ch);
-  writeLog(ch.id, 'travel', `Driving the ${v.maker} ${v.name} to ${target.name} — ${km}km, £${cost} petrol, -${conditionCost.toFixed(1)}% condition.`,
-    { vehicle: v.id, km, cost, conditionCost });
-  res.json({ ok: true, character: publicCharacter(ch), durationMs: dur, km, cost });
+  writeLog(ch.id, 'travel', `Driving the ${v.maker} ${v.name} to ${target.name} — ${km}km, £${cost} in tolls, -${conditionCost.toFixed(1)}% condition, -${Math.round(fuelNeeded)}% fuel (tank ${Math.round(newFuel)}%).`,
+    { vehicle: v.id, km, cost, conditionCost, fuelUsed: fuelNeeded, fuelAfter: newFuel });
+  res.json({ ok: true, character: publicCharacter(ch), durationMs: dur, km, cost, fuelUsed: fuelNeeded, fuelAfter: newFuel });
 });
 
 export default router;

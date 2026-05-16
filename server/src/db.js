@@ -910,6 +910,11 @@ export function initDb() {
   // stolen cars start at 75-100 (rolled at theft time). Selling/repair
   // costs scale with this value.
   addColumnIfMissing('vehicles_owned', 'condition', 'REAL NOT NULL DEFAULT 100');
+  // Fuel tank — 0..100. Defaults to 100 so existing vehicles start
+  // with a full tank rather than stranded at zero. Drained by intra-
+  // and inter-city drives, refilled from the inventory > vehicles
+  // tab (POST /api/vehicles/refill). See services/fuel.js.
+  addColumnIfMissing('vehicles_owned', 'fuel', 'REAL NOT NULL DEFAULT 100');
   // Set when a car is in transit between cities (paid shipping).
   // shipping_until > now ⇒ car is locked: can't be equipped, listed,
   // or re-shipped. The row's `city` already points at the destination

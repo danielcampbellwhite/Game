@@ -70,6 +70,7 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       cityName: cityById(r.city)?.name, acquired_at: r.acquired_at,
       is_active: r.id === ch.active_vehicle_id,
       condition: r.condition ?? 100,
+      fuel:      r.fuel ?? 100,
       shipping_until: r.shipping_until && r.shipping_until > Date.now() ? r.shipping_until : null,
     };
   }).filter(Boolean);
