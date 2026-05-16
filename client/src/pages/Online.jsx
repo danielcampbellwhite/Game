@@ -35,7 +35,8 @@ export default function Online() {
   }
 
   const TABS = [
-    { id: 'flights', label: 'Flights' },
+    { id: 'flights',  label: 'Flights'  },
+    { id: 'vehicles', label: 'Vehicles' },
   ];
 
   const viaLabel = {
@@ -71,9 +72,145 @@ export default function Online() {
         ))}
       </div>
 
-      {tab === 'flights' && <FlightsTab />}
+      {tab === 'flights'  && <FlightsTab />}
+      {tab === 'vehicles' && <VehiclesTab />}
     </div>
   );
+}
+
+function VehiclesTab() {
+  const { character, refresh } = useGame();
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg]   = useState(null);
+  const [destCity, setDestCity] = useState(null);
+  const [tier, setTier] = useState('all');
+  useScrollOnMessage(msg);
+
+  async function load() {
+    try {
+      const d = await api.get('/online/vehicles');
+      setData(d);
+      // Default to the first deliverable city if the player hasn't picked.
+      if (!destCity && d.destinations[0]) setDestCity(d.destinations[0].id);
+    } catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function buy(v) {
+    if (!destCity) { setMsg('Pick a destination city first.'); return; }
+    setBusy(v.id); setMsg(null);
+    try {
+      await api.post('/online/vehicles/buy', { vehicle_id: v.id, destination_city: destCity });
+      const dCity = data.destinations.find(d => d.id === destCity);
+      setMsg(`${v.maker} ${v.name} on the way to ${dCity?.name || destCity}. ETA ${data.leadHours}h.`);
+      await refresh();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!data) return <Card><p className="text-xs text-ink-100/55">Loading vehicle catalogue…</p></Card>;
+
+  if (data.destinations.length === 0) {
+    return (
+      <Card title="No garage to deliver to"
+        subtitle="Online orders are shipped to a garage you own. Buy a property in any city to unlock deliveries.">
+        <Link to="/property" className="btn btn-primary text-xs inline-block">Browse properties →</Link>
+      </Card>
+    );
+  }
+
+  const tiers = ['all', ...Array.from(new Set(data.inventory.map(v => v.tier))).sort((a, b) => a - b)];
+  const list = data.inventory.filter(v => tier === 'all' || v.tier === tier);
+
+  return (
+    <div className="space-y-3">
+      {msg && <Card><p className="text-xs">{msg}</p></Card>}
+
+      <Card title="Deliver to"
+        subtitle={`Online markup ${data.markup_pct}%. Cars take ~${data.leadHours}h to arrive and ship into the garage you choose.`}>
+        <div className="flex flex-wrap gap-1.5">
+          {data.destinations.map(d => (
+            <button key={d.id}
+              onClick={() => setDestCity(d.id)}
+              className={`px-3 py-1.5 rounded-md text-xs ${destCity === d.id ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/60'}`}>
+              {d.name} <span className="text-[11px] opacity-70">{d.free}/{d.capacity}{d.pending ? ` · ${d.pending} en route` : ''}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {data.pending.length > 0 && (
+        <Card title="Incoming deliveries"
+          subtitle="Orders currently in transit.">
+          <ul className="text-xs space-y-1">
+            {data.pending.map(p => (
+              <li key={p.id} className="flex justify-between border-b border-ink-100/5 py-1 last:border-0">
+                <span className="text-ink-100/85">{p.vehicle} → {p.destination}</span>
+                <Countdown until={p.arrives_at} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <Card title="Catalogue"
+        subtitle="Same models as the dealership, plus the online markup. Tier gates the same way.">
+        <div className="flex flex-wrap gap-1 mb-2">
+          {tiers.map(t => (
+            <button key={t}
+              onClick={() => setTier(t)}
+              className={`px-2 py-1 rounded text-[11px] ${tier === t ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/60'}`}>
+              {t === 'all' ? 'All tiers' : `Tier ${t}`}
+            </button>
+          ))}
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {list.map(v => {
+            const dCity = data.destinations.find(d => d.id === destCity);
+            const noSlot = !dCity || dCity.free <= 0;
+            const broke = (character?.bank ?? 0) < v.cost;
+            const disabled = v.locked || noSlot || broke || busy === v.id;
+            return (
+              <div key={v.id} className={`rounded-lg p-3 border bg-ink-950/40 ${v.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="font-medium truncate">{v.maker} {v.name}</div>
+                  <span className="text-[11px] uppercase tracking-wide text-ink-100/55">T{v.tier}</span>
+                </div>
+                <div className="text-money-400 font-semibold mt-1 tabular-nums">{fmt(v.cost)}</div>
+                <div className="text-[11px] text-ink-100/45 line-through tabular-nums">{fmt(v.base)}</div>
+                <button
+                  disabled={disabled}
+                  onClick={() => buy(v)}
+                  className="btn btn-primary text-xs w-full mt-2">
+                  {busy === v.id ? '…'
+                    : v.locked ? `Lvl ${v.levelGate}`
+                    : noSlot ? 'Garage full'
+                    : broke ? 'Bank too low'
+                    : 'Order'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Countdown({ until }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const remaining = Math.max(0, until - now);
+  if (remaining <= 0) return <span className="text-money-300 tabular-nums">Arriving…</span>;
+  const h = Math.floor(remaining / 3_600_000);
+  const m = Math.floor((remaining % 3_600_000) / 60_000);
+  const s = Math.floor((remaining % 60_000) / 1000);
+  return <span className="tabular-nums text-ink-100/70">{h}h {String(m).padStart(2, '0')}m {String(s).padStart(2, '0')}s</span>;
 }
 
 function FlightsTab() {

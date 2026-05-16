@@ -803,6 +803,25 @@ export function initDb() {
       created_at   INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_flight_tickets_char ON flight_tickets(char_id, status);
+
+    -- Online vehicle purchases that haven't been delivered yet. One row
+    -- per car ordered via /api/online/vehicles/buy. Materialised into
+    -- vehicles_owned by services/deliveries.js when arrives_at passes.
+    -- Pending rows count against destination-city garage capacity so a
+    -- player can't oversell their storage by stacking orders.
+    CREATE TABLE IF NOT EXISTS vehicle_deliveries (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      char_id          INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      vehicle_id       TEXT    NOT NULL,
+      destination_city TEXT    NOT NULL,
+      base_cost        INTEGER NOT NULL,
+      cost             INTEGER NOT NULL,
+      ordered_at       INTEGER NOT NULL,
+      arrives_at       INTEGER NOT NULL,
+      status           TEXT    NOT NULL DEFAULT 'pending',
+      delivered_at     INTEGER NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_vehicle_deliveries_char ON vehicle_deliveries(char_id, status);
   `);
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps

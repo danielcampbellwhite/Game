@@ -11,8 +11,12 @@ import { requireAuth, requireCharacter, requireFreeCharacter } from '../middlewa
 import { requireInternet } from '../services/online.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
-import { CITIES, cityById } from '../data.js';
+import { CITIES, cityById, VEHICLES, vehicleById, VEHICLE_TIER_LEVEL_GATE } from '../data.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
+import { garageCapacity, vehicleCount } from '../services/garage.js';
+import {
+  DELIVERY_LEAD_MS, listPendingDeliveries, pendingDeliveryCountInCity,
+} from '../services/deliveries.js';
 
 const router = Router();
 
@@ -122,6 +126,109 @@ router.post('/flights/ticket', requireAuth, requireCharacter, requireFreeCharact
   writeLog(ch.id, 'travel',
     `Booked ${klass} ticket to ${target.name} online for £${cost.toLocaleString()} (incl. ${Math.round(ONLINE_MARKUP * 100)}% markup). Head to the airport to board.`);
   res.json({ ok: true, departsAt, cost, base, character: publicCharacter(ch) });
+});
+
+// ─── Vehicle delivery ─────────────────────────────────────────
+// Online car ordering. The dealer ships to any city where the player
+// owns a garage (== owns a property with a garage slot). Markup is the
+// same 8% as flights. Pays from bank. Delivery is wall-clock 4 hours
+// (DELIVERY_LEAD_MS) and the car materialises into vehicles_owned via
+// applyTick → materializeReadyDeliveries.
+
+function deliverableCities(charId) {
+  // Cities where the player owns at least one garage slot.
+  return CITIES
+    .map(c => {
+      const cap = garageCapacity(charId, c.id);
+      if (cap <= 0) return null;
+      const used = vehicleCount(charId, c.id);
+      const pending = pendingDeliveryCountInCity(charId, c.id);
+      return {
+        id: c.id, name: c.name, emoji: c.emoji,
+        capacity: cap, used, pending,
+        free: Math.max(0, cap - used - pending),
+      };
+    })
+    .filter(Boolean);
+}
+
+router.get('/vehicles', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const destinations = deliverableCities(ch.id);
+  const totalFree = destinations.reduce((s, d) => s + d.free, 0);
+  const inventory = VEHICLES.map(v => {
+    const cityMul = cityById(ch.city)?.businessMul || 1.0;
+    const base = Math.floor(v.bookPrice * cityMul);
+    return {
+      id: v.id, name: v.name, maker: v.maker, tier: v.tier,
+      bookPrice: v.bookPrice,
+      base,
+      cost: onlinePrice(base),
+      levelGate: VEHICLE_TIER_LEVEL_GATE[v.tier] || 1,
+      locked: ch.level < (VEHICLE_TIER_LEVEL_GATE[v.tier] || 1),
+    };
+  });
+  const pending = listPendingDeliveries(ch.id).map(d => {
+    const v = vehicleById(d.vehicle_id);
+    return {
+      id: d.id,
+      vehicle: v ? `${v.maker} ${v.name}` : d.vehicle_id,
+      destination: cityById(d.destination_city)?.name || d.destination_city,
+      arrives_at: d.arrives_at,
+      cost: d.cost,
+    };
+  });
+  res.json({
+    inventory,
+    destinations,
+    totalFree,
+    pending,
+    leadHours: Math.round(DELIVERY_LEAD_MS / 3_600_000),
+    markup_pct: Math.round(ONLINE_MARKUP * 100),
+  });
+});
+
+router.post('/vehicles/buy', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const v = vehicleById(req.body?.vehicle_id);
+  if (!v) return res.status(400).json({ error: 'Unknown vehicle.' });
+  const destCity = req.body?.destination_city;
+  const target = cityById(destCity);
+  if (!target) return res.status(400).json({ error: 'Pick a destination city you own a garage in.' });
+  const levelGate = VEHICLE_TIER_LEVEL_GATE[v.tier] || 1;
+  if (ch.level < levelGate) {
+    return res.status(403).json({ error: `Tier ${v.tier} cars unlock at level ${levelGate}.` });
+  }
+  const cap = garageCapacity(ch.id, destCity);
+  if (cap <= 0) {
+    return res.status(400).json({ error: `You don't own a garage in ${target.name}. Buy a property there first.` });
+  }
+  const used    = vehicleCount(ch.id, destCity);
+  const pending = pendingDeliveryCountInCity(ch.id, destCity);
+  if (used + pending >= cap) {
+    return res.status(400).json({
+      error: `No free space in your ${target.name} garage (${used}/${cap} parked, ${pending} on the way).`,
+    });
+  }
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const base = Math.floor(v.bookPrice * cityMul);
+  const cost = onlinePrice(base);
+  if (ch.bank < cost) {
+    return res.status(400).json({ error: `Need £${cost.toLocaleString()} in your bank account to pay online.` });
+  }
+  ch.bank -= cost;
+  const now = Date.now();
+  const arrives = now + DELIVERY_LEAD_MS;
+  db.prepare(`
+    INSERT INTO vehicle_deliveries
+      (char_id, vehicle_id, destination_city, base_cost, cost, ordered_at, arrives_at, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+  `).run(ch.id, v.id, destCity, base, cost, now, arrives);
+  writeLog(ch.id, 'delivery',
+    `Ordered ${v.maker} ${v.name} online for £${cost.toLocaleString()} (incl. ${Math.round(ONLINE_MARKUP * 100)}% markup). Delivery to ${target.name} in ~${Math.round(DELIVERY_LEAD_MS / 3_600_000)}h.`,
+    { vehicle: v.id, city: destCity, cost, eta: arrives });
+  saveCharacter(ch);
+  res.json({ ok: true, arrives_at: arrives, cost, base, character: publicCharacter(ch) });
 });
 
 export default router;
