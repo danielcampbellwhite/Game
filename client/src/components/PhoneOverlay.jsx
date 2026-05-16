@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import ChatPanel from './ChatPanel.jsx';
+import Messages from '../pages/Messages.jsx';
+import Newspaper from '../pages/Newspaper.jsx';
+import Stocks from '../pages/Stocks.jsx';
+import { BankAppTab, FlightsTab, VehiclesTab, WeaponsTab } from '../pages/Online.jsx';
 
 // iPhone-styled overlay that opens when the player taps the floating
 // phone button. Has its own internal "screen" state so apps can open
@@ -77,15 +81,20 @@ const APP_ICONS = {
   )},
 };
 
+// Each app opens AS A SCREEN inside the phone — no navigation, the
+// component renders directly inside the device frame so the player
+// feels like they're flicking between phone apps. `title` is shown
+// on the in-phone header bar; `Component` is rendered into the screen
+// body when the app is open.
 const APPS = [
-  { id: 'chat',     label: 'Chat',     screen: 'chat'                                            },
-  { id: 'messages', label: 'Messages', to:     '/messages',           hint: 'DMs'                },
-  { id: 'bank',     label: 'Bank',     to:     '/online?tab=bank'                                },
-  { id: 'flights',  label: 'Flights',  to:     '/online?tab=flights'                             },
-  { id: 'cars',     label: 'Cars',     to:     '/online?tab=vehicles', hint: 'Ship to a garage'  },
-  { id: 'weapons',  label: 'Gear',     to:     '/online?tab=weapons',  hint: 'Ship to property'  },
-  { id: 'news',     label: 'Gazette',  to:     '/newspaper'                                      },
-  { id: 'markets',  label: 'Markets',  to:     '/stocks'                                         },
+  { id: 'chat',     label: 'Chat',     title: 'Live Chat', screen: 'chat'      },
+  { id: 'messages', label: 'Messages', title: 'Messages',  screen: 'messages'  },
+  { id: 'bank',     label: 'Bank',     title: 'Bank',      screen: 'bank'      },
+  { id: 'flights',  label: 'Flights',  title: 'Flights',   screen: 'flights'   },
+  { id: 'cars',     label: 'Cars',     title: 'Cars',      screen: 'cars'      },
+  { id: 'weapons',  label: 'Gear',     title: 'Gear',      screen: 'weapons'   },
+  { id: 'news',     label: 'Gazette',  title: 'Gazette',   screen: 'news'      },
+  { id: 'markets',  label: 'Markets',  title: 'Markets',   screen: 'markets'   },
 ];
 
 function AppTile({ app, disabled, onPick }) {
@@ -151,15 +160,10 @@ export default function PhoneOverlay({ open, onClose }) {
   const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   function launch(app) {
-    if (app.screen) {
-      setScreen(app.screen);
-      return;
-    }
-    if (app.to) {
-      nav(app.to);
-      onClose?.();
-    }
+    if (app.screen) setScreen(app.screen);
   }
+
+  const activeApp = APPS.find(a => a.screen === screen);
 
   // Header shown above the active app screen (chat etc.) — a back
   // arrow returns to the home grid.
@@ -177,6 +181,13 @@ export default function PhoneOverlay({ open, onClose }) {
       </div>
     );
   }
+
+  // Compact CSS scope applied to every embedded page rendered inside
+  // the phone screen. The pages were designed for a wide layout; we
+  // shrink the body type and tighten the card padding so they fit a
+  // ~298px phone viewport without overflow. Anything that uses md:
+  // breakpoints just stays in its mobile layout — we never widen.
+  const phonePageWrap = 'text-[12px] [&_.card]:p-3 [&_.btn]:py-1.5 [&_.btn]:px-2 [&_h3]:text-base';
 
   return (
     <div
@@ -219,8 +230,9 @@ export default function PhoneOverlay({ open, onClose }) {
         {/* Screen body */}
         <div className="flex-1 relative z-10 flex flex-col min-h-0">
           {screen === 'home' && (
-            <div className="flex-1 overflow-y-auto scrollbar px-5 pt-4 pb-4">
-              <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+            <div className="flex-1 overflow-y-auto scrollbar px-6 pt-6 pb-4">
+              {/* 3-column grid with generous spacing so icons breathe. */}
+              <div className="grid grid-cols-3 gap-x-6 gap-y-7">
                 {APPS.map(app => (
                   <AppTile
                     key={app.id}
@@ -240,28 +252,42 @@ export default function PhoneOverlay({ open, onClose }) {
             </div>
           )}
 
-          {screen === 'chat' && (
+          {activeApp && (
             <>
-              <AppHeader title="Live Chat" />
-              <div className="flex-1 min-h-0">
-                <ChatPanel onPickDms={() => { nav('/messages'); onClose?.(); }} />
+              <AppHeader title={activeApp.title} />
+              <div className="flex-1 min-h-0 overflow-y-auto scrollbar bg-ink-950/85">
+                {/* Each app's content renders as if it were a tiny
+                    mobile web view. Embedded page components stay
+                    self-contained — they reuse the same /api/* calls
+                    they would on their own routes. */}
+                {screen === 'chat'     && <ChatPanel onPickDms={() => setScreen('messages')} />}
+                {screen === 'messages' && <div className={`${phonePageWrap} p-2`}><Messages /></div>}
+                {screen === 'bank'     && <div className={`${phonePageWrap} p-2`}><BankAppTab /></div>}
+                {screen === 'flights'  && <div className={`${phonePageWrap} p-2`}><FlightsTab /></div>}
+                {screen === 'cars'     && <div className={`${phonePageWrap} p-2`}><VehiclesTab /></div>}
+                {screen === 'weapons'  && <div className={`${phonePageWrap} p-2`}><WeaponsTab /></div>}
+                {screen === 'news'     && <div className={`${phonePageWrap} p-2`}><Newspaper /></div>}
+                {screen === 'markets'  && <div className={`${phonePageWrap} p-2`}><Stocks /></div>}
               </div>
             </>
           )}
         </div>
 
-        {/* Dock bar with the home indicator + power-style lock */}
-        <div className="relative z-10 px-4 py-2 flex items-center justify-between shrink-0 border-t border-white/5 bg-black/40 backdrop-blur">
-          <span className="text-[10px] uppercase tracking-wider text-white/55 truncate">{character?.name || 'Mafia Life'}</span>
+        {/* iPhone-style hardware home button. One tap closes the
+            current app (back to the home grid); tapping it on the
+            home screen locks the phone (closes the overlay). */}
+        <div className="relative z-20 pt-2 pb-3 shrink-0 flex items-center justify-center">
           <button
             type="button"
-            onClick={onClose}
-            className="text-[11px] uppercase tracking-wider text-white/80 hover:text-white px-3 py-1 rounded-md hover:bg-white/10">
-            Lock
+            onClick={() => { screen === 'home' ? onClose?.() : setScreen('home'); }}
+            aria-label={screen === 'home' ? 'Lock phone' : 'Home'}
+            title={screen === 'home' ? 'Lock' : 'Home'}
+            className="w-11 h-11 rounded-full bg-ink-1000 border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_2px_6px_rgba(0,0,0,0.6)] hover:bg-ink-950 active:scale-95 transition flex items-center justify-center">
+            {/* Inner concentric square — matches the classic iPhone
+                home glyph without needing an image asset. */}
+            <span aria-hidden className="block w-4 h-4 rounded-[5px] border-2 border-white/55" />
           </button>
         </div>
-        {/* Home bar */}
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-28 h-1 bg-white/45 rounded-full z-20" />
       </div>
     </div>
   );

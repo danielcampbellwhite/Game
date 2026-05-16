@@ -92,7 +92,7 @@ export default function Online() {
   );
 }
 
-function BankAppTab() {
+export function BankAppTab() {
   const [data, setData] = useState(null);
   const [msg, setMsg]   = useState(null);
   useEffect(() => {
@@ -136,7 +136,7 @@ function BankAppTab() {
   );
 }
 
-function WeaponsTab() {
+export function WeaponsTab() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -289,7 +289,7 @@ function GearGrid({ items, kind, extra, cash, busy, onBuy }) {
   );
 }
 
-function VehiclesTab() {
+export function VehiclesTab() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -424,7 +424,7 @@ function Countdown({ until }) {
   return <span className="tabular-nums text-ink-100/70">{h}h {String(m).padStart(2, '0')}m {String(s).padStart(2, '0')}s</span>;
 }
 
-function FlightsTab() {
+export function FlightsTab() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
