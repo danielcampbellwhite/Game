@@ -274,17 +274,14 @@ export default function Nav() {
         <Link
           to="/"
           aria-label="Home — Mafia Life: Criminal Empire"
-          className="relative inline-block shrink-0">
+          className="relative inline-block shrink-0 pb-2 sm:pb-3">
           <span className="font-display text-3xl sm:text-4xl text-blood-500 leading-none tracking-wide">
             MAFIA LIFE
           </span>
           <span
             aria-hidden
-            className="font-cursive text-gold-300 text-2xl sm:text-3xl leading-none absolute inset-0 flex items-center justify-center select-none pointer-events-none whitespace-nowrap z-10"
-            style={{
-              textShadow: '0 0 12px rgba(0,0,0,0.85), 0 1px 0 rgba(0,0,0,0.7), 0 0 4px rgba(252,211,77,0.45)',
-              transform: 'translateY(8%)',
-            }}>
+            className="font-cursive text-gold-400/95 text-xl sm:text-2xl leading-none absolute -bottom-1 right-0 sm:right-1 translate-y-2 select-none pointer-events-none whitespace-nowrap"
+            style={{ textShadow: '0 1px 0 rgba(0,0,0,0.55)' }}>
             Criminal Empire
           </span>
         </Link>
