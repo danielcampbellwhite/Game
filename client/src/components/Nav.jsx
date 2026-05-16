@@ -301,7 +301,7 @@ export default function Nav() {
             onClick={onClickGuard}
             aria-label="Messages"
             title="Messages"
-            className={`relative px-2 py-1 rounded-md transition flex items-center justify-center ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-white'}`}>
+            className={`relative px-2 py-1 rounded-md transition hidden md:flex items-center justify-center ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : 'hover:bg-ink-800/60 text-white'}`}>
             {/* Inline SVG envelope — pure white, bigger than the
                 emoji glyph it replaces, scales cleanly across DPRs. */}
             <svg
@@ -327,11 +327,19 @@ export default function Nav() {
             onClick={onClickGuard}
             aria-label="Gold Bars store"
             title={`Gold Bars: ${character?.premium_points || 0}`}
-            className={`px-2 py-1 rounded-md transition flex items-center gap-1 text-gold-300 ${lockedOut ? 'opacity-30 cursor-not-allowed' : 'hover:bg-ink-800/60'}`}>
-            <span aria-hidden></span>
+            className={`px-2 py-1 rounded-md transition flex items-center gap-1.5 text-gold-300 ${lockedOut ? 'opacity-30 cursor-not-allowed' : 'hover:bg-ink-800/60'}`}>
+            {/* Gold-bar SVG — small trapezoidal ingot with a top
+                highlight, scales cleanly to any DPR. */}
+            <svg viewBox="0 0 20 14" className="w-5 h-3.5 shrink-0" aria-hidden>
+              <polygon points="3,2 17,2 19,12 1,12" fill="currentColor" />
+              <polygon points="3,2 17,2 15,5 5,5" fill="#fff" opacity="0.35" />
+              <line x1="6" y1="8" x2="14" y2="8" stroke="#000" strokeOpacity="0.2" strokeWidth="0.5" />
+            </svg>
             <span className="text-[13px] tabular-nums font-medium">{character?.premium_points || 0}</span>
           </Link>
-          <MuteToggle />
+          <div className="hidden md:flex">
+            <MuteToggle />
+          </div>
           <NotificationBell />
           {/* Mobile-only hamburger — toggles the nav-links drawer below.
               Desktop (md+) renders the nav links inline so this is hidden. */}
@@ -346,13 +354,31 @@ export default function Nav() {
         </div>
       </div>
 
+      {/*  Mobile-only character strip — name + level/prestige/rank +
+           reputation. Sits between the top bar and the stats so
+           the player can see who they are at a glance without
+           the desktop inline chip.  */}
+      {character && (
+        <div className="md:hidden border-t border-ink-100/10 bg-ink-900/40">
+          <Link
+            to="/"
+            onClick={onClickGuard}
+            className={`max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex items-baseline justify-between gap-2 ${lockedOut ? 'text-ink-100/30 cursor-not-allowed' : ''}`}>
+            <div className="text-sm font-medium truncate">{character.name}</div>
+            <div className="text-[12px] text-ink-100/55 whitespace-nowrap shrink-0">
+              Lvl {character.level}{character.prestige ? ` ★${character.prestige}` : ''} · {character.rank} · Rep {character.reputation?.toLocaleString() || 0}
+            </div>
+          </Link>
+        </div>
+      )}
+
       {/*  Condensed stats strip  */}
       {character && (
         <div className="border-t border-ink-100/10 bg-ink-900/40">
           <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-1 text-xs">
             <MiniStat label="Energy"  value={character.energy}    max={character.max_energy} color="bg-yellow-400" />
             <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
-            <MiniStat label="Happy"   value={character.happiness} max={100}                  color="bg-pink-400"   />
+            <MiniStat label="Moral"   value={character.happiness} max={100}                  color="bg-pink-400"   />
             <div className="min-w-0 leading-tight">
               <div className="flex items-baseline justify-between gap-2 text-[12px] uppercase text-ink-100/55">
                 <span>{character.at_max_level ? 'Max Lvl' : 'XP'}</span>

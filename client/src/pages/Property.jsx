@@ -81,7 +81,7 @@ function OwnedCard({ p, here, character, modsCatalogue, modSlots, onChange, setM
         </div>
         <div className="text-right text-[12px] whitespace-nowrap">
           <div className={here ? 'text-money-400' : 'text-ink-100/40'}>
-            +{p.bonuses?.max_energy} en · +{p.bonuses?.max_nerve} nv · +{p.bonuses?.happiness} hp
+            +{p.bonuses?.max_energy} en · +{p.bonuses?.max_nerve} nv · +{p.bonuses?.happiness} mr
           </div>
           <div className="text-blood-300 mt-0.5">def {p.defence}</div>
         </div>
@@ -249,7 +249,7 @@ export default function Property() {
                     </div>
                   </div>
                   <div className="text-[13px] text-ink-100/60 mt-2">
-                    +{p.bonuses.max_energy} en · +{p.bonuses.max_nerve} nv · +{p.bonuses.happiness} hp · def {p.defence}
+                    +{p.bonuses.max_energy} en · +{p.bonuses.max_nerve} nv · +{p.bonuses.happiness} mr · def {p.defence}
                   </div>
                   {p.modsValue > 0 && (
                     <div className="text-[11px] text-ink-100/55 mt-0.5">Mods installed (worth {fmt(p.modsValue)}).</div>
@@ -283,7 +283,7 @@ export default function Property() {
                   </div>
                 </div>
                 <div className="text-[13px] text-ink-100/60 mt-2">
-                  +{p.bonuses.max_energy} energy · +{p.bonuses.max_nerve} nerve · +{p.bonuses.happiness} happiness
+                  +{p.bonuses.max_energy} energy · +{p.bonuses.max_nerve} nerve · +{p.bonuses.happiness} moral
                 </div>
                 {p.garage > 0 && (
                   <div className="text-[12px] text-ink-100/50 mt-0.5">{p.garage} garage spaces</div>

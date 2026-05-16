@@ -9,7 +9,7 @@ import React from 'react';
 const VITAL_STYLE = {
   energy:    { label: 'Energy', pos: 'border-yellow-400/60 text-yellow-300', neg: 'border-yellow-700/40 text-yellow-300/60' },
   health:    { label: 'Health', pos: 'border-money-500/60  text-money-300',  neg: 'border-blood-500/60  text-blood-300'      },
-  happiness: { label: 'Happy',  pos: 'border-pink-400/60   text-pink-300',   neg: 'border-pink-700/40   text-pink-300/60'   },
+  happiness: { label: 'Moral',  pos: 'border-pink-400/60   text-pink-300',   neg: 'border-pink-700/40   text-pink-300/60'   },
 };
 
 // Stats that no longer affect gameplay — hide them from the UI even
