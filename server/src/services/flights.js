@@ -15,6 +15,8 @@ export function flightDurationMs(fromCity, toCity, durationMul) {
   const from = cityById(fromCity);
   const to = cityById(toCity);
   if (!from || !to) return 0;
-  const baseMin = 5 + Math.abs(CITIES.indexOf(from) - CITIES.indexOf(to)) * 2;
+  // Doubled in 2026-05 — gives the in-flight world-map progress
+  // animation enough wall-clock to feel like a real journey.
+  const baseMin = 10 + Math.abs(CITIES.indexOf(from) - CITIES.indexOf(to)) * 4;
   return Math.floor(baseMin * 60 * 1000 * durationMul);
 }

@@ -822,6 +822,16 @@ export function initDb() {
   // requires storing your active car in a local garage first; selling
   // (any outlet) targets the active car.
   addColumnIfMissing('characters', 'active_vehicle_id', 'INTEGER REFERENCES vehicles_owned(id) ON DELETE SET NULL');
+  // Stamp set whenever inter-city travel begins (flight boarded
+  // / road trip started / private aircraft takeoff). Pairs with
+  // travel_until so the client can compute progress without a
+  // server round-trip: progress = (now - started_at) / (until -
+  // started_at). Cleared on arrival.
+  addColumnIfMissing('characters', 'travel_started_at', 'INTEGER');
+  // Travel mode for the current inter-city trip — 'plane' / 'helicopter'
+  // / 'car'. Drives the in-flight world-map icon (plane vs car vs heli).
+  // Cleared on arrival alongside travel_until.
+  addColumnIfMissing('characters', 'travel_mode', 'TEXT');
   // Stash rows belonging to a specific property — each owned house
   // has its own pool now, scoped by property_owned_id rather than
   // a shared city-wide bucket. Existing rows get backfilled to the

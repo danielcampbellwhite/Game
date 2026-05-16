@@ -20,8 +20,8 @@ const CONDITION_LOSS_PER_KM   = 1 / 500; // 1% per 500km
 // then a 30 s boarding window, then takeoff. Tickets bought before
 // the window are valid; once the window passes without boarding,
 // the ticket lapses and the cash is gone.
-const FLIGHT_INTERVAL_MS = 5 * 60 * 1000;
-const BOARDING_WINDOW_MS = 30 * 1000;
+const FLIGHT_INTERVAL_MS = 10 * 60 * 1000;
+const BOARDING_WINDOW_MS = 2 * 60 * 1000;
 
 function nextDepartureAt(now = Date.now()) {
   return Math.ceil(now / FLIGHT_INTERVAL_MS) * FLIGHT_INTERVAL_MS;
@@ -212,8 +212,11 @@ router.post('/board/:ticketId', requireAuth, requireCharacter, requireFreeCharac
     ch.travel_to = null;
     writeLog(ch.id, 'travel', `Instant first-class to ${target.name}.`);
   } else {
-    ch.travel_until = Date.now() + dur;
+    const now2 = Date.now();
+    ch.travel_started_at = now2;
+    ch.travel_until = now2 + dur;
     ch.travel_to = target.id;
+    ch.travel_mode = 'plane';
     writeLog(ch.id, 'travel', `Boarded ${t.class} flight to ${target.name} (${Math.round(dur/60000)} min).`);
   }
   saveCharacter(ch);
@@ -279,8 +282,11 @@ router.post('/fly', requireAuth, requireCharacter, requireFreeCharacter, (req, r
     ch.travel_to = null;
     writeLog(ch.id, 'travel', `Instant first-class to ${target.name} (£${cost}).`);
   } else {
-    ch.travel_until = Date.now() + dur;
+    const now3 = Date.now();
+    ch.travel_started_at = now3;
+    ch.travel_until = now3 + dur;
     ch.travel_to = target.id;
+    ch.travel_mode = 'plane';
     writeLog(ch.id, 'travel', `Boarded ${klass} flight to ${target.name} (£${cost}, ${Math.round(dur/60000)} min).`);
   }
   saveCharacter(ch);
@@ -346,7 +352,10 @@ router.post('/drive', requireAuth, requireCharacter, requireFreeCharacter, (req,
   const newFuel      = Math.max(0, (row.fuel ?? 100) - fuelNeeded);
   db.prepare('UPDATE vehicles_owned SET condition = ?, fuel = ?, city = ? WHERE id = ?')
     .run(newCondition, newFuel, target.id, row.id);
-  ch.travel_until = Date.now() + dur;
+  const nowDrive = Date.now();
+  ch.travel_started_at = nowDrive;
+  ch.travel_until = nowDrive + dur;
+  ch.travel_mode = 'car';
   ch.travel_to = target.id;
   saveCharacter(ch);
   writeLog(ch.id, 'travel', `Driving the ${v.maker} ${v.name} to ${target.name} — ${km}km, £${cost} in tolls, -${conditionCost.toFixed(1)}% condition, -${Math.round(fuelNeeded)}% fuel (tank ${Math.round(newFuel)}%).`,

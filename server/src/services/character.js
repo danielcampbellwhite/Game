@@ -224,6 +224,8 @@ export function applyTick(ch) {
     ch.city = arrivedCity;
     ch.travel_until = null;
     ch.travel_to = null;
+    ch.travel_started_at = null;
+    ch.travel_mode = null;
     // Landing in a new city dumps you on the streets — buildings
     // reset; you walk in fresh. Also wipes any stale intra-city
     // travel state from the previous city.
@@ -316,7 +318,7 @@ const SAVE_STMT = `
     reputation = ?,
     cash = ?, bank = ?, dirty_cash = ?,
     jail_until = ?, jail_reason = ?, jail_sentence_ms = ?, hospital_until = ?, hospital_reason = ?,
-    travel_until = ?, travel_to = ?,
+    travel_until = ?, travel_to = ?, travel_started_at = ?, travel_mode = ?,
     current_location = ?, intra_travel_until = ?, intra_travel_to = ?, intra_travel_mode = ?,
     last_tick = ?, last_health_tick = ?, last_daily = ?, login_streak = ?,
     bank_last_interest = ?,
@@ -363,7 +365,7 @@ export function saveCharacter(ch) {
     ch.cash, ch.bank, ch.dirty_cash,
     ch.jail_until, ch.jail_reason || null, ch.jail_sentence_ms || null,
     ch.hospital_until, ch.hospital_reason || null,
-    ch.travel_until, ch.travel_to,
+    ch.travel_until, ch.travel_to, ch.travel_started_at || null, ch.travel_mode || null,
     ch.current_location || 'streets', ch.intra_travel_until || null, ch.intra_travel_to || null, ch.intra_travel_mode || null,
     ch.last_tick, ch.last_health_tick, ch.last_daily, ch.login_streak,
     ch.bank_last_interest,
@@ -528,6 +530,8 @@ export function publicCharacter(ch) {
     jail_until: ch.jail_until, jail_reason: ch.jail_reason || null,
     hospital_until: ch.hospital_until, hospital_reason: ch.hospital_reason || null,
     travel_until: ch.travel_until, travel_to: ch.travel_to,
+    travel_started_at: ch.travel_started_at || null,
+    travel_mode: ch.travel_mode || null,
     current_location:   ch.current_location || 'streets',
     // Looked-up name + route + gated flag for the current slug so
     // the nav can render a one-tap "go to where I'm standing"

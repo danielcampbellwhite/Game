@@ -177,8 +177,11 @@ router.post('/fly', ...atAirport, requireFreeCharacter, (req, res) => {
   db.prepare('UPDATE vehicles_owned SET fuel = ?, city = ? WHERE id = ?').run(newFuel, target.id, row.id);
 
   const dur = Math.max(1500, Math.round(km * AIRCRAFT_MS_PER_KM[a.class]));
-  ch.travel_until = Date.now() + dur;
+  const nowFly = Date.now();
+  ch.travel_started_at = nowFly;
+  ch.travel_until = nowFly + dur;
   ch.travel_to    = target.id;
+  ch.travel_mode  = a.class; // 'plane' or 'helicopter'
   saveCharacter(ch);
   writeLog(ch.id, 'aviation', ` Flying the ${a.maker} ${a.name} to ${target.name} — ${km}km, ${Math.round(fuelNeeded)}% fuel.`,
     { aircraft: a.id, km, fuelUsed: fuelNeeded, fuelAfter: newFuel, to: target.id });

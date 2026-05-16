@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import LockBadge from '../components/LockBadge.jsx';
+import TravelMap from '../components/TravelMap.jsx';
 import { fmt } from '../components/Money.jsx';
 
 // Format a positive ms duration as MM:SS for the live countdowns.
@@ -88,9 +89,20 @@ export default function Travel() {
   // class-picker buttons.
   const ticketByCity = Object.fromEntries((data.tickets || []).map(t => [t.to_city, t]));
 
+  // Travel progress map — shown when the player is mid-flight or
+  // mid-drive between cities. Reads timestamps off the character
+  // object so it survives a refresh. mode hint comes from the
+  // character's last travel kick-off (boarded flight / drove
+  // road trip / flew private aircraft) — see TravelProgress below.
+  const travelling = character?.travel_until && character.travel_until > Date.now();
+
   return (
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
+
+      {travelling && (
+        <TravelProgress character={character} onArrive={async () => { await refresh(); await load(); }} />
+      )}
 
       {/* Tabs — split the airport into commercial (book a seat) and
           private/hangar (your own aircraft + storage). */}
@@ -210,6 +222,52 @@ export default function Travel() {
       </Card>
       </>}
     </div>
+  );
+}
+
+// Wrapper around TravelMap that infers the mode and auto-refreshes
+// when arrival is due. The "mode" hint is best-effort — we don't
+// currently log it on the character. Default to plane (commercial
+// is the most common path); future enhancement: persist
+// travel_mode = 'plane' | 'helicopter' | 'car' on travel start.
+function TravelProgress({ character, onArrive }) {
+  const fromCity = character.city; // pre-arrival, character.city is still origin
+  // Actually `character.city` updates on arrival via applyTick;
+  // the origin we need is captured from where they were when travel
+  // started, which we don't persist. As a fallback, infer from the
+  // route: travel_to is destination. We can't recover origin cleanly
+  // for older sessions — for new sessions the origin equals
+  // current city until applyTick flips it on arrival. Good enough
+  // for V1: character.city always holds origin while in transit.
+  const toCity   = character.travel_to;
+  const started  = character.travel_started_at;
+  const until    = character.travel_until;
+  const mode     = character.travel_mode || 'plane';
+
+  // Watch for arrival — refresh once when the timer hits zero so
+  // the post-arrival state lands without a manual refresh.
+  useEffect(() => {
+    if (!until) return;
+    const remaining = until - Date.now();
+    if (remaining <= 0) {
+      onArrive?.();
+      return;
+    }
+    const t = setTimeout(() => onArrive?.(), remaining + 250);
+    return () => clearTimeout(t);
+  }, [until, onArrive]);
+
+  if (!fromCity || !toCity || !until) return null;
+
+  return (
+    <TravelMap
+      fromCity={fromCity}
+      toCity={toCity}
+      startedAt={started}
+      until={until}
+      mode={mode}
+      label={mode === 'car' ? 'Driving cross-country' : mode === 'helicopter' ? 'Helicopter in flight' : 'Flight in progress'}
+    />
   );
 }
 
