@@ -9,6 +9,7 @@ import MuteToggle from './MuteToggle.jsx';
 const links = [
   { to: '/inventory',  label: 'Inventory' },
   { to: '/city',       label: 'City'      },
+  { to: '/online',     label: 'Online'    },
   { to: '/crimes',     label: 'Crimes'    },
   { to: '/jobs',       label: 'Job Board' },
   { to: '/businesses', label: 'My Businesses'},
