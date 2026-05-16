@@ -442,6 +442,9 @@ export default function Nav() {
   // main nav rather than the footer.
   const signOut = useCallback(() => { logout(); nav('/login'); }, [logout, nav]);
 
+  const [dmUnread, setDmUnread] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   // While the mobile drawer is open, lock body scroll so the page
   // behind the menu can't move under the user's finger. Restored on
   // close (or unmount). No-op on desktop where the drawer never opens.
@@ -451,8 +454,6 @@ export default function Nav() {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, [menuOpen]);
-  const [dmUnread, setDmUnread] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
   // Local tick clock so the intra-city travel countdown updates every
   // 500ms without waiting for the 30s character refresh.
   const [clock, setClock] = useState(() => Date.now());
