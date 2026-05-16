@@ -80,6 +80,79 @@ function topEarners(city, since, n = 5) {
   }));
 }
 
+// Biggest SINGLE-attempt crime takes in the last 24h. Distinct from
+// topEarners (which sums across the day) — surfaces the spectacular
+// one-offs that make for actual newspaper copy.
+function bigScores(city, since, n = 5) {
+  const rows = db.prepare(`
+    SELECT l.id, l.char_id, l.created_at, l.message, c.name, c.reputation,
+           CAST(json_extract(l.meta_json, '$.payout') AS INTEGER) AS payout,
+           json_extract(l.meta_json, '$.crime') AS crime
+    FROM log l
+    JOIN characters c ON c.id = l.char_id
+    WHERE c.city = ? AND l.created_at >= ?
+      AND l.type = 'crime'
+      AND json_extract(l.meta_json, '$.payout') IS NOT NULL
+      AND CAST(json_extract(l.meta_json, '$.payout') AS INTEGER) > 0
+    ORDER BY payout DESC
+    LIMIT ?
+  `).all(city, since, n);
+  return rows.map(r => ({
+    name:    display(r.name, r.reputation, r.char_id),
+    payout:  r.payout,
+    crime:   r.crime,
+    when:    r.created_at,
+  }));
+}
+
+// Murders that landed in the last 24 h, attacker side (the kill
+// outcome is logged on both attacker and victim; we read the attacker
+// row so we can pull cashTaken from meta).
+function recentMurders(city, since, n = 12) {
+  const rows = db.prepare(`
+    SELECT l.id, l.char_id, l.created_at, l.message, c.name, c.reputation,
+           CAST(json_extract(l.meta_json, '$.target')    AS INTEGER) AS target_id,
+           CAST(json_extract(l.meta_json, '$.cashTaken') AS INTEGER) AS cash_taken,
+           json_extract(l.meta_json, '$.outcome')                    AS outcome
+    FROM log l
+    JOIN characters c ON c.id = l.char_id
+    WHERE c.city = ? AND l.created_at >= ?
+      AND l.type = 'pvp'
+      AND json_extract(l.meta_json, '$.outcome') = 'kill'
+    ORDER BY l.id DESC
+    LIMIT ?
+  `).all(city, since, n);
+  return rows.map(r => {
+    const targetRow = r.target_id
+      ? db.prepare('SELECT name, reputation FROM characters WHERE id = ?').get(r.target_id)
+      : null;
+    return {
+      attacker:  display(r.name, r.reputation, r.char_id),
+      victim:    targetRow ? display(targetRow.name, targetRow.reputation, r.target_id) : 'an unknown body',
+      cashTaken: r.cash_taken || 0,
+      when:      r.created_at,
+    };
+  });
+}
+
+// Turf flips (successful captures) inside the city in the last
+// 24 h. The log row's message holds the area name + odds; we re-use
+// it as-is rather than re-parsing.
+function recentTurfFlips(city, since, n = 8) {
+  return db.prepare(`
+    SELECT l.id, l.created_at, l.message, c.name AS actor_name, c.reputation AS actor_rep, l.char_id AS actor_id
+    FROM log l
+    JOIN characters c ON c.id = l.char_id
+    WHERE c.city = ? AND l.created_at >= ?
+      AND l.type = 'turf' AND l.message LIKE '%TOOK%'
+    ORDER BY l.id DESC
+    LIMIT ?
+  `).all(city, since, n).map(r => ({
+    text: r.message.replace(r.actor_name, display(r.actor_name, r.actor_rep, r.actor_id)),
+    when: r.created_at,
+  }));
+}
+
 // Police blotter — arrests + hospital admissions in the last 24 h.
 function blotter(city, since) {
   return db.prepare(`
@@ -153,6 +226,9 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
 
   const turf = turfSnapshot(targetCity);
   const earners = topEarners(targetCity, since);
+  const big = bigScores(targetCity, since);
+  const murders = recentMurders(targetCity, since);
+  const turfFlips = recentTurfFlips(targetCity, since);
   const jailings = blotter(targetCity, since);
   const hospital = hospitalisations(targetCity, since);
 
@@ -167,6 +243,9 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     weather: weatherFor(targetCity, now),
     headlines,
     earners,
+    bigScores: big,
+    murders,
+    turfFlips,
     turf,
     blotter: { jailings, hospital },
     citiesAvailable: CITIES.map(c => ({ id: c.id, name: c.name })),
