@@ -45,10 +45,11 @@ const SHOWCASE = [
 ];
 
 const BULLETS = [
-  'Lift wallets, knock over banks, run drugs across borders, hunt rival players in the alley.',
-  'Found a gang. Declare war on another. Hold turf for permanent crime-cooldown perks.',
-  'Hold down a job for steady wages, fence illegal cash through the underworld, bet your bankroll on the next horse race.',
-  'No background workers — your city accrues income, drift and timers while you\'re offline. Drop in for five minutes or all night.',
+  'Pull off jobs from picking pockets to museum heists. The big scores drop you into reaction mini-games — hot-wire the car, outrun the cops on a five-arrow chase, crack the cipher under a timer.',
+  'Murder rival players across 18 cities. Permadeath on a clean kill — they rebuild from scratch, you keep every penny they had on them.',
+  'Found a gang at level 10. Wage 24-hour turf wars, capture sectors, and claim crime-cooldown perks on every job your crew runs there.',
+  'Build a real empire — drug labs stocking your stash, businesses paying out hourly, properties laundering dirty cash, garages full of cars you almost certainly stole.',
+  'Dress the part. Cop a Patek Philippe and a bespoke Savile Row suit, or rock a tracksuit and a gold Cuban chain. Twenty cosmetic threads across two stores, all hand-drawn.',
 ];
 
 function StatBlock({ value, label }) {
