@@ -37,6 +37,7 @@ export default function Online() {
   const TABS = [
     { id: 'flights',  label: 'Flights'  },
     { id: 'vehicles', label: 'Vehicles' },
+    { id: 'weapons',  label: 'Weapons'  },
   ];
 
   const viaLabel = {
@@ -74,6 +75,160 @@ export default function Online() {
 
       {tab === 'flights'  && <FlightsTab />}
       {tab === 'vehicles' && <VehiclesTab />}
+      {tab === 'weapons'  && <WeaponsTab />}
+    </div>
+  );
+}
+
+function WeaponsTab() {
+  const { character, refresh } = useGame();
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg]   = useState(null);
+  const [section, setSection] = useState('weapons');   // weapons | armours | ammo
+  const [destProp, setDestProp] = useState(null);
+  useScrollOnMessage(msg);
+
+  async function load() {
+    try {
+      const d = await api.get('/online/weapons');
+      setData(d);
+      if (!destProp && d.properties[0]) setDestProp(d.properties[0].id);
+    } catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function buy(kind, item, qty = 1) {
+    if (!destProp) { setMsg('Pick a destination property first.'); return; }
+    setBusy(`${kind}-${item.id}`); setMsg(null);
+    try {
+      await api.post('/online/weapons/buy', {
+        kind, item_id: item.id, qty, destination_property: destProp,
+      });
+      setMsg(`Ordered. ETA ~${data.leadHours}h.`);
+      await refresh();
+      await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!data) return <Card><p className="text-xs text-ink-100/55">Loading catalogue…</p></Card>;
+
+  if (data.properties.length === 0) {
+    return (
+      <Card title="No property to deliver to"
+        subtitle="Online gear orders ship to your house stash. Buy a property first.">
+        <Link to="/property" className="btn btn-primary text-xs inline-block">Browse properties →</Link>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {msg && <Card><p className="text-xs">{msg}</p></Card>}
+
+      <Card title="Deliver to"
+        subtitle={`Online markup ${data.markup_pct}%. Lead time ~${data.leadHours}h. Goods land in the property's house stash.`}>
+        <div className="flex flex-wrap gap-1.5">
+          {data.properties.map(p => (
+            <button key={p.id}
+              onClick={() => setDestProp(p.id)}
+              className={`px-3 py-1.5 rounded-md text-xs ${destProp === p.id ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/60'}`}>
+              {p.name} <span className="text-[11px] opacity-70">· {p.cityName}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {data.pending.length > 0 && (
+        <Card title="Incoming">
+          <ul className="text-xs space-y-1">
+            {data.pending.map(p => (
+              <li key={p.id} className="flex justify-between border-b border-ink-100/5 py-1 last:border-0">
+                <span className="text-ink-100/85">{p.qty}× {p.label} → {p.destination}</span>
+                <Countdown until={p.arrives_at} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <div className="flex gap-1 text-xs">
+        {[
+          { id: 'weapons', label: 'Weapons' },
+          { id: 'armours', label: 'Armour'  },
+          { id: 'ammo',    label: 'Ammo'    },
+        ].map(s => (
+          <button key={s.id}
+            onClick={() => setSection(s.id)}
+            className={`px-3 py-1 rounded-md ${section === s.id ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/60'}`}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {section === 'weapons' && (
+        <GearGrid
+          items={data.weapons}
+          kind="weapon"
+          extra={w => `DMG ${w.dmg} · ${w.maker || ''}`}
+          cash={character.bank}
+          busy={busy}
+          onBuy={(item) => buy('weapon', item, 1)}
+        />
+      )}
+      {section === 'armours' && (
+        <GearGrid
+          items={data.armours}
+          kind="armour"
+          extra={() => null}
+          cash={character.bank}
+          busy={busy}
+          onBuy={(item) => buy('armour', item, 1)}
+        />
+      )}
+      {section === 'ammo' && (
+        <GearGrid
+          items={data.ammo}
+          kind="ammo"
+          extra={a => `pack of ${a.packSize}`}
+          cash={character.bank}
+          busy={busy}
+          onBuy={(item) => buy('ammo', item, 1)}
+        />
+      )}
+    </div>
+  );
+}
+
+function GearGrid({ items, kind, extra, cash, busy, onBuy }) {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      {items.map(it => {
+        const broke = (cash ?? 0) < it.cost;
+        const locked = it.locked;
+        const disabled = broke || locked || busy === `${kind}-${it.id}`;
+        return (
+          <div key={it.id} className={`rounded-lg p-3 border bg-ink-950/40 ${locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="font-medium truncate">{it.name}</div>
+              {it.level && <span className="text-[11px] uppercase tracking-wide text-ink-100/55">L{it.level}</span>}
+            </div>
+            <div className="text-[12px] text-ink-100/55 mt-0.5 min-h-[16px]">{extra(it)}</div>
+            <div className="text-money-400 font-semibold mt-1 tabular-nums">{fmt(it.cost)}</div>
+            <div className="text-[11px] text-ink-100/45 line-through tabular-nums">{fmt(it.base)}</div>
+            <button
+              disabled={disabled}
+              onClick={() => onBuy(it)}
+              className="btn btn-primary text-xs w-full mt-2">
+              {busy === `${kind}-${it.id}` ? '…'
+                : locked ? `Lvl ${it.level}`
+                : broke ? 'Bank too low'
+                : 'Order'}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

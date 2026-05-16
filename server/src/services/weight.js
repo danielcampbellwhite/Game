@@ -189,7 +189,7 @@ export function listHouseStash(charId, propertyOwnedId) {
 
 // Manual upsert — see comment on upsertVehicleStash for the
 // NULL-aware reasoning.
-function upsertHouseStash(charId, propertyOwnedId, city, kind, itemId, addQty) {
+export function upsertHouseStash(charId, propertyOwnedId, city, kind, itemId, addQty) {
   const r = db.prepare(
     "SELECT id FROM stash WHERE char_id = ? AND container = 'house' AND property_owned_id = ? AND kind = ? AND item_id = ?"
   ).get(charId, propertyOwnedId, kind, itemId);

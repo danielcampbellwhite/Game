@@ -822,6 +822,26 @@ export function initDb() {
       delivered_at     INTEGER NULL
     );
     CREATE INDEX IF NOT EXISTS idx_vehicle_deliveries_char ON vehicle_deliveries(char_id, status);
+
+    -- Online weapon / armour / ammo purchases. Same pattern as
+    -- vehicle_deliveries: pending rows materialise into the chosen
+    -- property's stash via services/deliveries.js when arrives_at
+    -- passes. destination_property is the row id in properties_owned.
+    CREATE TABLE IF NOT EXISTS weapon_deliveries (
+      id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+      char_id              INTEGER NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      destination_property INTEGER NOT NULL,
+      kind                 TEXT    NOT NULL,
+      item_id              TEXT    NOT NULL,
+      qty                  INTEGER NOT NULL,
+      base_cost            INTEGER NOT NULL,
+      cost                 INTEGER NOT NULL,
+      ordered_at           INTEGER NOT NULL,
+      arrives_at           INTEGER NOT NULL,
+      status               TEXT    NOT NULL DEFAULT 'pending',
+      delivered_at         INTEGER NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_weapon_deliveries_char ON weapon_deliveries(char_id, status);
   `);
   // Police heat — accumulates with each crime, decays passively over
   // time. 0 means clean; high heat shrinks success chances and bumps

@@ -8,7 +8,7 @@ import { getPremiumPropertyBonusesForUser, userIdForChar } from './premium.js';
 import { maybeArrive, forceLocation, locationMeta } from './locations.js';
 import { migrateCharacterWeights } from './weight.js';
 import { internetStatus } from './online.js';
-import { materializeReadyDeliveries } from './deliveries.js';
+import { materializeReadyDeliveries, materializeReadyWeaponDeliveries } from './deliveries.js';
 
 // Pending-trial flag is surfaced on publicCharacter so App.jsx's
 // Protected wrapper can redirect into /trial the moment charges
@@ -224,6 +224,7 @@ export function applyTick(ch) {
   // into the destination garage now. Stays in 'pending' if the garage
   // is full at delivery time; the next tick will retry.
   materializeReadyDeliveries(ch.id, now);
+  materializeReadyWeaponDeliveries(ch.id, now);
 
   // Travel arrival
   if (ch.travel_until && ch.travel_until <= now && ch.travel_to) {

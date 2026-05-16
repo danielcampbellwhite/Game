@@ -10,12 +10,15 @@
 // can free a slot and the next tick will retry.
 
 import { db } from '../db.js';
-import { vehicleById, cityById } from '../data.js';
+import { vehicleById, cityById, weaponById, armourById, ammoById, propertyById } from '../data.js';
 import { freeGarageSpace } from './garage.js';
 import { writeLog } from './log.js';
+import { upsertHouseStash } from './weight.js';
 
-// Online ordering delay — wall-clock 4 hours.
-export const DELIVERY_LEAD_MS = 4 * 60 * 60 * 1000;
+// Online ordering delay — wall-clock 4 hours for vehicles, 2 for
+// gear (lighter parcels move quicker on the courier route).
+export const DELIVERY_LEAD_MS        = 4 * 60 * 60 * 1000;
+export const WEAPON_DELIVERY_LEAD_MS = 2 * 60 * 60 * 1000;
 
 export function listPendingDeliveries(charId) {
   return db.prepare(
@@ -71,4 +74,55 @@ export function materializeReadyDeliveries(charId, now = Date.now()) {
 function vehicleDescription(vehicleId) {
   const v = vehicleById(vehicleId);
   return v ? `${v.maker} ${v.name}` : vehicleId;
+}
+
+// ─── Weapon / armour / ammo deliveries ────────────────────────
+// Same shape as vehicle deliveries but the destination is a specific
+// owned property and the goods drop into that property's house stash.
+// No carry-weight check at delivery — the stash itself bears the
+// load; the player can move it onto their person later.
+
+export function listPendingWeaponDeliveries(charId) {
+  return db.prepare(
+    "SELECT * FROM weapon_deliveries WHERE char_id = ? AND status = 'pending' ORDER BY arrives_at ASC"
+  ).all(charId);
+}
+
+export function materializeReadyWeaponDeliveries(charId, now = Date.now()) {
+  const ready = db.prepare(
+    "SELECT * FROM weapon_deliveries WHERE char_id = ? AND status = 'pending' AND arrives_at <= ?"
+  ).all(charId, now);
+  const delivered = [];
+  for (const d of ready) {
+    // Re-confirm the destination property still belongs to the player —
+    // sold properties shouldn't accept deliveries. If it's been sold,
+    // mark the delivery 'lost' rather than letting it linger.
+    const prop = db.prepare(
+      'SELECT id, city, property_id FROM properties_owned WHERE id = ? AND char_id = ?'
+    ).get(d.destination_property, charId);
+    if (!prop) {
+      db.prepare("UPDATE weapon_deliveries SET status = 'lost', delivered_at = ? WHERE id = ?").run(now, d.id);
+      writeLog(charId, 'delivery',
+        ` Delivery of ${gearDescription(d)} couldn't be delivered — the destination property is no longer yours.`,
+        { delivery: d.id, kind: d.kind, item: d.item_id });
+      continue;
+    }
+    upsertHouseStash(charId, prop.id, prop.city, d.kind, d.item_id, d.qty);
+    db.prepare(
+      "UPDATE weapon_deliveries SET status = 'delivered', delivered_at = ? WHERE id = ?"
+    ).run(now, d.id);
+    const propMeta = propertyById(prop.property_id);
+    writeLog(charId, 'delivery',
+      ` Delivered: ${d.qty}× ${gearDescription(d)} → stashed at your ${propMeta?.name || 'property'} in ${cityById(prop.city)?.name}.`,
+      { delivery: d.id, kind: d.kind, item: d.item_id, property: prop.id }, true);
+    delivered.push(d);
+  }
+  return delivered;
+}
+
+function gearDescription(d) {
+  if (d.kind === 'weapon') return weaponById(d.item_id)?.name || d.item_id;
+  if (d.kind === 'armour') return armourById(d.item_id)?.name || d.item_id;
+  if (d.kind === 'ammo')   return ammoById(d.item_id)?.name   || d.item_id;
+  return d.item_id;
 }

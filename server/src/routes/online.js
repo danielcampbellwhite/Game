@@ -11,11 +11,16 @@ import { requireAuth, requireCharacter, requireFreeCharacter } from '../middlewa
 import { requireInternet } from '../services/online.js';
 import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
-import { CITIES, cityById, VEHICLES, vehicleById, VEHICLE_TIER_LEVEL_GATE } from '../data.js';
+import {
+  CITIES, cityById, VEHICLES, vehicleById, VEHICLE_TIER_LEVEL_GATE,
+  WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, propertyById,
+} from '../data.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 import { garageCapacity, vehicleCount } from '../services/garage.js';
 import {
-  DELIVERY_LEAD_MS, listPendingDeliveries, pendingDeliveryCountInCity,
+  DELIVERY_LEAD_MS, WEAPON_DELIVERY_LEAD_MS,
+  listPendingDeliveries, pendingDeliveryCountInCity,
+  listPendingWeaponDeliveries,
 } from '../services/deliveries.js';
 
 const router = Router();
@@ -229,6 +234,126 @@ router.post('/vehicles/buy', requireAuth, requireCharacter, requireInternet, (re
     { vehicle: v.id, city: destCity, cost, eta: arrives });
   saveCharacter(ch);
   res.json({ ok: true, arrives_at: arrives, cost, base, character: publicCharacter(ch) });
+});
+
+// ─── Gear delivery (weapons / armour / ammo) ─────────────────
+// Order weapons, armour, and ammo for delivery to a property you
+// own. No licence check (the online seller doesn't ask). Same 8%
+// markup, paid from bank. Lead time is 2 hours.
+
+function ownedPropertiesFor(charId) {
+  const rows = db.prepare(
+    'SELECT id, property_id, city FROM properties_owned WHERE char_id = ? ORDER BY city'
+  ).all(charId);
+  return rows.map(r => {
+    const p = propertyById(r.property_id);
+    return {
+      id: r.id,
+      property_id: r.property_id,
+      name: p?.name || 'Property',
+      city: r.city,
+      cityName: cityById(r.city)?.name || r.city,
+    };
+  });
+}
+
+router.get('/weapons', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const properties = ownedPropertiesFor(ch.id);
+  const weapons = WEAPONS
+    .filter(w => w.cost > 0)
+    .map(w => {
+      const base = Math.floor(w.cost * cityMul);
+      return {
+        id: w.id, name: w.name, maker: w.maker, category: w.category,
+        dmg: w.dmg, level: w.level, ammoType: w.ammoType || null,
+        base, cost: onlinePrice(base),
+        locked: ch.level < w.level,
+      };
+    });
+  const armours = ARMOUR
+    .filter(a => a.cost > 0)
+    .map(a => {
+      const base = Math.floor(a.cost * cityMul);
+      return {
+        id: a.id, name: a.name, level: a.level,
+        base, cost: onlinePrice(base),
+        locked: ch.level < a.level,
+      };
+    });
+  const ammo = AMMO.map(a => ({
+    id: a.id, name: a.name, packSize: a.packSize,
+    // Ammo is uniform-priced; still apply markup so the online tier feels consistent.
+    base: a.cost * a.packSize,
+    cost: onlinePrice(a.cost * a.packSize),
+  }));
+  const pending = listPendingWeaponDeliveries(ch.id).map(d => ({
+    id: d.id,
+    qty: d.qty,
+    label: d.kind === 'weapon' ? (weaponById(d.item_id)?.name || d.item_id)
+         : d.kind === 'armour' ? (armourById(d.item_id)?.name || d.item_id)
+         : (ammoById(d.item_id)?.name || d.item_id),
+    destination: (() => {
+      const p = db.prepare('SELECT property_id, city FROM properties_owned WHERE id = ?').get(d.destination_property);
+      return p ? `${propertyById(p.property_id)?.name || 'Property'} in ${cityById(p.city)?.name}` : 'A property';
+    })(),
+    arrives_at: d.arrives_at,
+    cost: d.cost,
+  }));
+  res.json({
+    weapons, armours, ammo,
+    properties,
+    pending,
+    leadHours: Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000),
+    markup_pct: Math.round(ONLINE_MARKUP * 100),
+  });
+});
+
+router.post('/weapons/buy', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const { kind, item_id, qty: rawQty = 1, destination_property } = req.body || {};
+  const propRow = db.prepare(
+    'SELECT id, city FROM properties_owned WHERE id = ? AND char_id = ?'
+  ).get(destination_property, ch.id);
+  if (!propRow) return res.status(400).json({ error: 'Pick a property you own as the delivery address.' });
+
+  let item;
+  if (kind === 'weapon')      item = weaponById(item_id);
+  else if (kind === 'armour') item = armourById(item_id);
+  else if (kind === 'ammo')   item = ammoById(item_id);
+  else return res.status(400).json({ error: 'Bad item kind.' });
+  if (!item) return res.status(400).json({ error: 'Unknown item.' });
+
+  const qty = Math.max(1, Math.min(99, parseInt(rawQty, 10) || 1));
+  // Weapons/armour are level-gated by catalogue; ammo isn't.
+  if ((kind === 'weapon' || kind === 'armour') && ch.level < item.level) {
+    return res.status(403).json({ error: `Requires level ${item.level}.` });
+  }
+
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  // For ammo, qty is "packs" — actual rounds delivered = packSize * qty.
+  const buyUnits = kind === 'ammo' ? item.packSize * qty : qty;
+  const baseUnit = kind === 'ammo' ? item.cost : Math.floor((item.cost || 0) * cityMul);
+  const totalBase = kind === 'ammo' ? baseUnit * buyUnits : baseUnit * qty;
+  const cost = onlinePrice(totalBase);
+  if (ch.bank < cost) {
+    return res.status(400).json({ error: `Need £${cost.toLocaleString()} in your bank account to pay online.` });
+  }
+
+  ch.bank -= cost;
+  const now = Date.now();
+  const arrives = now + WEAPON_DELIVERY_LEAD_MS;
+  db.prepare(`
+    INSERT INTO weapon_deliveries
+      (char_id, destination_property, kind, item_id, qty, base_cost, cost, ordered_at, arrives_at, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+  `).run(ch.id, propRow.id, kind, item.id, buyUnits, totalBase, cost, now, arrives);
+  writeLog(ch.id, 'delivery',
+    `Ordered ${buyUnits}× ${item.name} (${kind}) online for £${cost.toLocaleString()} — ETA ~${Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000)}h.`,
+    { kind, item: item.id, qty: buyUnits, property: propRow.id, cost, eta: arrives });
+  saveCharacter(ch);
+  res.json({ ok: true, arrives_at: arrives, cost, base: totalBase, character: publicCharacter(ch) });
 });
 
 export default router;
