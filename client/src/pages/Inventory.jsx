@@ -190,13 +190,11 @@ function WardrobeTab() {
   return (
     <div className="space-y-4">
       <Card title="Currently wearing"
-        subtitle="Five cosmetic slots. None of it changes stats — just style. Buy more at the Streetwear Outlet or the Atelier."
-        right={
-          <div className="flex gap-2">
-            <Link to="/clothing/low"  className="btn btn-ghost text-xs">→ Streetwear</Link>
-            <Link to="/clothing/high" className="btn btn-ghost text-xs">→ Atelier</Link>
-          </div>
-        }>
+        subtitle="Five cosmetic slots. None of it changes stats — just style. Buy more at the Streetwear Outlet or the Atelier.">
+        <div className="grid grid-cols-2 gap-2 mb-3 sm:max-w-sm">
+          <Link to="/clothing/low"  className="btn btn-ghost text-xs">→ Streetwear</Link>
+          <Link to="/clothing/high" className="btn btn-ghost text-xs">→ Atelier</Link>
+        </div>
         <div className="flex flex-col gap-2 sm:grid sm:grid-cols-5">
           {SLOT_ORDER.map(slot => {
             const eq = data.equipped[slot];
