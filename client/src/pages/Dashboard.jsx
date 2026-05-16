@@ -203,18 +203,16 @@ const NODES = [
   { to: '/trades',     label: 'Trades',        teaser: 'Deals on the side',  style: 'note' },
 ];
 
-// Rectangle-perimeter positions in container-% coordinates. Each
-// node lives on the rim of the corkboard, not on a polar circle.
-// 6 nodes = two on top, one on each side, two on the bottom.
-// Tightened in from the outer edges so the cards cluster nearer
-// the centre photo rather than hugging the container border.
+// Two-column layout: 3 cards stacked on each side of the polaroid
+// photo. Container-% coordinates; cards are centred at these
+// points so the inner padding determines the actual edge.
 const RECT_POSITIONS = [
-  { x: 35, y: 18 },  // top-left
-  { x: 65, y: 18 },  // top-right
-  { x: 84, y: 50 },  // right
-  { x: 65, y: 82 },  // bottom-right
-  { x: 35, y: 82 },  // bottom-left
-  { x: 16, y: 50 },  // left
+  { x: 15, y: 18 },  // left column · top      (City)
+  { x: 15, y: 50 },  // left column · middle   (Crimes)
+  { x: 15, y: 82 },  // left column · bottom   (Businesses)
+  { x: 85, y: 18 },  // right column · top     (Fight Club)
+  { x: 85, y: 50 },  // right column · middle  (Gangs)
+  { x: 85, y: 82 },  // right column · bottom  (Trades)
 ];
 
 // Stylised fedora-and-suit silhouette for the centre. Sized via parent
