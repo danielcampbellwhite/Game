@@ -56,9 +56,9 @@ function PlayerCrimes({ character }) {
           className={`text-left rounded-lg p-3 border transition ${open === 'rob' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>
           <div className="font-medium">Rob a Player</div>
           <div className="text-[13px] text-ink-100/55 mt-1">
-            Mug them on the spot. Win → all their cash on hand + hospitalised. Lose → caught.
+            Mug them on the spot. Win → all their cash on hand + hospitalised. Lose → 50% chance you're nicked (15m inside).
           </div>
-          <div className="text-[12px] text-ink-100/40 mt-1">10 energy · 1h cooldown · single roll</div>
+          <div className="text-[12px] text-ink-100/40 mt-1">10 energy · 12h cooldown · single roll</div>
         </button>
         <button onClick={() => toggle('murder')}
           className={`text-left rounded-lg p-3 border transition ${open === 'murder' ? 'border-blood-500 bg-blood-700/10' : 'border-ink-100/10 bg-ink-950/40 hover:border-blood-500/40'}`}>

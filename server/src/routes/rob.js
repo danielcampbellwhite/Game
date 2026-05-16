@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth, requireCharacter, requireFreeCharacter } from '../middleware/auth.js';
 import { cityById } from '../data.js';
-import { saveCharacter, publicCharacter, loadCharacterById, awardXp, isNewCharProtected, newCharProtectionHoursLeft, NEW_CHAR_PROTECTION_DAYS } from '../services/character.js';
+import { saveCharacter, publicCharacter, loadCharacterById, awardXp, isNewCharProtected, newCharProtectionHoursLeft, NEW_CHAR_PROTECTION_DAYS, applyJailSentence } from '../services/character.js';
 import { effectiveStats } from '../services/buffs.js';
 import { sendEvent } from '../services/events.js';
 import { writeLog } from '../services/log.js';
@@ -13,7 +13,7 @@ const router = Router();
 
 //  Tunables 
 const ENERGY_COST = 10;
-const ATTACKER_COOLDOWN_MS = 60 * 60 * 1000;       // 1h between robberies (per attacker)
+const ATTACKER_COOLDOWN_MS = 12 * 60 * 60 * 1000;   // 12h between robberies (per attacker)
 const TARGET_COOLDOWN_MS   = 30 * 60 * 1000;       // 30m immunity (per target)
 
 // Hospital time on win (target).
@@ -147,15 +147,29 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
     });
   }
 
-  // Lose: target gets alerted (with same reveal coin-flip), no jail.
+  // Lose: target gets alerted (with same reveal coin-flip). 50%
+  // of the time the player also gets pinched on the spot — sirens,
+  // 15m inside. The other half they slip away clean (just no
+  // payout). Reflects the "Lose → caught" blurb on the Crimes
+  // page which previously was empty marketing.
   const revealed = Math.random() < REVEAL_PCT;
   const robberLabel = revealed ? ch.name : 'an unknown assailant';
+  const caught = Math.random() < 0.5;
+  const jailMin = 15;
 
-  writeLog(ch.id, 'pvp', ` ${target.name} fought you off — got away with nothing.`,
-    { target: target.id }, true);
+  if (caught) {
+    applyJailSentence(ch, jailMin * 60 * 1000, `Caught trying to rob ${target.name} — ${jailMin}m inside.`);
+    writeLog(ch.id, 'pvp', ` ${target.name} fought you off and the cops bagged you — ${jailMin}m inside.`,
+      { target: target.id, jail_min: jailMin }, true);
+  } else {
+    writeLog(ch.id, 'pvp', ` ${target.name} fought you off — got away with nothing.`,
+      { target: target.id }, true);
+  }
   writeLog(target.id, 'pvp',
-    ` You fought off a robbery attempt by ${robberLabel}.`,
-    { attacker_id: revealed ? ch.id : null, revealed }, true);
+    caught
+      ? ` You fought off a robbery attempt by ${robberLabel} — the cops bagged them.`
+      : ` You fought off a robbery attempt by ${robberLabel}.`,
+    { attacker_id: revealed ? ch.id : null, revealed, attacker_jailed: caught }, true);
 
   saveCharacter(ch);
   sendEvent(target.id, 'pvp.attacked', {
@@ -164,6 +178,8 @@ router.post('/attempt', requireAuth, requireCharacter, requireFreeCharacter, (re
   });
   res.json({
     ok: true, win: false,
+    jailed: caught,
+    jail_min: caught ? jailMin : 0,
     character: publicCharacter(ch),
   });
 });

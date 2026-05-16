@@ -23,8 +23,12 @@ function OutcomeBanner({ result }) {
   }
   return (
     <div className="rounded-md border border-blood-500 bg-blood-700/15 text-blood-100 p-3">
-      <div className="font-display text-lg">Robbery failed</div>
-      <div className="text-xs mt-1">They fought you off — got away with nothing.</div>
+      <div className="font-display text-lg">{result.jailed ? 'Caught.' : 'Robbery failed'}</div>
+      <div className="text-xs mt-1">
+        {result.jailed
+          ? `They fought you off — sirens did the rest. ${result.jail_min}m inside.`
+          : 'They fought you off — got away with nothing. (You slipped the cops this time.)'}
+      </div>
     </div>
   );
 }
@@ -94,7 +98,7 @@ export default function Rob() {
           <li><b className="text-blood-400">Lose</b> — they fought you off. They get notified (50/50 reveal); you walk away empty-handed.</li>
         </ul>
         <p className="text-[13px] text-ink-100/45 mt-2">
-          No jail time on either outcome. 1h cooldown on you afterwards · 30m immunity for them. New characters are protected for the first <b>3 days</b> after creation. Works on online and offline targets.
+          On a loss there's a <b>50% chance you're caught</b> — 15 minutes in jail. Otherwise you slip away with no payout. <b>12h cooldown</b> on you afterwards · 30m immunity for them. New characters are protected for the first <b>3 days</b> after creation. Works on online and offline targets.
         </p>
       </Card>
 
