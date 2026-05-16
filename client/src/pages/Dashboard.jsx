@@ -648,9 +648,14 @@ function CharacterSheet({ c, onAvatarChange }) {
     ['SPD', c.speed],
     ['INT', c.intelligence],
   ];
+  // Bank is hidden until the player visits the bank or gets online
+  // (phone / laptop). Render an em-dash with a hint instead.
+  const bankLabel = c.bank_visible
+    ? c.bank
+    : { hidden: true, note: 'visit the bank or get online' };
   const money = [
     ['Cash',      c.cash],
-    ['Bank',      c.bank],
+    ['Bank',      bankLabel],
     ['Net worth', c.net_worth],
   ];
   return (
@@ -677,7 +682,14 @@ function CharacterSheet({ c, onAvatarChange }) {
         {money.map(([label, value]) => (
           <div key={label} className="rounded-md bg-ink-900/50 px-2 py-1.5 leading-tight">
             <div className="text-[12px] uppercase tracking-wide text-ink-100/55">{label}</div>
-            <div className="text-sm tabular-nums text-money-400 font-medium truncate">{fmt(value)}</div>
+            {value && typeof value === 'object' && value.hidden ? (
+              <div className="text-sm tabular-nums text-ink-100/40 font-medium truncate"
+                title={value.note}>
+                —
+              </div>
+            ) : (
+              <div className="text-sm tabular-nums text-money-400 font-medium truncate">{fmt(value)}</div>
+            )}
           </div>
         ))}
       </div>

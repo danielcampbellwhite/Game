@@ -38,6 +38,7 @@ export default function Online() {
     { id: 'flights',  label: 'Flights'  },
     { id: 'vehicles', label: 'Vehicles' },
     { id: 'weapons',  label: 'Weapons'  },
+    { id: 'bank',     label: 'Bank'     },
   ];
 
   const viaLabel = {
@@ -76,6 +77,51 @@ export default function Online() {
       {tab === 'flights'  && <FlightsTab />}
       {tab === 'vehicles' && <VehiclesTab />}
       {tab === 'weapons'  && <WeaponsTab />}
+      {tab === 'bank'     && <BankAppTab />}
+    </div>
+  );
+}
+
+function BankAppTab() {
+  const [data, setData] = useState(null);
+  const [msg, setMsg]   = useState(null);
+  useEffect(() => {
+    api.get('/online/bank-app').then(setData).catch(e => setMsg(e.message));
+  }, []);
+  if (!data) return <Card><p className="text-xs text-ink-100/55">{msg || 'Loading…'}</p></Card>;
+  return (
+    <div className="space-y-3">
+      <Card title="Bank app"
+        subtitle={data.note}>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-md bg-ink-900/50 px-3 py-2">
+            <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Bank balance</div>
+            <div className="font-display text-2xl text-money-300 tabular-nums">{fmt(data.bank)}</div>
+          </div>
+          <div className="rounded-md bg-ink-900/50 px-3 py-2">
+            <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Pocket cash</div>
+            <div className="font-display text-2xl text-ink-100 tabular-nums">{fmt(data.cash)}</div>
+          </div>
+        </div>
+      </Card>
+
+      {data.loans.length > 0 && (
+        <Card title="Outstanding loans">
+          <ul className="text-xs space-y-1">
+            {data.loans.map(l => (
+              <li key={l.id} className="flex justify-between border-b border-ink-100/5 py-1 last:border-0">
+                <span className="text-ink-100/85">Loan #{l.id}</span>
+                <span className="tabular-nums text-blood-300">{fmt(l.principal)} owed</span>
+              </li>
+            ))}
+          </ul>
+          {data.totalOwed > 0 && (
+            <p className="text-[12px] text-ink-100/55 mt-2">
+              Total owed: <span className="text-blood-300 tabular-nums">{fmt(data.totalOwed)}</span> · repay at the bank.
+            </p>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

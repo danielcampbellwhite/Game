@@ -356,4 +356,21 @@ router.post('/weapons/buy', requireAuth, requireCharacter, requireInternet, (req
   res.json({ ok: true, arrives_at: arrives, cost, base: totalBase, character: publicCharacter(ch) });
 });
 
+// ─── Bank app — read-only mirror of the bank counter ─────────
+// Lets a player check their balance and outstanding loans from
+// anywhere they're online. Cash deposits, withdrawals, and loans
+// still need a physical visit to the bank.
+
+router.get('/bank-app', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const loans = db.prepare('SELECT * FROM loans WHERE char_id = ?').all(ch.id);
+  res.json({
+    bank: ch.bank,
+    cash: ch.cash,
+    loans,
+    totalOwed: loans.reduce((a, l) => a + l.principal, 0),
+    note: 'Deposits, withdrawals, and new loans require a visit to the bank.',
+  });
+});
+
 export default router;

@@ -516,6 +516,15 @@ function gangBadgeFor(charId) {
   return { id: row.id, name: row.name, tag: row.tag, faction: row.faction, role: row.role };
 }
 
+// Bank balance visibility — the player's stored balance is only
+// surfaced when they're at the bank or have internet. Used by
+// publicCharacter to mask the number until they can "see" it in
+// fiction.
+function bankVisibleFor(ch) {
+  if (ch.current_location === 'bank') return true;
+  return internetStatus(ch).online;
+}
+
 export function publicCharacter(ch) {
   const atMax = ch.level >= MAX_LEVEL;
   return {
@@ -533,7 +542,15 @@ export function publicCharacter(ch) {
     stat_caps: STAT_CAPS,
     buffs: buffSnapshot(ch),
     reputation: ch.reputation, rank: rankFor(ch.reputation).name,
-    cash: ch.cash, bank: ch.bank, dirty_cash: ch.dirty_cash,
+    cash: ch.cash,
+    // Bank balance is only visible when the player is physically at
+    // the bank OR has internet access (phone on them, or a laptop
+    // where they are). Otherwise we strip it entirely so the client
+    // can't accidentally show stale numbers. Use ch.bank_visible to
+    // tell whether the strip was applied.
+    bank: bankVisibleFor(ch) ? ch.bank : null,
+    bank_visible: bankVisibleFor(ch),
+    dirty_cash: ch.dirty_cash,
     net_worth: computeNetWorth(ch),
     jail_until: ch.jail_until, jail_reason: ch.jail_reason || null,
     hospital_until: ch.hospital_until, hospital_reason: ch.hospital_reason || null,
