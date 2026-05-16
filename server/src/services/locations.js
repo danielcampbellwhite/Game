@@ -15,8 +15,8 @@ import { db } from '../db.js';
 import { writeLog } from './log.js';
 import { intraDriveFuelCost, consumeFuel } from './fuel.js';
 
-export const WALK_MS  = 45 * 1000;
-export const DRIVE_MS = 10 * 1000;
+export const WALK_MS  = 30 * 1000;
+export const DRIVE_MS =  5 * 1000;
 
 // Catalog of physical locations. `slug` is the persisted value of
 // characters.current_location and the value sent to /travel.
