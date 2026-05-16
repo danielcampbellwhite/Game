@@ -81,6 +81,75 @@ export function getPropertyBonuses(charId, city) {
 // `last_tick = now` every call — that eats the sub-period delta and the
 // timer never accumulates if any other call (e.g. the 30s client poll)
 // fires sooner than the period.
+
+// Per-drive chance the player's active stolen vehicle gets flagged
+// on the next ANPR camera. 2% = roughly one bust every ~50 drives,
+// which keeps the threat real without making stolen rides
+// unusable. Jail term scales with the vehicle's tier — beaters get
+// a slap on the wrist, premium / luxury rides earn proper time.
+const STOLEN_BUST_CHANCE_PER_DRIVE = 0.02;
+const STOLEN_BUST_JAIL_BY_TIER = {
+  1: 6 * 60 * 1000,
+  2: 10 * 60 * 1000,
+  3: 15 * 60 * 1000,
+  4: 25 * 60 * 1000,
+  5: 40 * 60 * 1000,
+};
+
+// Called at the top of applyTick when the player has a drive-mode
+// arrival pending (intra-city or inter-city). If the active vehicle
+// was stolen and the roll lands, impound the car (cascade-deletes
+// the in-car stash via the schema FK), clear the active link,
+// scrub the travel state so the player doesn't also arrive at the
+// destination, and jail them. Pure no-op otherwise.
+function bustStolenDriverIfRolled(ch, now) {
+  // Only matters if a drive arrival is due NOW. Intra-city uses
+  // intra_travel_*; inter-city uses travel_*. We check both.
+  const intraDriveDue = ch.intra_travel_until && ch.intra_travel_until <= now
+                     && ch.intra_travel_to && ch.intra_travel_mode === 'drive';
+  const interTravelDue = ch.travel_until && ch.travel_until <= now && ch.travel_to;
+  // Inter-city drives don't store a separate "mode" field — if the
+  // player has an active vehicle and a travel arrival is due, they
+  // drove. (Flights null out active_vehicle_id at boarding.)
+  const interDriveDue  = interTravelDue && !!ch.active_vehicle_id;
+  if (!intraDriveDue && !interDriveDue) return false;
+  if (!ch.active_vehicle_id) return false;
+
+  const veh = db.prepare(`
+    SELECT vo.id, vo.vehicle_id, vo.acquired_via
+    FROM vehicles_owned vo
+    WHERE vo.id = ?
+  `).get(ch.active_vehicle_id);
+  if (!veh || veh.acquired_via !== 'stolen') return false;
+  if (Math.random() >= STOLEN_BUST_CHANCE_PER_DRIVE) return false;
+
+  // Bust. Look up the vehicle catalog row for tier + display name.
+  const catalogVeh = vehicleById(veh.vehicle_id);
+  const tier = catalogVeh?.tier || 1;
+  const jailMs = STOLEN_BUST_JAIL_BY_TIER[tier] || STOLEN_BUST_JAIL_BY_TIER[3];
+  const niceName = catalogVeh ? `${catalogVeh.maker} ${catalogVeh.name}` : 'stolen car';
+
+  // Drop the vehicle row — ON DELETE CASCADE wipes the stash rows
+  // scoped to vehicle_id (anything stored in the boot/glovebox).
+  db.prepare('DELETE FROM vehicles_owned WHERE id = ?').run(veh.id);
+  ch.active_vehicle_id = null;
+
+  // Tear down the in-flight travel so applyTick's arrival blocks
+  // don't ALSO move the player to the destination this tick.
+  ch.intra_travel_until = null;
+  ch.intra_travel_to    = null;
+  ch.intra_travel_mode  = null;
+  ch.travel_until       = null;
+  ch.travel_to          = null;
+
+  const jailMin = Math.round(jailMs / 60000);
+  applyJailSentence(ch, jailMs, `Pulled over driving a stolen ${niceName} — plates ran, car impounded.`);
+  writeLog(ch.id, 'crime',
+    ` Pulled over — stolen plates flagged on the ${niceName}. Car impounded, anything inside is gone. ${jailMin}m inside.`,
+    { stolen_bust: true, vehicle_id: veh.vehicle_id, tier, jail_min: jailMin }, true);
+  return true;
+}
+
 export function applyTick(ch) {
   const now = Date.now();
   if (!ch.last_tick) ch.last_tick = now;
@@ -141,6 +210,14 @@ export function applyTick(ch) {
     if (ch.current_location === 'jail') forceLocation(ch, 'streets');
     writeLog(ch.id, 'jail', ' Released from jail — sentence served.', null, true);
   }
+  // Stolen-car bust check — every drive arrival rolls a small
+  // chance of being pulled over if the player's active vehicle was
+  // boosted (acquired_via='stolen'). Hit = car impounded (cascades
+  // the in-car stash), all-purpose jail term, and the travel
+  // arrival is skipped (you don't land where you were going, you
+  // land in a cell).
+  bustStolenDriverIfRolled(ch, now);
+
   // Travel arrival
   if (ch.travel_until && ch.travel_until <= now && ch.travel_to) {
     const arrivedCity = ch.travel_to;
