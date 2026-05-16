@@ -276,9 +276,9 @@ const TABS = [
   { id: 'town',       label: 'Around Town' },
 ];
 function readTabPref() {
-  if (typeof window === 'undefined') return 'map';
+  if (typeof window === 'undefined') return 'town';
   const v = window.localStorage.getItem(TAB_PREF_KEY);
-  return TABS.some(t => t.id === v) ? v : 'map';
+  return TABS.some(t => t.id === v) ? v : 'town';
 }
 
 export default function City() {

@@ -23,6 +23,86 @@ const OUTFIT_LABELS = { hat: 'Hat', top: 'Top', bottom: 'Bottom', shoes: 'Shoes'
 // and links out to the full /newspaper page. Newspaper used to live
 // at a physical Newsstand location — surfacing it on the home page
 // removes the travel friction.
+// Dashboard slot for daily missions — overview only. Pulls /api/missions
+// once per refresh, shows how many are complete / claimed / unclaimed
+// with a live countdown to the next UTC reset, plus a button to the
+// full missions page. The Missions tab is no longer in the main nav
+// — this panel is the entry point.
+function MissionsPanel() {
+  const [data, setData] = useState(null);
+  const [err, setErr]   = useState(null);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/missions').then(r => { if (!cancelled) setData(r); })
+      .catch(e => { if (!cancelled) setErr(e.message); });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    // Just for the live countdown — re-render every 30s.
+    const id = setInterval(() => setTick(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (err) return (
+    <Card title="Daily missions">
+      <p className="text-xs text-blood-300">{err}</p>
+    </Card>
+  );
+  if (!data) return (
+    <Card title="Daily missions">
+      <p className="text-xs text-ink-100/55">Loading…</p>
+    </Card>
+  );
+
+  const missions   = data.missions || [];
+  const total      = missions.length;
+  const complete   = missions.filter(m => m.complete).length;
+  const claimed    = missions.filter(m => m.claimed).length;
+  const unclaimed  = missions.filter(m => m.complete && !m.claimed).length;
+
+  const resetMs = Math.max(0, (data.resets_at || 0) - Date.now());
+  // eslint-disable-next-line no-unused-expressions
+  tick;
+  const h = Math.floor(resetMs / 3_600_000);
+  const m = Math.floor((resetMs % 3_600_000) / 60_000);
+  const resetText = resetMs > 0 ? `${h}h ${m}m` : 'now';
+
+  const allDone = total > 0 && complete === total;
+  const headline = total === 0
+    ? 'No missions today.'
+    : allDone
+      ? `All ${total} done`
+      : `${complete}/${total} complete`;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[11px] uppercase tracking-wider text-ink-100/45">Daily missions</div>
+          <div className="font-display text-base text-ink-50 mt-0.5 flex items-baseline gap-2 flex-wrap">
+            <span className={allDone ? 'text-money-300' : ''}>{headline}</span>
+            {unclaimed > 0 && (
+              <span className="text-[12px] uppercase tracking-wide text-yellow-300">
+                {unclaimed} unclaimed reward{unclaimed === 1 ? '' : 's'}
+              </span>
+            )}
+            {claimed > 0 && (
+              <span className="text-[12px] text-ink-100/45">· {claimed} claimed</span>
+            )}
+          </div>
+          <p className="text-[12px] text-ink-100/55 leading-snug mt-1">
+            Resets in {resetText} (UTC midnight).
+          </p>
+        </div>
+        <Link to="/missions" className="btn btn-primary text-xs shrink-0 whitespace-nowrap">
+          {unclaimed > 0 ? 'Claim →' : 'View →'}
+        </Link>
+      </div>
+    </Card>
+  );
+}
+
 function NewspaperPanel({ c }) {
   const [data, setData] = useState(null);
   const [err, setErr]   = useState(null);
@@ -115,18 +195,25 @@ function OutfitPanel({ c }) {
 // coordinates around the centre.
 
 const NODES = [
-  { to: '/city',       label: 'City',        teaser: 'Streets & shops',    style: 'note' },
-  { to: '/missions',   label: 'Missions',    teaser: 'Daily ops',          style: 'note' },
-  { to: '/crimes',     label: 'Crimes',      teaser: 'Solo & crew jobs',   style: 'note' },
-  { to: '/businesses', label: 'Businesses',  teaser: 'Fronts & empire',    style: 'note' },
-  { to: '/combat',     label: 'Fight Club',  teaser: 'Knuckles only',      style: 'note' },
-  { to: '/gangs',      label: 'Gangs',       teaser: 'Crews & politics',   style: 'note' },
-  { to: '/wars',       label: 'Turf Wars',   teaser: 'Active fronts',      style: 'note' },
-  { to: '/trades',     label: 'Trades',      teaser: 'Deals on the side',  style: 'note' },
+  { to: '/city',       label: 'City',          teaser: 'Streets & shops',    style: 'note' },
+  { to: '/crimes',     label: 'Crimes',        teaser: 'Solo & crew jobs',   style: 'note' },
+  { to: '/businesses', label: 'My Businesses', teaser: 'Fronts & empire',    style: 'note' },
+  { to: '/combat',     label: 'Fight Club',    teaser: 'Knuckles only',      style: 'note' },
+  { to: '/gangs',      label: 'Gangs',         teaser: 'Crews & politics',   style: 'note' },
+  { to: '/trades',     label: 'Trades',        teaser: 'Deals on the side',  style: 'note' },
 ];
 
-// Deterministic per-node tilts so refreshes don't shuffle the board.
-const ROT = [-4, 3, -2, 5, -3, 4, -5, 2, -3, 4];
+// Rectangle-perimeter positions in container-% coordinates. Each
+// node lives on the rim of the corkboard, not on a polar circle.
+// 6 nodes = two on top, one on each side, two on the bottom.
+const RECT_POSITIONS = [
+  { x: 28, y:  6 },  // top-left
+  { x: 72, y:  6 },  // top-right
+  { x: 94, y: 50 },  // right
+  { x: 72, y: 94 },  // bottom-right
+  { x: 28, y: 94 },  // bottom-left
+  { x:  6, y: 50 },  // left
+];
 
 // Stylised fedora-and-suit silhouette for the centre. Sized via parent
 // container; viewBox keeps the shape proportional. The tie pop of red
@@ -163,13 +250,13 @@ function GangsterBust() {
   );
 }
 
-function ArticleNode({ node, x, y, rotation, lockedOut, focused, dimmed }) {
+function ArticleNode({ node, x, y, lockedOut, focused, dimmed }) {
   const isPaper = node.style === 'paper';
-  // Focus state pops the card forward — bigger, untilted, brighter
-  // border, on top z-axis. The non-focused-but-something-is-focused
-  // case fades the card to push attention to the highlighted one.
+  // Focus state pops the card forward — bigger, brighter border,
+  // on top z-axis. No rotation (board is a rectangle, not a noir
+  // corkboard mosaic anymore).
   const transform =
-    `translate(-50%, -50%) rotate(${focused ? 0 : rotation}deg) scale(${focused ? 1.35 : 1})`;
+    `translate(-50%, -50%) scale(${focused ? 1.35 : 1})`;
   return (
     <Link
       to={node.to}
@@ -261,18 +348,11 @@ function PolaroidFrame({ character }) {
 
 function EvidenceBoard({ character, lockedOut }) {
   const nav = useNavigate();
-  // Polar layout — start at the top (-90°) and walk clockwise so the
-  // first node sits straight above the silhouette. Radius 36 spreads
-  // the ring a touch wider; with the smaller card type the outermost
-  // edges still stay inside the container on a 360px-wide phone.
-  const RADIUS = 36;
-  const positions = NODES.map((_, i) => {
-    const angle = ((-90 + (i * 360 / NODES.length)) * Math.PI) / 180;
-    return {
-      x: 50 + RADIUS * Math.cos(angle),
-      y: 50 + RADIUS * Math.sin(angle),
-    };
-  });
+  // Rectangle-perimeter layout — nodes hang off the rim instead of
+  // a polar ring. Positions are container-% coords (see
+  // RECT_POSITIONS above). Falls back to centre if NODES outgrows
+  // the hardcoded list so we never read undefined.
+  const positions = NODES.map((_, i) => RECT_POSITIONS[i] || { x: 50, y: 50 });
 
   // ── Proximity focus ─────────────────────────────────────
   // Track the pointer in container-percent coords; the closest node
@@ -372,7 +452,6 @@ function EvidenceBoard({ character, lockedOut }) {
           node={n}
           x={positions[i].x}
           y={positions[i].y}
-          rotation={ROT[i % ROT.length]}
           lockedOut={lockedOut}
           focused={focusedId === n.to}
           dimmed={!!focusedId && focusedId !== n.to}
@@ -719,6 +798,8 @@ export default function Dashboard() {
       )}
 
       <InvestigationBanner />
+
+      <MissionsPanel />
 
       <EvidenceBoard character={c} lockedOut={lockedOut} />
 

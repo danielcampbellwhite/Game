@@ -8,15 +8,13 @@ import MuteToggle from './MuteToggle.jsx';
 
 const links = [
   { to: '/inventory',  label: 'Inventory' },
-  { to: '/missions',   label: 'Missions'  },
   { to: '/city',       label: 'City'      },
   { to: '/crimes',     label: 'Crimes'    },
   { to: '/jobs',       label: 'Job Board' },
-  { to: '/businesses', label: 'Businesses'},
+  { to: '/businesses', label: 'My Businesses'},
   { to: '/combat',     label: 'Fight Club'},
   { to: '/bounties',   label: 'Bounties'  },
   { to: '/gangs',      label: 'Gangs'     },
-  { to: '/wars',       label: 'Turf Wars' },
   { to: '/players',    label: 'Players'   },
   { to: '/friends',    label: 'Friends'   },
   { to: '/trades',     label: 'Trades'    },
