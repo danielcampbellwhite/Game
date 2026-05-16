@@ -22,12 +22,12 @@ export default function Patches() {
           <span className="font-display text-4xl text-blood-500 leading-none tracking-wide">MAFIA LIFE</span>
           <span
             aria-hidden
-            className="font-cursive text-gold-400/95 text-2xl leading-none absolute -bottom-1 right-0 translate-y-2 select-none pointer-events-none whitespace-nowrap"
+            className="font-cursive text-gold-400/95 text-2xl leading-none absolute -bottom-1 right-0 translate-y-1 select-none pointer-events-none whitespace-nowrap"
             style={{ textShadow: '0 1px 0 rgba(0,0,0,0.55)' }}>
             Criminal Empire
           </span>
         </Link>
-        <p className="text-xs text-ink-100/55 mt-3 uppercase tracking-[0.25em]">Patches & Updates</p>
+        <p className="text-xs text-ink-100/55 mt-6 uppercase tracking-[0.25em]">Patches & Updates</p>
       </div>
 
       {PATCHES.map((p, i) => (
