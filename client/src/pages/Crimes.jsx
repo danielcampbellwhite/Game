@@ -246,6 +246,10 @@ export default function Crimes() {
   // instead of the cash, or by GET /crimes/qte on mount (covers
   // refresh-during-QTE).
   const [crimeQte, setCrimeQte] = useState(null);
+  // Hot-wire QTE that precedes every tier='gta' crime. Returned by
+  // /crimes/commit when the player picks a GTA job, or recovered on
+  // mount via GET /crimes/hotwire after a refresh mid-QTE.
+  const [hotwire, setHotwire] = useState(null);
 
   async function load() { const d = await api.get('/crimes'); setList(d.crimes); }
   async function loadChase() {
@@ -260,7 +264,13 @@ export default function Crimes() {
       if (r.qte) setCrimeQte(r.qte);
     } catch { /* none */ }
   }
-  useEffect(() => { load(); loadChase(); loadCrimeQte(); }, []);
+  async function loadHotwire() {
+    try {
+      const r = await api.get('/crimes/hotwire');
+      if (r.hotwire) setHotwire(r.hotwire);
+    } catch { /* none */ }
+  }
+  useEffect(() => { load(); loadChase(); loadCrimeQte(); loadHotwire(); }, []);
 
   async function commit(crime) {
     setBusyId(crime.id);
@@ -275,6 +285,7 @@ export default function Crimes() {
       setLast({ crime, result: r });
       if (r.chase) setChase(r.chase);
       if (r.qte) setCrimeQte(r.qte);
+      if (r.hotwire) setHotwire(r.hotwire);
       await refresh();
       await load();
     } catch (e) { setLast({ crime, error: e.message }); }
@@ -297,6 +308,92 @@ export default function Crimes() {
           chase={chase}
           onResolved={async () => { await refresh(); await load(); }}
           onClose={() => setChase(null)}
+        />
+      )}
+      {hotwire && (
+        <QteSequence
+          data={hotwire}
+          endpoints={{ begin: '/crimes/hotwire/begin', resolve: '/crimes/hotwire/resolve', giveUp: '/crimes/hotwire/give-up' }}
+          title="Hot-wire"
+          subtitle={`Start the ${hotwire.crimeName || 'car'}.`}
+          tagline="Match the wires before the alarm trips. Every hit boosts your odds — and your escape if the cops show."
+          accent="cyan"
+          giveUpLabel="Walk away — energy refunded"
+          tutorialNodes={(
+            <ul className="text-[13px] text-ink-100/75 space-y-1.5 list-disc pl-5">
+              <li>Read the three arrows and tap them <b>in order</b>. {Math.round((hotwire.durationMs || 3000)/1000)}-second timer.</li>
+              <li>Each correct wire = <b>+3% crime success</b> and <b>+5% chase escape</b> if you get spotted.</li>
+              <li>3/3 = best run: +9% success, +15% escape on a chase.</li>
+              <li>Half the time a botched GTA still gets you a getaway chase. The other half, straight to jail.</li>
+              <li>Walk away to refund the energy — no crime committed.</li>
+              <li>Tip: <b>arrow keys</b> work on desktop.</li>
+            </ul>
+          )}
+          renderResult={r => {
+            const hw = r.hotwire || {};
+            const hits = `${hw.correct ?? 0}/${hw.length ?? 3}`;
+            if (r.gaveUp) return (
+              <>
+                <div className="font-display text-2xl text-yellow-300">Walked away.</div>
+                <p className="text-[13px] text-ink-100/75">Energy refunded. Try a different job.</p>
+              </>
+            );
+            if (r.success && r.vehicle) return (
+              <>
+                <div className="font-display text-3xl text-money-300">DRIVE-OFF.</div>
+                <p className="text-[13px] text-ink-100/75">{hits} clean. Stole a {r.vehicle.maker} {r.vehicle.name}{r.condition ? ` (${r.condition}%).` : '.'}</p>
+              </>
+            );
+            if (r.success) return (
+              <>
+                <div className="font-display text-3xl text-money-300">SUCCESS.</div>
+                <p className="text-[13px] text-ink-100/75">{hits} clean.</p>
+              </>
+            );
+            if (r.chase) return (
+              <>
+                <div className="font-display text-2xl text-cyan-300">Sirens.</div>
+                <p className="text-[13px] text-ink-100/75">{hits} on the wires (+{hw.chaseBonusPct}% escape boost). Outrun them.</p>
+              </>
+            );
+            if (r.jailed) return (
+              <>
+                <div className="font-display text-2xl text-blood-300">Caught.</div>
+                <p className="text-[13px] text-ink-100/75">{hits} clean — straight to jail, {r.jail_min}m.</p>
+              </>
+            );
+            if (r.hospital) return (
+              <>
+                <div className="font-display text-2xl text-blue-300">Roughed up.</div>
+                <p className="text-[13px] text-ink-100/75">Hospital {r.hosp_min}m. Heal up.</p>
+              </>
+            );
+            if (r.escaped) return (
+              <>
+                <div className="font-display text-2xl text-yellow-300">Bolted.</div>
+                <p className="text-[13px] text-ink-100/75">{hits} clean — nothing stolen but you got away.</p>
+              </>
+            );
+            if (r.error) return (
+              <>
+                <div className="font-display text-2xl text-blood-300">Error</div>
+                <p className="text-[13px] text-ink-100/75">{r.error}</p>
+              </>
+            );
+            return (
+              <>
+                <div className="font-display text-2xl text-ink-100/80">Done.</div>
+              </>
+            );
+          }}
+          onResolved={async (r) => {
+            await refresh();
+            await load();
+            // If the hot-wire failure rolled into a chase, hand off
+            // to the chase modal so the player keeps playing.
+            if (r?.chase) setChase(r.chase);
+          }}
+          onClose={() => setHotwire(null)}
         />
       )}
       {crimeQte && (

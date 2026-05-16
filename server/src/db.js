@@ -640,6 +640,9 @@ export function initDb() {
   // they use the same arrow-sequence mechanic, so a single flag
   // suffices.
   addColumnIfMissing('characters', 'crime_qte_tutorial_seen', 'INTEGER');
+  // First-time tutorial flag for the hot-wire mini-game that
+  // precedes every GTA crime.
+  addColumnIfMissing('characters', 'hotwire_tutorial_seen', 'INTEGER');
 
   // Clothing owned — one row per (character, clothing item). Items are
   // non-stackable cosmetics, so qty is implicit at 1.

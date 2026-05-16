@@ -31,6 +31,13 @@ try {
   if (!cols.includes('is_tutorial')) {
     db.exec(`ALTER TABLE active_chases ADD COLUMN is_tutorial INTEGER NOT NULL DEFAULT 0`);
   }
+  // Optional bonus from the hot-wire QTE that preceded the GTA
+  // crime. Added to escapeChance at resolve time. Defaults to 0 so
+  // chases triggered by other paths (none today, but room for
+  // growth) behave as before.
+  if (!cols.includes('escape_bonus_pct')) {
+    db.exec(`ALTER TABLE active_chases ADD COLUMN escape_bonus_pct INTEGER NOT NULL DEFAULT 0`);
+  }
 } catch {}
 
 // 1h placeholder — keeps the chase row alive while the player reads
@@ -61,14 +68,15 @@ function randomSequence(len = CHASE_SEQUENCE_LEN) {
 // is_tutorial=1 and expires_at is parked an hour out so the timer
 // can't run down while they read the explainer. The client shows a
 // pre-game overlay and POSTs /chases/begin to start the real timer.
-export function startChase(ch, { crimeId, crimeName, jailMin }) {
+export function startChase(ch, { crimeId, crimeName, jailMin, escapeBonusPct = 0 }) {
   const now = Date.now();
   const sequence = randomSequence();
   const isTutorial = !ch.chase_tutorial_seen ? 1 : 0;
   const expiresAt = isTutorial ? now + TUTORIAL_HOLD_MS : now + CHASE_DURATION_MS;
+  const bonus = Math.max(0, Math.min(40, escapeBonusPct | 0));
   db.prepare(`
-    INSERT INTO active_chases (char_id, sequence_json, intended_jail_min, crime_id, crime_name, created_at, expires_at, is_tutorial)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO active_chases (char_id, sequence_json, intended_jail_min, crime_id, crime_name, created_at, expires_at, is_tutorial, escape_bonus_pct)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(char_id) DO UPDATE SET
       sequence_json     = excluded.sequence_json,
       intended_jail_min = excluded.intended_jail_min,
@@ -76,8 +84,9 @@ export function startChase(ch, { crimeId, crimeName, jailMin }) {
       crime_name        = excluded.crime_name,
       created_at        = excluded.created_at,
       expires_at        = excluded.expires_at,
-      is_tutorial       = excluded.is_tutorial
-  `).run(ch.id, JSON.stringify(sequence), jailMin, crimeId, crimeName, now, expiresAt, isTutorial);
+      is_tutorial       = excluded.is_tutorial,
+      escape_bonus_pct  = excluded.escape_bonus_pct
+  `).run(ch.id, JSON.stringify(sequence), jailMin, crimeId, crimeName, now, expiresAt, isTutorial, bonus);
   return {
     chase: {
       sequence,
@@ -101,6 +110,7 @@ function loadChase(charId) {
     createdAt:       row.created_at,
     expiresAt:       row.expires_at,
     isTutorial:      !!row.is_tutorial,
+    escapeBonusPct:  row.escape_bonus_pct || 0,
   };
 }
 function clearChase(charId) {
@@ -210,7 +220,10 @@ router.post('/resolve', requireAuth, requireCharacter, (req, res) => {
   // basically guarantees an escape; 0/5 still gives you a 10–30%
   // hail-mary roll.
   const drivingBonus = Math.min(0.20, (ch.driving || 1) * 0.003);
-  const escapeChance = Math.min(0.95, 0.10 + correct * 0.16 + drivingBonus);
+  // Hot-wire bonus carries forward from the pre-crime QTE — up to
+  // +15% from a perfect 3/3 hot-wire.
+  const hotwireBonus = (c.escapeBonusPct || 0) / 100;
+  const escapeChance = Math.min(0.95, 0.10 + correct * 0.16 + drivingBonus + hotwireBonus);
   const escaped = Math.random() < escapeChance;
 
   clearChase(ch.id);

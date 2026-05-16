@@ -16,6 +16,9 @@ import {
   deferCrimeQte, loadPendingCrimeQte, beginCrimeQte, scoreCrimeQte, clearPendingCrimeQte, TIER_QTE,
 } from '../services/crime-qte.js';
 import {
+  startHotwire, loadHotwire, beginHotwire, scoreHotwire, clearHotwire,
+} from '../services/hotwire.js';
+import {
   recordCrimeForInvestigation,
   getPendingTrial,
   jailMultiplier,
@@ -231,6 +234,36 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   const intelBonus = (crime.intelBonus || 0) * (ch.intelligence * 0.3);
   const hourMul = crimeHourMul(crime.id, ch.city, now);
   const success = Math.max(5, Math.min(95, (crime.base + ch.intelligence * 0.3 + ch.level * 0.4 + intelBonus - heatPenalty) * hourMul));
+
+  // GTA crimes are deferred behind a hot-wire QTE. Persist the
+  // precomputed crime-resolution context (success rate, heat,
+  // hour-mul, intel-bonus) on the pending row so /hotwire/resolve
+  // can run the actual resolution with the QTE bonus applied,
+  // immune to any heat decay or hour-bucket flip in the seconds
+  // between commit and resolve.
+  if (crime.tier === 'gta') {
+    const hotwire = startHotwire(ch, {
+      crime,
+      baseSuccessPct: success,
+      heatAtCommit:   heatNow,
+      hourMul,
+      intelBonus,
+    });
+    saveCharacter(ch);
+    // Record cooldown so the player can't spam /commit to refresh
+    // the QTE seed.
+    db.prepare(`
+      INSERT INTO consumable_cooldowns (char_id, item_id, used_at) VALUES (?, ?, ?)
+      ON CONFLICT(char_id, item_id) DO UPDATE SET used_at = excluded.used_at
+    `).run(ch.id, cooldownKey(crime.id), now);
+    return res.json({
+      ok: true,
+      hotwire,
+      cooldownUntil: now + cdSec * 1000,
+      character: publicCharacter(ch),
+    });
+  }
+
   const roll = Math.random() * 100;
   const succeeded = roll < success;
 
@@ -499,6 +532,188 @@ router.post('/qte/resolve', requireAuth, requireCharacter, (req, res) => {
     expired,
     character: publicCharacter(ch),
   });
+});
+
+// ─── Hot-wire QTE (GTA only) ────────────────────────────────────
+// Fires on every tier='gta' commit. Inputs modify the success rate
+// (+3% per correct, max +9%) and — if the crime fails into a jail
+// consequence — the chase's escape chance (+5% per correct, max
+// +15%). On jail-bound failure, the chase only fires 50% of the
+// time; the other half goes straight to jail.
+
+const HOTWIRE_CHASE_TRIGGER_CHANCE = 0.5;
+
+router.get('/hotwire', requireAuth, requireCharacter, (req, res) => {
+  const h = loadHotwire(req.character.id);
+  if (!h) return res.json({ hotwire: null });
+  res.json({
+    hotwire: {
+      crimeName:  h.crimeName,
+      sequence:   h.sequence,
+      expiresAt:  h.expiresAt,
+      durationMs: 3000,
+      tutorial:   h.isTutorial,
+    },
+  });
+});
+
+router.post('/hotwire/begin', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const h = beginHotwire(ch);
+  if (!h) return res.status(404).json({ error: 'No active hot-wire.' });
+  res.json({
+    ok: true,
+    hotwire: {
+      crimeName: h.crimeName, sequence: h.sequence, expiresAt: h.expiresAt,
+      durationMs: 3000, tutorial: h.isTutorial,
+    },
+  });
+});
+
+router.post('/hotwire/resolve', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const h = loadHotwire(ch.id);
+  if (!h) return res.status(404).json({ error: 'No active hot-wire.' });
+  if (h.isTutorial) return res.status(409).json({ error: 'Hit Continue first.' });
+  const crime = crimeById(h.crimeId);
+  if (!crime) {
+    clearHotwire(ch.id);
+    return res.status(400).json({ error: 'Crime no longer exists.' });
+  }
+  const now = Date.now();
+  const inputs = Array.isArray(req.body?.inputs) ? req.body.inputs.slice(0, h.sequence.length) : [];
+  const expired = now > h.expiresAt;
+  const scored = scoreHotwire(h, inputs, { expired });
+
+  // Apply hot-wire bonus, roll the crime, run the resolution. The
+  // bonus is bounded — even 9 extra % can't push success past 95%.
+  const finalSuccess = Math.max(5, Math.min(95, h.baseSuccessPct + scored.successBonusPct));
+  const roll = Math.random() * 100;
+  const succeeded = roll < finalSuccess;
+
+  // Heat is applied unconditionally at commit time in the normal
+  // path, but we deferred. Apply now so attribution lines up.
+  if (typeof addHeat === 'function') {
+    addHeat(ch, HEAT_BY_RISK[crime.risk] || 0);
+  }
+
+  let result;
+  if (succeeded) {
+    const happyMul = 1 + (ch.happiness - 50) / 200;
+    const xpGain = Math.floor(crime.xp * happyMul);
+    const lvls = awardXp(ch, xpGain);
+    ch.reputation += Math.floor(crime.xp / 4);
+    ch.happiness = Math.min(100, ch.happiness + 1);
+    bumpMission(ch, 'crime_success', 1, { tier: crime.tier, crime: crime.id });
+    if (ch.faction) {
+      db.prepare(`
+        INSERT INTO faction_stats (faction_id, crimes_committed) VALUES (?, 1)
+        ON CONFLICT(faction_id) DO UPDATE SET crimes_committed = crimes_committed + 1
+      `).run(ch.faction);
+    }
+    // Vehicle steal path — mirrors the /commit success branch for
+    // crime.tier='gta'.
+    const v = rollVehicleFromTier(crime.vehicleTier);
+    let stolenCondition = 100;
+    let stolenActive = false;
+    let chopped = false;
+    let chopPayout = 0;
+    if (v) {
+      stolenCondition = Math.round(75 + Math.random() * 25);
+      const drivingGate = VEHICLE_TIER_DRIVING_GATE[v.tier] || 0;
+      const canDrive = (ch.driving || 1) >= drivingGate;
+      if (canDrive && !ch.active_premium_vehicle_id) {
+        const info = db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
+        ch.active_vehicle_id = info.lastInsertRowid;
+        stolenActive = true;
+      } else if (freeGarageSpace(ch.id, ch.city) > 0) {
+        db.prepare('INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at, condition) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(ch.id, v.id, 'stolen', ch.city, Date.now(), stolenCondition);
+      } else {
+        chopPayout = Math.floor(v.bookPrice * 0.15);
+        ch.cash += chopPayout;
+        chopped = true;
+      }
+    }
+    const summary = !v
+      ? `Pulled off "${crime.name}" (+${xpGain}xp).`
+      : chopped
+        ? `Pulled off "${crime.name}" — chopped the ${v.maker} ${v.name} for £${chopPayout.toLocaleString()} (no garage, no licence) (+${xpGain}xp).`
+        : stolenActive
+          ? `Pulled off "${crime.name}" — drove off in a ${v.maker} ${v.name} (${stolenCondition}% cond, +${xpGain}xp).`
+          : `Pulled off "${crime.name}" — stashed the ${v.maker} ${v.name} in the garage. +${xpGain}xp.`;
+    writeLog(ch.id, 'crime', summary, { crime: crime.id, vehicle: v?.id, xp: xpGain, condition: stolenCondition, stashed: !stolenActive && !chopped, chopped, chopPayout, hotwire: scored });
+    result = { ok: true, success: true, vehicle: v, condition: stolenCondition, xp: xpGain, levels: lvls, active: stolenActive, chopped, chopPayout, hotwire: scored };
+  } else {
+    // Failure path. Consequence roll mirrors the /commit failure
+    // branch. The chase, if it would have fired, is now gated by
+    // a 50% coinflip — half the time it's a chance to escape, half
+    // the time it's straight to jail.
+    const risk = RISK_TABLE[crime.risk] || RISK_TABLE.low;
+    const jailFloor = risk.jail;
+    const jailCeil  = Math.min(risk.jail + risk.hosp, jailFloor * (1 + h.heatAtCommit * HEAT_JAIL_MULTIPLIER));
+    const adjustedJail = Math.max(jailFloor, jailCeil);
+    const consequence = Math.random();
+    if (consequence < adjustedJail) {
+      const recMul = jailMultiplier(ch.id);
+      const baseMins = Math.floor(risk.jailMin * (1 + Math.random() * 0.6));
+      const mins = Math.floor(baseMins * recMul);
+      if (Math.random() < HOTWIRE_CHASE_TRIGGER_CHANCE) {
+        const payload = startChase(ch, {
+          crimeId: crime.id, crimeName: crime.name, jailMin: mins,
+          escapeBonusPct: scored.chaseBonusPct,
+        });
+        const msg = ` Sirens behind you mid-getaway from "${crime.name}". Outrun them or it's ${mins}m inside.`;
+        writeLog(ch.id, 'crime', msg, { crime: crime.id, chase: true, jail_min: mins, hotwire: scored }, true);
+        result = { ok: true, success: false, chase: payload.chase, hotwire: scored };
+      } else {
+        const msg = failMessage(crime.tier, 'jail', crime.name, mins);
+        applyJailSentence(ch, mins * 60 * 1000, msg);
+        writeLog(ch.id, 'crime', msg, { crime: crime.id, jail_min: mins, hotwire: scored }, true);
+        result = { ok: true, success: false, jailed: true, jail_min: mins, hotwire: scored };
+      }
+    } else if (consequence < adjustedJail + risk.hosp) {
+      const mins = Math.floor(risk.hospMin * (1 + Math.random() * 0.7));
+      ch.hospital_until = Date.now() + mins * 60 * 1000;
+      ch.health = Math.max(1, Math.floor(ch.health * 0.3));
+      const msg = failMessage(crime.tier, 'hospital', crime.name, mins);
+      ch.hospital_reason = msg;
+      writeLog(ch.id, 'crime', msg, { crime: crime.id, hosp_min: mins, hotwire: scored }, true);
+      result = { ok: true, success: false, hospital: true, hosp_min: mins, hotwire: scored };
+    } else {
+      ch.happiness = Math.max(0, ch.happiness - 2);
+      const msg = failMessage(crime.tier, 'escape', crime.name);
+      writeLog(ch.id, 'crime', msg, { crime: crime.id, hotwire: scored });
+      result = { ok: true, success: false, escaped: true, hotwire: scored };
+    }
+  }
+  clearHotwire(ch.id);
+  saveCharacter(ch);
+  res.json({ ...result, character: publicCharacter(ch), expired });
+});
+
+router.post('/hotwire/give-up', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
+  const ch = req.character;
+  const h = loadHotwire(ch.id);
+  if (!h) return res.status(404).json({ error: 'No active hot-wire.' });
+  // Mark tutorial seen even on give-up so the next attempt skips
+  // the overlay.
+  if (!ch.hotwire_tutorial_seen) {
+    ch.hotwire_tutorial_seen = 1;
+    db.prepare('UPDATE characters SET hotwire_tutorial_seen = 1 WHERE id = ?').run(ch.id);
+  }
+  // Give-up = 0/0 hits, no bonus, crime rolls with the base success
+  // rate. This is equivalent to a 0-correct resolve.
+  req.body = { inputs: [] };
+  // Defer to /resolve by re-using its logic? Simpler: clear and apply
+  // a baseline failure (you didn't even start). Skip the crime
+  // entirely — refund energy as a courtesy.
+  ch.energy = Math.min(ch.max_energy, ch.energy + (crimeById(h.crimeId)?.energy || 0));
+  clearHotwire(ch.id);
+  writeLog(ch.id, 'crime', `Walked away from "${h.crimeName}" before the engine turned. Energy refunded.`);
+  saveCharacter(ch);
+  res.json({ ok: true, gaveUp: true, character: publicCharacter(ch) });
 });
 
 export default router;
