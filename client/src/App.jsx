@@ -93,7 +93,12 @@ function Protected({ children }) {
   // (plead / court) clears the flag and unblocks the rest of the
   // game. The flag lives on character.pending_trial (server tags it
   // on publicCharacter).
-  if (character.pending_trial && location.pathname !== '/trial') {
+  //
+  // Hospital and jail are higher-priority lockouts: while in either,
+  // skip the trial redirect so the two guards don't bounce the user
+  // between /hospital and /trial in an infinite loop. The trial
+  // resumes as soon as hospital_until / jail_until expires.
+  if (!inHospital && !inJail && character.pending_trial && location.pathname !== '/trial') {
     return <Navigate to="/trial" replace />;
   }
 
