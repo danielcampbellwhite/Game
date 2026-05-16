@@ -113,7 +113,7 @@ export default function Login() {
             <span className="font-display text-5xl text-blood-500 leading-none tracking-wide">MAFIA LIFE</span>
             <span
               aria-hidden
-              className="font-cursive text-gold-400/95 text-3xl leading-none absolute -bottom-2 right-0 -translate-y-1 select-none pointer-events-none whitespace-nowrap"
+              className="font-cursive text-gold-400/95 text-3xl leading-none absolute -bottom-2 right-0 -translate-y-[16px] select-none pointer-events-none whitespace-nowrap"
               style={{ textShadow: '0 1px 0 rgba(0,0,0,0.55)' }}>
               Criminal Empire
             </span>
