@@ -53,6 +53,11 @@ export function effectiveStats(ch) {
     strength: (ch.strength || 0) + getCurrentBuff(ch, 'strength'),
     defence:  (ch.defence  || 0) + getCurrentBuff(ch, 'defence'),
     speed:    (ch.speed    || 0) + getCurrentBuff(ch, 'speed'),
+    // No INT buff stat in the current buff system — pass the raw
+    // value so callers (e.g. the murder hit formula) read a number,
+    // not undefined. Skipping this turns the whole hit math into
+    // NaN, which silently makes every shot miss.
+    intelligence: ch.intelligence || 0,
     accuracy: getCurrentBuff(ch, 'accuracy'), // base 0; pure buff stat
   };
 }
