@@ -22,7 +22,7 @@ export default function Patches() {
           <span className="font-display text-4xl text-blood-500 leading-none tracking-wide">MAFIA LIFE</span>
           <span
             aria-hidden
-            className="font-cursive text-gold-400/95 text-2xl leading-none absolute -bottom-1 right-0 -translate-y-[6px] select-none pointer-events-none whitespace-nowrap"
+            className="font-cursive text-gold-400/95 text-2xl leading-none absolute -bottom-1 right-0 -translate-y-[2px] select-none pointer-events-none whitespace-nowrap"
             style={{ textShadow: '0 1px 0 rgba(0,0,0,0.55)' }}>
             Criminal Empire
           </span>
