@@ -15,8 +15,9 @@ import { useGame } from '../context/GameContext.jsx';
 // Tap when offline → shows a short "no signal" hint with the
 //                    buy-a-smartphone pointer.
 
-// Comfortable thumb-sized FAB.
-const BUBBLE_PX   = 56;
+// Comfortable thumb-sized FAB — chunky enough on mobile to spot at a
+// glance and easy to grab with a thumb.
+const BUBBLE_PX   = 72;
 const EDGE_MARGIN = 12;
 // Pixels of movement before a pointerdown becomes a drag rather than
 // a tap. Keeps small thumb jitter from closing the overlay accidentally.
@@ -169,7 +170,7 @@ export default function PhoneFab({ onOpen }) {
         className={`rounded-2xl bg-ink-950/95 border border-ink-100/15 backdrop-blur shadow-2xl shadow-black/60 hover:bg-ink-900/95 ${drag ? 'cursor-grabbing' : 'cursor-grab'} active:scale-95 transition flex items-center justify-center select-none`}>
         {/* Phone glyph — simple rounded rectangle outline so it reads
             as "mobile" without needing an icon font. */}
-        <svg viewBox="0 0 24 32" className="w-6 h-8 text-ink-100/90" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+        <svg viewBox="0 0 24 32" className="w-8 h-10 text-ink-100/90" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
           <rect x="2" y="2" width="20" height="28" rx="3" />
           <line x1="2" y1="6"  x2="22" y2="6"  />
           <line x1="2" y1="26" x2="22" y2="26" />
@@ -177,8 +178,8 @@ export default function PhoneFab({ onOpen }) {
         </svg>
         {/* Status dot — top-right corner of the FAB. Green pulses
             when online; red sits solid when offline. */}
-        <span className="absolute top-1.5 right-1.5">
-          <span className={`block w-2.5 h-2.5 rounded-full ${online ? 'bg-money-400' : 'bg-blood-500'}`} />
+        <span className="absolute top-2 right-2">
+          <span className={`block w-3 h-3 rounded-full ${online ? 'bg-money-400' : 'bg-blood-500'}`} />
           {online && (
             <span className="absolute inset-0 rounded-full bg-money-400 opacity-70 animate-ping" />
           )}
