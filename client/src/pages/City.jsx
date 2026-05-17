@@ -141,17 +141,33 @@ function AroundTown() {
     <div className="space-y-3">
       <div className="rounded-lg border border-ink-100/10 bg-ink-900/40 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wide text-ink-100/55">You are at</div>
-          <div className="text-2xl font-display mt-0.5">
-            {travelling
-              ? <span className="text-cyan-200">En route…</span>
-              : (here?.name || 'On the streets')}
+          <div className="text-xs uppercase tracking-wide text-ink-100/55">
+            {travelling ? 'En route to' : 'You are at'}
           </div>
-          <p className="text-[12px] text-ink-100/55 mt-1">
-            {travelling
-              ? 'Locked except for chat until you arrive. Countdown is on the destination tile below.'
-              : data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
-          </p>
+          {travelling ? (() => {
+            const dest = data.locations.find(l => l.slug === data.intra_travel_to);
+            const destName = dest?.name || (data.intra_travel_to || '').replace(/_/g, ' ');
+            const verb = data.intra_travel_mode === 'drive' ? 'Driving' : 'Walking';
+            const secs = Math.max(0, Math.ceil(travelMsLeft / 1000));
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            const clockTxt = m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
+            return (
+              <>
+                <div className="text-2xl font-display mt-0.5 text-cyan-200">{destName}</div>
+                <p className="text-[12px] text-ink-100/55 mt-1">
+                  {verb} · {clockTxt} to go · locked except for chat until you arrive.
+                </p>
+              </>
+            );
+          })() : (
+            <>
+              <div className="text-2xl font-display mt-0.5">{here?.name || 'On the streets'}</div>
+              <p className="text-[12px] text-ink-100/55 mt-1">
+                {data.has_vehicle ? 'Active vehicle parked nearby — driving available.' : 'No active vehicle — walking only.'}
+              </p>
+            </>
+          )}
         </div>
         {!travelling && here?.gated && (
           <button
