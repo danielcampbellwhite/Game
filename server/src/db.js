@@ -1052,6 +1052,22 @@ export function initDb() {
   // "Online" is derived as (now - last_active_at) < 60_000 in publicProfileFor.
   addColumnIfMissing('characters', 'last_active_at', 'INTEGER');
 
+  // Bank-account columns. Existing characters are grandfathered into
+  // an open account with PIN '0000' so the rollout doesn't lock anyone
+  // out of their cash; new characters open the account explicitly at
+  // the bank and get a random PIN.
+  addColumnIfMissing('characters', 'bank_account_opened', 'INTEGER NOT NULL DEFAULT 0');
+  addColumnIfMissing('characters', 'bank_pin',            'TEXT');
+  addColumnIfMissing('characters', 'bank_pin_attempts',   'INTEGER NOT NULL DEFAULT 0');
+  addColumnIfMissing('characters', 'bank_locked_until',   'INTEGER');
+  // One-shot backfill for the rollout. Anyone who had bank cash or
+  // dirty cash deposited before this migration almost certainly had
+  // an "account" by playing — grant them the default PIN and the
+  // opened flag so they can carry on banking with no friction.
+  try {
+    db.prepare("UPDATE characters SET bank_account_opened = 1, bank_pin = '0000' WHERE bank_pin IS NULL").run();
+  } catch {}
+
   // PvP fights gain a mode column to differentiate KO ('knockout') from
   // permadeath ('murder'). pvp_challenges mirrors so both sides see it.
   addColumnIfMissing('pvp_fights',     'mode', "TEXT NOT NULL DEFAULT 'knockout'");

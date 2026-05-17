@@ -45,7 +45,8 @@ const NAV_TREE = [
     { to: '/hospital',        label: 'Hospital' },
     { to: '/jail',            label: 'Jail' },
   ]},
-  { to: '/online',     label: 'Online' },
+  // Online services now live behind the phone in the bottom-right
+  // corner — no top-level Online nav link needed.
   { to: '/crimes',     label: 'Crimes', children: [
     { to: '/crimes',    label: 'Solo crimes' },
     { to: '/burglary',  label: 'Burglary' },

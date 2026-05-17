@@ -22,6 +22,7 @@ import {
   listPendingDeliveries, pendingDeliveryCountInCity,
   listPendingWeaponDeliveries,
 } from '../services/deliveries.js';
+import { changePin, forgotPin, recentBankLog, pinLockoutMsLeft } from '../services/bank.js';
 
 const router = Router();
 
@@ -356,21 +357,40 @@ router.post('/weapons/buy', requireAuth, requireCharacter, requireInternet, (req
   res.json({ ok: true, arrives_at: arrives, cost, base: totalBase, character: publicCharacter(ch) });
 });
 
-// ─── Bank app — read-only mirror of the bank counter ─────────
-// Lets a player check their balance and outstanding loans from
-// anywhere they're online. Cash deposits, withdrawals, and loans
-// still need a physical visit to the bank.
+// ─── Bank app — read-only balance + PIN management ───────────
+// Lets a player check their balance + transaction history and
+// manage their PIN from anywhere they're online. Cash deposits,
+// withdrawals, and new loans still require a physical visit to
+// the bank counter or an ATM.
 
 router.get('/bank-app', requireAuth, requireCharacter, requireInternet, (req, res) => {
   const ch = req.character;
   const loans = db.prepare('SELECT * FROM loans WHERE char_id = ?').all(ch.id);
   res.json({
     bank: ch.bank,
-    cash: ch.cash,
+    account_opened: !!ch.bank_account_opened,
+    pin_lockout_ms_left: pinLockoutMsLeft(ch),
+    transactions: recentBankLog(ch.id, 20),
     loans,
     totalOwed: loans.reduce((a, l) => a + l.principal, 0),
     note: 'Deposits, withdrawals, and new loans require a visit to the bank.',
   });
+});
+
+router.post('/bank-app/change-pin', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const r = changePin(ch, String(req.body?.old_pin || ''), String(req.body?.new_pin || ''));
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  saveCharacter(ch);
+  res.json({ ok: true });
+});
+
+router.post('/bank-app/forgot-pin', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const r = forgotPin(ch);
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  saveCharacter(ch);
+  res.json({ ok: true });
 });
 
 export default router;

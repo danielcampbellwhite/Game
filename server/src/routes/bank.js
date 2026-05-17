@@ -3,6 +3,10 @@ import { db } from '../db.js';
 import { requireAuth, requireCharacter } from '../middleware/auth.js';
 import { saveCharacter, publicCharacter, computeNetWorth } from '../services/character.js';
 import { writeLog } from '../services/log.js';
+import {
+  openAccount, verifyPin, changePin, forgotPin, recentBankLog,
+  isPinFormat, pinLockoutMsLeft,
+} from '../services/bank.js';
 
 const router = Router();
 
@@ -46,44 +50,93 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   res.json({
     cash: ch.cash,
     bank: ch.bank,
+    account_opened: !!ch.bank_account_opened,
+    pin_locked_until: ch.bank_locked_until || null,
+    pin_lockout_ms_left: pinLockoutMsLeft(ch),
     loans,
     maxLoan: borrow.max,
     breakdown: borrow,
     credit: { tier: tier.name, rate: tier.rate },
     networth,
     interestRateHourly: 0.0002,
+    transactions: recentBankLog(ch.id, 20),
   });
+});
+
+// POST /open-account — first-time setup. Generates a 4-digit PIN and
+// returns it ONCE so the player can write it down. Subsequent calls
+// from an already-opened account return alreadyOpen=true with no PIN.
+router.post('/open-account', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const r = openAccount(ch);
+  res.json({ ok: true, pin: r.pin || null, alreadyOpen: !!r.alreadyOpen });
 });
 
 router.post('/deposit', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
+  if (!ch.bank_account_opened) return res.status(400).json({ error: 'Open a bank account first.' });
   const amount = Math.max(1, parseInt(req.body?.amount || 0, 10));
   if (ch.cash < amount) return res.status(400).json({ error: 'Not enough cash' });
   ch.cash -= amount; ch.bank += amount;
-  writeLog(ch.id, 'bank', `Deposited £${amount}.`);
+  writeLog(ch.id, 'bank', `Deposited £${amount.toLocaleString()}.`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });
 
+// POST /withdraw { amount, pin } — counter withdrawal. Requires PIN.
 router.post('/withdraw', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
+  if (!ch.bank_account_opened) return res.status(400).json({ error: 'Open a bank account first.' });
   const amount = Math.max(1, parseInt(req.body?.amount || 0, 10));
+  const pin = String(req.body?.pin || '');
   if (ch.bank < amount) return res.status(400).json({ error: 'Not enough in bank' });
+  const v = verifyPin(ch, pin);
+  if (!v.ok) return res.status(400).json({ error: v.error, locked: !!v.locked });
   ch.bank -= amount; ch.cash += amount;
-  writeLog(ch.id, 'bank', `Withdrew £${amount}.`);
+  writeLog(ch.id, 'bank', `Withdrew £${amount.toLocaleString()} at the counter.`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
+});
+
+// POST /atm/withdraw { amount, pin } — alias of /withdraw, separate
+// endpoint so the ATM mini-game can be tracked / logged distinctly
+// from the over-the-counter route.
+router.post('/atm/withdraw', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  if (!ch.bank_account_opened) return res.status(400).json({ error: 'Open a bank account first.' });
+  const amount = Math.max(1, parseInt(req.body?.amount || 0, 10));
+  const pin = String(req.body?.pin || '');
+  if (ch.bank < amount) return res.status(400).json({ error: 'Insufficient funds.' });
+  const v = verifyPin(ch, pin);
+  if (!v.ok) return res.status(400).json({ error: v.error, locked: !!v.locked });
+  ch.bank -= amount; ch.cash += amount;
+  writeLog(ch.id, 'bank', `Withdrew £${amount.toLocaleString()} at the ATM.`);
+  saveCharacter(ch);
+  res.json({ ok: true, character: publicCharacter(ch) });
+});
+
+router.post('/change-pin', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const oldPin = String(req.body?.old_pin || '');
+  const newPin = String(req.body?.new_pin || '');
+  const r = changePin(ch, oldPin, newPin);
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  saveCharacter(ch);
+  res.json({ ok: true });
+});
+
+router.post('/forgot-pin', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const r = forgotPin(ch);
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  saveCharacter(ch);
+  res.json({ ok: true });
 });
 
 router.post('/loan', requireAuth, requireCharacter, (req, res) => {
   const ch = req.character;
   const amount = Math.max(1000, parseInt(req.body?.amount || 0, 10));
   const loans = db.prepare('SELECT * FROM loans WHERE char_id = ?').all(ch.id);
-  // Single-open-loan rule. Without this you could stack loans against
-  // an inflated net-worth surface (live stock prices, vehicle book
-  // values) and then cash out into illiquid assets — the auto-default
-  // only seizes cash and bank, so the rest of your portfolio stayed
-  // safe. Repay the open loan before taking another.
   if (loans.length > 0) {
     return res.status(409).json({ error: 'You already have an open loan. Repay it before taking another.' });
   }
@@ -111,7 +164,7 @@ router.post('/repay', requireAuth, requireCharacter, (req, res) => {
   if (ch.cash < loan.principal) return res.status(400).json({ error: 'Not enough cash to repay' });
   ch.cash -= loan.principal;
   db.prepare('DELETE FROM loans WHERE id = ?').run(loan.id);
-  writeLog(ch.id, 'bank', `Repaid £${loan.principal} loan.`);
+  writeLog(ch.id, 'bank', `Repaid £${loan.principal.toLocaleString()} loan.`);
   saveCharacter(ch);
   res.json({ ok: true, character: publicCharacter(ch) });
 });

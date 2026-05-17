@@ -91,43 +91,105 @@ export default function Online() {
 export function BankAppTab() {
   const [data, setData] = useState(null);
   const [msg, setMsg]   = useState(null);
-  useEffect(() => {
-    api.get('/online/bank-app').then(setData).catch(e => setMsg(e.message));
-  }, []);
+  const [busy, setBusy] = useState(null);
+  const [oldPin, setOldPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+
+  async function reload() {
+    try { setData(await api.get('/online/bank-app')); }
+    catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { reload(); }, []);
+
+  async function changePin() {
+    if (!/^\d{4}$/.test(newPin)) { setMsg('New PIN must be 4 digits.'); return; }
+    if (newPin !== confirmPin)   { setMsg('PINs don\'t match.'); return; }
+    setBusy('change'); setMsg(null);
+    try {
+      await api.post('/online/bank-app/change-pin', { old_pin: oldPin, new_pin: newPin });
+      setMsg('PIN updated.');
+      setOldPin(''); setNewPin(''); setConfirmPin('');
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  async function forgot() {
+    setBusy('forgot'); setMsg(null);
+    try {
+      await api.post('/online/bank-app/forgot-pin', {});
+      setMsg('Bank sent you a DM with your PIN.');
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   if (!data) return <Card><p className="text-xs text-ink-100/55">{msg || 'Loading…'}</p></Card>;
+  if (!data.account_opened) {
+    return (
+      <Card title="No account yet"
+        subtitle="Visit the bank to open an account and get a PIN. Once opened, you can manage it from here.">
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <Card title="Bank app"
         subtitle={data.note}>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-md bg-ink-900/50 px-3 py-2">
-            <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Bank balance</div>
-            <div className="font-display text-2xl text-money-300 tabular-nums">{fmt(data.bank)}</div>
-          </div>
-          <div className="rounded-md bg-ink-900/50 px-3 py-2">
-            <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Pocket cash</div>
-            <div className="font-display text-2xl text-ink-100 tabular-nums">{fmt(data.cash)}</div>
-          </div>
+        <div className="rounded-md bg-ink-900/50 px-3 py-2">
+          <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Balance</div>
+          <div className="font-display text-3xl text-money-300 tabular-nums">{fmt(data.bank)}</div>
         </div>
+        {data.loans.length > 0 && (
+          <div className="mt-2 text-[12px] text-ink-100/65">
+            Outstanding loans: <span className="text-blood-300 tabular-nums">{fmt(data.totalOwed)}</span>
+          </div>
+        )}
       </Card>
 
-      {data.loans.length > 0 && (
-        <Card title="Outstanding loans">
-          <ul className="text-xs space-y-1">
-            {data.loans.map(l => (
-              <li key={l.id} className="flex justify-between border-b border-ink-100/5 py-1 last:border-0">
-                <span className="text-ink-100/85">Loan #{l.id}</span>
-                <span className="tabular-nums text-blood-300">{fmt(l.principal)} owed</span>
+      <Card title="Recent transactions"
+        subtitle="Last 20 bank-related events on this account.">
+        {data.transactions.length === 0 ? (
+          <p className="text-[12px] text-ink-100/45">No activity yet.</p>
+        ) : (
+          <ul className="text-[12px] divide-y divide-ink-100/5">
+            {data.transactions.map(t => (
+              <li key={t.id} className="py-1.5 flex items-start justify-between gap-2">
+                <span className="text-ink-100/85">{t.message}</span>
+                <span className="text-ink-100/40 text-[11px] whitespace-nowrap shrink-0">
+                  {new Date(t.created_at).toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}
+                </span>
               </li>
             ))}
           </ul>
-          {data.totalOwed > 0 && (
-            <p className="text-[12px] text-ink-100/55 mt-2">
-              Total owed: <span className="text-blood-300 tabular-nums">{fmt(data.totalOwed)}</span> · repay at the bank.
-            </p>
-          )}
-        </Card>
-      )}
+        )}
+      </Card>
+
+      <Card title="PIN management"
+        subtitle="Change your PIN, or ask the bank to DM you a reminder if you've forgotten it.">
+        {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          <input type="text" inputMode="numeric" maxLength="4" value={oldPin}
+            onChange={e => setOldPin(e.target.value.replace(/\D/g,'').slice(0,4))}
+            placeholder="Old PIN" className="text-xs" />
+          <input type="text" inputMode="numeric" maxLength="4" value={newPin}
+            onChange={e => setNewPin(e.target.value.replace(/\D/g,'').slice(0,4))}
+            placeholder="New" className="text-xs" />
+          <input type="text" inputMode="numeric" maxLength="4" value={confirmPin}
+            onChange={e => setConfirmPin(e.target.value.replace(/\D/g,'').slice(0,4))}
+            placeholder="Confirm" className="text-xs" />
+        </div>
+        <div className="flex gap-1.5">
+          <button onClick={changePin} disabled={busy === 'change' || !oldPin || !newPin}
+            className="btn btn-primary text-xs flex-1">
+            {busy === 'change' ? '…' : 'Change PIN'}
+          </button>
+          <button onClick={forgot} disabled={busy === 'forgot'}
+            className="btn btn-ghost text-xs flex-1">
+            {busy === 'forgot' ? '…' : 'Forgot?'}
+          </button>
+        </div>
+      </Card>
     </div>
   );
 }
