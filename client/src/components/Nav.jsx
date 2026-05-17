@@ -21,30 +21,35 @@ const NAV_TREE = [
   { to: '/car',   label: 'My Car' },
   { to: '/house', label: 'House' },
   { to: '/city',  label: 'City', children: [
+    // `locationSlug` makes a child a travel destination: when the
+    // player isn't already at this location, the dropdown row gets
+    // Walk + Drive buttons so they can launch the trip without
+    // walking to /city first. Tapping the label still navigates
+    // (the City page handles arrival).
     { to: '/city',            label: 'City map' },
-    { to: '/bank',            label: 'Bank' },
-    { to: '/general-store',   label: 'General Store' },
-    { to: '/high-street',     label: 'High Street' },
-    { to: '/clothing/low',    label: 'Streetwear Outlet' },
-    { to: '/clothing/high',   label: 'Atelier' },
-    { to: '/dealership',      label: 'Car Dealership' },
-    { to: '/aircraft-dealer', label: 'Aircraft Broker' },
-    { to: '/chop-shop',       label: 'Chop Shop' },
-    { to: '/repair',          label: 'Repair Shop' },
-    { to: '/gun-store',       label: 'Gun Store' },
-    { to: '/drugs',           label: 'The Block (drugs)' },
-    { to: '/fence',           label: 'The Fence' },
-    { to: '/property',        label: 'Estate Agent' },
-    { to: '/stocks',          label: 'Stock Brokerage' },
-    { to: '/travel',          label: 'Airport' },
-    { to: '/casino',          label: 'Casino' },
-    { to: '/bookmaker',       label: 'Bookmaker' },
-    { to: '/gym',             label: 'Gym' },
-    { to: '/range',           label: 'Shooting Range' },
-    { to: '/university',      label: 'University' },
-    { to: '/driving-school',  label: 'Driving School' },
-    { to: '/hospital',        label: 'Hospital' },
-    { to: '/jail',            label: 'Jail' },
+    { to: '/bank',            label: 'Bank',              locationSlug: 'bank' },
+    { to: '/general-store',   label: 'General Store',     locationSlug: 'general_store' },
+    { to: '/high-street',     label: 'High Street',       locationSlug: 'high_street' },
+    { to: '/clothing/low',    label: 'Streetwear Outlet', locationSlug: 'clothing_low' },
+    { to: '/clothing/high',   label: 'Atelier',           locationSlug: 'clothing_high' },
+    { to: '/dealership',      label: 'Car Dealership',    locationSlug: 'dealership' },
+    { to: '/aircraft-dealer', label: 'Aircraft Broker',   locationSlug: 'aircraft_dealer' },
+    { to: '/chop-shop',       label: 'Chop Shop',         locationSlug: 'chop_shop' },
+    { to: '/repair',          label: 'Repair Shop',       locationSlug: 'repair' },
+    { to: '/gun-store',       label: 'Gun Store',         locationSlug: 'gun_store' },
+    { to: '/drugs',           label: 'The Block (drugs)', locationSlug: 'drug_market' },
+    { to: '/fence',           label: 'The Fence',         locationSlug: 'fence' },
+    { to: '/property',        label: 'Estate Agent',      locationSlug: 'estate_agent' },
+    { to: '/stocks',          label: 'Stock Brokerage',   locationSlug: 'brokerage' },
+    { to: '/travel',          label: 'Airport',           locationSlug: 'airport' },
+    { to: '/casino',          label: 'Casino',            locationSlug: 'casino' },
+    { to: '/bookmaker',       label: 'Bookmaker',         locationSlug: 'bookmaker' },
+    { to: '/gym',             label: 'Gym',               locationSlug: 'gym' },
+    { to: '/range',           label: 'Shooting Range',    locationSlug: 'range' },
+    { to: '/university',      label: 'University',        locationSlug: 'university' },
+    { to: '/driving-school',  label: 'Driving School',    locationSlug: 'driving_school' },
+    { to: '/hospital',        label: 'Hospital',          locationSlug: 'hospital' },
+    { to: '/jail',            label: 'Jail',              locationSlug: 'jail' },
   ]},
   // Online services now live behind the phone in the bottom-right
   // corner — no top-level Online nav link needed.
@@ -280,7 +285,7 @@ function MiniStat({ label, value, max, color, money }) {
 // `children` it's a click-to-open dropdown that closes on outside
 // click or when a child link is picked. Active styling kicks in when
 // the route equals the parent OR any child.
-function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard, isAdmin, onSignOut }) {
+function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard, isAdmin, onSignOut, currentLocation, hasVehicle, onTravelTo }) {
   const [open, setOpen] = useState(false);
   // Bounding rect of the trigger button — used to position the
   // dropdown with `position: fixed` so it escapes the scrolling
@@ -377,6 +382,44 @@ function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard, isAdmin
                   </li>
                 );
               }
+              // Location row: show Walk + Drive shortcuts inline so
+              // the player can launch the trip without first jumping
+              // to /city. The label itself still navigates (handy
+              // when you're already at the location and want to enter
+              // the building).
+              if (c.locationSlug) {
+                const here = currentLocation === c.locationSlug;
+                return (
+                  <li key={c.to} className="px-2 py-1">
+                    <div className="flex items-center gap-1">
+                      <NavLink
+                        to={c.to}
+                        onClick={(e) => { onClickGuard(e); setOpen(false); onPick?.(); }}
+                        className={({ isActive }) =>
+                          `flex-1 min-w-0 truncate px-2 py-1 rounded ${isActive || here ? 'bg-blood-700/60 text-white' : 'text-ink-100/85 hover:bg-ink-800/70'}`}>
+                        {c.label}{here && <span className="ml-1 text-[10px] uppercase text-money-300">· here</span>}
+                      </NavLink>
+                      {!here && !lockedOut && (
+                        <>
+                          <button type="button"
+                            onClick={() => { setOpen(false); onPick?.(); onTravelTo?.(c.locationSlug, 'walk'); }}
+                            title="Walk here"
+                            className="shrink-0 px-2 py-1 rounded text-[11px] uppercase bg-ink-900/60 hover:bg-ink-800/70 text-ink-100/85">
+                            Walk
+                          </button>
+                          <button type="button"
+                            disabled={!hasVehicle}
+                            onClick={() => { setOpen(false); onPick?.(); onTravelTo?.(c.locationSlug, 'drive'); }}
+                            title={hasVehicle ? 'Drive here' : 'No active car — walk instead'}
+                            className={`shrink-0 px-2 py-1 rounded text-[11px] uppercase ${hasVehicle ? 'bg-money-700/60 hover:bg-money-700 text-white' : 'bg-ink-900/30 text-ink-100/40 cursor-not-allowed'}`}>
+                            Drive
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              }
               return (
                 <li key={c.to}>
                   <NavLink
@@ -400,7 +443,7 @@ function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard, isAdmin
 // nav. Collapsible via the toggle handle on the right; preference is
 // persisted to localStorage so we don't reset on every render.
 const SUBNAV_KEY = 'mafia.subnav.collapsed';
-function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSignOut }) {
+function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSignOut, currentLocation, hasVehicle, onTravelTo }) {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(SUBNAV_KEY) === '1'; }
     catch { return false; }
@@ -427,7 +470,10 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
                 linkClass={linkClass}
                 onClickGuard={onClickGuard}
                 isAdmin={isAdmin}
-                onSignOut={onSignOut} />
+                onSignOut={onSignOut}
+                currentLocation={currentLocation}
+                hasVehicle={hasVehicle}
+                onTravelTo={onTravelTo} />
             ))}
           </div>
         </div>
@@ -457,6 +503,25 @@ export default function Nav() {
   // into the Account dropdown so the sign-out button lives in the
   // main nav rather than the footer.
   const signOut = useCallback(() => { logout(); nav('/login'); }, [logout, nav]);
+
+  // Fire an intra-city travel directly from a nav dropdown — the
+  // server endpoint mirrors the City page's startTravel(). On
+  // success the character refresh picks up the new
+  // intra_travel_until and the existing travel banner takes over;
+  // the nav also bounces the player to /city so they can see the
+  // countdown immediately.
+  const travelTo = useCallback(async (slug, mode) => {
+    try {
+      await api.post('/locations/travel', { to: slug, mode });
+      await refresh?.();
+      if (window.location.pathname !== '/city') nav('/city');
+    } catch (e) {
+      // Surface the error inline isn't possible from here — fall back
+      // to a console hint. The most common 4xx ("you're travelling",
+      // "you need a vehicle") is also visible on /city.
+      console.warn('travel failed:', e.message);
+    }
+  }, [nav, refresh]);
 
   const [dmUnread, setDmUnread] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -675,7 +740,10 @@ export default function Nav() {
           linkClass={linkClass}
           onClickGuard={onClickGuard}
           isAdmin={!!character.is_admin}
-          onSignOut={signOut} />
+          onSignOut={signOut}
+          currentLocation={character.current_location}
+          hasVehicle={!!character.active_vehicle_id || !!character.active_premium_vehicle_id}
+          onTravelTo={travelTo} />
       )}
 
       {/*  Nav links
@@ -724,6 +792,9 @@ export default function Nav() {
                 onClickGuard={onClickGuard}
                 isAdmin={!!character?.is_admin}
                 onSignOut={signOut}
+                currentLocation={character?.current_location}
+                hasVehicle={!!character?.active_vehicle_id || !!character?.active_premium_vehicle_id}
+                onTravelTo={travelTo}
                 onPick={() => setMenuOpen(false)} />
             ))}
           </div>
