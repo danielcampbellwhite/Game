@@ -639,7 +639,7 @@ export default function Nav() {
 
       {/*  Condensed stats strip  */}
       {character && (
-        <div className="border-t border-ink-100/10 bg-ink-900/40">
+        <div className="border-t border-ink-100/10 bg-ink-900/40 stats-strip">
           <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-1 text-xs">
             <MiniStat label="Energy"  value={character.energy}    max={character.max_energy} color="bg-yellow-400" />
             <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
