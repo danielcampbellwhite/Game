@@ -28,7 +28,7 @@ const ENERGY_REGEN_MS = 5 * 60 * 1000;   // 1 energy per 5 min
 const NERVE_REGEN_MS  = 5 * 60 * 1000;   // 1 nerve per 5 min
 const HEALTH_REGEN_MS = 60 * 1000;       // 1 hp per minute (out of hospital)
 // 1% per day, compounded hourly: (1 + r)^24 = 1.01 → r ≈ 0.0004146.
-const BANK_INTEREST_PER_HOUR = 0.0004146;
+export const BANK_INTEREST_PER_HOUR = 0.0004146;
 
 export function loadCharacter(userId) {
   // Stamp the owning user's is_admin flag onto the row so callers can

@@ -25,6 +25,7 @@ import {
   listPendingWeaponDeliveries,
 } from '../services/deliveries.js';
 import { changePin, forgotPin, recentBankLog, pinLockoutMsLeft, sendMoney } from '../services/bank.js';
+import { BANK_INTEREST_PER_HOUR } from '../services/character.js';
 
 const router = Router();
 
@@ -404,6 +405,11 @@ router.post('/weapons/buy', requireAuth, requireCharacter, requireInternet, (req
 router.get('/bank-app', requireAuth, requireCharacter, requireInternet, (req, res) => {
   const ch = req.character;
   const loans = db.prepare('SELECT * FROM loans WHERE char_id = ?').all(ch.id);
+  // Interest details — same hourly rate the applyTick loop uses.
+  // bankLastInterest lets the client show "next payout in MM:SS".
+  // nextHourlyInterest = balance * rate, capped at 0 if the balance
+  // is zero so the app doesn't promise interest the player won't get.
+  const nextHourlyInterest = Math.max(0, Math.floor((ch.bank || 0) * BANK_INTEREST_PER_HOUR));
   res.json({
     bank: ch.bank,
     account_opened: !!ch.bank_account_opened,
@@ -411,6 +417,13 @@ router.get('/bank-app', requireAuth, requireCharacter, requireInternet, (req, re
     transactions: recentBankLog(ch.id, 20),
     loans,
     totalOwed: loans.reduce((a, l) => a + l.principal, 0),
+    interest: {
+      hourlyRate:        BANK_INTEREST_PER_HOUR,
+      // Annualised compound for the headline figure on the app.
+      apr:               Math.pow(1 + BANK_INTEREST_PER_HOUR, 24 * 365) - 1,
+      nextHourlyInterest,
+      bankLastInterest:  ch.bank_last_interest || null,
+    },
     note: 'Deposits, withdrawals, and new loans require a visit to the bank.',
   });
 });

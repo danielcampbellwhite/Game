@@ -135,12 +135,32 @@ export function BankAppTab() {
 
   return (
     <div className="space-y-3">
-      <Card title="Bank app" collapsible defaultOpen
+      <Card title="Bank balance" collapsible defaultOpen
         subtitle={data.note}>
         <div className="rounded-md bg-ink-900/50 px-3 py-2">
           <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Balance</div>
           <div className="font-display text-3xl text-money-300 tabular-nums">{fmt(data.bank)}</div>
         </div>
+        {data.interest && (
+          <div className="mt-2 rounded-md bg-ink-900/40 px-3 py-2 text-[12px]">
+            <div className="flex items-baseline justify-between">
+              <span className="uppercase tracking-wide text-ink-100/55 text-[11px]">Interest</span>
+              <span className="text-money-300 tabular-nums">
+                {(data.interest.hourlyRate * 100).toFixed(4)}% / hr ·{' '}
+                {(data.interest.apr * 100).toFixed(1)}% APR
+              </span>
+            </div>
+            <div className="mt-1 flex items-baseline justify-between">
+              <span className="text-ink-100/65">Next payout</span>
+              <span className="tabular-nums">
+                +{fmt(data.interest.nextHourlyInterest)}
+                {data.interest.bankLastInterest != null && (
+                  <NextInterest at={data.interest.bankLastInterest} />
+                )}
+              </span>
+            </div>
+          </div>
+        )}
         {data.loans.length > 0 && (
           <div className="mt-2 text-[12px] text-ink-100/65">
             Outstanding loans: <span className="text-blood-300 tabular-nums">{fmt(data.totalOwed)}</span>
@@ -574,6 +594,23 @@ export function VehiclesTab() {
       </Card>
     </div>
   );
+}
+
+// Live "next interest in MM:SS" indicator. Anchors to bank_last_interest;
+// each hour after that timestamp another payout falls due.
+function NextInterest({ at }) {
+  const [now, setNow] = React.useState(() => Date.now());
+  React.useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const HOUR = 60 * 60 * 1000;
+  const elapsed = now - at;
+  const nextAt = at + (Math.floor(elapsed / HOUR) + 1) * HOUR;
+  const ms = Math.max(0, nextAt - now);
+  const m = String(Math.floor(ms / 60_000)).padStart(2, '0');
+  const s = String(Math.floor((ms % 60_000) / 1000)).padStart(2, '0');
+  return <span className="text-ink-100/70 ml-1">in {m}:{s}</span>;
 }
 
 function Countdown({ until }) {
