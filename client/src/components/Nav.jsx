@@ -228,7 +228,7 @@ function NotificationBell() {
       {open && (
         <div
           ref={dropdownRef}
-          style={{ transform: `translateX(${shiftX}px)` }}
+          style={{ transform: `translateX(${shiftX}px)`, zIndex: 50 }}
           className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-ink-100/15 bg-ink-950/95 backdrop-blur shadow-2xl shadow-black/60 overflow-hidden">
           <div className="px-3 py-2 border-b border-ink-100/10 flex items-baseline justify-between">
             <span className="text-xs uppercase tracking-wide text-ink-100/60">Notifications</span>
