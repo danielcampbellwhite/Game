@@ -19,7 +19,8 @@ import {
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 import { garageCapacity, vehicleCount } from '../services/garage.js';
 import {
-  DELIVERY_LEAD_MS, WEAPON_DELIVERY_LEAD_MS,
+  DELIVERY_LEAD_MS, WEAPON_DELIVERY_LEAD_MS, GEAR_DELIVERY_LEAD_MS,
+  leadTimeForKind,
   listPendingDeliveries, pendingDeliveryCountInCity,
   listPendingWeaponDeliveries,
 } from '../services/deliveries.js';
@@ -307,7 +308,13 @@ router.get('/weapons', requireAuth, requireCharacter, requireInternet, (req, res
     weapons, armours, ammo,
     properties,
     pending,
-    leadHours: Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000),
+    // ETAs split by kind so the UI can label each tier of item with
+    // its real lead time — long guns take longer to ship than ammo.
+    leadMinutes: {
+      weapon: Math.round(WEAPON_DELIVERY_LEAD_MS / 60_000),
+      armour: Math.round(GEAR_DELIVERY_LEAD_MS  / 60_000),
+      ammo:   Math.round(GEAR_DELIVERY_LEAD_MS  / 60_000),
+    },
     markup_pct: Math.round(ONLINE_MARKUP * 100),
   });
 });
@@ -345,14 +352,15 @@ router.post('/weapons/buy', requireAuth, requireCharacter, requireInternet, (req
 
   ch.bank -= cost;
   const now = Date.now();
-  const arrives = now + WEAPON_DELIVERY_LEAD_MS;
+  const leadMs = leadTimeForKind(kind);
+  const arrives = now + leadMs;
   db.prepare(`
     INSERT INTO weapon_deliveries
       (char_id, destination_property, kind, item_id, qty, base_cost, cost, ordered_at, arrives_at, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
   `).run(ch.id, propRow.id, kind, item.id, buyUnits, totalBase, cost, now, arrives);
   writeLog(ch.id, 'delivery',
-    `Ordered ${buyUnits}× ${item.name} (${kind}) online for £${cost.toLocaleString()} — ETA ~${Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000)}h.`,
+    `Ordered ${buyUnits}× ${item.name} (${kind}) online for £${cost.toLocaleString()} — ETA ~${Math.round(leadMs / 60_000)} min.`,
     { kind, item: item.id, qty: buyUnits, property: propRow.id, cost, eta: arrives });
   saveCharacter(ch);
   res.json({ ok: true, arrives_at: arrives, cost, base: totalBase, character: publicCharacter(ch) });
@@ -459,7 +467,7 @@ router.get('/shop', requireAuth, requireCharacter, requireInternet, (req, res) =
     items,
     properties,
     pending,
-    leadHours: Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000),
+    leadMinutes: Math.round(GEAR_DELIVERY_LEAD_MS / 60_000),
     markup_pct: Math.round(ONLINE_MARKUP * 100),
   });
 });
@@ -484,14 +492,14 @@ router.post('/shop/buy', requireAuth, requireCharacter, requireInternet, (req, r
   }
   ch.bank -= cost;
   const now = Date.now();
-  const arrives = now + WEAPON_DELIVERY_LEAD_MS;
+  const arrives = now + GEAR_DELIVERY_LEAD_MS;
   db.prepare(`
     INSERT INTO weapon_deliveries
       (char_id, destination_property, kind, item_id, qty, base_cost, cost, ordered_at, arrives_at, status)
     VALUES (?, ?, 'misc', ?, ?, ?, ?, ?, ?, 'pending')
   `).run(ch.id, propRow.id, item.id, qty, totalBase, cost, now, arrives);
   writeLog(ch.id, 'delivery',
-    `Ordered ${qty}× ${item.name} online for £${cost.toLocaleString()} — ETA ~${Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000)}h.`,
+    `Ordered ${qty}× ${item.name} online for £${cost.toLocaleString()} — ETA ~${Math.round(GEAR_DELIVERY_LEAD_MS / 60_000)} min.`,
     { kind: 'misc', item: item.id, qty, property: propRow.id, cost, eta: arrives });
   saveCharacter(ch);
   res.json({ ok: true, arrives_at: arrives, cost, base: totalBase, character: publicCharacter(ch) });

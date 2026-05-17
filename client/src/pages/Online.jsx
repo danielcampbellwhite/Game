@@ -221,7 +221,7 @@ export function ShopAppTab() {
     setBusy(`buy-${item.id}`); setMsg(null);
     try {
       await api.post('/online/shop/buy', { item_id: item.id, qty: n, destination_property: destProp });
-      setMsg(`Ordered ${n}× ${item.name}. ETA ~${data.leadHours}h.`);
+      setMsg(`Ordered ${n}× ${item.name}. ETA ~${data.leadMinutes} min.`);
       await refresh(); await load();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
@@ -243,7 +243,7 @@ export function ShopAppTab() {
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
 
       <Card title="Deliver to"
-        subtitle={`Online markup ${data.markup_pct}%. Same sundries Murphy's stocks, dropped at the door in ~${data.leadHours}h.`}>
+        subtitle={`Online markup ${data.markup_pct}%. Same sundries Murphy's stocks, dropped at the door in ~${data.leadMinutes} min.`}>
         <div className="flex flex-wrap gap-1.5">
           {data.properties.map(p => (
             <button key={p.id}
@@ -327,7 +327,7 @@ export function WeaponsTab() {
       await api.post('/online/weapons/buy', {
         kind, item_id: item.id, qty, destination_property: destProp,
       });
-      setMsg(`Ordered. ETA ~${data.leadHours}h.`);
+      setMsg(`Ordered. ETA ~${data.leadMinutes?.[kind] ?? 30} min.`);
       await refresh();
       await load();
     } catch (e) { setMsg(e.message); }
@@ -350,7 +350,7 @@ export function WeaponsTab() {
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
 
       <Card title="Deliver to"
-        subtitle={`Online markup ${data.markup_pct}%. Lead time ~${data.leadHours}h. Goods land in the property's house stash.`}>
+        subtitle={`Online markup ${data.markup_pct}%. Weapons ~${data.leadMinutes?.weapon ?? 60} min, armour & ammo ~${data.leadMinutes?.ammo ?? 30} min. Goods land in the property's house stash.`}>
         <div className="flex flex-wrap gap-1.5">
           {data.properties.map(p => (
             <button key={p.id}

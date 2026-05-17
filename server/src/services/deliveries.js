@@ -15,10 +15,20 @@ import { freeGarageSpace } from './garage.js';
 import { writeLog } from './log.js';
 import { upsertHouseStash } from './weight.js';
 
-// Online ordering delay — wall-clock 4 hours for vehicles, 2 for
-// gear (lighter parcels move quicker on the courier route).
+// Online ordering delay. Heavier loads ride a longer route — a car
+// takes 4 hours to ship across town, a long gun an hour, and a
+// box of ammo / scratchcards / lockpicks half an hour.
 export const DELIVERY_LEAD_MS        = 4 * 60 * 60 * 1000;
-export const WEAPON_DELIVERY_LEAD_MS = 2 * 60 * 60 * 1000;
+export const WEAPON_DELIVERY_LEAD_MS = 1 * 60 * 60 * 1000;
+export const GEAR_DELIVERY_LEAD_MS   =     30 * 60 * 1000;
+
+// Resolve the ETA for a kind of delivery. kind='weapon' is the
+// long-gun route; everything else (armour, ammo, misc shop) goes
+// on the express courier.
+export function leadTimeForKind(kind) {
+  if (kind === 'weapon') return WEAPON_DELIVERY_LEAD_MS;
+  return GEAR_DELIVERY_LEAD_MS;
+}
 
 export function listPendingDeliveries(charId) {
   return db.prepare(
