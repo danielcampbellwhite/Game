@@ -605,9 +605,12 @@ export default function Nav() {
     : 0;
 
   return (
-    <header className="border-b border-ink-100/10 bg-ink-950/85 backdrop-blur">
+    // No background on the <header> itself — each child row paints
+    // its own so the SubNavStrip's tab row can sit transparent
+    // against the page underneath.
+    <header className="border-b border-ink-100/10">
       {/*  Top bar — branding + character chip + actions  */}
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3 bg-ink-950/85 backdrop-blur">
         <Link
           to="/"
           aria-label="Home — Mafia Life: Criminal Empire"
@@ -758,7 +761,7 @@ export default function Nav() {
           has its own scroll boundary instead of pushing the page
           content down. Body scroll is locked (effect above) and a
           backdrop catches taps outside the sheet to close it. */}
-      <nav className="hidden md:block border-t border-ink-100/10">
+      <nav className="hidden md:block border-t border-ink-100/10 bg-ink-950/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex flex-row flex-wrap items-center gap-1">
           {(inHospital || inJail) && (
             <NavLink to={inHospital ? '/hospital' : '/jail'}
