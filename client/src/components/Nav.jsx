@@ -462,7 +462,7 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
           rows so it reads as a proper menu strip. Background drops
           when collapsed so only the bare tab is left. */}
       <div
-        className={`transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16 border-t border-ink-100/10 bg-ink-950/85 backdrop-blur'}`}
+        className={`transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16 border-t border-ink-100/10 bg-ink-950'}`}
         aria-hidden={collapsed}>
         <div className="max-w-6xl mx-auto px-3 sm:px-4">
           <div className="flex items-center gap-1 overflow-x-auto py-1.5 scrollbar"
