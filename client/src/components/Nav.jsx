@@ -457,38 +457,39 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
   }, [collapsed]);
 
   return (
-    <div className="border-t border-ink-100/10 bg-ink-900/30">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 flex items-stretch">
-        {/* The scroll lane itself. Hidden via max-h transition when
-            collapsed so the toggle handle smoothly slides up. */}
-        <div
-          className={`min-w-0 flex-1 transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16'}`}
-          aria-hidden={collapsed}>
-          <div className="flex items-center gap-1 overflow-x-auto py-1.5 scrollbar"
-            style={{ WebkitOverflowScrolling: 'touch' }}>
-            {items.map(item => (
-              <NavMenuItem key={item.to}
-                item={item}
-                lockedOut={lockedOut}
-                linkClass={linkClass}
-                onClickGuard={onClickGuard}
-                isAdmin={isAdmin}
-                onSignOut={onSignOut}
-                currentLocation={currentLocation}
-                hasVehicle={hasVehicle}
-                onTravelTo={onTravelTo} />
-            ))}
-          </div>
+    <div className="border-t border-ink-100/10 bg-ink-900/30 relative">
+      {/* Scroll lane. Hidden via max-h transition when collapsed so
+          the toggle pull-tab slides up flush against the stats strip. */}
+      <div
+        className={`max-w-6xl mx-auto px-3 sm:px-4 transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16'}`}
+        aria-hidden={collapsed}>
+        <div className="flex items-center gap-1 overflow-x-auto py-1.5 scrollbar"
+          style={{ WebkitOverflowScrolling: 'touch' }}>
+          {items.map(item => (
+            <NavMenuItem key={item.to}
+              item={item}
+              lockedOut={lockedOut}
+              linkClass={linkClass}
+              onClickGuard={onClickGuard}
+              isAdmin={isAdmin}
+              onSignOut={onSignOut}
+              currentLocation={currentLocation}
+              hasVehicle={hasVehicle}
+              onTravelTo={onTravelTo} />
+          ))}
         </div>
-        {/* Toggle handle. Down arrow when collapsed (i.e. "expand me"),
-            up arrow when expanded ("collapse me"). aria-expanded
-            mirrors the visual state. */}
+      </div>
+      {/* Pull tab — centred under the lane, half-stuck-out so it
+          looks like something to grab. Down arrow when collapsed
+          (i.e. "pull down to expand"), up arrow when expanded
+          ("push back up"). */}
+      <div className="flex justify-center">
         <button
           type="button"
           aria-label={collapsed ? 'Show quick-access nav' : 'Hide quick-access nav'}
           aria-expanded={!collapsed}
           onClick={() => setCollapsed(c => !c)}
-          className="shrink-0 self-center ml-1 px-2 py-1 rounded-md text-ink-100/55 hover:bg-ink-800/60 hover:text-ink-100/85 transition">
+          className="px-4 py-0.5 -mb-px rounded-b-md bg-ink-900/60 border border-t-0 border-ink-100/15 text-ink-100/70 hover:bg-ink-800/70 hover:text-ink-100 transition">
           <span aria-hidden className="text-base leading-none inline-block transition-transform"
             style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
             ▾
