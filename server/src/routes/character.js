@@ -19,54 +19,82 @@ const STAT_KEYS = ['strength', 'defence', 'speed', 'intelligence'];
 
 // Validates a starter pack { car_id, house_id, business_id } against
 // the curated lists. Returns { ok, picks, error }. Picks are the
-// resolved objects (with prices) ready to insert.
-// Starter cities are limited to those with unlockLevel <= 5 so a brand-
-// new character can't sit in a high-tier hub from second one and farm
-// its multipliers. Higher cities show in the picker but locked.
+// resolved objects (with prices) ready to insert. Each slot is
+// individually optional — passing 'none' (or omitting the id) skips
+// that asset for the new character. Unspent starter budget is
+// converted to extra starting cash so the choice has weight.
 const MAX_STARTER_CITY_UNLOCK = 5;
 function isStartableCity(c) {
   return c && (c.unlockLevel || 1) <= MAX_STARTER_CITY_UNLOCK;
 }
 
+function isOptOut(id) { return !id || id === 'none' || id === 'skip'; }
+
+// Human-readable summary line for the welcome log. Lists only the
+// slots the player actually took; mentions the cash refund when any
+// slot was skipped so the math is visible.
+function starterSummary(picks) {
+  const items = [picks.car?.name, picks.house?.name, picks.biz?.name].filter(Boolean);
+  const lead = items.length ? `Starter pack: ${items.join(', ')}.` : 'Starter pack: skipped everything.';
+  return picks.cashRefund > 0
+    ? `${lead} Unspent £${picks.cashRefund.toLocaleString()} rolled into cash.`
+    : lead;
+}
+
 function validateStarter(input, city) {
-  if (!input || typeof input !== 'object') return { ok: false, error: 'Pick a car, a house, and a business.' };
   const cityRow = cityById(city);
   if (!isStartableCity(cityRow)) {
     return { ok: false, error: `${cityRow?.name || 'That city'} unlocks at level ${cityRow?.unlockLevel || '?'} — pick a starter city instead.` };
   }
+  const in_ = input && typeof input === 'object' ? input : {};
   const cars = starterCars();
   const houses = starterHousesForCity(city);
   const bizs = starterBusinesses();
-  const car   = cars.find(c => c.id === input.car_id);
-  const house = houses.find(h => h.id === input.house_id);
-  const biz   = bizs.find(b => b.id === input.business_id);
-  if (!car)   return { ok: false, error: 'Pick a starter car.' };
-  if (!house) return { ok: false, error: `Pick a starter house in ${city.replace(/_/g, ' ')}.` };
-  if (!biz)   return { ok: false, error: 'Pick a starter business.' };
-  const total = car.price + house.price + biz.price;
+  const car   = isOptOut(in_.car_id)      ? null : cars.find(c => c.id === in_.car_id);
+  const house = isOptOut(in_.house_id)    ? null : houses.find(h => h.id === in_.house_id);
+  const biz   = isOptOut(in_.business_id) ? null : bizs.find(b => b.id === in_.business_id);
+  if (!isOptOut(in_.car_id)      && !car)   return { ok: false, error: 'Unknown starter car. Pick one or choose "skip".' };
+  if (!isOptOut(in_.house_id)    && !house) return { ok: false, error: `Unknown starter house in ${city.replace(/_/g, ' ')}. Pick one or choose "skip".` };
+  if (!isOptOut(in_.business_id) && !biz)   return { ok: false, error: 'Unknown starter business. Pick one or choose "skip".' };
+  const total = (car?.price || 0) + (house?.price || 0) + (biz?.price || 0);
   if (total > STARTER_BUDGET) {
     return { ok: false, error: `Over budget by £${(total - STARTER_BUDGET).toLocaleString()}.` };
   }
-  return { ok: true, picks: { car, house, biz, total } };
+  // Anything left of the budget rolls forward as starting cash.
+  const cashRefund = Math.max(0, STARTER_BUDGET - total);
+  return { ok: true, picks: { car, house, biz, total, cashRefund } };
 }
 
 // Insert vehicle / property / business rows for a freshly-created
 // character. Used by both /create and /new-character so the starter
-// loadout flows through every creation path identically.
+// loadout flows through every creation path identically. Each asset
+// is optional — skipped slots simply don't insert a row.
 function applyStarterPack(charId, city, picks) {
   const now = Date.now();
-  db.prepare(`
-    INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at)
-    VALUES (?, ?, 'bought', ?, ?)
-  `).run(charId, picks.car.id, city, now);
-  db.prepare(`
-    INSERT INTO properties_owned (char_id, property_id, city)
-    VALUES (?, ?, ?)
-  `).run(charId, picks.house.id, city);
-  db.prepare(`
-    INSERT INTO businesses_owned (char_id, business_id, city, last_collected)
-    VALUES (?, ?, ?, ?)
-  `).run(charId, picks.biz.id, city, now);
+  if (picks.car) {
+    db.prepare(`
+      INSERT INTO vehicles_owned (char_id, vehicle_id, acquired_via, city, acquired_at)
+      VALUES (?, ?, 'bought', ?, ?)
+    `).run(charId, picks.car.id, city, now);
+  }
+  if (picks.house) {
+    db.prepare(`
+      INSERT INTO properties_owned (char_id, property_id, city)
+      VALUES (?, ?, ?)
+    `).run(charId, picks.house.id, city);
+  }
+  if (picks.biz) {
+    db.prepare(`
+      INSERT INTO businesses_owned (char_id, business_id, city, last_collected)
+      VALUES (?, ?, ?, ?)
+    `).run(charId, picks.biz.id, city, now);
+  }
+  // Refund unused starter budget as starting cash so the player
+  // benefits from skipping a slot rather than just losing the budget.
+  if (picks.cashRefund > 0) {
+    db.prepare('UPDATE characters SET cash = cash + ? WHERE id = ?')
+      .run(picks.cashRefund, charId);
+  }
 }
 
 // Returns { ok, stats, error } where stats is the validated, integer-
@@ -205,7 +233,7 @@ router.post('/create', requireAuth, (req, res) => {
   );
   applyFactionPerks(info.lastInsertRowid, faction);
   applyStarterPack(info.lastInsertRowid, city, starterCheck.picks);
-  writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}. Starter pack: ${starterCheck.picks.car.name}, ${starterCheck.picks.house.name}, ${starterCheck.picks.biz.name}.`);
+  writeLog(info.lastInsertRowid, 'system', `Welcome to ${cityById(city).name}, ${name}. ${starterSummary(starterCheck.picks)}`);
   const ch = loadCharacter(req.user.id);
   applyTick(ch);
   res.json({ character: publicCharacter(ch) });
@@ -299,7 +327,7 @@ router.post('/new-character', requireAuth, (req, res) => {
 
   applyFactionPerks(ch.id, faction);
   applyStarterPack(ch.id, city, starterCheck2.picks);
-  writeLog(ch.id, 'system', `${trimmed} starts fresh — level ${startLevel}. Welcome to ${cityById(city).name}. Starter pack: ${starterCheck2.picks.car.name}, ${starterCheck2.picks.house.name}, ${starterCheck2.picks.biz.name}.`);
+  writeLog(ch.id, 'system', `${trimmed} starts fresh — level ${startLevel}. Welcome to ${cityById(city).name}. ${starterSummary(starterCheck2.picks)}`);
   const fresh = loadCharacter(req.user.id);
   applyTick(fresh);
   res.json({ character: publicCharacter(fresh) });

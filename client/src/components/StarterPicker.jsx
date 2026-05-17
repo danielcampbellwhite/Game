@@ -2,27 +2,28 @@ import React from 'react';
 import { fmt } from './Money.jsx';
 
 // Starter-pack picker rendered on character-create / new-character.
-// Players have a fixed budget to distribute across three required
-// picks: a car, a house in their starting city, and a small business.
-//
-// All three are required; the total must be ≤ budget; the parent
-// gates submit on that. Server re-validates against the same
-// catalogues — these come from /api/character/options so the client
-// never has to know the prices itself.
+// Each slot (car, house, business) is OPTIONAL — players can pick a
+// "Skip" tile to start without one. Anything left of the budget
+// rolls forward as starting cash on the server, so skipping a slot
+// has a real reward instead of just losing the budget.
 
 function PickRow({ label, options, selectedId, onSelect, budgetLeft, currentPrice }) {
-  if (!options.length) {
-    return (
-      <div>
-        <div className="text-[12px] uppercase text-ink-100/60 mb-1">{label}</div>
-        <p className="text-xs text-ink-100/55 italic">Nothing available — pick a different starting city.</p>
-      </div>
-    );
-  }
   return (
     <div>
       <div className="text-[12px] uppercase text-ink-100/60 mb-1">{label}</div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* Opt-out tile — always available, always £0. */}
+        <button type="button"
+          onClick={() => onSelect(null)}
+          className={`p-2 rounded-md border text-left transition ${
+            selectedId == null
+              ? 'border-money-500 bg-money-700/15'
+              : 'border-ink-100/10 hover:bg-ink-800/60'
+          }`}>
+          <div className="text-xs font-medium leading-tight">Skip</div>
+          <div className="text-[11px] text-ink-100/50 leading-tight mt-0.5">Start without one</div>
+          <div className="text-[12px] text-money-300 tabular-nums mt-1">{fmt(0)}</div>
+        </button>
         {options.map(o => {
           const selected = selectedId === o.id;
           // Affordable iff swapping to this pick wouldn't exceed
@@ -75,6 +76,10 @@ export default function StarterPicker({ starter, city, value, onChange }) {
           {fmt(left)} <span className="text-ink-100/50">/ {fmt(budget)} left</span>
         </span>
       </div>
+      <p className="text-[12px] text-ink-100/65">
+        Each slot is optional — skip a row to start without that asset.
+        Unspent budget rolls forward as starting cash.
+      </p>
 
       <PickRow
         label="Car"
@@ -103,7 +108,12 @@ export default function StarterPicker({ starter, city, value, onChange }) {
 
       {overBudget && (
         <p className="text-[13px] text-blood-400">
-          Over budget by {fmt(-left)}. Drop one of your picks for a cheaper option.
+          Over budget by {fmt(-left)}. Drop one of your picks for a cheaper option, or skip a slot.
+        </p>
+      )}
+      {!overBudget && left > 0 && (
+        <p className="text-[12px] text-money-300">
+          You'll start with an extra <b className="tabular-nums">{fmt(left)}</b> in cash.
         </p>
       )}
     </div>
@@ -114,6 +124,8 @@ export function emptyStarter() {
   return { car_id: null, house_id: null, business_id: null };
 }
 
-export function starterComplete(value) {
-  return !!(value?.car_id && value?.house_id && value?.business_id);
+// Always valid now — every slot is optional, including skipping all three.
+// The server is the source of truth for budget / unknown-id rejection.
+export function starterComplete(_value) {
+  return true;
 }
