@@ -51,7 +51,9 @@ try {
 } catch {}
 
 export const HOTWIRE_SEQUENCE_LEN = 3;
-export const HOTWIRE_DURATION_MS  = 4_000;
+// 7 seconds — enough time to read the prompts, find the keys, and
+// fat-finger one of them without immediately losing the car.
+export const HOTWIRE_DURATION_MS  = 7_000;
 const TUTORIAL_HOLD_MS = 60 * 60 * 1000;
 const ARROW_POOL = ['up', 'down', 'left', 'right'];
 

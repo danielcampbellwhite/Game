@@ -599,11 +599,17 @@ router.post('/hotwire/resolve', requireAuth, requireCharacter, requireFreeCharac
   const expired = now > h.expiresAt;
   const scored = scoreHotwire(h, inputs, { expired });
 
-  // Apply hot-wire bonus, roll the crime, run the resolution. The
-  // bonus is bounded — even 9 extra % can't push success past 95%.
-  const finalSuccess = Math.max(5, Math.min(95, h.baseSuccessPct + scored.successBonusPct));
+  // A flat-out failed QTE — timer ran out, or zero arrows correct —
+  // hard-fails the steal regardless of the base success roll. You
+  // didn't get the car started; rolling well on the base chance
+  // doesn't override that. Partial scores (1/3, 2/3) still roll
+  // normally with their proportional bonus.
+  const hardFailed = expired || scored.correct === 0;
+  const finalSuccess = hardFailed
+    ? 0
+    : Math.max(5, Math.min(95, h.baseSuccessPct + scored.successBonusPct));
   const roll = Math.random() * 100;
-  const succeeded = roll < finalSuccess;
+  const succeeded = !hardFailed && roll < finalSuccess;
 
   // Heat is applied unconditionally at commit time in the normal
   // path, but we deferred. Apply now so attribution lines up.
