@@ -610,7 +610,7 @@ export default function Nav() {
     // against the page underneath.
     <header className="border-b border-ink-100/10">
       {/*  Top bar — branding + character chip + actions  */}
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3 bg-ink-950/85 backdrop-blur">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3 bg-ink-950">
         <Link
           to="/"
           aria-label="Home — Mafia Life: Criminal Empire"
@@ -699,7 +699,7 @@ export default function Nav() {
            the player can see who they are at a glance without
            the desktop inline chip.  */}
       {character && (
-        <div className="md:hidden border-t border-ink-100/10 bg-ink-900/40">
+        <div className="md:hidden border-t border-ink-100/10 bg-ink-950">
           <Link
             to="/"
             onClick={onClickGuard}
@@ -714,7 +714,7 @@ export default function Nav() {
 
       {/*  Condensed stats strip  */}
       {character && (
-        <div className="border-t border-ink-100/10 bg-ink-900/40 stats-strip">
+        <div className="border-t border-ink-100/10 bg-ink-950 stats-strip">
           <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 grid grid-cols-3 sm:grid-cols-6 gap-x-3 gap-y-1 text-xs">
             <MiniStat label="Energy"  value={character.energy}    max={character.max_energy} color="bg-yellow-400" />
             <MiniStat label="Health"  value={character.health}    max={character.max_health} color="bg-money-500"  />
