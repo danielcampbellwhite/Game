@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import ChatPanel from './ChatPanel.jsx';
@@ -140,10 +140,36 @@ export default function PhoneOverlay({ open, onClose }) {
   const { character } = useGame();
   const nav = useNavigate();
   const [screen, setScreen] = useState('home');
+  // Scroll container for whichever app screen is mounted. Children
+  // fire the `mafia:phone-action` window event after a successful
+  // order / message-send / book / etc., and we scroll it back to
+  // the top so the player sees the confirmation banner that just
+  // rendered above the catalogue they were browsing.
+  const appScrollRef = useRef(null);
 
   // Reset to home each time the phone opens — feels right when the
   // player taps the icon: phone wakes to the home screen.
   useEffect(() => { if (open) setScreen('home'); }, [open]);
+  // Scroll back to top whenever the active screen changes too — a
+  // fresh app shouldn't inherit the previous one's scroll position.
+  useEffect(() => {
+    if (appScrollRef.current) appScrollRef.current.scrollTop = 0;
+  }, [screen]);
+
+  // Listen for action confirmations from the embedded apps and snap
+  // the screen back up so the success banner is in view.
+  useEffect(() => {
+    if (!open) return;
+    const onAction = () => {
+      const el = appScrollRef.current;
+      if (!el) return;
+      // Use smooth scroll where supported; falls back to a hard jump.
+      try { el.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch { el.scrollTop = 0; }
+    };
+    window.addEventListener('mafia:phone-action', onAction);
+    return () => window.removeEventListener('mafia:phone-action', onAction);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -272,7 +298,7 @@ export default function PhoneOverlay({ open, onClose }) {
           {activeApp && (
             <>
               <AppHeader title={activeApp.title} />
-              <div className="flex-1 min-h-0 overflow-y-auto scrollbar bg-ink-950/85">
+              <div ref={appScrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar bg-ink-950/85">
                 {/* Each app's content renders as if it were a tiny
                     mobile web view. Embedded page components stay
                     self-contained — they reuse the same /api/* calls

@@ -29,7 +29,18 @@ async function request(method, path, body) {
         (data?.not_at_location || data?.intra_travel_until)) {
       try { window.dispatchEvent(new CustomEvent('mafia:not-at-location', { detail: data })); } catch {}
     }
+    // Same mutation event as the success path — it's nice to be
+    // scrolled back to the top to see the error banner too.
+    if (typeof window !== 'undefined' && method !== 'GET') {
+      try { window.dispatchEvent(new CustomEvent('mafia:phone-action', { detail: { ok: false, path } })); } catch {}
+    }
     throw err;
+  }
+  // Mutation succeeded — phone overlay listens for this and scrolls
+  // its active app screen back to the top so the player sees the
+  // confirmation banner. Read-only requests don't fire it.
+  if (typeof window !== 'undefined' && method !== 'GET') {
+    try { window.dispatchEvent(new CustomEvent('mafia:phone-action', { detail: { ok: true, path } })); } catch {}
   }
   return data;
 }
