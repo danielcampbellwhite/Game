@@ -5,7 +5,7 @@ import ChatPanel from './ChatPanel.jsx';
 import Messages from '../pages/Messages.jsx';
 import Newspaper from '../pages/Newspaper.jsx';
 import Stocks from '../pages/Stocks.jsx';
-import { BankAppTab, FlightsTab, VehiclesTab, WeaponsTab } from '../pages/Online.jsx';
+import { BankAppTab, FlightsTab, VehiclesTab, WeaponsTab, ShopAppTab } from '../pages/Online.jsx';
 
 // iPhone-styled overlay that opens when the player taps the floating
 // phone button. Has its own internal "screen" state so apps can open
@@ -44,6 +44,13 @@ const APP_ICONS = {
       <rect x="20" y="13" width="6"  height="3" />
       <rect x="7"  y="19" width="5"  height="4" rx="0.5" />
       <rect x="14" y="11" width="2"  height="3" />
+    </svg>
+  )},
+  shop:     { gradient: ['#f97316', '#9a3412'], glyph: (
+    <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" stroke="white" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" aria-hidden>
+      {/* Shopping bag with handles */}
+      <path d="M7 12 H25 L23 27 H9 Z" fill="white" stroke="white" />
+      <path d="M11 12 V9 a5 5 0 0 1 10 0 V12" stroke="white" fill="none" />
     </svg>
   )},
   messages: { gradient: ['#3b82f6', '#1e40af'], glyph: (
@@ -90,6 +97,7 @@ const APPS = [
   { id: 'chat',     label: 'Chat',     title: 'Live Chat', screen: 'chat'      },
   { id: 'messages', label: 'Messages', title: 'Messages',  screen: 'messages'  },
   { id: 'bank',     label: 'Bank',     title: 'Bank',      screen: 'bank'      },
+  { id: 'shop',     label: 'Shop',     title: 'Shop',      screen: 'shop'      },
   { id: 'flights',  label: 'Flights',  title: 'Flights',   screen: 'flights'   },
   { id: 'cars',     label: 'Cars',     title: 'Cars',      screen: 'cars'      },
   { id: 'weapons',  label: 'Gear',     title: 'Gear',      screen: 'weapons'   },
@@ -260,6 +268,7 @@ export default function PhoneOverlay({ open, onClose }) {
                 {screen === 'chat'     && <ChatPanel onPickDms={() => setScreen('messages')} />}
                 {screen === 'messages' && <div className={`${phonePageWrap} p-2`}><Messages /></div>}
                 {screen === 'bank'     && <div className={`${phonePageWrap} p-2`}><BankAppTab /></div>}
+                {screen === 'shop'     && <div className={`${phonePageWrap} p-2`}><ShopAppTab /></div>}
                 {screen === 'flights'  && <div className={`${phonePageWrap} p-2`}><FlightsTab /></div>}
                 {screen === 'cars'     && <div className={`${phonePageWrap} p-2`}><VehiclesTab /></div>}
                 {screen === 'weapons'  && <div className={`${phonePageWrap} p-2`}><WeaponsTab /></div>}

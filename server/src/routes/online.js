@@ -14,6 +14,7 @@ import { writeLog } from '../services/log.js';
 import {
   CITIES, cityById, VEHICLES, vehicleById, VEHICLE_TIER_LEVEL_GATE,
   WEAPONS, ARMOUR, AMMO, weaponById, armourById, ammoById, propertyById,
+  MISC_ITEMS, miscItemById,
 } from '../data.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 import { garageCapacity, vehicleCount } from '../services/garage.js';
@@ -22,7 +23,7 @@ import {
   listPendingDeliveries, pendingDeliveryCountInCity,
   listPendingWeaponDeliveries,
 } from '../services/deliveries.js';
-import { changePin, forgotPin, recentBankLog, pinLockoutMsLeft } from '../services/bank.js';
+import { changePin, forgotPin, recentBankLog, pinLockoutMsLeft, sendMoney } from '../services/bank.js';
 
 const router = Router();
 
@@ -391,6 +392,109 @@ router.post('/bank-app/forgot-pin', requireAuth, requireCharacter, requireIntern
   if (!r.ok) return res.status(400).json({ error: r.error });
   saveCharacter(ch);
   res.json({ ok: true });
+});
+
+router.post('/bank-app/send', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const r = sendMoney(ch, req.body || {});
+  if (!r.ok) return res.status(400).json({ error: r.error, locked: !!r.locked });
+  saveCharacter(ch);
+  res.json({ ok: true, sentTo: r.sentTo, character: publicCharacter(ch) });
+});
+
+// ─── Shop app — order general-store sundries online ─────────
+// Mirror of Murphy's General Store catalogue at the 8% online price.
+// Orders queue into the existing weapon_deliveries pipeline (it's
+// just a generic deliveries-to-property table) with kind='misc'.
+// Same ~2-hour lead time as gear; arrives in the chosen property's
+// house stash.
+
+router.get('/shop', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const properties = db.prepare(
+    'SELECT id, property_id, city FROM properties_owned WHERE char_id = ? ORDER BY city'
+  ).all(ch.id).map(r => {
+    const p = propertyById(r.property_id);
+    return {
+      id: r.id,
+      name: p?.name || 'Property',
+      city: r.city,
+      cityName: cityById(r.city)?.name || r.city,
+    };
+  });
+  const items = MISC_ITEMS
+    .filter(i => !i.wholesale_only)
+    .map(i => {
+      const base = Math.floor(i.cost * cityMul);
+      return {
+        id: i.id,
+        name: i.name,
+        emoji: i.emoji || '',
+        desc: i.desc || '',
+        base,
+        cost: onlinePrice(base),
+        effects: i.effects || null,
+        missionOnly: !!i.missionOnly,
+        device: i.device || null,
+      };
+    });
+  // Pending misc deliveries — reuse the existing weapon_deliveries
+  // pipeline filtered to kind='misc' so the player can see what's
+  // on the way without a separate query.
+  const pending = db.prepare(
+    "SELECT * FROM weapon_deliveries WHERE char_id = ? AND status = 'pending' AND kind = 'misc' ORDER BY arrives_at ASC"
+  ).all(ch.id).map(d => {
+    const p = db.prepare('SELECT property_id, city FROM properties_owned WHERE id = ?').get(d.destination_property);
+    return {
+      id: d.id,
+      qty: d.qty,
+      label: miscItemById(d.item_id)?.name || d.item_id,
+      destination: p ? `${propertyById(p.property_id)?.name || 'Property'} in ${cityById(p.city)?.name}` : 'A property',
+      arrives_at: d.arrives_at,
+      cost: d.cost,
+    };
+  });
+  res.json({
+    items,
+    properties,
+    pending,
+    leadHours: Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000),
+    markup_pct: Math.round(ONLINE_MARKUP * 100),
+  });
+});
+
+router.post('/shop/buy', requireAuth, requireCharacter, requireInternet, (req, res) => {
+  const ch = req.character;
+  const { item_id, qty: rawQty = 1, destination_property } = req.body || {};
+  const propRow = db.prepare(
+    'SELECT id, city FROM properties_owned WHERE id = ? AND char_id = ?'
+  ).get(destination_property, ch.id);
+  if (!propRow) return res.status(400).json({ error: 'Pick a property you own as the delivery address.' });
+  const item = miscItemById(item_id);
+  if (!item) return res.status(400).json({ error: 'Unknown item.' });
+  if (item.wholesale_only) return res.status(400).json({ error: 'Not stocked online.' });
+  const qty = Math.max(1, Math.min(99, parseInt(rawQty, 10) || 1));
+  const cityMul = cityById(ch.city)?.businessMul || 1.0;
+  const baseUnit = Math.floor((item.cost || 0) * cityMul);
+  const totalBase = baseUnit * qty;
+  const cost = onlinePrice(totalBase);
+  if (ch.bank < cost) {
+    return res.status(400).json({ error: `Need £${cost.toLocaleString()} in your bank account to pay online.` });
+  }
+  ch.bank -= cost;
+  const now = Date.now();
+  const arrives = now + WEAPON_DELIVERY_LEAD_MS;
+  db.prepare(`
+    INSERT INTO weapon_deliveries
+      (char_id, destination_property, kind, item_id, qty, base_cost, cost, ordered_at, arrives_at, status)
+    VALUES (?, ?, 'misc', ?, ?, ?, ?, ?, ?, 'pending')
+  `).run(ch.id, propRow.id, item.id, qty, totalBase, cost, now, arrives);
+  writeLog(ch.id, 'delivery',
+    `Ordered ${qty}× ${item.name} online for £${cost.toLocaleString()} — ETA ~${Math.round(WEAPON_DELIVERY_LEAD_MS / 3_600_000)}h.`,
+    { kind: 'misc', item: item.id, qty, property: propRow.id, cost, eta: arrives });
+  saveCharacter(ch);
+  res.json({ ok: true, arrives_at: arrives, cost, base: totalBase, character: publicCharacter(ch) });
 });
 
 export default router;

@@ -109,3 +109,36 @@ export function recentBankLog(charId, limit = 20) {
     "SELECT id, type, message, created_at FROM log WHERE char_id = ? AND type IN ('bank','dealership','property','shop','drugs','delivery') ORDER BY id DESC LIMIT ?"
   ).all(charId, Math.max(1, Math.min(50, limit)));
 }
+
+// Bank-to-bank transfer. Source: sender's bank. Sink: recipient's
+// bank. PIN authenticates the sender (it's effectively a withdrawal
+// in their books). Returns { ok, sentTo: { id, name }, error }.
+export function sendMoney(ch, { recipient_id, recipient_name, amount, pin, memo }) {
+  const amt = Math.max(1, parseInt(amount, 10) || 0);
+  if (!amt) return { ok: false, error: 'Enter an amount.' };
+  if (!ch.bank_account_opened) return { ok: false, error: 'Open a bank account first.' };
+  // Resolve the recipient by id, else by exact name (case-insensitive).
+  let recipient = null;
+  if (recipient_id) {
+    recipient = db.prepare('SELECT id, name, bank, bank_account_opened FROM characters WHERE id = ?').get(parseInt(recipient_id, 10));
+  } else if (recipient_name) {
+    recipient = db.prepare('SELECT id, name, bank, bank_account_opened FROM characters WHERE LOWER(name) = LOWER(?)').get(String(recipient_name).trim());
+  }
+  if (!recipient) return { ok: false, error: 'Recipient not found.' };
+  if (recipient.id === ch.id) return { ok: false, error: 'You can\'t transfer to yourself.' };
+  if (!recipient.bank_account_opened) return { ok: false, error: `${recipient.name} hasn't opened a bank account.` };
+  if (ch.bank < amt) return { ok: false, error: 'Not enough in your bank.' };
+  const v = verifyPin(ch, pin);
+  if (!v.ok) return { ok: false, error: v.error, locked: !!v.locked };
+  // Apply both sides atomically.
+  ch.bank -= amt;
+  db.prepare('UPDATE characters SET bank = bank + ? WHERE id = ?').run(amt, recipient.id);
+  const memoSuffix = memo && memo.trim() ? ` — note: "${String(memo).trim().slice(0, 60)}"` : '';
+  writeLog(ch.id, 'bank',
+    `Transferred £${amt.toLocaleString()} to ${recipient.name}${memoSuffix}.`,
+    { recipient: recipient.id, amount: amt });
+  writeLog(recipient.id, 'bank',
+    `Received £${amt.toLocaleString()} from ${ch.name}${memoSuffix}.`,
+    { sender: ch.id, amount: amt });
+  return { ok: true, sentTo: { id: recipient.id, name: recipient.name } };
+}

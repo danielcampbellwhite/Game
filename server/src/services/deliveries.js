@@ -10,7 +10,7 @@
 // can free a slot and the next tick will retry.
 
 import { db } from '../db.js';
-import { vehicleById, cityById, weaponById, armourById, ammoById, propertyById } from '../data.js';
+import { vehicleById, cityById, weaponById, armourById, ammoById, miscItemById, propertyById } from '../data.js';
 import { freeGarageSpace } from './garage.js';
 import { writeLog } from './log.js';
 import { upsertHouseStash } from './weight.js';
@@ -121,8 +121,9 @@ export function materializeReadyWeaponDeliveries(charId, now = Date.now()) {
 }
 
 function gearDescription(d) {
-  if (d.kind === 'weapon') return weaponById(d.item_id)?.name || d.item_id;
-  if (d.kind === 'armour') return armourById(d.item_id)?.name || d.item_id;
-  if (d.kind === 'ammo')   return ammoById(d.item_id)?.name   || d.item_id;
+  if (d.kind === 'weapon') return weaponById(d.item_id)?.name   || d.item_id;
+  if (d.kind === 'armour') return armourById(d.item_id)?.name   || d.item_id;
+  if (d.kind === 'ammo')   return ammoById(d.item_id)?.name     || d.item_id;
+  if (d.kind === 'misc')   return miscItemById(d.item_id)?.name || d.item_id;
   return d.item_id;
 }

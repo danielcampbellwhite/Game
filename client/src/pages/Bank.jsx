@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
+import SendMoneyForm from '../components/SendMoneyForm.jsx';
 import { fmt } from '../components/Money.jsx';
 
 const TIER_COLOR = {
@@ -152,6 +153,8 @@ export default function Bank() {
       </Card>
 
       <AtmCard info={info} onChange={async () => { await refresh(); await load(); }} />
+
+      <SendMoneyForm endpoint="/bank/send" onDone={async () => { await refresh(); await load(); }} />
 
       <ChangePinCard onChange={async () => { await refresh(); await load(); }} />
 

@@ -5,7 +5,7 @@ import { saveCharacter, publicCharacter, computeNetWorth } from '../services/cha
 import { writeLog } from '../services/log.js';
 import {
   openAccount, verifyPin, changePin, forgotPin, recentBankLog,
-  isPinFormat, pinLockoutMsLeft,
+  isPinFormat, pinLockoutMsLeft, sendMoney,
 } from '../services/bank.js';
 
 const router = Router();
@@ -131,6 +131,17 @@ router.post('/forgot-pin', requireAuth, requireCharacter, (req, res) => {
   if (!r.ok) return res.status(400).json({ error: r.error });
   saveCharacter(ch);
   res.json({ ok: true });
+});
+
+// POST /send { recipient_id?, recipient_name?, amount, pin, memo? } —
+// bank-to-bank transfer to another player. PIN required (same as a
+// withdrawal). Both parties get a "Transferred / Received" log line.
+router.post('/send', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const r = sendMoney(ch, req.body || {});
+  if (!r.ok) return res.status(400).json({ error: r.error, locked: !!r.locked });
+  saveCharacter(ch);
+  res.json({ ok: true, sentTo: r.sentTo, character: publicCharacter(ch) });
 });
 
 router.post('/loan', requireAuth, requireCharacter, (req, res) => {

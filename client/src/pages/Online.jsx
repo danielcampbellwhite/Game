@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext.jsx';
 import { useScrollOnMessage } from '../hooks/useScrollOnMessage.js';
 import Card from '../components/Card.jsx';
 import LockBadge from '../components/LockBadge.jsx';
+import SendMoneyForm from '../components/SendMoneyForm.jsx';
 import { fmt } from '../components/Money.jsx';
 
 // In-game internet portal. The whole page requires online status —
@@ -165,6 +166,8 @@ export function BankAppTab() {
         )}
       </Card>
 
+      <SendMoneyForm endpoint="/online/bank-app/send" onDone={reload} compact />
+
       <Card title="PIN management"
         subtitle="Change your PIN, or ask the bank to DM you a reminder if you've forgotten it.">
         {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
@@ -188,6 +191,111 @@ export function BankAppTab() {
             className="btn btn-ghost text-xs flex-1">
             {busy === 'forgot' ? '…' : 'Forgot?'}
           </button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+export function ShopAppTab() {
+  const { character, refresh } = useGame();
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg]   = useState(null);
+  const [destProp, setDestProp] = useState(null);
+  const [qty, setQty] = useState({});
+  useScrollOnMessage(msg);
+
+  async function load() {
+    try {
+      const d = await api.get('/online/shop');
+      setData(d);
+      if (!destProp && d.properties[0]) setDestProp(d.properties[0].id);
+    } catch (e) { setMsg(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function buy(item) {
+    if (!destProp) { setMsg('Pick a destination property first.'); return; }
+    const n = Math.max(1, parseInt(qty[item.id] || 1, 10));
+    setBusy(`buy-${item.id}`); setMsg(null);
+    try {
+      await api.post('/online/shop/buy', { item_id: item.id, qty: n, destination_property: destProp });
+      setMsg(`Ordered ${n}× ${item.name}. ETA ~${data.leadHours}h.`);
+      await refresh(); await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
+  if (!data) return <Card><p className="text-xs text-ink-100/55">Loading shop…</p></Card>;
+
+  if (data.properties.length === 0) {
+    return (
+      <Card title="No property to deliver to"
+        subtitle="Online orders are shipped to your house stash. Buy a property first.">
+        <Link to="/property" className="btn btn-primary text-xs inline-block">Browse properties →</Link>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {msg && <Card><p className="text-xs">{msg}</p></Card>}
+
+      <Card title="Deliver to"
+        subtitle={`Online markup ${data.markup_pct}%. Same sundries Murphy's stocks, dropped at the door in ~${data.leadHours}h.`}>
+        <div className="flex flex-wrap gap-1.5">
+          {data.properties.map(p => (
+            <button key={p.id}
+              onClick={() => setDestProp(p.id)}
+              className={`px-3 py-1.5 rounded-md text-xs ${destProp === p.id ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/70 hover:bg-ink-800/60'}`}>
+              {p.name} <span className="text-[11px] opacity-70">· {p.cityName}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {data.pending.length > 0 && (
+        <Card title="Incoming">
+          <ul className="text-xs space-y-1">
+            {data.pending.map(p => (
+              <li key={p.id} className="flex justify-between border-b border-ink-100/5 py-1 last:border-0">
+                <span className="text-ink-100/85">{p.qty}× {p.label} → {p.destination}</span>
+                <Countdown until={p.arrives_at} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <Card title="Catalogue"
+        subtitle="Mission props, consumables, scratchers — anything from the General Store.">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {data.items.map(it => {
+            const broke = (character?.bank ?? 0) < it.cost;
+            return (
+              <div key={it.id} className="rounded-lg p-3 border border-ink-100/10 bg-ink-950/40 flex flex-col">
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="font-medium truncate">{it.emoji} {it.name}</div>
+                </div>
+                <div className="text-[12px] text-ink-100/55 mt-0.5 min-h-[28px]">{it.desc}</div>
+                <div className="text-money-400 font-semibold mt-1 tabular-nums">{fmt(it.cost)}</div>
+                <div className="text-[11px] text-ink-100/45 line-through tabular-nums">{fmt(it.base)}</div>
+                <div className="flex gap-1 mt-2">
+                  <input type="number" min="1" max="99" placeholder="1"
+                    value={qty[it.id] || ''}
+                    onChange={e => setQty({ ...qty, [it.id]: e.target.value })}
+                    className="w-14 text-xs" />
+                  <button
+                    disabled={broke || busy === `buy-${it.id}`}
+                    onClick={() => buy(it)}
+                    className="btn btn-primary text-xs flex-1">
+                    {busy === `buy-${it.id}` ? '…' : broke ? 'Bank too low' : 'Order'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Card>
     </div>
