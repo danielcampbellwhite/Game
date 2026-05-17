@@ -684,7 +684,7 @@ export function FlightsTab() {
                   {f.locked && <LockBadge level={f.unlockLevel} />}
                 </div>
 
-                {/* Class picker — the price comes from f.classes */}
+                {/* Class picker — the price + flight time come from f.classes */}
                 <div className="flex gap-1 mt-2 text-[11px]">
                   {Object.entries(f.classes).map(([k, v]) => (
                     <button key={k}
@@ -693,6 +693,9 @@ export function FlightsTab() {
                       className={`flex-1 px-1.5 py-1 rounded-md ${klass === k ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/85 hover:bg-ink-800/60'}`}>
                       <div className="capitalize">{k}</div>
                       <div className="text-[11px]">{fmt(v.cost)}</div>
+                      <div className="text-[10px] opacity-80">
+                        {v.durationMs === 0 ? 'instant' : `${Math.round(v.durationMs / 60_000)} min`}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -724,6 +727,19 @@ export function FlightsTab() {
                     })}
                   </div>
                 </div>
+
+                {(() => {
+                  const dur = f.classes[klass]?.durationMs ?? 0;
+                  const durTxt = dur === 0 ? 'instant arrival' : `${Math.round(dur / 60_000)}-min flight`;
+                  return (
+                    <div className="text-[11px] text-ink-100/85 mt-2 tabular-nums">
+                      {fmtClock(slot || (data.schedule?.slots?.[0] ?? 0))} departure · {durTxt}
+                      {dur > 0 && slot ? (
+                        <> · lands {fmtClock(slot + dur)}</>
+                      ) : null}
+                    </div>
+                  );
+                })()}
 
                 <button
                   disabled={f.locked || busy === `${f.city}` || (character?.bank ?? 0) < (f.classes[klass]?.cost || 0)}
