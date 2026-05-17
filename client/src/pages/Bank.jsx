@@ -93,25 +93,14 @@ export default function Bank() {
     );
   }
 
-  // PIN reveal modal — shown only once. Player has to confirm "got it".
+  // PIN reveal — shown once for 10 seconds, then auto-dismisses
+  // and never comes back. The bank has also DM'd the player a copy
+  // so they can recover it from Messages, but the screen reveal is
+  // one-shot and time-boxed on purpose.
   if (issuedPin) {
     return (
-      <Card title="Your new PIN">
-        <p className="text-xs text-ink-100/65 mb-3">
-          The cashier slides a card across the counter and points to four pencilled digits.
-          Write this down — you'll need it to withdraw cash anywhere.
-        </p>
-        <div className="text-center font-display text-4xl tracking-[0.4em] text-money-300 my-4">{issuedPin}</div>
-        <p className="text-[12px] text-ink-100/55 mb-3">
-          You can change it any time at the counter or on the bank app. Forgot it?
-          The bank will DM you a reminder.
-        </p>
-        <button
-          onClick={() => { setIssuedPin(null); load(); }}
-          className="btn btn-primary text-sm">
-          I've got it
-        </button>
-      </Card>
+      <PinReveal pin={issuedPin}
+        onDismiss={() => { setIssuedPin(null); load(); }} />
     );
   }
 
@@ -204,6 +193,39 @@ export default function Bank() {
 // Standard phone-keypad PIN entry. 1-9 in a 3×3 grid, 0 centred
 // underneath. Compact buttons so the keypad doesn't dominate the
 // card.
+// One-shot PIN reveal. Player sees the digits for 10 seconds with
+// a visible countdown, then the screen auto-dismisses and the PIN
+// can never be retrieved from here again. The bank has also DM'd
+// the player a copy so Messages keeps a record.
+function PinReveal({ pin, onDismiss }) {
+  const [secs, setSecs] = useState(10);
+  useEffect(() => {
+    const i = setInterval(() => setSecs(s => s - 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  useEffect(() => { if (secs <= 0) onDismiss?.(); }, [secs, onDismiss]);
+  return (
+    <Card title="Your new PIN — memorise it now">
+      <p className="text-xs text-ink-100/80 mb-2">
+        The cashier slides a card across the counter and points to four
+        pencilled digits. This screen disappears in <b>{Math.max(0, secs)}s</b>
+        {' '}and won't be shown again — write it down or memorise it.
+      </p>
+      <div className="text-center font-display text-5xl tracking-[0.4em] text-money-300 my-4">
+        {pin}
+      </div>
+      <div className="h-1 rounded bg-ink-900/60 overflow-hidden mb-3">
+        <div className="h-full bg-money-400 transition-all duration-1000 ease-linear"
+          style={{ width: `${Math.max(0, secs) * 10}%` }} />
+      </div>
+      <p className="text-[12px] text-ink-100/65">
+        Bank has also DM'd it to you — check Messages. Forgot it later?
+        Use <b>Forgot PIN?</b> on the bank app to have it re-sent.
+      </p>
+    </Card>
+  );
+}
+
 function AtmCard({ info, onChange }) {
   const [amount, setAmount]  = useState('');
   const [pin, setPin]        = useState('');

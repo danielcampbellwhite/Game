@@ -69,7 +69,12 @@ export function openAccount(ch) {
   db.prepare('UPDATE characters SET bank_account_opened = 1, bank_pin = ? WHERE id = ?').run(pin, ch.id);
   ch.bank_account_opened = 1;
   ch.bank_pin = pin;
-  writeLog(ch.id, 'bank', `Opened a current account at First National. PIN issued.`);
+  // Bank DMs the player the PIN at sign-up so they have a record
+  // even if they miss the 10-second screen reveal. The forgot-PIN
+  // flow uses the same channel later.
+  sendBankDm(ch.id,
+    `Welcome to First National, ${ch.name}. Your new card PIN is ${pin}. Memorise it — staff won't ask for it, and the bank app won't show it again. If you forget, use "Forgot PIN?" to have it re-sent here.`);
+  writeLog(ch.id, 'bank', `Opened a current account at First National. PIN issued and DM'd.`);
   return { opened: true, alreadyOpen: false, pin };
 }
 

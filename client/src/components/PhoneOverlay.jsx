@@ -298,7 +298,24 @@ export default function PhoneOverlay({ open, onClose }) {
           {activeApp && (
             <>
               <AppHeader title={activeApp.title} />
-              <div ref={appScrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar bg-ink-950/85">
+              <div ref={appScrollRef}
+                onClickCapture={(e) => {
+                  // Internal links inside an embedded page would
+                  // navigate the underlying app router and tear the
+                  // phone overlay off the player's screen. We swallow
+                  // them here so the phone stays self-contained —
+                  // navigation between phone apps happens via the
+                  // home-screen launcher, not via embedded Links.
+                  const a = e.target?.closest && e.target.closest('a');
+                  if (!a) return;
+                  if (a.target === '_blank') return;             // honour explicit new-tab
+                  const href = a.getAttribute('href') || '';
+                  if (!href) return;
+                  if (/^(mailto:|tel:|https?:\/\/)/i.test(href)) return; // external goes via browser
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                className="flex-1 min-h-0 overflow-y-auto scrollbar bg-ink-950/85">
                 {/* Each app's content renders as if it were a tiny
                     mobile web view. Embedded page components stay
                     self-contained — they reuse the same /api/* calls
