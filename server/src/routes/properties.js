@@ -12,6 +12,7 @@ import {
   propertyDefence,
   modsValue,
 } from '../data-property-mods.js';
+import { HANGAR_PURCHASE_COST, loadHangar, buyHangar, hangarSummary } from '../services/hangar.js';
 
 // Inline migration so we don't have to touch db.js. Adds the mods
 // blob (slot → mod id) and the for-sale price column to the existing
@@ -84,12 +85,36 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     };
   }).filter(Boolean);
 
+  // Hangars are commercial real estate at the city's airport. The
+  // estate agent handles the title; ongoing operations (slot
+  // upgrades, refuel, take-off) still live at /api/hangar.
+  const hangarHere = loadHangar(ch.id, ch.city) ? hangarSummary(ch.id, ch.city) : null;
+
   res.json({
     owned, forSale, market,
     currentCity: ch.city, currentCityName: cityById(ch.city)?.name,
     modSlots: PROPERTY_MOD_SLOTS,
     modsCatalogue: PROPERTY_MODS,
+    hangar: {
+      owned_here: hangarHere,                        // null when the player doesn't own one in this city
+      purchase_cost: HANGAR_PURCHASE_COST,
+    },
   });
+});
+
+// POST /buy-hangar — title transfer for a base hangar in the player's
+// current city. Delegates to buyHangar() which already enforces the
+// "one per city" + cash gates. Slot upgrades and flight ops still
+// happen via /api/hangar.
+router.post('/buy-hangar', requireAuth, requireCharacter, (req, res) => {
+  const ch = req.character;
+  const r = buyHangar(ch);
+  if (r.error) return res.status(400).json({ error: r.error });
+  writeLog(ch.id, 'property',
+    ` Bought a hangar at ${cityById(ch.city)?.name} airport — £${r.cost.toLocaleString()}.`,
+    { city: ch.city, cost: r.cost }, true);
+  saveCharacter(ch);
+  res.json({ ok: true, cost: r.cost, hangar: hangarSummary(ch.id, ch.city), character: publicCharacter(ch) });
 });
 
 router.post('/buy', requireAuth, requireCharacter, (req, res) => {

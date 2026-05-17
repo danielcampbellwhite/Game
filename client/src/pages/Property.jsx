@@ -199,6 +199,16 @@ export default function Property() {
     finally { setBusy(null); }
   }
 
+  async function buyHangar() {
+    setBusy('hangar'); setMsg(null);
+    try {
+      await api.post('/properties/buy-hangar', {});
+      setMsg('Hangar purchased. Manage it at the airport.');
+      await refresh(); await load();
+    } catch (e) { setMsg(e.message); }
+    finally { setBusy(null); }
+  }
+
   if (!data) return null;
   const onChange = async () => { await refresh(); await load(); };
 
@@ -206,6 +216,31 @@ export default function Property() {
     <div className="space-y-4">
       {msg && <Card><p className="text-xs">{msg}</p></Card>}
       <Card title=" Estate Agent" subtitle={`Listings in ${data.currentCityName}. Properties are city-locked — to buy a place in another city, fly there first.`} />
+
+      {data.hangar && (
+        <Card title="Commercial — Airport Hangar"
+          subtitle={`A unit at ${data.currentCityName} airport. Title is held by the agent; ongoing operations (storage upgrades, refuelling, take-off) happen at the airport itself.`}>
+          {data.hangar.owned_here ? (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div className="text-sm text-money-300">You already own the hangar in {data.currentCityName}.</div>
+              <Link to="/travel" className="btn btn-ghost text-xs">Manage at airport →</Link>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <div className="font-display text-2xl text-money-300 tabular-nums">{fmt(data.hangar.purchase_cost)}</div>
+                <div className="text-[12px] text-ink-100/55">Base purchase — 1 plane, 1 helicopter, 1 car-park.</div>
+              </div>
+              <button
+                disabled={busy === 'hangar' || (character?.cash ?? 0) < data.hangar.purchase_cost}
+                onClick={buyHangar}
+                className="btn btn-primary text-sm">
+                {busy === 'hangar' ? '…' : 'Buy hangar'}
+              </button>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card title="Your portfolio" subtitle={data.owned.length
           ? `${data.owned.length} propert${data.owned.length === 1 ? 'y' : 'ies'} across the world. Bonuses only apply in the city you're currently in. Mod defence protects against burglars.`

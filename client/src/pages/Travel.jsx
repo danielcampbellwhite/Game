@@ -309,14 +309,18 @@ function HangarPanel({ onChange }) {
 
       {/* Hangar status */}
       <Card title={`Your Hangar — ${data.cityName}`}
-        subtitle={h ? 'Storage for planes, helicopters, and one car-park area for the ride you came in on.' : 'No hangar in this city yet. Buy one to keep aircraft here and fly out.'}>
+        subtitle={h
+          ? 'Storage for planes, helicopters, and one car-park area for the ride you came in on.'
+          : `No hangar in this city yet. Hangars are commercial real estate — title is held at the Estate Agent.`}>
         {!h ? (
-          <button
-            disabled={busy === 'buy'}
-            onClick={() => call('buy')}
-            className="btn btn-primary text-sm">
-            Buy hangar — £{data.purchaseCost.toLocaleString()}
-          </button>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-xs text-ink-100/65">
+              Buy a hangar at the Estate Agent. Once you own it, manage upgrades / refuel / take-off from this page.
+            </p>
+            <Link to="/property" className="btn btn-primary text-xs">
+              Visit Estate Agent →
+            </Link>
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 text-center">

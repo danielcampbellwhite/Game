@@ -11,7 +11,7 @@ import { saveCharacter, publicCharacter } from '../services/character.js';
 import { writeLog } from '../services/log.js';
 import {
   HANGAR_PURCHASE_COST, HANGAR_MAX, SLOT_UPGRADE_COSTS,
-  loadHangars, hangarSummary, buyHangar, upgradeHangarSlot,
+  loadHangars, hangarSummary, upgradeHangarSlot,
   hangarHasFreeSlot,
 } from '../services/hangar.js';
 import {
@@ -56,15 +56,8 @@ router.get('/', ...atAirport, (req, res) => {
   });
 });
 
-// POST /buy — buy a base hangar in the current city.
-router.post('/buy', ...atAirport, (req, res) => {
-  const ch = req.character;
-  const r = buyHangar(ch);
-  if (r.error) return res.status(400).json({ error: r.error });
-  writeLog(ch.id, 'aviation', ` Bought a hangar at ${cityById(ch.city)?.name} airport — £${r.cost.toLocaleString()}.`, { city: ch.city }, true);
-  saveCharacter(ch);
-  res.json({ ok: true, cost: r.cost, hangar: hangarSummary(ch.id, ch.city), character: publicCharacter(ch) });
-});
+// Hangar purchases moved to the estate agent — /api/properties/buy-hangar.
+// Slot upgrades, refuel and take-off stay here.
 
 // POST /upgrade { slot: 'plane' | 'helicopter' | 'car' } — bump a
 // slot count by 1, charged out of cash. Server enforces caps + price.
