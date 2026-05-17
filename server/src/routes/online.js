@@ -83,10 +83,22 @@ router.get('/flights', requireAuth, requireCharacter, requireInternet, (req, res
       })),
     };
   });
+  // Schedule info — same 10-min rolling slot that the airport desk
+  // uses, surfaced so the phone Flights tab can show a "next flight
+  // in MM:SS" header beside the catalogue.
+  const now = Date.now();
+  let nextDep = nextDepartureAt(now);
+  if (nextDep - now < BOARDING_WINDOW_MS) nextDep += FLIGHT_INTERVAL_MS;
   res.json({
     flights,
     markup_pct: Math.round(ONLINE_MARKUP * 100),
     boarding_note: `Pay online from your bank, then head to the ${from.name} airport to board.`,
+    schedule: {
+      now,
+      intervalMs:       FLIGHT_INTERVAL_MS,
+      boardingWindowMs: BOARDING_WINDOW_MS,
+      nextDepartureAt:  nextDep,
+    },
   });
 });
 

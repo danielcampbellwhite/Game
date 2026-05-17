@@ -593,60 +593,111 @@ function Countdown({ until }) {
 export function FlightsTab() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
+  // Per-row outcome map — keyed by city id. Cleared on next book or
+  // load, so a successful "ticket booked" / "boarding 14:32" message
+  // shows inside the same flight card the player just tapped.
+  const [outcome, setOutcome] = useState({});
   const [busy, setBusy] = useState(null);
-  const [msg, setMsg]   = useState(null);
-  useScrollOnMessage(msg);
 
   async function load() {
     try { setData(await api.get('/online/flights')); }
-    catch (e) { setMsg(e.message); }
+    catch {}
   }
   useEffect(() => { load(); }, []);
 
+  // 1Hz tick so the next-departure countdown moves smoothly. Refetch
+  // the schedule when the slot rolls over so the boarding window is
+  // accurate after a departure passes.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  useEffect(() => {
+    if (!data?.schedule?.nextDepartureAt) return;
+    const ms = data.schedule.nextDepartureAt - Date.now();
+    if (ms <= 0) { load(); return; }
+    const t = setTimeout(load, ms + 200);
+    return () => clearTimeout(t);
+  }, [data?.schedule?.nextDepartureAt]);
+
   async function book(city, klass) {
-    setBusy(`${city}-${klass}`); setMsg(null);
+    setBusy(`${city}-${klass}`);
+    // Clear THIS card's message — leave others alone.
+    setOutcome(o => ({ ...o, [city]: null }));
     try {
-      await api.post('/online/flights/ticket', { city, klass });
-      setMsg('Ticket booked. Head to the airport to board.');
+      const r = await api.post('/online/flights/ticket', { city, klass });
+      const m = Math.max(0, Math.ceil((r.departsAt - Date.now()) / 60_000));
+      setOutcome(o => ({ ...o,
+        [city]: { ok: true, text: `Ticket booked (${klass}). Boards in ~${m} min — head to the airport.` }
+      }));
       await refresh();
       await load();
-    } catch (e) { setMsg(e.message); }
+    } catch (e) {
+      setOutcome(o => ({ ...o, [city]: { ok: false, text: e.message } }));
+    }
     finally { setBusy(null); }
   }
 
   if (!data) return <Card><p className="text-xs text-ink-100/55">Loading flights…</p></Card>;
 
+  // Compute the next-departure countdown locally for the live tick.
+  const now = Date.now();
+  const nextAt = data.schedule?.nextDepartureAt;
+  const boardingOpensAt = nextAt - (data.schedule?.boardingWindowMs || 0);
+  const inWindow = nextAt && now >= boardingOpensAt && now < nextAt;
+  const remainMs = nextAt ? Math.max(0, (inWindow ? nextAt : boardingOpensAt) - now) : 0;
+  const mm = String(Math.floor(remainMs / 60_000)).padStart(2, '0');
+  const ss = String(Math.floor((remainMs % 60_000) / 1000)).padStart(2, '0');
+
   return (
     <Card title="Book a flight"
       subtitle={`Online markup ${data.markup_pct}% over the desk fare. ${data.boarding_note}`}>
-      {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
+      {nextAt && (
+        <div className="rounded-md bg-ink-900/50 border border-ink-100/10 px-3 py-2 mb-3 flex items-baseline justify-between text-xs">
+          <span className="text-ink-100/55 uppercase tracking-wide text-[11px]">Next flight</span>
+          <span className={`tabular-nums font-medium ${inWindow ? 'text-blood-300' : 'text-ink-100'}`}>
+            {inWindow ? `Boarding now — takeoff in ${mm}:${ss}` : `Departs in ${mm}:${ss}`}
+          </span>
+        </div>
+      )}
       <div className="grid md:grid-cols-2 gap-3">
-        {data.flights.map(f => (
-          <div key={f.city}
-            className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
-            <div className="flex items-baseline justify-between gap-2">
-              <div className="font-medium">{f.emoji} {f.name}</div>
-              {f.locked && <LockBadge level={f.unlockLevel} />}
+        {data.flights.map(f => {
+          const out = outcome[f.city];
+          return (
+            <div key={f.city}
+              className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="font-medium">{f.emoji} {f.name}</div>
+                {f.locked && <LockBadge level={f.unlockLevel} />}
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
+                {Object.entries(f.classes).map(([k, v]) => {
+                  const tooPoor = (character?.bank ?? 0) < v.cost;
+                  return (
+                    <button key={k}
+                      disabled={f.locked || busy === `${f.city}-${k}` || tooPoor}
+                      className="btn"
+                      onClick={() => book(f.city, k)}>
+                      <div>
+                        <div className="capitalize">{k}</div>
+                        <div className="text-[12px] text-ink-100/70">{fmt(v.cost)}</div>
+                        <div className="text-[11px] text-ink-100/45 line-through">{fmt(v.base)}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {out && (
+                <div className={`mt-2 px-2 py-1.5 rounded-md text-[12px] ${out.ok
+                    ? 'bg-money-700/15 border border-money-500/40 text-money-200'
+                    : 'bg-blood-700/15 border border-blood-500/40 text-blood-200'}`}>
+                  {out.text}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
-              {Object.entries(f.classes).map(([k, v]) => {
-                const tooPoor = (character?.bank ?? 0) < v.cost;
-                return (
-                  <button key={k}
-                    disabled={f.locked || busy === `${f.city}-${k}` || tooPoor}
-                    className="btn"
-                    onClick={() => book(f.city, k)}>
-                    <div>
-                      <div className="capitalize">{k}</div>
-                      <div className="text-[12px] text-ink-100/70">{fmt(v.cost)}</div>
-                      <div className="text-[11px] text-ink-100/45 line-through">{fmt(v.base)}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
