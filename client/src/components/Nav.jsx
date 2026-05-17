@@ -678,17 +678,13 @@ export default function Nav() {
       )}
 
       {/*  Nav links
-          Desktop (md+): horizontal row, always visible.
-          Mobile (<md): hidden by default, opens as a vertical drawer
-          when the ☰ button up top is tapped. */}
-      <nav className={`border-t border-ink-100/10 ${menuOpen ? 'block' : 'hidden'} md:block`}>
-        {/* Mobile: full-viewport scrollable drawer so the long list of
-            location sub-items reaches everything. Body scroll is locked
-            (see effect above) so the page underneath can't move. The
-            inner container holds its own overflow with momentum scroll. */}
-        <div
-          className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-1 md:max-h-none md:overflow-visible max-h-[calc(100vh-12rem)] overflow-y-auto overscroll-contain scrollbar"
-          style={{ WebkitOverflowScrolling: 'touch' }}>
+          Desktop (md+): horizontal row, always visible inline.
+          Mobile (<md): pops up as a fixed bottom sheet so the menu
+          has its own scroll boundary instead of pushing the page
+          content down. Body scroll is locked (effect above) and a
+          backdrop catches taps outside the sheet to close it. */}
+      <nav className="hidden md:block border-t border-ink-100/10">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 flex flex-row flex-wrap items-center gap-1">
           {(inHospital || inJail) && (
             <NavLink to={inHospital ? '/hospital' : '/jail'}
               onClick={() => setMenuOpen(false)}
@@ -708,10 +704,6 @@ export default function Nav() {
               </NavLink>
             );
           })()}
-          {/* "You are at X" quick-jump — visible only when standing
-              inside a real building (gated location, not the streets
-              and not while travelling/jailed/hospitalised). One tap
-              jumps to the building's own page. */}
           {!lockedOut && character?.current_location_meta?.gated && (
             <NavLink
               to={character.current_location_meta.route}
@@ -722,10 +714,7 @@ export default function Nav() {
               {character.current_location_meta.name} →
             </NavLink>
           )}
-          {/* Main nav items. Top-level items with children open a
-              dropdown on desktop and inline expand on mobile (see the
-              drawer rendering below in the mobile-only block). */}
-          <div className="hidden md:flex md:flex-wrap items-center gap-1">
+          <div className="flex md:flex-wrap items-center gap-1">
             {NAV_TREE_SORTED.map(item => (
               <NavMenuItem key={item.to}
                 item={item}
@@ -737,44 +726,104 @@ export default function Nav() {
                 onPick={() => setMenuOpen(false)} />
             ))}
           </div>
-          {/* Mobile drawer: flatten parents + indented children so the
-              user can reach every page from one scrollable drawer. */}
-          <div className="md:hidden flex flex-col gap-0.5">
-            {NAV_TREE_SORTED.map(item => (
-              <React.Fragment key={item.to}>
-                <NavLink
-                  to={item.to}
-                  onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
-                  className={({ isActive }) => linkClass(isActive)}>
-                  {item.label}
-                </NavLink>
-                {item.children?.map(c => {
-                  if (c.adminOnly && !character?.is_admin) return null;
-                  if (c.signOut) {
-                    return (
-                      <button
-                        key="signout"
-                        type="button"
-                        onClick={() => { setMenuOpen(false); signOut(); }}
-                        className="text-left pl-7 text-[11px] px-3 py-2 md:py-1.5 rounded-md text-blood-300 hover:bg-blood-700/30">
-                        {c.label}
-                      </button>
-                    );
-                  }
-                  return (
-                    <NavLink key={c.to} to={c.to}
-                      onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
-                      className={({ isActive }) =>
-                        `${linkClass(isActive)} pl-7 text-[11px] text-ink-100/70`}>
-                      {c.label}
-                    </NavLink>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </div>
         </div>
       </nav>
+
+      {/* Mobile bottom-sheet menu — fixed-position; renders only when
+          menuOpen so we don't pay for the layout when it's closed. */}
+      {menuOpen && (
+        <>
+          <div
+            onClick={() => setMenuOpen(false)}
+            aria-hidden
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 45 }}
+            className="md:hidden backdrop-blur-sm" />
+          <div
+            role="dialog"
+            aria-label="Navigation"
+            style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 46, maxHeight: '78vh' }}
+            className="md:hidden bg-ink-950/98 border-t border-ink-100/15 rounded-t-2xl shadow-2xl shadow-black/80 flex flex-col overscroll-contain">
+            {/* Grab handle + close affordance */}
+            <div className="pt-2 pb-1 flex flex-col items-center shrink-0">
+              <span aria-hidden className="block w-12 h-1 rounded-full bg-ink-100/30" />
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Close menu"
+                className="mt-1 px-3 py-1 text-[11px] uppercase tracking-wider text-ink-100/70 hover:text-ink-100 rounded-md hover:bg-ink-800/60">
+                Close
+              </button>
+            </div>
+
+            <div
+              className="px-3 pb-4 flex-1 overflow-y-auto overscroll-contain scrollbar"
+              style={{ WebkitOverflowScrolling: 'touch' }}>
+              {(inHospital || inJail) && (
+                <NavLink to={inHospital ? '/hospital' : '/jail'}
+                  onClick={() => setMenuOpen(false)}
+                  className={`block px-3 py-2 rounded-md text-white animate-pulse text-center ${inHospital ? 'bg-blue-600' : 'bg-yellow-600'}`}>
+                  {inHospital ? 'Hospital — locked' : 'Jail — locked'}
+                </NavLink>
+              )}
+              {inIntraTravel && !inHospital && !inJail && (() => {
+                const secs = Math.max(0, Math.ceil((character.intra_travel_until - clock) / 1000));
+                const dest = (character.intra_travel_to || '').replace(/_/g, ' ');
+                const verb = character.intra_travel_mode === 'drive' ? 'Driving' : 'Walking';
+                return (
+                  <NavLink to="/city"
+                    onClick={() => setMenuOpen(false)}
+                    className="block mt-1 px-3 py-2 rounded-md text-white animate-pulse text-center bg-cyan-700">
+                    {verb} to {dest} — {secs}s
+                  </NavLink>
+                );
+              })()}
+              {!lockedOut && character?.current_location_meta?.gated && (
+                <NavLink
+                  to={character.current_location_meta.route}
+                  onClick={() => setMenuOpen(false)}
+                  className="block mt-1 px-3 py-2 rounded-md bg-money-700/20 border border-money-500/40 text-money-300 hover:bg-money-700/30 transition text-center">
+                  <span className="opacity-75 mr-1">At:</span>
+                  {character.current_location_meta.name} →
+                </NavLink>
+              )}
+              <div className="flex flex-col gap-0.5 mt-2">
+                {NAV_TREE_SORTED.map(item => (
+                  <React.Fragment key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
+                      className={({ isActive }) => linkClass(isActive)}>
+                      {item.label}
+                    </NavLink>
+                    {item.children?.map(c => {
+                      if (c.adminOnly && !character?.is_admin) return null;
+                      if (c.signOut) {
+                        return (
+                          <button
+                            key="signout"
+                            type="button"
+                            onClick={() => { setMenuOpen(false); signOut(); }}
+                            className="text-left pl-7 text-[11px] px-3 py-2 rounded-md text-blood-300 hover:bg-blood-700/30">
+                            {c.label}
+                          </button>
+                        );
+                      }
+                      return (
+                        <NavLink key={c.to} to={c.to}
+                          onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
+                          className={({ isActive }) =>
+                            `${linkClass(isActive)} pl-7 text-[11px] text-ink-100/70`}>
+                          {c.label}
+                        </NavLink>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 }
