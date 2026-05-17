@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext.jsx';
 import { api } from '../api.js';
@@ -730,10 +731,12 @@ export default function Nav() {
       </nav>
 
       {/* Mobile full-screen menu — fills the viewport with a solid
-          black panel so there's nothing to scroll past behind it.
-          Renders only when menuOpen so the closed state pays no
-          layout cost. */}
-      {menuOpen && (
+          black panel. Rendered through a portal to document.body so
+          the header's backdrop-blur (which would otherwise establish
+          a containing block) doesn't clip the overlay to the header
+          row. Renders only when menuOpen so the closed state pays
+          no layout cost. */}
+      {menuOpen && createPortal(
         <div
           role="dialog"
           aria-label="Navigation"
@@ -819,7 +822,8 @@ export default function Nav() {
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
