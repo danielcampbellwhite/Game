@@ -13,7 +13,7 @@ const router = Router();
 
 //  Tunables 
 const ENERGY_COST = 10;
-const ATTACKER_COOLDOWN_MS = 12 * 60 * 60 * 1000;   // 12h between robberies (per attacker)
+const ATTACKER_COOLDOWN_MS = 5 * 60 * 1000;         // 5m between robberies (per attacker)
 const TARGET_COOLDOWN_MS   = 30 * 60 * 1000;       // 30m immunity (per target)
 
 // Hospital time on win (target).
