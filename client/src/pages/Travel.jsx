@@ -16,6 +16,78 @@ function mmss(ms) {
   const s = total % 60;
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
+// Wall-clock HH:MM for a slot timestamp.
+function fmtClock(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function prettyCity(id) {
+  return String(id || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// One destination card on the Departures grid. Class picker + the
+// 4-hour slot timetable. Booking targets the picked slot (defaulting
+// to the next available slot when the player hasn't tapped one).
+function FlightCard({ f, sched, now, grounded, busy, cash, onBook }) {
+  const [klass, setKlass] = React.useState('economy');
+  const [slot,  setSlot]  = React.useState(null);
+  const v = f.classes[klass];
+  return (
+    <div className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="font-medium">{f.emoji} {f.name}</div>
+        {f.locked && <LockBadge level={f.unlockLevel} />}
+      </div>
+
+      <div className="flex gap-1 mt-2 text-[11px]">
+        {Object.entries(f.classes).map(([k, vv]) => (
+          <button key={k} disabled={f.locked}
+            onClick={() => setKlass(k)}
+            className={`flex-1 px-1.5 py-1 rounded-md ${klass === k ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/85 hover:bg-ink-800/60'}`}>
+            <div className="capitalize">{k}</div>
+            <div className="text-[11px]">{fmt(vv.cost)}</div>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-2">
+        <div className="text-[11px] uppercase tracking-wide text-ink-100/70 mb-1">Departure</div>
+        <div className="flex flex-wrap gap-1">
+          {f.slots.map(s => {
+            const past   = s.departs_at <= now;
+            const taken  = s.taken;
+            const chosen = slot === s.departs_at;
+            const disabled = f.locked || past || taken;
+            return (
+              <button key={s.departs_at}
+                onClick={() => setSlot(s.departs_at)}
+                disabled={disabled}
+                title={taken ? 'You already hold a seat on this departure' : past ? 'Already departed' : ''}
+                className={`px-1.5 py-0.5 rounded text-[11px] tabular-nums ${
+                  chosen ? 'bg-money-600 text-white' :
+                  taken  ? 'bg-money-700/30 text-money-300 line-through' :
+                  past   ? 'bg-ink-900/40 text-ink-100/40 line-through' :
+                           'bg-ink-900/60 text-ink-100/85 hover:bg-ink-800/60'
+                }`}>
+                {fmtClock(s.departs_at)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <button
+        disabled={f.locked || !!busy || grounded || cash < (v?.cost || 0)}
+        onClick={() => onBook(f.city, klass, slot || undefined)}
+        className="btn btn-money w-full text-xs mt-2">
+        {busy === `buy-${f.city}-${klass}` ? '…'
+          : cash < (v?.cost || 0) ? `Need ${fmt(v?.cost || 0)}`
+          : slot ? `Book ${klass} — ${fmtClock(slot)}`
+          : `Book ${klass} — next departure`}
+      </button>
+    </div>
+  );
+}
 
 export default function Travel() {
   const { refresh, character } = useGame();
@@ -39,7 +111,7 @@ export default function Travel() {
     const id = setInterval(() => {
       setTickFlag(v => v + 1);
       const now = Date.now();
-      const dep = data?.schedule?.nextDepartureAt;
+      const dep = data?.schedule?.slots?.[0];
       if (dep && now >= dep && lastDepRef.current !== dep) {
         lastDepRef.current = dep;
         load();
@@ -48,11 +120,11 @@ export default function Travel() {
     return () => clearInterval(id);
   }, [data]);
 
-  async function buyTicket(city, klass) {
+  async function buyTicket(city, klass, departs_at) {
     setBusy(`buy-${city}-${klass}`); setMsg(null);
     try {
-      await api.post('/travel/ticket', { city, klass });
-      setMsg('Ticket booked. Wait for boarding to open.');
+      const r = await api.post('/travel/ticket', { city, klass, departs_at });
+      setMsg(`Ticket booked — departs ${fmtClock(r.departsAt)}.`);
       await refresh(); await load();
     } catch (e) { setMsg(e.message); }
     finally { setBusy(null); }
@@ -82,13 +154,8 @@ export default function Travel() {
   const grounded = !!character?.active_vehicle_id;
   const now = Date.now();
   const sched = data.schedule;
-  const departsAt = sched?.nextDepartureAt;
-  const boardingOpensAt = departsAt - sched.boardingWindowMs;
-  const inBoardingWindow = now >= boardingOpensAt && now < departsAt;
-  // Map of "destination city → ticket I hold for it" so each flight
-  // card knows whether to show a ticketed state instead of the
-  // class-picker buttons.
-  const ticketByCity = Object.fromEntries((data.tickets || []).map(t => [t.to_city, t]));
+  // First bookable slot in the rolling 4-hour timetable.
+  const nextSlot = sched?.slots?.[0];
 
   // Travel progress map — shown when the player is mid-flight or
   // mid-drive between cities. Reads timestamps off the character
@@ -151,74 +218,61 @@ export default function Travel() {
         )}
       </Card>
 
+      {/* Held tickets — every ticket the player owns out of this
+          city, each with its own boarding countdown + Board button.
+          Multi-ticket-per-route works because every ticket appears
+          on its own row keyed by id, not by destination. */}
+      {(data.tickets || []).length > 0 && (
+        <Card title="Your tickets"
+          subtitle="Boarding opens 5 min before takeoff. Board from the row below.">
+          <ul className="text-xs divide-y divide-ink-100/5">
+            {data.tickets.map(t => {
+              const opensAt = t.departs_at - sched.boardingWindowMs;
+              const inWindow = now >= opensAt && now < t.departs_at;
+              const missed   = now >= t.departs_at;
+              return (
+                <li key={t.id} className="py-2 flex items-baseline justify-between gap-2">
+                  <div>
+                    <div className="capitalize text-ink-100">{t.class} → {prettyCity(t.to_city)}</div>
+                    <div className="text-[11px] text-ink-100/70">Departs {fmtClock(t.departs_at)} · {fmt(t.cost)} paid</div>
+                  </div>
+                  {missed ? (
+                    <span className="text-[11px] uppercase text-blood-300">Missed</span>
+                  ) : inWindow ? (
+                    <button
+                      disabled={!!busy || grounded}
+                      onClick={() => board(t.id)}
+                      className="btn btn-primary text-[11px] animate-pulse">
+                      {busy === `board-${t.id}` ? '…' : `Board — ${mmss(t.departs_at - now)}`}
+                    </button>
+                  ) : (
+                    <span className="text-ink-100/85 tabular-nums">Boards in {mmss(opensAt - now)}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
+
       <Card title=" Departures" subtitle={
-          `Next flight in ${mmss(boardingOpensAt - now)}` +
-          (inBoardingWindow ? ` · BOARDING NOW (${mmss(departsAt - now)} left)` : ` · 5 min cycle, 30 s boarding window`)
+          nextSlot
+            ? `Slots every ${Math.round(sched.intervalMs / 60_000)} min, ${Math.round(sched.boardingWindowMs / 60_000)} min boarding. Next departure at ${fmtClock(nextSlot)}.`
+            : 'No bookable flights right now.'
         }>
         {grounded && (
           <p className="text-xs text-yellow-300 mb-3">
             You're driving a car. Stash it in a garage before booking a flight.
           </p>
         )}
-        <div className="rounded-md bg-ink-900/50 border border-ink-100/10 px-3 py-2 mb-3 flex items-baseline justify-between text-xs">
-          <span className="text-ink-100/55 uppercase tracking-wide text-[11px]">Next flight</span>
-          <span className={`tabular-nums font-medium ${inBoardingWindow ? 'text-blood-300' : 'text-ink-100'}`}>
-            {inBoardingWindow ? `Take off in ${mmss(departsAt - now)}` : `Boarding opens in ${mmss(boardingOpensAt - now)}`}
-          </span>
-        </div>
 
         <div className="grid md:grid-cols-2 gap-3">
-          {data.flights.map(f => {
-            const ticket = ticketByCity[f.city];
-            const ticketBoarding = ticket && now >= (ticket.departs_at - sched.boardingWindowMs) && now < ticket.departs_at;
-            return (
-              <div key={f.city} className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : ticketBoarding ? 'border-blood-500/60 bg-blood-700/10' : 'border-ink-100/10'}`}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="font-medium">{f.emoji} {f.name}</div>
-                  {f.locked && <LockBadge level={f.unlockLevel} />}
-                </div>
-
-                {/* Ticketed state — show class, cost paid, board countdown. */}
-                {ticket ? (
-                  <div className="mt-2 space-y-2">
-                    <div className="text-[13px] text-ink-100/70">
-                      Ticket: <b className="capitalize">{ticket.class}</b> · {fmt(ticket.cost)} paid
-                    </div>
-                    <div className={`text-xs tabular-nums ${ticketBoarding ? 'text-blood-300 font-semibold' : 'text-ink-100/55'}`}>
-                      {ticketBoarding
-                        ? `BOARDING — ${mmss(ticket.departs_at - now)} until takeoff`
-                        : `Boards in ${mmss((ticket.departs_at - sched.boardingWindowMs) - now)}`}
-                    </div>
-                    <button
-                      disabled={!ticketBoarding || !!busy || grounded}
-                      onClick={() => board(ticket.id)}
-                      className={`btn w-full text-xs ${ticketBoarding ? 'btn-primary animate-pulse' : ''}`}>
-                      {busy === `board-${ticket.id}` ? '…'
-                        : ticketBoarding ? `Board now — ${mmss(ticket.departs_at - now)}`
-                        : 'Wait for boarding'}
-                    </button>
-                  </div>
-                ) : (
-                  // No ticket yet — show class picker buttons that
-                  // BUY a ticket for the next departure.
-                  <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
-                    {Object.entries(f.classes).map(([k, v]) => (
-                      <button key={k}
-                        disabled={f.locked || !!busy || grounded || character.cash < v.cost}
-                        className="btn"
-                        onClick={() => buyTicket(f.city, k)}>
-                        <div>
-                          <div className="capitalize">{k}</div>
-                          <div className="text-[12px] text-ink-100/60">{fmt(v.cost)}</div>
-                          <div className="text-[12px] text-ink-100/40">{v.durationMs === 0 ? 'instant' : `${Math.round(v.durationMs/60000)}m flight`}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {data.flights.map(f => (
+            <FlightCard key={f.city}
+              f={f} sched={sched} now={now} grounded={grounded} busy={busy}
+              cash={character.cash}
+              onBook={buyTicket} />
+          ))}
         </div>
       </Card>
       </>}

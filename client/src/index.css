@@ -6,10 +6,11 @@
   color-scheme: dark;
 }
 
-/* Scale the entire UI up ~25%. Tailwind classes are rem-based off of html,
-   so bumping html font-size scales every text/icon/spacing class
-   proportionally without needing per-component edits. */
-html { font-size: 20px; }
+/* Base font-size. Tailwind classes are rem-based off of html, so this
+   scales every text / icon / spacing utility together. 16px matches
+   the conventional browser default (1rem = 16px) so text-base reads
+   as a comfortable 16px throughout the app. */
+html { font-size: 16px; }
 
 /* Belt-and-braces overflow-x guard. `clip` (rather than hidden) does
    not establish a containing block, so sticky positioning on the

@@ -593,10 +593,11 @@ function Countdown({ until }) {
 export function FlightsTab() {
   const { character, refresh } = useGame();
   const [data, setData] = useState(null);
-  // Per-row outcome map — keyed by city id. Cleared on next book or
-  // load, so a successful "ticket booked" / "boarding 14:32" message
-  // shows inside the same flight card the player just tapped.
-  const [outcome, setOutcome] = useState({});
+  // Per-card outcome message AND per-card chosen slot. Both keyed by
+  // city id so each destination remembers what the player picked.
+  const [outcome,   setOutcome]   = useState({});
+  const [pickedSlot, setPickedSlot] = useState({});
+  const [pickedClass, setPickedClass] = useState({});
   const [busy, setBusy] = useState(null);
 
   async function load() {
@@ -605,32 +606,36 @@ export function FlightsTab() {
   }
   useEffect(() => { load(); }, []);
 
-  // 1Hz tick so the next-departure countdown moves smoothly. Refetch
-  // the schedule when the slot rolls over so the boarding window is
-  // accurate after a departure passes.
+  // 1Hz tick so the countdowns move smoothly.
   const [, setTick] = useState(0);
   useEffect(() => {
     const i = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(i);
   }, []);
+  // Refetch the schedule when the next slot rolls over so it stays accurate.
   useEffect(() => {
-    if (!data?.schedule?.nextDepartureAt) return;
-    const ms = data.schedule.nextDepartureAt - Date.now();
+    const next = data?.schedule?.slots?.[0];
+    if (!next) return;
+    const ms = next - Date.now();
     if (ms <= 0) { load(); return; }
     const t = setTimeout(load, ms + 200);
     return () => clearTimeout(t);
-  }, [data?.schedule?.nextDepartureAt]);
+  }, [data?.schedule?.slots?.[0]]);
 
-  async function book(city, klass) {
-    setBusy(`${city}-${klass}`);
-    // Clear THIS card's message — leave others alone.
+  async function book(city) {
+    const klass = pickedClass[city] || 'economy';
+    const slot  = pickedSlot[city];
+    setBusy(`${city}`);
     setOutcome(o => ({ ...o, [city]: null }));
     try {
-      const r = await api.post('/online/flights/ticket', { city, klass });
-      const m = Math.max(0, Math.ceil((r.departsAt - Date.now()) / 60_000));
+      const r = await api.post('/online/flights/ticket', {
+        city, klass,
+        ...(slot ? { departs_at: slot } : {}),
+      });
       setOutcome(o => ({ ...o,
-        [city]: { ok: true, text: `Ticket booked (${klass}). Boards in ~${m} min — head to the airport.` }
+        [city]: { ok: true, text: `Ticket booked (${klass}) — departs ${fmtClock(r.departsAt)}. Head to the airport to board.` }
       }));
+      setPickedSlot(s => ({ ...s, [city]: null }));
       await refresh();
       await load();
     } catch (e) {
@@ -641,64 +646,134 @@ export function FlightsTab() {
 
   if (!data) return <Card><p className="text-xs text-ink-100/55">Loading flights…</p></Card>;
 
-  // Compute the next-departure countdown locally for the live tick.
   const now = Date.now();
-  const nextAt = data.schedule?.nextDepartureAt;
-  const boardingOpensAt = nextAt - (data.schedule?.boardingWindowMs || 0);
-  const inWindow = nextAt && now >= boardingOpensAt && now < nextAt;
-  const remainMs = nextAt ? Math.max(0, (inWindow ? nextAt : boardingOpensAt) - now) : 0;
-  const mm = String(Math.floor(remainMs / 60_000)).padStart(2, '0');
-  const ss = String(Math.floor((remainMs % 60_000) / 1000)).padStart(2, '0');
 
   return (
-    <Card title="Book a flight"
-      subtitle={`Online markup ${data.markup_pct}% over the desk fare. ${data.boarding_note}`}>
-      {nextAt && (
-        <div className="rounded-md bg-ink-900/50 border border-ink-100/10 px-3 py-2 mb-3 flex items-baseline justify-between text-xs">
-          <span className="text-ink-100/55 uppercase tracking-wide text-[11px]">Next flight</span>
-          <span className={`tabular-nums font-medium ${inWindow ? 'text-blood-300' : 'text-ink-100'}`}>
-            {inWindow ? `Boarding now — takeoff in ${mm}:${ss}` : `Departs in ${mm}:${ss}`}
-          </span>
-        </div>
-      )}
-      <div className="grid md:grid-cols-2 gap-3">
-        {data.flights.map(f => {
-          const out = outcome[f.city];
-          return (
-            <div key={f.city}
-              className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
-              <div className="flex items-baseline justify-between gap-2">
-                <div className="font-medium">{f.emoji} {f.name}</div>
-                {f.locked && <LockBadge level={f.unlockLevel} />}
-              </div>
-              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
-                {Object.entries(f.classes).map(([k, v]) => {
-                  const tooPoor = (character?.bank ?? 0) < v.cost;
-                  return (
-                    <button key={k}
-                      disabled={f.locked || busy === `${f.city}-${k}` || tooPoor}
-                      className="btn"
-                      onClick={() => book(f.city, k)}>
-                      <div>
-                        <div className="capitalize">{k}</div>
-                        <div className="text-[12px] text-ink-100/70">{fmt(v.cost)}</div>
-                        <div className="text-[11px] text-ink-100/45 line-through">{fmt(v.base)}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {out && (
-                <div className={`mt-2 px-2 py-1.5 rounded-md text-[12px] ${out.ok
-                    ? 'bg-money-700/15 border border-money-500/40 text-money-200'
-                    : 'bg-blood-700/15 border border-blood-500/40 text-blood-200'}`}>
-                  {out.text}
+    <div className="space-y-3">
+      {/* Held tickets — one row each, with a live countdown to
+          boarding open (head to the airport when that hits 0). */}
+      {data.tickets && data.tickets.length > 0 && (
+        <Card title={`Your tickets (${data.tickets.length})`}
+          subtitle="Boarding opens 5 min before takeoff. Head to the airport to board.">
+          <ul className="text-xs divide-y divide-ink-100/5">
+            {data.tickets.map(t => (
+              <li key={t.id} className="py-1.5 flex items-baseline justify-between gap-2">
+                <div>
+                  <div className="capitalize text-ink-100">{t.class} → {prettyCity(t.to_city)}</div>
+                  <div className="text-[11px] text-ink-100/70">Departs {fmtClock(t.departs_at)}</div>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </Card>
+                <BoardCountdown departsAt={t.departs_at} boardingMs={data.schedule.boardingWindowMs} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <Card title="Book a flight"
+        subtitle={`Online markup ${data.markup_pct}% over the desk fare. ${data.boarding_note}`}>
+        <div className="grid md:grid-cols-2 gap-3">
+          {data.flights.map(f => {
+            const out = outcome[f.city];
+            const klass = pickedClass[f.city] || 'economy';
+            const slot  = pickedSlot[f.city];
+            return (
+              <div key={f.city}
+                className={`rounded-lg p-3 border bg-ink-950/40 ${f.locked ? 'border-ink-100/5 opacity-50 grayscale' : 'border-ink-100/10'}`}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="font-medium">{f.emoji} {f.name}</div>
+                  {f.locked && <LockBadge level={f.unlockLevel} />}
+                </div>
+
+                {/* Class picker — the price comes from f.classes */}
+                <div className="flex gap-1 mt-2 text-[11px]">
+                  {Object.entries(f.classes).map(([k, v]) => (
+                    <button key={k}
+                      onClick={() => setPickedClass(s => ({ ...s, [f.city]: k }))}
+                      disabled={f.locked}
+                      className={`flex-1 px-1.5 py-1 rounded-md ${klass === k ? 'bg-blood-700 text-white' : 'bg-ink-900/60 text-ink-100/85 hover:bg-ink-800/60'}`}>
+                      <div className="capitalize">{k}</div>
+                      <div className="text-[11px]">{fmt(v.cost)}</div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Slot picker — the 4-hour timetable. Already-booked
+                    slots are greyed out, slots in the past are too. */}
+                <div className="mt-2">
+                  <div className="text-[11px] uppercase tracking-wide text-ink-100/70 mb-1">Departure</div>
+                  <div className="flex flex-wrap gap-1">
+                    {f.slots.map(s => {
+                      const past   = s.departs_at <= now;
+                      const taken  = s.taken;
+                      const chosen = slot === s.departs_at;
+                      const disabled = f.locked || past || taken;
+                      return (
+                        <button key={s.departs_at}
+                          onClick={() => setPickedSlot(o => ({ ...o, [f.city]: s.departs_at }))}
+                          disabled={disabled}
+                          title={taken ? 'Already booked' : past ? 'Already departed' : ''}
+                          className={`px-1.5 py-0.5 rounded text-[11px] tabular-nums ${
+                            chosen ? 'bg-money-600 text-white' :
+                            taken  ? 'bg-money-700/30 text-money-300 line-through' :
+                            past   ? 'bg-ink-900/40 text-ink-100/40 line-through' :
+                                     'bg-ink-900/60 text-ink-100/85 hover:bg-ink-800/60'
+                          }`}>
+                          {fmtClock(s.departs_at)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button
+                  disabled={f.locked || busy === `${f.city}` || (character?.bank ?? 0) < (f.classes[klass]?.cost || 0)}
+                  onClick={() => book(f.city)}
+                  className="btn btn-primary w-full text-xs mt-2">
+                  {busy === `${f.city}` ? '…'
+                    : (character?.bank ?? 0) < (f.classes[klass]?.cost || 0) ? 'Bank too low'
+                    : slot ? `Book ${klass} — ${fmtClock(slot)}`
+                    : `Book ${klass} — next departure`}
+                </button>
+
+                {out && (
+                  <div className={`mt-2 px-2 py-1.5 rounded-md text-[12px] ${out.ok
+                      ? 'bg-money-700/15 border border-money-500/40 text-money-200'
+                      : 'bg-blood-700/15 border border-blood-500/40 text-blood-200'}`}>
+                    {out.text}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
   );
+}
+
+// Formats an absolute ms timestamp as a wall-clock HH:MM.
+function fmtClock(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function prettyCity(id) {
+  return String(id || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function BoardCountdown({ departsAt, boardingMs }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const opensAt = departsAt - (boardingMs || 0);
+  if (now >= departsAt) return <span className="text-blood-300 text-[11px] uppercase">Missed</span>;
+  if (now >= opensAt)   return <span className="text-blood-300 tabular-nums">Boarding {fmtMmSs(departsAt - now)}</span>;
+  return <span className="text-ink-100/85 tabular-nums">Opens {fmtMmSs(opensAt - now)}</span>;
+}
+function fmtMmSs(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }

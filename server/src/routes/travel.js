@@ -6,6 +6,11 @@ import { saveCharacter, publicCharacter, applyJailSentence } from '../services/c
 import { writeLog } from '../services/log.js';
 import { FLIGHT_CLASSES, flightDurationMs } from '../services/flights.js';
 import { interDriveFuelCost, maxKmOnFullTank } from '../services/fuel.js';
+import {
+  BOARDING_WINDOW_MS,
+  bookableSlots, earliestBookableSlot, inBoardingWindow,
+  isSlotBookable, scheduleSnapshot,
+} from '../services/flight-schedule.js';
 
 const router = Router();
 
@@ -15,20 +20,6 @@ const router = Router();
 const DRIVE_COST_PER_KM       = 0.10;   // £/km
 const DRIVE_MS_PER_KM         = 1500;   // 1.5s per km of road = ~25 min per 1000km
 const CONDITION_LOSS_PER_KM   = 1 / 500; // 1% per 500km
-
-// Live flight schedule. 5-minute rotation per departure: 4:30 wait,
-// then a 30 s boarding window, then takeoff. Tickets bought before
-// the window are valid; once the window passes without boarding,
-// the ticket lapses and the cash is gone.
-const FLIGHT_INTERVAL_MS = 10 * 60 * 1000;
-const BOARDING_WINDOW_MS = 2 * 60 * 1000;
-
-function nextDepartureAt(now = Date.now()) {
-  return Math.ceil(now / FLIGHT_INTERVAL_MS) * FLIGHT_INTERVAL_MS;
-}
-function inBoardingWindow(departsAt, now = Date.now()) {
-  return now >= departsAt - BOARDING_WINDOW_MS && now < departsAt;
-}
 
 // Lazy cleanup — flips any of the player's tickets that have lapsed
 // (departs_at has passed without a boarding) to 'missed'. Called on
@@ -45,10 +36,24 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   const from = cityById(ch.city);
   const now = Date.now();
   expireLapsedTickets(ch.id, now);
-  const departsAt = nextDepartureAt(now);
+  const schedule = scheduleSnapshot(now);
+  // Tickets the player already holds, keyed below per route so each
+  // destination card can grey-out the slots they've already bought.
+  const myTickets = db.prepare(`
+    SELECT id, from_city, to_city, class, cost, departs_at, status
+    FROM flight_tickets
+    WHERE char_id = ? AND status = 'booked' AND from_city = ?
+    ORDER BY departs_at ASC
+  `).all(ch.id, ch.city);
+  const bookedByRoute = {};
+  for (const t of myTickets) {
+    const key = `${t.to_city}`;
+    (bookedByRoute[key] = bookedByRoute[key] || new Set()).add(t.departs_at);
+  }
   const flights = CITIES.filter(c => c.id !== ch.city).map(c => {
     const baseFare = Math.floor((from.flightBase + c.flightBase) / 2);
     const unlockLevel = c.unlockLevel || 1;
+    const taken = bookedByRoute[c.id] || new Set();
     return {
       city: c.id, name: c.name, emoji: c.emoji,
       unlockLevel,
@@ -57,17 +62,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
         cost: Math.floor(baseFare * v.mul),
         durationMs: flightDurationMs(ch.city, c.id, v.durationMul),
       }]))),
+      // Per-slot availability for THIS destination — the slot list is
+      // shared across all routes; only the "already-booked" flags vary.
+      slots: schedule.slots.map(t => ({ departs_at: t, taken: taken.has(t) })),
     };
   });
-  // Player's active (booked) tickets out of their current city. We
-  // don't surface tickets for cities they've already left because
-  // there's no UI to act on those.
-  const tickets = db.prepare(`
-    SELECT id, from_city, to_city, class, cost, departs_at, status
-    FROM flight_tickets
-    WHERE char_id = ? AND status = 'booked' AND from_city = ?
-    ORDER BY departs_at ASC
-  `).all(ch.id, ch.city);
   // Drivable destinations — only cities reachable via the LAND_EDGES
   // graph from the player's current city.
   const drives = landReachableFrom(ch.city).map(r => {
@@ -88,13 +87,8 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     flights,
     drives,
     currentCity: ch.city,
-    schedule: {
-      intervalMs:        FLIGHT_INTERVAL_MS,
-      boardingWindowMs:  BOARDING_WINDOW_MS,
-      nextDepartureAt:   departsAt,
-      now,
-    },
-    tickets: tickets.map(t => ({
+    schedule,
+    tickets: myTickets.map(t => ({
       ...t,
       boardingOpensAt: t.departs_at - BOARDING_WINDOW_MS,
       isBoarding: inBoardingWindow(t.departs_at, now),
@@ -102,12 +96,13 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
   });
 });
 
-// Buy a ticket for the next 10-minute departure to a destination.
-// Class selected at purchase time; price debited immediately. Cannot
-// hold two pending tickets for the same destination.
+// Buy a ticket for a specific scheduled departure. `departs_at` is an
+// ms timestamp from the slot list returned by GET / — caller picks
+// which slot they want. Players may hold multiple tickets per route
+// (one per slot) but never two seats on the same slot.
 router.post('/ticket', requireAuth, requireCharacter, requireFreeCharacter, (req, res) => {
   const ch = req.character;
-  const { city, klass = 'economy' } = req.body || {};
+  const { city, klass = 'economy', departs_at } = req.body || {};
   const target = cityById(city);
   if (!target) return res.status(400).json({ error: 'Unknown city' });
   if (target.id === ch.city) return res.status(400).json({ error: "Already there." });
@@ -124,31 +119,35 @@ router.post('/ticket', requireAuth, requireCharacter, requireFreeCharacter, (req
   }
   const now = Date.now();
   expireLapsedTickets(ch.id, now);
-  const existing = db.prepare(
-    "SELECT id FROM flight_tickets WHERE char_id = ? AND status = 'booked' AND from_city = ? AND to_city = ?"
-  ).get(ch.id, ch.city, target.id);
-  if (existing) return res.status(409).json({ error: `You already hold a ticket to ${target.name}.` });
+
+  // Resolve the departure slot. If the caller didn't pick one, fall
+  // back to the earliest bookable slot so a "just book the next one"
+  // call still works.
+  let slot = parseInt(departs_at, 10);
+  if (!Number.isFinite(slot)) slot = earliestBookableSlot(now);
+  if (!isSlotBookable(slot, now)) {
+    return res.status(400).json({ error: 'That departure has already left or is past the bookable horizon.' });
+  }
+  // One seat per (route, slot). Multiple slots on the same route are fine.
+  const dupe = db.prepare(
+    "SELECT id FROM flight_tickets WHERE char_id = ? AND status = 'booked' AND from_city = ? AND to_city = ? AND departs_at = ?"
+  ).get(ch.id, ch.city, target.id, slot);
+  if (dupe) return res.status(409).json({ error: 'You already hold a seat on that departure.' });
 
   const from = cityById(ch.city);
   const baseFare = Math.floor((from.flightBase + target.flightBase) / 2);
   const cost = Math.floor(baseFare * cls.mul);
   if (ch.cash < cost) return res.status(400).json({ error: `Need £${cost.toLocaleString()}` });
 
-  // If there's less than the boarding window left until the next
-  // slot, push the ticket to the FOLLOWING slot — otherwise the
-  // player would buy and instantly miss.
-  let departsAt = nextDepartureAt(now);
-  if (departsAt - now < BOARDING_WINDOW_MS) departsAt += FLIGHT_INTERVAL_MS;
-
   ch.cash -= cost;
   db.prepare(`
     INSERT INTO flight_tickets (char_id, from_city, to_city, class, cost, departs_at, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?, 'booked', ?)
-  `).run(ch.id, ch.city, target.id, klass, cost, departsAt, now);
+  `).run(ch.id, ch.city, target.id, klass, cost, slot, now);
   saveCharacter(ch);
   writeLog(ch.id, 'travel',
-    `Booked ${klass} ticket to ${target.name} for £${cost.toLocaleString()}, departs ${new Date(departsAt).toUTCString()}.`);
-  res.json({ ok: true, departsAt, character: publicCharacter(ch) });
+    `Booked ${klass} ticket to ${target.name} for £${cost.toLocaleString()}, departs ${new Date(slot).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}.`);
+  res.json({ ok: true, departsAt: slot, character: publicCharacter(ch) });
 });
 
 // Board a flight — only valid in the 1-minute window before takeoff.
@@ -213,12 +212,18 @@ router.post('/board/:ticketId', requireAuth, requireCharacter, requireFreeCharac
     ch.travel_to = null;
     writeLog(ch.id, 'travel', `Instant first-class to ${target.name}.`);
   } else {
-    const now2 = Date.now();
-    ch.travel_started_at = now2;
-    ch.travel_until = now2 + dur;
+    // Boarding can happen anywhere inside the 5-min boarding window,
+    // but the flight itself doesn't move until the scheduled takeoff.
+    // Anchor travel_started_at to t.departs_at so the TravelMap holds
+    // the plane on the origin marker until the clock hits takeoff.
+    const takeoffAt = t.departs_at;
+    ch.travel_started_at = takeoffAt;
+    ch.travel_until = takeoffAt + dur;
     ch.travel_to = target.id;
     ch.travel_mode = 'plane';
-    writeLog(ch.id, 'travel', `Boarded ${t.class} flight to ${target.name} (${Math.round(dur/60000)} min).`);
+    const minsToTakeoff = Math.max(0, Math.ceil((takeoffAt - Date.now()) / 60000));
+    writeLog(ch.id, 'travel',
+      `Boarded ${t.class} flight to ${target.name}. Pushback in ${minsToTakeoff} min, flight time ${Math.round(dur/60000)} min.`);
   }
   saveCharacter(ch);
   res.json({ ok: true, busted, seized, jailMin: bustJailMin, character: publicCharacter(ch) });

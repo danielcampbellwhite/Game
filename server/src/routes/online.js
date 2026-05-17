@@ -36,13 +36,13 @@ export function onlinePrice(base) {
   return Math.ceil(base * (1 + ONLINE_MARKUP));
 }
 
-// Mirror the airport flight window so a ticket bought online and an
-// in-person ticket land on the same boarding slot.
-const FLIGHT_INTERVAL_MS = 10 * 60 * 1000;
-const BOARDING_WINDOW_MS = 2 * 60 * 1000;
-function nextDepartureAt(now = Date.now()) {
-  return Math.ceil(now / FLIGHT_INTERVAL_MS) * FLIGHT_INTERVAL_MS;
-}
+// Shared flight schedule — same slots the airport desk sees, so a
+// ticket bought online and one bought at the counter land on the
+// same departure list.
+import {
+  BOARDING_WINDOW_MS as FLIGHT_BOARDING_WINDOW_MS,
+  earliestBookableSlot, isSlotBookable, scheduleSnapshot, inBoardingWindow,
+} from '../services/flight-schedule.js';
 
 // GET / — landing page. Right now just a status summary the client
 // uses to decide which features to surface. Later this grows to
@@ -66,9 +66,30 @@ router.get('/flights', requireAuth, requireCharacter, requireInternet, (req, res
   const ch = req.character;
   const from = cityById(ch.city);
   if (!from) return res.status(400).json({ error: 'Unknown origin city.' });
+  const now = Date.now();
+  // Lazy expire — same as the airport desk does.
+  db.prepare(
+    "UPDATE flight_tickets SET status = 'missed' WHERE char_id = ? AND status = 'booked' AND departs_at <= ?"
+  ).run(ch.id, now);
+  const schedule = scheduleSnapshot(now);
+  // Held tickets out of the player's current city, surfaced on the
+  // phone app so the slot picker can grey-out already-booked slots
+  // AND so the player can see their boarding countdowns without
+  // walking to the airport.
+  const myTickets = db.prepare(`
+    SELECT id, from_city, to_city, class, cost, departs_at, status
+    FROM flight_tickets
+    WHERE char_id = ? AND status = 'booked' AND from_city = ?
+    ORDER BY departs_at ASC
+  `).all(ch.id, ch.city);
+  const bookedByRoute = {};
+  for (const t of myTickets) {
+    (bookedByRoute[t.to_city] = bookedByRoute[t.to_city] || new Set()).add(t.departs_at);
+  }
   const flights = CITIES.filter(c => c.id !== ch.city).map(c => {
     const baseFare = Math.floor((from.flightBase + c.flightBase) / 2);
     const unlockLevel = c.unlockLevel || 1;
+    const taken = bookedByRoute[c.id] || new Set();
     return {
       city: c.id, name: c.name, emoji: c.emoji,
       unlockLevel,
@@ -81,24 +102,19 @@ router.get('/flights', requireAuth, requireCharacter, requireInternet, (req, res
           durationMs: flightDurationMs(ch.city, c.id, v.durationMul),
         }];
       })),
+      slots: schedule.slots.map(t => ({ departs_at: t, taken: taken.has(t) })),
     };
   });
-  // Schedule info — same 10-min rolling slot that the airport desk
-  // uses, surfaced so the phone Flights tab can show a "next flight
-  // in MM:SS" header beside the catalogue.
-  const now = Date.now();
-  let nextDep = nextDepartureAt(now);
-  if (nextDep - now < BOARDING_WINDOW_MS) nextDep += FLIGHT_INTERVAL_MS;
   res.json({
     flights,
     markup_pct: Math.round(ONLINE_MARKUP * 100),
     boarding_note: `Pay online from your bank, then head to the ${from.name} airport to board.`,
-    schedule: {
-      now,
-      intervalMs:       FLIGHT_INTERVAL_MS,
-      boardingWindowMs: BOARDING_WINDOW_MS,
-      nextDepartureAt:  nextDep,
-    },
+    schedule,
+    tickets: myTickets.map(t => ({
+      ...t,
+      boardingOpensAt: t.departs_at - FLIGHT_BOARDING_WINDOW_MS,
+      isBoarding: inBoardingWindow(t.departs_at, now),
+    })),
   });
 });
 
@@ -108,7 +124,7 @@ router.get('/flights', requireAuth, requireCharacter, requireInternet, (req, res
 // next departure slot and the player physically boards at the airport.
 router.post('/flights/ticket', requireAuth, requireCharacter, requireFreeCharacter, requireInternet, (req, res) => {
   const ch = req.character;
-  const { city, klass = 'economy' } = req.body || {};
+  const { city, klass = 'economy', departs_at } = req.body || {};
   const target = cityById(city);
   if (!target) return res.status(400).json({ error: 'Unknown city.' });
   if (target.id === ch.city) return res.status(400).json({ error: 'Already there.' });
@@ -118,13 +134,17 @@ router.post('/flights/ticket', requireAuth, requireCharacter, requireFreeCharact
   const cls = FLIGHT_CLASSES[klass];
   if (!cls) return res.status(400).json({ error: 'Unknown flight class.' });
 
-  // Re-check for an existing pending ticket — players shouldn't end
-  // up holding two seats on the same route just because they bought
-  // one online and one at the desk.
-  const existing = db.prepare(
-    "SELECT id FROM flight_tickets WHERE char_id = ? AND status = 'booked' AND from_city = ? AND to_city = ?"
-  ).get(ch.id, ch.city, target.id);
-  if (existing) return res.status(409).json({ error: `You already hold a ticket to ${target.name}.` });
+  const now = Date.now();
+  let slot = parseInt(departs_at, 10);
+  if (!Number.isFinite(slot)) slot = earliestBookableSlot(now);
+  if (!isSlotBookable(slot, now)) {
+    return res.status(400).json({ error: 'That departure has already left or is past the bookable horizon.' });
+  }
+  // One seat per (route, slot) only — multiple slots per route are fine.
+  const dupe = db.prepare(
+    "SELECT id FROM flight_tickets WHERE char_id = ? AND status = 'booked' AND from_city = ? AND to_city = ? AND departs_at = ?"
+  ).get(ch.id, ch.city, target.id, slot);
+  if (dupe) return res.status(409).json({ error: 'You already hold a seat on that departure.' });
 
   const from = cityById(ch.city);
   const baseFare = Math.floor((from.flightBase + target.flightBase) / 2);
@@ -134,18 +154,15 @@ router.post('/flights/ticket', requireAuth, requireCharacter, requireFreeCharact
     return res.status(400).json({ error: `Need £${cost.toLocaleString()} in your bank account to pay online.` });
   }
 
-  let departsAt = nextDepartureAt();
-  if (departsAt - Date.now() < BOARDING_WINDOW_MS) departsAt += FLIGHT_INTERVAL_MS;
-
   ch.bank -= cost;
   db.prepare(`
     INSERT INTO flight_tickets (char_id, from_city, to_city, class, cost, departs_at, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?, 'booked', ?)
-  `).run(ch.id, ch.city, target.id, klass, cost, departsAt, Date.now());
+  `).run(ch.id, ch.city, target.id, klass, cost, slot, now);
   saveCharacter(ch);
   writeLog(ch.id, 'travel',
-    `Booked ${klass} ticket to ${target.name} online for £${cost.toLocaleString()} (incl. ${Math.round(ONLINE_MARKUP * 100)}% markup). Head to the airport to board.`);
-  res.json({ ok: true, departsAt, cost, base, character: publicCharacter(ch) });
+    `Booked ${klass} ticket to ${target.name} online for £${cost.toLocaleString()} (incl. ${Math.round(ONLINE_MARKUP * 100)}% markup). Departs ${new Date(slot).toLocaleString([], { hour: '2-digit', minute: '2-digit' })} — head to the airport to board.`);
+  res.json({ ok: true, departsAt: slot, cost, base, character: publicCharacter(ch) });
 });
 
 // ─── Vehicle delivery ─────────────────────────────────────────
