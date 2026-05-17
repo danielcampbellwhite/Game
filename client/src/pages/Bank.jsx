@@ -201,37 +201,20 @@ export default function Bank() {
 }
 
 // ─── ATM mini-game ────────────────────────────────────────────
-// A keypad with a fresh random digit layout each session — taps the
-// PIN one digit at a time. Mirrors the small "look down, find the
-// number" tension of using a real cash machine.
+// Standard phone-keypad PIN entry. 1-9 in a 3×3 grid, 0 centred
+// underneath. Compact buttons so the keypad doesn't dominate the
+// card.
 function AtmCard({ info, onChange }) {
   const [amount, setAmount]  = useState('');
   const [pin, setPin]        = useState('');
   const [busy, setBusy]      = useState(false);
   const [msg, setMsg]        = useState(null);
-  const [layoutSeed, setLayoutSeed] = useState(() => Math.random());
-
-  // Shuffle the keypad each render-cycle the player isn't typing —
-  // gives the mini-game its "ATM" feel. Stable while they're keying
-  // a PIN in so the buttons don't move under their thumb.
-  const keys = React.useMemo(() => {
-    const digits = ['1','2','3','4','5','6','7','8','9','0'];
-    // Fisher-Yates with the seed (deterministic per layoutSeed).
-    let s = Math.floor(layoutSeed * 1e9) >>> 0;
-    function rnd() { s = (s * 1664525 + 1013904223) >>> 0; return s / 0x100000000; }
-    for (let i = digits.length - 1; i > 0; i--) {
-      const j = Math.floor(rnd() * (i + 1));
-      [digits[i], digits[j]] = [digits[j], digits[i]];
-    }
-    return digits;
-  }, [layoutSeed]);
 
   function pressDigit(d) {
     if (pin.length >= 4) return;
     setPin(p => p + d);
   }
   function clear() { setPin(''); }
-  function reshuffle() { setPin(''); setLayoutSeed(Math.random()); }
 
   async function withdraw() {
     if (busy) return;
@@ -242,20 +225,23 @@ function AtmCard({ info, onChange }) {
     try {
       await api.post('/bank/atm/withdraw', { amount: amt, pin });
       setMsg(`Dispensed ${fmt(amt)}.`);
-      setPin(''); setAmount(''); reshuffle();
+      setPin(''); setAmount('');
       await onChange?.();
-    } catch (e) { setMsg(e.message); setPin(''); reshuffle(); }
+    } catch (e) { setMsg(e.message); setPin(''); }
     finally { setBusy(false); }
   }
 
   const lockedMs = info.pin_lockout_ms_left || 0;
   const locked = lockedMs > 0;
+  // Standard touch-tone layout. Bottom row centres the 0 under 8.
+  const ROWS = [['1','2','3'], ['4','5','6'], ['7','8','9'], ['', '0', '']];
+  const keyClass = 'h-9 sm:h-10 rounded-md bg-ink-900/70 hover:bg-ink-800 border border-ink-100/15 font-display text-base text-ink-50 tabular-nums leading-none px-0';
 
   return (
     <Card title="ATM"
       subtitle={locked
         ? 'Card temporarily locked. Reset your PIN from the bank app to unlock.'
-        : 'Enter your PIN to withdraw. PIN keypad reshuffles each session.'}>
+        : 'Enter your PIN to withdraw cash.'}>
       {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
 
       <div className="grid sm:grid-cols-2 gap-3">
@@ -274,7 +260,6 @@ function AtmCard({ info, onChange }) {
           </div>
           <div className="flex gap-1 text-[11px]">
             <button onClick={clear} disabled={locked || busy} className="btn btn-ghost text-[11px] flex-1">Clear</button>
-            <button onClick={reshuffle} disabled={locked || busy} className="btn btn-ghost text-[11px] flex-1">Shuffle</button>
           </div>
           <button onClick={withdraw} disabled={locked || busy || pin.length !== 4 || !amount}
             className="btn btn-primary w-full text-xs mt-1">
@@ -282,20 +267,20 @@ function AtmCard({ info, onChange }) {
           </button>
         </div>
 
-        {/* Keypad */}
-        <div className="grid grid-cols-3 gap-2">
-          {keys.slice(0, 9).map(d => (
-            <button key={d} onClick={() => pressDigit(d)} disabled={locked || busy || pin.length >= 4}
-              className="aspect-square rounded-lg bg-ink-900/70 hover:bg-ink-800 border border-ink-100/15 font-display text-2xl text-ink-50 tabular-nums">
-              {d}
-            </button>
-          ))}
-          <div />
-          <button onClick={() => pressDigit(keys[9])} disabled={locked || busy || pin.length >= 4}
-            className="aspect-square rounded-lg bg-ink-900/70 hover:bg-ink-800 border border-ink-100/15 font-display text-2xl text-ink-50 tabular-nums">
-            {keys[9]}
-          </button>
-          <div />
+        {/* Keypad — fixed touch-tone layout */}
+        <div className="grid grid-cols-3 gap-1 max-w-[220px] mx-auto w-full">
+          {ROWS.flat().map((d, i) =>
+            d === '' ? (
+              <div key={`blank-${i}`} />
+            ) : (
+              <button key={d}
+                onClick={() => pressDigit(d)}
+                disabled={locked || busy || pin.length >= 4}
+                className={keyClass}>
+                {d}
+              </button>
+            )
+          )}
         </div>
       </div>
     </Card>
