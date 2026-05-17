@@ -53,6 +53,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
     });
   }
 
+  // Order the around-the-city tiles alphabetically by display name
+  // so the list is easy to scan. Homes and public buildings sit in
+  // the same alphabetical sequence — owned-vs-rented mixed.
+  items.sort((a, b) => a.name.localeCompare(b.name));
+
   res.json({
     city: ch.city,
     current_location: here,

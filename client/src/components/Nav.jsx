@@ -81,6 +81,21 @@ const NAV_TREE = [
   ]},
 ];
 
+// Alphabetic sort by label, used for both the top-level list and
+// every dropdown's children. Items without a label (defensive) sink
+// to the bottom so they don't tilt the comparison.
+function alphabetic(items) {
+  return [...items].sort((a, b) => (a.label || '').localeCompare(b.label || ''));
+}
+
+// Pre-sort the whole tree once at module load: top-level entries
+// alphabetic, and every dropdown's children alphabetic too. Re-used
+// by the main nav, the mobile drawer, and the secondary horizontal
+// strip so the order is consistent everywhere.
+const NAV_TREE_SORTED = alphabetic(NAV_TREE).map(item =>
+  item.children ? { ...item, children: alphabetic(item.children) } : item
+);
+
 const TYPE_COLOR = {
   crime: 'text-blood-400',
   combat: 'text-blood-400',
@@ -654,7 +669,7 @@ export default function Nav() {
            Hidden when the player has no character loaded.  */}
       {character && (
         <SubNavStrip
-          items={NAV_TREE}
+          items={NAV_TREE_SORTED}
           lockedOut={lockedOut}
           linkClass={linkClass}
           onClickGuard={onClickGuard}
@@ -711,7 +726,7 @@ export default function Nav() {
               dropdown on desktop and inline expand on mobile (see the
               drawer rendering below in the mobile-only block). */}
           <div className="hidden md:flex md:flex-wrap items-center gap-1">
-            {NAV_TREE.map(item => (
+            {NAV_TREE_SORTED.map(item => (
               <NavMenuItem key={item.to}
                 item={item}
                 lockedOut={lockedOut}
@@ -725,7 +740,7 @@ export default function Nav() {
           {/* Mobile drawer: flatten parents + indented children so the
               user can reach every page from one scrollable drawer. */}
           <div className="md:hidden flex flex-col gap-0.5">
-            {NAV_TREE.map(item => (
+            {NAV_TREE_SORTED.map(item => (
               <React.Fragment key={item.to}>
                 <NavLink
                   to={item.to}

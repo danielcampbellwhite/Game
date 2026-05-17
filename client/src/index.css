@@ -65,3 +65,22 @@ input, select {
 
 .scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* Readability rescue: the low-opacity ink-100 utilities (text-ink-100/40
+   through /70) read as muted grey on the app's dark-ink surfaces. The
+   contrast was fine on slate-bright cards in early designs, but with
+   the bg-ink-900 / bg-ink-950 / bg-ink-1000 surfaces in use everywhere
+   they now blur into the background.
+
+   Bump every text utility in those opacity bands up to ~0.92 so they
+   read as near-white. Borders / dividers keep their original alpha by
+   targeting only the `color` property. */
+.text-ink-100\/40,
+.text-ink-100\/45,
+.text-ink-100\/50,
+.text-ink-100\/55,
+.text-ink-100\/60,
+.text-ink-100\/65,
+.text-ink-100\/70 {
+  color: rgba(245, 245, 244, 0.92);
+}
