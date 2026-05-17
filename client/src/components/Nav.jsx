@@ -346,7 +346,10 @@ function NavMenuItem({ item, lockedOut, onPick, linkClass, onClickGuard, isAdmin
   let style = null;
   if (open && rect) {
     const GUTTER = 8;
-    const W = 220;
+    // 320 px wide so location rows ("Aircraft Broker", "Streetwear
+    // Outlet", "Stock Brokerage") fit alongside the Walk + Drive
+    // shortcut buttons without truncating.
+    const W = 320;
     let left = rect.left;
     if (left + W + GUTTER > window.innerWidth) left = Math.max(GUTTER, window.innerWidth - W - GUTTER);
     style = { position: 'fixed', top: rect.bottom + 4, left, width: W, zIndex: 50 };
@@ -878,6 +881,38 @@ export default function Nav() {
                           className="text-left pl-7 text-[11px] px-3 py-2 rounded-md text-blood-300 hover:bg-blood-700/30">
                           {c.label}
                         </button>
+                      );
+                    }
+                    // Location children get inline Walk + Drive
+                    // shortcuts so the player can launch the trip
+                    // without having to find /city first.
+                    if (c.locationSlug) {
+                      const here = character?.current_location === c.locationSlug;
+                      const hasVeh = !!character?.active_vehicle_id || !!character?.active_premium_vehicle_id;
+                      return (
+                        <div key={c.to} className="pl-7 flex items-center gap-1">
+                          <NavLink to={c.to}
+                            onClick={(e) => { onClickGuard(e); setMenuOpen(false); }}
+                            className={({ isActive }) =>
+                              `flex-1 min-w-0 px-2 py-1.5 rounded-md ${isActive || here ? 'bg-blood-700/60 text-white' : 'text-ink-100/85 hover:bg-ink-800/70'}`}>
+                            {c.label}{here && <span className="ml-1 text-[10px] uppercase text-money-300">· here</span>}
+                          </NavLink>
+                          {!here && !lockedOut && (
+                            <>
+                              <button type="button"
+                                onClick={() => { setMenuOpen(false); travelTo(c.locationSlug, 'walk'); }}
+                                className="shrink-0 px-2 py-1 rounded text-[11px] uppercase bg-ink-900/60 hover:bg-ink-800/70 text-ink-100/85">
+                                Walk
+                              </button>
+                              <button type="button"
+                                disabled={!hasVeh}
+                                onClick={() => { setMenuOpen(false); travelTo(c.locationSlug, 'drive'); }}
+                                className={`shrink-0 px-2 py-1 rounded text-[11px] uppercase ${hasVeh ? 'bg-money-700/60 hover:bg-money-700 text-white' : 'bg-ink-900/30 text-ink-100/40 cursor-not-allowed'}`}>
+                                Drive
+                              </button>
+                            </>
+                          )}
+                        </div>
                       );
                     }
                     return (
