@@ -458,11 +458,11 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
 
   return (
     <div className="relative">
-      {/* Scroll lane on top. Background + border only paint while
-          it's visible so a collapsed strip leaves no tinted row —
-          only the tab stays. */}
+      {/* Scroll lane on top — same solid backdrop as the other nav
+          rows so it reads as a proper menu strip. Background drops
+          when collapsed so only the bare tab is left. */}
       <div
-        className={`transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16 border-t border-ink-100/10 bg-ink-900/30'}`}
+        className={`transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16 border-t border-ink-100/10 bg-ink-950/85 backdrop-blur'}`}
         aria-hidden={collapsed}>
         <div className="max-w-6xl mx-auto px-3 sm:px-4">
           <div className="flex items-center gap-1 overflow-x-auto py-1.5 scrollbar"
@@ -482,16 +482,16 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
           </div>
         </div>
       </div>
-      {/* Pull tab — dangles off the BOTTOM of the lane. When the
-          lane is collapsed the tab is the only thing left so the
-          player can grab it to pull the menu back down. */}
+      {/* Pull tab — just the chevron sitting on transparent space.
+          No background, no border, no shadow. A bit of padding for
+          a comfortable tap target. */}
       <div className="flex justify-center pointer-events-none">
         <button
           type="button"
           aria-label={collapsed ? 'Show quick-access nav' : 'Hide quick-access nav'}
           aria-expanded={!collapsed}
           onClick={() => setCollapsed(c => !c)}
-          className="pointer-events-auto -mt-px px-5 py-0.5 rounded-b-md bg-ink-900/80 border border-t-0 border-ink-100/15 text-ink-100/70 hover:bg-ink-800/80 hover:text-ink-100 transition shadow-sm shadow-black/40">
+          className="pointer-events-auto px-4 py-0.5 text-ink-100/70 hover:text-ink-100 transition">
           <span aria-hidden className="text-base leading-none inline-block transition-transform"
             style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
             ▾
