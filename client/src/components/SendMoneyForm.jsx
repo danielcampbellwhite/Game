@@ -15,7 +15,7 @@ import { fmt } from './Money.jsx';
 //   onDone   — callback after a successful transfer, so the parent
 //              can re-fetch state.
 //   compact  — slimmer layout for the phone view.
-export default function SendMoneyForm({ endpoint, onDone, compact = false }) {
+export default function SendMoneyForm({ endpoint, onDone, compact = false, collapsible = false }) {
   const { refresh } = useGame();
   const [name, setName]     = useState('');
   const [amount, setAmount] = useState('');
@@ -47,6 +47,7 @@ export default function SendMoneyForm({ endpoint, onDone, compact = false }) {
 
   return (
     <Card title="Send money"
+      collapsible={collapsible}
       subtitle="Bank transfer to another player. PIN required; the recipient needs a bank account too.">
       {msg && <p className={`text-xs mb-2 ${msg.startsWith('Sent') ? 'text-money-400' : 'text-blood-300'}`}>{msg}</p>}
       <div className={`grid ${compact ? 'grid-cols-1 gap-1.5' : 'sm:grid-cols-2 gap-2'}`}>

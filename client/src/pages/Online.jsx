@@ -135,7 +135,7 @@ export function BankAppTab() {
 
   return (
     <div className="space-y-3">
-      <Card title="Bank app"
+      <Card title="Bank app" collapsible defaultOpen
         subtitle={data.note}>
         <div className="rounded-md bg-ink-900/50 px-3 py-2">
           <div className="text-[11px] uppercase tracking-wide text-ink-100/55">Balance</div>
@@ -148,7 +148,7 @@ export function BankAppTab() {
         )}
       </Card>
 
-      <Card title="Recent transactions"
+      <Card title="Recent transactions" collapsible
         subtitle="Last 20 bank-related events on this account.">
         {data.transactions.length === 0 ? (
           <p className="text-[12px] text-ink-100/45">No activity yet.</p>
@@ -166,9 +166,9 @@ export function BankAppTab() {
         )}
       </Card>
 
-      <SendMoneyForm endpoint="/online/bank-app/send" onDone={reload} compact />
+      <SendMoneyForm endpoint="/online/bank-app/send" onDone={reload} compact collapsible />
 
-      <Card title="PIN management"
+      <Card title="PIN management" collapsible
         subtitle="Change your PIN, or ask the bank to DM you a reminder if you've forgotten it.">
         {msg && <p className="text-xs text-money-400 mb-2">{msg}</p>}
         <div className="grid grid-cols-3 gap-1.5 mb-2">
