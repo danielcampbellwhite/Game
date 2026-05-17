@@ -561,7 +561,7 @@ export default function Nav() {
           </div>
         </Link>
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-2 text-xs">
+        <div className="ml-auto flex items-center gap-3 sm:gap-4 text-xs">
           <Link
             to="/messages"
             onClick={onClickGuard}
