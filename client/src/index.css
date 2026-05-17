@@ -67,6 +67,25 @@ input, select {
 .scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
+/* 16-px floor. The codebase uses a lot of text-xs (12 px), text-sm
+   (14 px), and arbitrary text-[Npx] values (6–15) for labels, chips
+   and captions. Anything smaller than 16 px gets bumped up so the
+   whole UI clears that threshold. Line-height moves with it so the
+   bumped text isn't crushed. */
+.text-\[6px\],
+.text-\[7px\],
+.text-\[10px\],
+.text-\[11px\],
+.text-\[12px\],
+.text-\[13px\],
+.text-\[14px\],
+.text-\[15px\],
+.text-xs,
+.text-sm {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
 /* Readability rescue: the low-opacity ink-100 utilities (text-ink-100/40
    through /70) read as muted grey on the app's dark-ink surfaces. The
    contrast was fine on slate-bright cards in early designs, but with
