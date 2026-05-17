@@ -74,7 +74,7 @@ import chatRoutes from './routes/chat.js';
 import locationsRoutes from './routes/locations.js';
 import clothingRoutes from './routes/clothing.js';
 import { requireAuth, requireCharacter } from './middleware/auth.js';
-import { requireAtLocation } from './middleware/location.js';
+import { requireAtLocation, requireAtLocationOrOnline } from './middleware/location.js';
 import { handleStripeWebhook } from './services/stripe.js';
 
 const PORT = process.env.PORT || 4000;
@@ -104,7 +104,9 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 // locations.js. Mount-level middleware fires before each route's own
 // requireAuth/requireCharacter; the duplicate downstream calls are a
 // no-op on a per-tick basis.
-const atBrokerage     = [requireAuth, requireCharacter, requireAtLocation('brokerage')];
+// Stock markets work at the physical brokerage AND on the phone's
+// Markets app — real-world parity, so use the "or online" variant.
+const atBrokerage     = [requireAuth, requireCharacter, requireAtLocationOrOnline('brokerage')];
 const atEstateAgent   = [requireAuth, requireCharacter, requireAtLocation('estate_agent')];
 const atAirport       = [requireAuth, requireCharacter, requireAtLocation('airport')];
 const atDrugMarket    = [requireAuth, requireCharacter, requireAtLocation('drug_market')];

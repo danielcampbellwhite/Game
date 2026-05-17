@@ -108,10 +108,14 @@ function Rule({ thick = false }) {
   return <div className={`border-t ${thick ? 'border-t-2 border-double' : 'border-[#1a1815]/60'} my-3`} />;
 }
 
-export default function Newspaper() {
+export default function Newspaper({ darkMode = false } = {}) {
   const { character } = useGame();
   const [data, setData] = useState(null);
   const [city, setCity] = useState(null);
+  // Two palettes — the default broadsheet (cream paper, near-black
+  // ink) and a phone-app variant (dark grey card, near-white ink).
+  const PAPER_BG = darkMode ? '#262626' : '#efe8d4';
+  const INK      = darkMode ? '#f5f5f4' : '#1a1815';
 
   async function load(targetCity) {
     const q = targetCity ? `?city=${encodeURIComponent(targetCity)}` : '';
@@ -138,9 +142,12 @@ export default function Newspaper() {
   return (
     <div className="max-w-4xl mx-auto">
       <div
-        className="font-serif bg-[#efe8d4] text-[#1a1815] p-4 sm:p-8 rounded-md shadow-2xl shadow-black/70"
+        className="font-serif p-4 sm:p-8 rounded-md shadow-2xl shadow-black/70"
         style={{
-          // Subtle paper grain — tiled diagonal noise.
+          background: PAPER_BG,
+          color: INK,
+          // Subtle grain — tiled diagonal noise. Lighter overlay on
+          // dark mode so it isn't a pure flat colour.
           backgroundImage:
             'radial-gradient(circle at 30% 20%, rgba(0,0,0,0.04) 0, transparent 50%),' +
             'radial-gradient(circle at 80% 70%, rgba(0,0,0,0.03) 0, transparent 40%)',
@@ -171,10 +178,8 @@ export default function Newspaper() {
           {data.citiesAvailable.map(c => (
             <button key={c.id}
               onClick={() => setCity(c.id)}
-              className={`uppercase tracking-[0.18em] px-2 py-0.5 ${
-                c.id === data.city
-                  ? 'bg-[#1a1815] text-[#efe8d4]'
-                  : 'text-[#1a1815]/70 hover:text-[#1a1815] underline-offset-2 hover:underline'}`}>
+              style={c.id === data.city ? { background: INK, color: PAPER_BG } : { color: INK, opacity: 0.7 }}
+              className="uppercase tracking-[0.18em] px-2 py-0.5">
               {c.name}
             </button>
           ))}
@@ -377,8 +382,8 @@ export default function Newspaper() {
                       <span className="capitalize font-bold uppercase tracking-wider text-[12px]">{fid}</span>
                       <span className="tabular-nums">{n}/{data.turf.total} · {pct}%</span>
                     </div>
-                    <div className="h-1 bg-[#1a1815]/15 overflow-hidden mt-0.5">
-                      <div className="h-full bg-[#1a1815]" style={{ width: `${pct}%` }} />
+                    <div className="h-1 overflow-hidden mt-0.5" style={{ background: `${INK}26` }}>
+                      <div className="h-full" style={{ width: `${pct}%`, background: INK }} />
                     </div>
                   </div>
                 );

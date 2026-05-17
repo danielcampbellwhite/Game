@@ -284,7 +284,7 @@ export default function PhoneOverlay({ open, onClose }) {
                 {screen === 'flights'  && <div className={`${phonePageWrap} p-2`}><FlightsTab /></div>}
                 {screen === 'cars'     && <div className={`${phonePageWrap} p-2`}><VehiclesTab /></div>}
                 {screen === 'weapons'  && <div className={`${phonePageWrap} p-2`}><WeaponsTab /></div>}
-                {screen === 'news'     && <div className={`${phonePageWrap} p-2`}><Newspaper /></div>}
+                {screen === 'news'     && <div className={`${phonePageWrap} p-2`}><Newspaper darkMode /></div>}
                 {screen === 'markets'  && <div className={`${phonePageWrap} p-2`}><Stocks /></div>}
               </div>
             </>
