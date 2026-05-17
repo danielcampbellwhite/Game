@@ -1389,18 +1389,20 @@ export const MISC_ITEMS = [
   { id: 'whisky',          name: 'Single Malt',        emoji: '', cost: 160, desc: 'Fortifies your spirit, dents your liver.',     effects: { nerve: 3, happiness: 6, health: -3 }, wholesale_only: true },
   { id: 'sandwich',        name: 'Deli Sandwich',      emoji: '', cost: 50,  desc: 'A proper feed.',                               effects: { health: 8, happiness: 3 },   wholesale_only: true },
   { id: 'painkillers',     name: 'Painkillers',        emoji: '', cost: 140, desc: 'Knocks the edge off a beating.',               effects: { health: 18 },                wholesale_only: true },
-  { id: 'lottery_ticket',  name: 'Lottery Scratcher',  emoji: '', cost: 50,  desc: 'Scratch & pray. Prizes from £50 all the way up to a £100,000 jackpot.',
-    // Tiered weighted draw — see /general-store /use. Long-run EV is
-    // £46.50, ~7% under the £50 ticket price, so the house edges ahead
-    // over time while still giving players plenty of small wins and a
-    // genuine (if microscopic) shot at the jackpot.
+  { id: 'lottery_ticket',  name: 'Lottery Scratcher',  emoji: '', cost: 50,  desc: 'Scratch & pray. Prizes from £100 all the way up to a £100,000 jackpot.',
+    // Tiered weighted draw — see /general-store /use. The floor for
+    // any non-losing tier is now £100 (was £50). Chances are
+    // unchanged from the previous balance, which means the long-run
+    // EV climbs to ~£67 against the £50 ticket — the house no longer
+    // edges ahead. If/when that becomes a problem, rebalance by
+    // either trimming the win chances or raising the ticket price.
     prizes: [
       { chance: 0.50000, amount: 0      },
-      { chance: 0.30060, amount: 50     },  // money back
-      { chance: 0.08000, amount: 60     },
-      { chance: 0.04000, amount: 70     },
-      { chance: 0.02500, amount: 80     },
-      { chance: 0.01800, amount: 90     },
+      { chance: 0.30060, amount: 100    },  // smallest win
+      { chance: 0.08000, amount: 100    },
+      { chance: 0.04000, amount: 100    },
+      { chance: 0.02500, amount: 100    },
+      { chance: 0.01800, amount: 100    },
       { chance: 0.01500, amount: 100    },
       { chance: 0.00800, amount: 200    },
       { chance: 0.00500, amount: 250    },
