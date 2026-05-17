@@ -458,26 +458,9 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
 
   return (
     <div className="relative">
-      {/* Pull tab — tucks up under the stats strip above (negative
-          top margin), centred, with rounded-bottom corners so it
-          reads as something hanging out from under the stats row.
-          Tapping it pulls the lane down underneath. */}
-      <div className="flex justify-center pointer-events-none">
-        <button
-          type="button"
-          aria-label={collapsed ? 'Show quick-access nav' : 'Hide quick-access nav'}
-          aria-expanded={!collapsed}
-          onClick={() => setCollapsed(c => !c)}
-          className="pointer-events-auto -mt-px px-5 py-0.5 rounded-b-md bg-ink-900/80 border border-t-0 border-ink-100/15 text-ink-100/70 hover:bg-ink-800/80 hover:text-ink-100 transition shadow-sm shadow-black/40">
-          <span aria-hidden className="text-base leading-none inline-block transition-transform"
-            style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
-            ▾
-          </span>
-        </button>
-      </div>
-      {/* Scroll lane — drops DOWN from under the tab when expanded.
-          Background + border only render when actually visible so a
-          collapsed strip leaves no empty row behind the tab. */}
+      {/* Scroll lane on top. Background + border only paint while
+          it's visible so a collapsed strip leaves no tinted row —
+          only the tab stays. */}
       <div
         className={`transition-[max-height] duration-200 overflow-hidden ${collapsed ? 'max-h-0' : 'max-h-16 border-t border-ink-100/10 bg-ink-900/30'}`}
         aria-hidden={collapsed}>
@@ -498,6 +481,22 @@ function SubNavStrip({ items, lockedOut, onClickGuard, linkClass, isAdmin, onSig
             ))}
           </div>
         </div>
+      </div>
+      {/* Pull tab — dangles off the BOTTOM of the lane. When the
+          lane is collapsed the tab is the only thing left so the
+          player can grab it to pull the menu back down. */}
+      <div className="flex justify-center pointer-events-none">
+        <button
+          type="button"
+          aria-label={collapsed ? 'Show quick-access nav' : 'Hide quick-access nav'}
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed(c => !c)}
+          className="pointer-events-auto -mt-px px-5 py-0.5 rounded-b-md bg-ink-900/80 border border-t-0 border-ink-100/15 text-ink-100/70 hover:bg-ink-800/80 hover:text-ink-100 transition shadow-sm shadow-black/40">
+          <span aria-hidden className="text-base leading-none inline-block transition-transform"
+            style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+            ▾
+          </span>
+        </button>
       </div>
     </div>
   );
