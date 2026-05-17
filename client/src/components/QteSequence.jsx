@@ -93,9 +93,10 @@ export default function QteSequence({
     setStarting(true);
     try {
       const r = await api.post(endpoints.begin);
-      // The server returns either { jailbreak } or { chase } or
-      // a generic { qte } shape. Inspect for a sequence/expiresAt.
-      const next = r?.jailbreak || r?.chase || r?.qte || null;
+      // The server returns either { jailbreak }, { chase }, { hotwire }
+      // or a generic { qte } shape depending on the QTE flavour.
+      // Inspect any of them for the next sequence + expiresAt.
+      const next = r?.jailbreak || r?.chase || r?.hotwire || r?.qte || null;
       if (next) setData(next);
     } catch (e) {
       setResult({ ok: false, error: e.message });
