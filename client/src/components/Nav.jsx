@@ -22,7 +22,6 @@ const NAV_TREE = [
   { to: '/city',  label: 'City', children: [
     { to: '/city',            label: 'City map' },
     { to: '/bank',            label: 'Bank' },
-    { to: '/electronics',     label: 'Electronics Store' },
     { to: '/general-store',   label: 'General Store' },
     { to: '/high-street',     label: 'High Street' },
     { to: '/clothing/low',    label: 'Streetwear Outlet' },

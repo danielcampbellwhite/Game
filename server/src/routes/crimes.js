@@ -228,6 +228,20 @@ router.post('/commit', requireAuth, requireCharacter, requireFreeCharacter, (req
   ch.energy -= crime.energy;
   const consumed = consumeRequirements(ch.id, requires);
 
+  // Tick the misc_use daily missions for every prop the crime burned
+  // (one event per qty so "Use 2 burner phones" counts both). Mirrors
+  // what the General Store's /use endpoint does, so dailies like
+  // "Ghost Caller" still complete when the prop is consumed by a
+  // crime instead of by a manual /use.
+  for (const r of (consumed || [])) {
+    if (r.kind !== 'misc') continue;
+    const n = r.qty || 1;
+    for (let i = 0; i < n; i++) {
+      bumpMission(ch, 'misc_use_any', 1);
+      bumpMission(ch, 'misc_use', 1, { item: r.item_id });
+    }
+  }
+
   const heatNow = effectiveHeat(ch);
   const heatPenalty = heatNow * HEAT_SUCCESS_PENALTY;
 

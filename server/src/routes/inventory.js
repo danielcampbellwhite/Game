@@ -54,10 +54,11 @@ router.get('/', requireAuth, requireCharacter, (req, res) => {
       prizes: m?.prizes || null,
       missionOnly: !!m?.missionOnly,
       device: m?.device || null,
-      // Mirrors isUsableMisc on the server. The client uses this to
-      // hide the "Use" button on items that have no /use behaviour
-      // (devices, crime tools, decorative misc).
-      usable: !!(m?.effects || m?.oneShotCash || m?.prizes || m?.missionOnly),
+      // Mirrors isUsableMisc on the server. Mission props and devices
+      // are not usable from the inventory — they're either consumed
+      // by crimes / missions automatically or work just by being
+      // carried (smartphone).
+      usable: !!(m?.effects || m?.oneShotCash || m?.prizes),
     };
   }).filter(i => i.qty > 0);
 

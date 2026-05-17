@@ -33,11 +33,11 @@ export default function Online() {
       <div className="space-y-3">
         <Card title="Offline">
           <p className="text-xs text-ink-100/65">
-            You can't get online from here. Carry a smartphone, or be at a property /
-            in your active vehicle with a laptop stashed there.
+            You can't get online from here. Carry a smartphone in your pocket
+            and you're connected anywhere.
           </p>
-          <Link to="/electronics" className="btn btn-primary text-xs mt-2 inline-block">
-            Buy a device →
+          <Link to="/general-store" className="btn btn-primary text-xs mt-2 inline-block">
+            Buy a smartphone →
           </Link>
         </Card>
       </div>
@@ -51,11 +51,7 @@ export default function Online() {
     { id: 'bank',     label: 'Bank'     },
   ];
 
-  const viaLabel = {
-    phone:       'connected on your phone',
-    laptop_home: 'connected on the laptop at this property',
-    laptop_car:  'connected on the laptop in your active vehicle',
-  }[i.reason] || 'connected';
+  const viaLabel = i.reason === 'phone' ? 'connected on your phone' : 'connected';
 
   return (
     <div className="space-y-3">

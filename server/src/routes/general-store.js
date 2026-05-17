@@ -40,14 +40,14 @@ function applyPrizeOverride(item) {
 }
 
 // A misc item is "usable" from /use if it has effects on vitals, a
-// random cash payout (lottery), a weighted prize table, or is a mission
-// prop (consumed once for mission tracking). Devices like smartphone
-// and laptop, decorative items, and crime tools that are consumed
-// inside a crime endpoint don't qualify — calling /use on them would
-// silently delete the item with nothing to show for it.
+// random cash payout (lottery), or a weighted prize table. Mission
+// props (lockpicks, gas cans, burner phones, etc.) are NOT usable
+// from the inventory — they're consumed automatically inside the
+// crime / mission endpoints that need them. Same for devices like
+// the smartphone, which works just by being carried.
 export function isUsableMisc(item) {
   if (!item) return false;
-  return !!(item.effects || item.oneShotCash || item.prizes || item.missionOnly);
+  return !!(item.effects || item.oneShotCash || item.prizes);
 }
 
 function ownedQty(charId, itemId) {

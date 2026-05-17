@@ -38,8 +38,7 @@ export const LOCATIONS = {
   casino:         { name: 'Lucky Crown Casino', route: '/casino',         travelable: true,  gated: true,  desc: 'Roulette, blackjack, slots — try your luck against the house. Open afternoons to early morning.' },
   bookmaker:      { name: 'Bookmaker',          route: '/bookmaker',      travelable: true,  gated: true,  desc: 'Wager on football, boxing, horses and F1. ~8% house margin.' },
   fence:          { name: 'The Fence',          route: '/fence',          travelable: true,  gated: true,  desc: 'Wash illegal cash into legal at 70% — your relationship buys you a few extra points.' },
-  general_store:  { name: 'General Store',      route: '/general-store',  travelable: true,  gated: true,  desc: 'Snacks, tools, lockpicks — the bits and bobs of the trade.' },
-  electronics:    { name: 'Electronics Store',  route: '/electronics',    travelable: true,  gated: true,  desc: 'Phones, laptops, the kit you need to get online. Pick up a smartphone for pocket internet or a laptop to set up at home.' },
+  general_store:  { name: 'General Store',      route: '/general-store',  travelable: true,  gated: true,  desc: 'Snacks, tools, lockpicks, smartphones — the bits and bobs of the trade.' },
   clothing_low:   { name: 'Streetwear Outlet',  route: '/clothing/low',   travelable: true,  gated: true,  desc: 'Tracksuits, snapbacks, gold chains. Cheap, flashy, all cosmetic.' },
   clothing_high:  { name: 'Atelier',            route: '/clothing/high',  travelable: true,  gated: true,  desc: 'Bespoke suits, Italian leather, watches that take a year to ship. Cosmetic, by appointment only.' },
   // New: services that used to be accessible from anywhere. Promoted

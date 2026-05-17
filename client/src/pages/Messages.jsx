@@ -186,16 +186,15 @@ export default function Messages() {
   const [threads, setThreads] = useState([]);
   const [busy, setBusy] = useState(false);
 
-  // DMs are an online-only feature. Without a phone / nearby laptop
+  // DMs are an online-only feature. Without a smartphone in pocket
   // the player can see the page exists but not read or reply.
   if (character && !character.internet?.online) {
     return (
       <Card title="Offline">
         <p className="text-xs text-ink-100/65">
-          You can't read or send DMs without a device. Carry a smartphone, or
-          be where you've stashed a laptop, to come online.
+          You can't read or send DMs without a smartphone in your pocket.
         </p>
-        <Link to="/electronics" className="btn btn-primary text-xs mt-2 inline-block">Buy a device →</Link>
+        <Link to="/general-store" className="btn btn-primary text-xs mt-2 inline-block">Buy a smartphone →</Link>
       </Card>
     );
   }

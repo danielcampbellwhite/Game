@@ -46,7 +46,6 @@ import OCPlan from './pages/OCPlan.jsx';
 import OcInviteModal from './components/OcInviteModal.jsx';
 import CarDealer from './pages/CarDealer.jsx';
 import AircraftDealer from './pages/AircraftDealer.jsx';
-import Electronics from './pages/Electronics.jsx';
 import Online from './pages/Online.jsx';
 import Car from './pages/Car.jsx';
 import House from './pages/House.jsx';
@@ -241,7 +240,6 @@ export default function App() {
           <Route path="/oc/plans/:id" element={<Protected><OCPlan /></Protected>} />
           <Route path="/dealership" element={<Protected><CarDealer /></Protected>} />
           <Route path="/aircraft-dealer" element={<Protected><AircraftDealer /></Protected>} />
-          <Route path="/electronics" element={<Protected><Electronics /></Protected>} />
           <Route path="/online" element={<Protected><Online /></Protected>} />
           <Route path="/car" element={<Protected><Car /></Protected>} />
           <Route path="/house" element={<Protected><House /></Protected>} />

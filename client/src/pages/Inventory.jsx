@@ -247,6 +247,15 @@ const TABS = [
   { id: 'wardrobe', label: 'Wardrobe' },
 ];
 
+// Used by the kit-bag Items section to colour effect chips by vital
+// (energy = yellow, health = green, happiness = pink, nerve = red).
+const MISC_EFFECT_COLOUR = {
+  energy:    'text-yellow-400',
+  nerve:     'text-blood-400',
+  health:    'text-money-400',
+  happiness: 'text-pink-400',
+};
+
 const SLOT_ORDER = ['hat', 'top', 'bottom', 'shoes', 'accessory'];
 const SLOT_LABELS = { hat: 'Hat', top: 'Top', bottom: 'Bottom', shoes: 'Shoes', accessory: 'Accessory' };
 
@@ -964,7 +973,17 @@ export default function Inventory() {
                     <div className="font-medium">{m.emoji} {m.name}</div>
                     <span className="text-[13px] text-ink-100/60 tabular-nums">×{m.qty}</span>
                   </div>
-                  {m.desc && <div className="text-[13px] text-ink-100/55 mt-1 flex-1">{m.desc}</div>}
+                  {m.desc && <div className="text-[13px] text-ink-100/55 mt-1">{m.desc}</div>}
+                  {m.effects && Object.keys(m.effects).length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                      {Object.entries(m.effects).map(([k, v]) => (
+                        <span key={k} className={`text-[12px] uppercase tracking-wide ${MISC_EFFECT_COLOUR[k] || 'text-ink-100/85'}`}>
+                          {v > 0 ? '+' : ''}{v} {k}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex-1" />
                   {m.usable ? (
                     <button
                       disabled={busy === `use-${m.id}` || m.qty <= 0}
@@ -974,7 +993,9 @@ export default function Inventory() {
                     </button>
                   ) : (
                     <div className="text-[11px] text-ink-100/45 mt-3 text-center italic">
-                      {m.device ? `${m.device === 'phone' ? 'Carry to stay online.' : 'Stash in a property or vehicle to use.'}` : 'No direct use.'}
+                      {m.device === 'phone' ? 'Carry to stay online.'
+                        : m.missionOnly      ? 'Consumed during crimes / missions.'
+                        : 'No direct use.'}
                     </div>
                   )}
                 </div>

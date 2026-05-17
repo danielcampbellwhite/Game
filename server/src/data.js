@@ -1420,12 +1420,10 @@ export const MISC_ITEMS = [
   { id: 'lockpick_set',    name: 'Lockpick Set',       emoji: '', cost: 180, desc: 'Required for some jobs. Single-use.',          missionOnly: true },
   { id: 'burner_phone',    name: 'Burner Phone',       emoji: '', cost: 120, desc: 'Untraceable. Burned after one call. Can send a one-off message to a single player.', missionOnly: true },
 
-  //  Devices — permanent goods that give online access. Phones are
-  //  portable (carried on person); laptops are not — they live in a
-  //  property or active vehicle stash and only give internet when
-  //  the player is physically with them. See services/online.js.
-  { id: 'smartphone',     name: 'Smartphone',          emoji: '', cost: 1500, desc: 'Pocket internet. Direct messages, live chat, online shopping — anywhere you carry it.',      device: 'phone',  portable: true,  electronicsOnly: true },
-  { id: 'laptop',         name: 'Laptop',              emoji: '', cost: 3500, desc: 'Powerful but not pocket-sized. Stash it at a property or in an active car — useable only when you\'re with it.', device: 'laptop', portable: false, electronicsOnly: true },
+  // Smartphone — the single device that gives in-game internet
+  // access. Carry it on your person and you're online anywhere.
+  // Stocked at the general store alongside other everyday gear.
+  { id: 'smartphone',     name: 'Smartphone',          emoji: '', cost: 1500, desc: 'Pocket internet. Direct messages, live chat, online shopping — anywhere you carry it.', device: 'phone',  portable: true },
   { id: 'duct_tape',       name: 'Duct Tape',          emoji: '', cost: 40,  desc: 'Holds the world together.',                    missionOnly: true },
   { id: 'gloves',          name: 'Leather Gloves',     emoji: '', cost: 80,  desc: 'No fingerprints, no problems.',                missionOnly: true },
   { id: 'ski_mask',        name: 'Ski Mask',           emoji: '', cost: 150, desc: 'For when subtlety is overrated.',              missionOnly: true },

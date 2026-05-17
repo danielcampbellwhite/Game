@@ -152,9 +152,7 @@ export default function PhoneOverlay({ open, onClose }) {
 
   const online = !!character?.internet?.online;
   const reasonLabel = {
-    phone:       'LTE',
-    laptop_home: 'Wi-Fi',
-    laptop_car:  'Hotspot',
+    phone: 'LTE',
   }[character?.internet?.reason] || '';
   const now = new Date();
   const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -245,8 +243,7 @@ export default function PhoneOverlay({ open, onClose }) {
               {!online && (
                 <div className="mt-6 mx-1 px-3 py-3 rounded-lg border border-blood-500/40 bg-blood-700/15 text-[12px] text-white/90 text-center">
                   <div className="font-medium text-blood-300 mb-1">No signal</div>
-                  Carry a smartphone, or be at the property / in the car where you've stashed
-                  a laptop, to use the apps.
+                  Carry a smartphone to use the apps. Pick one up at the General Store.
                 </div>
               )}
             </div>

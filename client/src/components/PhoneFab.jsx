@@ -4,9 +4,9 @@ import { useGame } from '../context/GameContext.jsx';
 
 // Floating phone widget anchored to the bottom-right of every authed
 // page. Green pulsing dot when the player is online (smartphone in
-// pocket, or laptop where they are); red solid when offline. Tap when
-// online to open the iPhone-style PhoneOverlay; tap when offline to
-// see a short "no signal" hint that explains how to get connected.
+// pocket); red solid when offline. Tap when online to open the
+// iPhone-style PhoneOverlay; tap when offline to see a short "no
+// signal" hint with the buy-a-smartphone pointer.
 
 // Comfortable thumb-sized FAB.
 const BUBBLE_PX = 56;
@@ -38,7 +38,7 @@ export default function PhoneFab({ onOpen }) {
           style={{ position: 'fixed', right: 12, bottom: 12 + BUBBLE_PX + 8 }}
           className="z-50 max-w-[220px] px-3 py-2 rounded-md bg-ink-950/95 border border-blood-500/40 text-[11px] text-ink-100/90 shadow-2xl shadow-black/60">
           <div className="font-medium text-blood-300 mb-0.5">No signal</div>
-          <div>Carry a smartphone, or be where you've stashed a laptop, to come online.</div>
+          <div>Carry a smartphone to come online. Pick one up at the General Store.</div>
         </div>
       )}
       <button
