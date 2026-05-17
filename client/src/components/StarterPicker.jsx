@@ -3,9 +3,8 @@ import { fmt } from './Money.jsx';
 
 // Starter-pack picker rendered on character-create / new-character.
 // Each slot (car, house, business) is OPTIONAL — players can pick a
-// "Skip" tile to start without one. Anything left of the budget
-// rolls forward as starting cash on the server, so skipping a slot
-// has a real reward instead of just losing the budget.
+// "Skip" tile to start without one. Unspent budget is forfeit; the
+// budget is a ceiling, not an allowance.
 
 function PickRow({ label, options, selectedId, onSelect, budgetLeft, currentPrice }) {
   return (
@@ -78,7 +77,7 @@ export default function StarterPicker({ starter, city, value, onChange }) {
       </div>
       <p className="text-[12px] text-ink-100/65">
         Each slot is optional — skip a row to start without that asset.
-        Unspent budget rolls forward as starting cash.
+        Unspent budget is forfeit, so spend up if you want the most stuff.
       </p>
 
       <PickRow
@@ -109,11 +108,6 @@ export default function StarterPicker({ starter, city, value, onChange }) {
       {overBudget && (
         <p className="text-[13px] text-blood-400">
           Over budget by {fmt(-left)}. Drop one of your picks for a cheaper option, or skip a slot.
-        </p>
-      )}
-      {!overBudget && left > 0 && (
-        <p className="text-[12px] text-money-300">
-          You'll start with an extra <b className="tabular-nums">{fmt(left)}</b> in cash.
         </p>
       )}
     </div>

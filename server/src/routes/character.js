@@ -21,8 +21,8 @@ const STAT_KEYS = ['strength', 'defence', 'speed', 'intelligence'];
 // the curated lists. Returns { ok, picks, error }. Picks are the
 // resolved objects (with prices) ready to insert. Each slot is
 // individually optional — passing 'none' (or omitting the id) skips
-// that asset for the new character. Unspent starter budget is
-// converted to extra starting cash so the choice has weight.
+// that asset for the new character. Unspent budget is forfeit —
+// players can't bank the difference as starting cash.
 const MAX_STARTER_CITY_UNLOCK = 5;
 function isStartableCity(c) {
   return c && (c.unlockLevel || 1) <= MAX_STARTER_CITY_UNLOCK;
@@ -31,14 +31,11 @@ function isStartableCity(c) {
 function isOptOut(id) { return !id || id === 'none' || id === 'skip'; }
 
 // Human-readable summary line for the welcome log. Lists only the
-// slots the player actually took; mentions the cash refund when any
-// slot was skipped so the math is visible.
+// slots the player actually took; says "skipped everything" if the
+// player passed on the entire pack.
 function starterSummary(picks) {
   const items = [picks.car?.name, picks.house?.name, picks.biz?.name].filter(Boolean);
-  const lead = items.length ? `Starter pack: ${items.join(', ')}.` : 'Starter pack: skipped everything.';
-  return picks.cashRefund > 0
-    ? `${lead} Unspent £${picks.cashRefund.toLocaleString()} rolled into cash.`
-    : lead;
+  return items.length ? `Starter pack: ${items.join(', ')}.` : 'Starter pack: skipped everything.';
 }
 
 function validateStarter(input, city) {
@@ -60,15 +57,14 @@ function validateStarter(input, city) {
   if (total > STARTER_BUDGET) {
     return { ok: false, error: `Over budget by £${(total - STARTER_BUDGET).toLocaleString()}.` };
   }
-  // Anything left of the budget rolls forward as starting cash.
-  const cashRefund = Math.max(0, STARTER_BUDGET - total);
-  return { ok: true, picks: { car, house, biz, total, cashRefund } };
+  return { ok: true, picks: { car, house, biz, total } };
 }
 
 // Insert vehicle / property / business rows for a freshly-created
 // character. Used by both /create and /new-character so the starter
 // loadout flows through every creation path identically. Each asset
-// is optional — skipped slots simply don't insert a row.
+// is optional — skipped slots simply don't insert a row, and any
+// unspent budget is forfeit (no cash refund).
 function applyStarterPack(charId, city, picks) {
   const now = Date.now();
   if (picks.car) {
@@ -88,12 +84,6 @@ function applyStarterPack(charId, city, picks) {
       INSERT INTO businesses_owned (char_id, business_id, city, last_collected)
       VALUES (?, ?, ?, ?)
     `).run(charId, picks.biz.id, city, now);
-  }
-  // Refund unused starter budget as starting cash so the player
-  // benefits from skipping a slot rather than just losing the budget.
-  if (picks.cashRefund > 0) {
-    db.prepare('UPDATE characters SET cash = cash + ? WHERE id = ?')
-      .run(picks.cashRefund, charId);
   }
 }
 
