@@ -54,7 +54,7 @@ function ThreadList({ threads, activeId, onPick }) {
   );
 }
 
-function Conversation({ otherId, character }) {
+function Conversation({ otherId, character, onBack }) {
   const [data, setData] = useState(null);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -134,7 +134,7 @@ function Conversation({ otherId, character }) {
   return (
     <div className="flex flex-col h-[60vh]">
       <div className="border-b border-ink-100/10 p-3 flex items-baseline gap-3">
-        <button onClick={() => nav('/messages')} className="text-xs text-ink-100/50 hover:text-ink-50">←</button>
+        <button onClick={() => (onBack ? onBack() : nav('/messages'))} className="text-xs text-ink-100/50 hover:text-ink-50">←</button>
         <span className="text-xl">{data.other?.avatar}</span>
         <div className="flex-1 min-w-0">
           <Link to={`/players/${data.other?.id}`} className="font-medium hover:text-blood-400">{data.other?.name}</Link>
@@ -178,13 +178,18 @@ function Conversation({ otherId, character }) {
   );
 }
 
-export default function Messages() {
+// When `embedded` is set (phone overlay), URL params are ignored
+// and the open thread is tracked in local state. Standalone (/messages
+// route) the URL params drive it and onPick uses navigate so the
+// browser back button works between threads.
+export default function Messages({ embedded = false } = {}) {
   const params = useParams();   // /messages or /messages/with/:otherId
-  const otherId = params.otherId;
   const nav = useNavigate();
   const { character } = useGame();
   const [threads, setThreads] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [localOther, setLocalOther] = useState(null);
+  const otherId = embedded ? localOther : params.otherId;
 
   // DMs are an online-only feature. Without a smartphone in pocket
   // the player can see the page exists but not read or reply.
@@ -223,12 +228,13 @@ export default function Messages() {
         <ThreadList
           threads={threads}
           activeId={threads.find(t => String(t.other.id) === String(otherId))?.thread_id}
-          onPick={t => nav(`/messages/with/${t.other.id}`)}
+          onPick={t => embedded ? setLocalOther(t.other.id) : nav(`/messages/with/${t.other.id}`)}
         />
       </Card>
       <Card className={!otherId ? 'hidden md:block' : ''}>
         {otherId ? (
-          <Conversation key={otherId} otherId={otherId} character={character} />
+          <Conversation key={otherId} otherId={otherId} character={character}
+            onBack={embedded ? () => setLocalOther(null) : undefined} />
         ) : (
           <p className="text-xs text-ink-100/55 p-4">Pick a thread on the left, or find someone via <Link to="/players" className="underline text-money-400">Players</Link>.</p>
         )}

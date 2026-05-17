@@ -323,7 +323,7 @@ export default function PhoneOverlay({ open, onClose }) {
                     self-contained — they reuse the same /api/* calls
                     they would on their own routes. */}
                 {screen === 'chat'     && <ChatPanel onPickDms={() => setScreen('messages')} />}
-                {screen === 'messages' && <div className={`${phonePageWrap} p-2`}><Messages /></div>}
+                {screen === 'messages' && <div className={`${phonePageWrap} p-2`}><Messages embedded /></div>}
                 {screen === 'bank'     && <div className={`${phonePageWrap} p-2`}><BankAppTab /></div>}
                 {screen === 'shop'     && <div className={`${phonePageWrap} p-2`}><ShopAppTab /></div>}
                 {screen === 'flights'  && <div className={`${phonePageWrap} p-2`}><FlightsTab /></div>}
