@@ -193,7 +193,19 @@ export default function PhoneOverlay({ open, onClose }) {
   // shrink the body type and tighten the card padding so they fit a
   // ~298px phone viewport without overflow. Anything that uses md:
   // breakpoints just stays in its mobile layout — we never widen.
-  const phonePageWrap = 'text-[12px] [&_.card]:p-3 [&_.btn]:py-1.5 [&_.btn]:px-2 [&_h3]:text-base';
+  // CSS scope applied to every embedded page rendered inside the
+  // phone screen. The pages were designed for a wider, more colour-
+  // coded layout; we bump the base size up to 14px so it reads at
+  // arm's length and force all text white so the muted greys (which
+  // disappear against the dark phone wallpaper) get the contrast
+  // they need. Inputs and buttons are bumped a notch for legibility
+  // too.
+  const phonePageWrap =
+    'text-[14px] text-white [&_*]:text-white ' +
+    '[&_input]:text-[14px] [&_input]:text-white [&_input::placeholder]:text-white/60 ' +
+    '[&_.btn]:text-[13px] [&_.btn]:py-1.5 [&_.btn]:px-2.5 ' +
+    '[&_.card]:p-3 [&_h3]:text-lg [&_h3]:text-white ' +
+    '[&_h4]:text-base [&_h4]:text-white';
 
   return (
     <div
