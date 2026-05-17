@@ -4,7 +4,6 @@ import { useGame } from '../context/GameContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import StatAllocator, { initialStats, pointsRemaining, STAT_POINTS } from '../components/StatAllocator.jsx';
 import FactionPicker from '../components/FactionPicker.jsx';
-import StarterPicker, { emptyStarter, starterComplete } from '../components/StarterPicker.jsx';
 
 export default function CharacterCreate() {
   const { createCharacter } = useGame();
@@ -15,7 +14,6 @@ export default function CharacterCreate() {
   const [faction, setFaction] = useState(null);
   const [gender, setGender] = useState(null);
   const [stats, setStats] = useState(initialStats);
-  const [starter, setStarter] = useState(emptyStarter);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const [rolling, setRolling] = useState(false);
@@ -32,27 +30,14 @@ export default function CharacterCreate() {
   }, []);
 
   const remaining = pointsRemaining(stats);
-  // Whenever the starting city changes, drop the previously-picked
-  // house — the per-city catalogue is different.
-  useEffect(() => { setStarter(s => ({ ...s, house_id: null })); }, [city]);
-
-  const starterOk = starterComplete(starter) && (() => {
-    const cars = opts?.starter?.cars || [];
-    const houses = (opts?.starter?.housesByCity && opts.starter.housesByCity[city]) || [];
-    const bizs = opts?.starter?.businesses || [];
-    const carP   = cars.find(c => c.id === starter.car_id)?.price || 0;
-    const houseP = houses.find(h => h.id === starter.house_id)?.price || 0;
-    const bizP   = bizs.find(b => b.id === starter.business_id)?.price || 0;
-    return (carP + houseP + bizP) <= (opts?.starter?.budget || 0);
-  })();
-  const canSubmit = !busy && name.trim() && faction && gender && remaining === 0 && starterOk;
+  const canSubmit = !busy && name.trim() && faction && gender && remaining === 0;
 
   async function submit(e) {
     e.preventDefault();
     setErr(null); setBusy(true);
     try {
       // Avatar field is no longer surfaced in the UI; submitted as empty.
-      await createCharacter({ name, avatar: '', city, stats, faction, gender, starter });
+      await createCharacter({ name, avatar: '', city, stats, faction, gender });
       nav('/');
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -122,14 +107,12 @@ export default function CharacterCreate() {
         </div>
         <FactionPicker factions={opts.factions || []} value={faction} onChange={setFaction} />
         <StatAllocator value={stats} onChange={setStats} />
-        <StarterPicker starter={opts.starter} city={city} value={starter} onChange={setStarter} />
         {err && <p className="text-blood-400 text-xs">{err}</p>}
         <button disabled={!canSubmit} type="submit" className="btn btn-primary w-full">
           {busy ? '...'
             : !faction ? 'Pick a faction'
             : !gender ? 'Pick a gender'
             : remaining > 0 ? `Spend ${remaining} more point${remaining === 1 ? '' : 's'}`
-            : !starterOk ? 'Finish your starter pack'
             : 'Hit the streets'}
         </button>
       </form>
