@@ -72,6 +72,12 @@ export default function PhoneFab({ onOpen }) {
   }, []);
 
   if (!character) return null;
+  // Only render the floating phone icon for players who actually
+  // own a smartphone (anywhere — pockets, house, vehicle). If the
+  // phone is reachable right now it glows green; if it's stashed
+  // somewhere they aren't, it glows red so the player knows where
+  // to go to recover it.
+  if (!character.internet?.owned) return null;
   const online = !!character.internet?.online;
 
   function onPointerDown(e) {
@@ -154,8 +160,8 @@ export default function PhoneFab({ onOpen }) {
         <div
           style={hintStyle}
           className="z-50 max-w-[220px] px-3 py-2 rounded-md bg-ink-950/95 border border-blood-500/40 text-[11px] text-ink-100/90 shadow-2xl shadow-black/60">
-          <div className="font-medium text-blood-300 mb-0.5">No signal</div>
-          <div>Carry a smartphone to come online. Pick one up at the General Store.</div>
+          <div className="font-medium text-blood-300 mb-0.5">Phone out of reach</div>
+          <div>Your phone isn't on you. Pick it up from the house or car stash you left it in.</div>
         </div>
       )}
       <button

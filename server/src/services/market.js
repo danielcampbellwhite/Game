@@ -102,12 +102,19 @@ export function getStockPrice(stockId) {
     for (let i = 0; i < Math.min(ticks, 48); i++) {
       const stamp = row.last_updated + (i + 1) * STOCK_TICK_MS;
       if (stamp >= trendUntil) {
-        trend = (Math.random() - 0.5) * 0.04; // ±2%
+        // Trend re-roll. Was ±2 % per day; now ±10 % per day so a
+        // strong bull or bear can build into a meaningful run.
+        trend = (Math.random() - 0.5) * 0.20;
         trendUntil = stamp + STOCK_TREND_MS;
       }
-      price *= 1 + trend / 24 + gauss(stock.vol);
-      const min = stock.base * 0.2;
-      const max = stock.base * 5.0;
+      // Per-tick noise tripled — losing or winning a chunk of your
+      // position in a single tick is now a real possibility, which
+      // is the entire point of putting money in the market here.
+      price *= 1 + trend / 24 + gauss(stock.vol * 3);
+      // Widen the floor/ceiling clamps so the price can actually
+      // travel to the new extremes a wider trend + noise allow.
+      const min = stock.base * 0.05;   // -95 % wipeout possible
+      const max = stock.base * 20.0;   // 20× moonshot possible
       price = clamp(price, min, max);
       // Persist each tick so the graph captures every step, not just the final.
       insertHistory(stockId, stamp, price);

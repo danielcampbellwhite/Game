@@ -52,7 +52,11 @@ export default function Online() {
     { id: 'bank',     label: 'Bank'     },
   ];
 
-  const viaLabel = i.reason === 'phone' ? 'connected on your phone' : 'connected';
+  const viaLabel = {
+    phone:      'connected on the phone in your pocket',
+    phone_home: 'connected on the phone at this property',
+    phone_car:  'connected on the phone in your car',
+  }[i.reason] || 'connected';
 
   return (
     <div className="space-y-3">
